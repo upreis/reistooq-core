@@ -286,6 +286,11 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
       );
   }, [state.visibleColumns, state.columnOrder]);
 
+  // 🎯 Array de keys visíveis (para passar para tabela)
+  const visibleColumnKeys = useMemo(() => {
+    return Array.from(state.visibleColumns);
+  }, [state.visibleColumns]);
+
   const actions: ReclamacoesColumnActions = useMemo(() => ({
     toggleColumn,
     showColumn,
@@ -317,6 +322,7 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
 
   return {
     state,
+    visibleColumnKeys, // 🎯 Array pronto para uso
     actions,
     definitions: RECLAMACOES_COLUMN_DEFINITIONS,
     visibleDefinitions,
