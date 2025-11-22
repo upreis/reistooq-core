@@ -381,7 +381,7 @@ export const reclamacoesColumns = (
   },
   // 📦 QUANTIDADE
   {
-    id: 'quantidade',
+    id: 'order_item_quantity',
     accessorKey: 'order_item_quantity',
     header: ({ column }) => {
       return (
@@ -802,7 +802,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('site_id') || '-'}</span>,
   },
   {
-    id: 'nome_produto',
+    id: 'order_item_title',
     accessorKey: 'order_item_title',
     header: ({ column }) => {
       return (
@@ -819,7 +819,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{row.getValue('order_item_title') || '-'}</span>,
   },
   {
-    id: 'trocas',
+    id: 'tem_trocas',
     accessorKey: 'tem_trocas',
     header: () => <span className="font-semibold text-sm">Trocas</span>,
     cell: ({ row }) => {
@@ -828,7 +828,7 @@ export const reclamacoesColumns = (
     },
   },
   {
-    id: 'mediacao',
+    id: 'tem_mediacao',
     accessorKey: 'tem_mediacao',
     header: () => <span className="font-semibold text-sm">Mediação</span>,
     cell: ({ row }) => {
@@ -837,7 +837,7 @@ export const reclamacoesColumns = (
     },
   },
   {
-    id: 'numero_venda',
+    id: 'order_id',
     accessorKey: 'order_id',
     header: ({ column }) => {
       return (
@@ -854,7 +854,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('order_id') || '-'}</span>,
   },
   {
-    id: 'status_venda',
+    id: 'order_status',
     accessorKey: 'order_status',
     header: ({ column }) => {
       return (
@@ -871,7 +871,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('order_status'))}</span>,
   },
   {
-    id: 'numero_rastreio',
+    id: 'tracking_number',
     accessorKey: 'tracking_number',
     header: ({ column }) => {
       return (
