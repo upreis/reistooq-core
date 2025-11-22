@@ -23,9 +23,7 @@ import {
 } from '@tanstack/react-table';
 import { MLOrder } from '../types/vendas.types';
 import { createVendasColumns } from './VendasTableColumns';
-import { mapToTableColumnIds } from '../config/column-mapping';
 import type { StatusAnalise } from '../types/venda-analise.types';
-import type { UseColumnManagerReturn } from '../types/columns.types';
 
 interface VendasTableProps {
   orders: MLOrder[];
@@ -38,7 +36,7 @@ interface VendasTableProps {
   onOpenAnotacoes?: (order: MLOrder) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
-  columnManager?: UseColumnManagerReturn; // 🎯 FASE 3
+  visibleColumnKeys?: string[]; // 🎯 FASE 3: Array de keys de colunas visíveis
 }
 
 export const VendasTable = ({
@@ -52,12 +50,12 @@ export const VendasTable = ({
   onOpenAnotacoes,
   anotacoes,
   activeTab,
-  columnManager
+  visibleColumnKeys = [] // 🎯 FASE 3: Recebe array de keys visíveis
 }: VendasTableProps) => {
   const totalPages = Math.ceil(total / itemsPerPage);
 
-  // Criar colunas com contexto
-  const columns = useMemo(() => {
+  // Criar TODAS as colunas com contexto
+  const allColumns = useMemo(() => {
     return createVendasColumns({
       onStatusChange,
       onOpenAnotacoes,
@@ -65,27 +63,27 @@ export const VendasTable = ({
     });
   }, [onStatusChange, onOpenAnotacoes, anotacoes]);
 
-  // 🎯 SINCRONIZAÇÃO: Converter IDs do columnManager para IDs do TanStack Table
-  const columnVisibility = useMemo(() => {
-    if (!columnManager) {
-      // Sem columnManager, todas visíveis
-      return {};
+  // 🎯 FILTRAR colunas baseado em visibleColumnKeys (PADRÃO /reclamacoes)
+  const columns = useMemo(() => {
+    // Se não há keys definidas, mostrar todas
+    if (visibleColumnKeys.length === 0) {
+      return allColumns;
     }
     
-    // Converter Set de keys do manager para IDs da tabela
-    const tableVisibleIds = mapToTableColumnIds(columnManager.state.visibleColumns);
+    // Filtrar apenas colunas visíveis
+    const filtered = allColumns.filter(col => visibleColumnKeys.includes(col.id as string));
     
-    // Criar objeto de visibilidade
-    const visibility: Record<string, boolean> = {};
-    columns.forEach((col) => {
-      const colId = col.id as string;
-      visibility[colId] = tableVisibleIds.has(colId);
+    console.log('🔍 [VendasTable] Filtrando colunas:', {
+      total: allColumns.length,
+      visibleKeys: visibleColumnKeys.length,
+      filtered: filtered.length,
+      ids: filtered.map(c => c.id)
     });
     
-    return visibility;
-  }, [columnManager, columns]);
+    return filtered;
+  }, [allColumns, visibleColumnKeys]);
 
-  // Configurar TanStack Table com columnVisibility sincronizado
+  // Configurar TanStack Table com columns PRÉ-FILTRADAS
   const table = useReactTable({
     data: orders,
     columns: columns as ColumnDef<MLOrder>[],
@@ -97,7 +95,6 @@ export const VendasTable = ({
         pageIndex: currentPage - 1,
         pageSize: itemsPerPage,
       },
-      columnVisibility, // 🎯 SINCRONIZAÇÃO COM COLUMNMANAGER
     },
   });
 

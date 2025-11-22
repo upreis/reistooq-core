@@ -88,6 +88,21 @@ export default function VendasOnline() {
   // 🎯 FASE 3: COLUMN MANAGER AVANÇADO
   const columnManager = useVendasColumnManager();
   
+  // 🎯 FASE 3: FILTRAR COLUNAS VISÍVEIS (Padrão /reclamacoes)
+  const visibleColumnKeys = useMemo(() => {
+    const keysArray = Array.from(columnManager.state.visibleColumns);
+    console.log('🔄 [VendasOnline] visibleColumnKeys recalculado:', {
+      count: keysArray.length,
+      keys: keysArray
+    });
+    return keysArray;
+  }, [columnManager.state.visibleColumns.size, Array.from(columnManager.state.visibleColumns).join(',')]);
+
+  console.log('🎯 [VendasOnline] Colunas visíveis:', {
+    count: visibleColumnKeys.length,
+    keys: visibleColumnKeys
+  });
+  
   // 🎯 FASE 4: POLLING AUTOMÁTICO
   const [pollingEnabled, setPollingEnabled] = useState(false);
   const { forceRefresh, isPolling } = useVendasPolling({
@@ -473,7 +488,7 @@ export default function VendasOnline() {
               onOpenAnotacoes={handleOpenAnotacoes}
               anotacoes={anotacoes}
               activeTab={activeTab}
-              columnManager={columnManager}
+              visibleColumnKeys={visibleColumnKeys}
               filteredOrders={vendasFiltradasPorAba}
             />
           </div>

@@ -11,14 +11,13 @@ import { VendasShippingDialog } from './VendasShippingDialog';
 import { VendasFeedbackDialog } from './VendasFeedbackDialog';
 import { useState } from 'react';
 import type { StatusAnalise } from '../types/venda-analise.types';
-import type { UseColumnManagerReturn } from '../types/columns.types'; // 🎯 FASE 3
 
 interface VendasOnlineTableProps {
   onStatusChange?: (orderId: string, newStatus: StatusAnalise) => void;
   onOpenAnotacoes?: (order: any) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
-  columnManager?: UseColumnManagerReturn; // 🎯 FASE 3
+  visibleColumnKeys?: string[]; // 🎯 FASE 3: Array de keys de colunas visíveis
   filteredOrders?: any[]; // 🎯 Vendas já filtradas por aba
 }
 
@@ -27,7 +26,7 @@ export const VendasOnlineTable = ({
   onOpenAnotacoes,
   anotacoes,
   activeTab, 
-  columnManager, 
+  visibleColumnKeys = [], 
   filteredOrders 
 }: VendasOnlineTableProps) => {
   const { 
@@ -63,7 +62,7 @@ export const VendasOnlineTable = ({
         onOpenAnotacoes={onOpenAnotacoes}
         anotacoes={anotacoes}
         activeTab={activeTab}
-        columnManager={columnManager} // 🎯 FASE 3
+        visibleColumnKeys={visibleColumnKeys} // 🎯 FASE 3
       />
 
       {/* Dialogs */}
