@@ -78,7 +78,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     });
     
     return filtered;
-  }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys.length, visibleColumnKeys.join(',')]);
+  }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys]);
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
