@@ -173,10 +173,11 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
                 table.getRowModel().rows.map((row) => {
                   return (
                     <TableRow key={row.id} className="hover:bg-muted/50">
-                      {columns.map((column, index) => {
-                        const cell = row.getAllCells()[index];
+                      {columns.map((column) => {
+                        // ✅ Buscar célula pelo ID da coluna, não por índice
+                        const cell = row.getAllCells().find(c => c.column.id === column.id);
                         return (
-                          <TableCell key={column.id || `cell-${index}`}>
+                          <TableCell key={column.id || `col-${row.id}`}>
                             {cell
                               ? flexRender(column.cell, cell.getContext())
                               : null}
