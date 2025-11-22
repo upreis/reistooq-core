@@ -45,6 +45,13 @@ export function ReclamacoesColumnSelector({ className }: ReclamacoesColumnSelect
   const visibleCount = state.visibleColumns.size;
   const totalCount = definitions.length;
 
+  console.log('🎛️ [ColumnSelector] Estado atual:', {
+    visibleCount,
+    totalCount,
+    visibleColumns: Array.from(state.visibleColumns),
+    activeProfile: state.activeProfile
+  });
+
   // 🎯 AGRUPAMENTO POR CATEGORIA
   const columnsByCategory = definitions.reduce((acc, col) => {
     if (!acc[col.category]) {

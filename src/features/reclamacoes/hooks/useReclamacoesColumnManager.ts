@@ -96,10 +96,14 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
   const { toast } = useToast();
 
   // 📦 ESTADO INICIAL
-  const getInitialState = useCallback((): ReclamacoesColumnState => {
+  const getInitialState = (): ReclamacoesColumnState => {
     const stored = loadFromStorage();
     
     if (stored?.visibleColumns && stored.columnOrder) {
+      console.log('🔄 [ColumnManager] Restaurando do cache:', {
+        visibleCount: stored.visibleColumns.size,
+        profile: stored.activeProfile
+      });
       return {
         visibleColumns: stored.visibleColumns,
         columnOrder: stored.columnOrder,
@@ -113,13 +117,18 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
       .filter(col => col.default)
       .map(col => col.key);
 
+    console.log('✨ [ColumnManager] Estado inicial padrão:', {
+      defaultCount: defaultColumns.length,
+      total: RECLAMACOES_COLUMN_DEFINITIONS.length
+    });
+
     return {
       visibleColumns: new Set(defaultColumns),
       columnOrder: RECLAMACOES_COLUMN_DEFINITIONS.map(col => col.key),
       activeProfile: 'padrao',
       customProfiles: [],
     };
-  }, []);
+  };
 
   const [state, setState] = useState<ReclamacoesColumnState>(getInitialState);
 
