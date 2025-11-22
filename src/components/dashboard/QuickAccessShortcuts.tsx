@@ -20,6 +20,8 @@ interface QuickAccessShortcutsProps {
   shortcuts: Shortcut[];
   /** Callback when a shortcut is removed */
   onRemoveShortcut?: (id: string) => void;
+  /** Callback when add button is clicked */
+  onAddClick?: () => void;
   /** Optional custom class names */
   className?: string;
 }
@@ -32,6 +34,7 @@ export const QuickAccessShortcuts = ({
   title = "Acesso Rápido",
   shortcuts,
   onRemoveShortcut,
+  onAddClick,
   className,
 }: QuickAccessShortcutsProps) => {
   const navigate = useNavigate();
@@ -99,7 +102,7 @@ export const QuickAccessShortcuts = ({
         
         {/* Add button */}
         <button
-          onClick={() => {}} // Pode adicionar lógica aqui no futuro
+          onClick={onAddClick}
           className="group relative flex flex-col items-center gap-2 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label="Adicionar novo atalho"
         >
