@@ -3,6 +3,10 @@
  * Sistema de gerenciamento de visibilidade de colunas
  */
 
+// 📦 STORAGE CONSTANTS
+export const RECLAMACOES_COLUMN_STORAGE_KEY = 'reclamacoes_column_preferences';
+export const RECLAMACOES_COLUMN_STORAGE_VERSION = 1;
+
 export type ColumnCategory = 
   | 'essential'    // Colunas essenciais (sempre importantes)
   | 'financial'    // Informações financeiras
@@ -525,7 +529,3 @@ export const RECLAMACOES_DEFAULT_PROFILES: ReclamacoesColumnProfile[] = [
     ],
   },
 ];
-
-// 📦 STORAGE
-export const RECLAMACOES_COLUMN_STORAGE_KEY = 'reclamacoes_column_preferences';
-export const RECLAMACOES_COLUMN_STORAGE_VERSION = 1;
