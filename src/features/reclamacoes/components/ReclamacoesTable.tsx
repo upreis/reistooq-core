@@ -171,11 +171,24 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
             <TableBody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => {
-                  return <OptimizedTableRow key={row.id} row={row} />;
+                  return (
+                    <TableRow key={row.id} className="hover:bg-muted/50">
+                      {columns.map((column, index) => {
+                        const cell = row.getAllCells()[index];
+                        return (
+                          <TableCell key={column.id || `cell-${index}`}>
+                            {cell
+                              ? flexRender(column.cell, cell.getContext())
+                              : null}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
                     {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
                   </TableCell>
                 </TableRow>
@@ -201,17 +214,3 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
 ReclamacoesTable.displayName = 'ReclamacoesTable';
 
-// ⚡ COMPONENTE OTIMIZADO PARA LINHA DA TABELA (memo evita re-renders desnecessários)
-const OptimizedTableRow = memo(function OptimizedTableRow({ row }: { row: any }) {
-  return (
-    <TableRow className="hover:bg-muted/50">
-      {row.getVisibleCells().map((cell: any) => (
-        <TableCell key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </TableCell>
-      ))}
-    </TableRow>
-  );
-});
-
-OptimizedTableRow.displayName = 'OptimizedTableRow';
