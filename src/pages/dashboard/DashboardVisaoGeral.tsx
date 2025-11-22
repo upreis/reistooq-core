@@ -73,6 +73,11 @@ export default function DashboardVisaoGeral() {
     }
   ];
 
+  const handleRemoveShortcut = (id: string) => {
+    console.log('Remover atalho:', id);
+    // Aqui você pode adicionar lógica para salvar a remoção em localStorage ou banco de dados
+  };
+
   useEffect(() => {
     const fetchOrganizationId = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -144,7 +149,7 @@ export default function DashboardVisaoGeral() {
       </div>
 
       {/* Atalhos Rápidos */}
-      <QuickAccessShortcuts shortcuts={shortcuts} />
+      <QuickAccessShortcuts shortcuts={shortcuts} onRemoveShortcut={handleRemoveShortcut} />
 
       <Card>
         <CardHeader>
