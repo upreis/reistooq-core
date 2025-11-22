@@ -1,12 +1,11 @@
 /**
- * 📊 VENDAS TABLE
- * Tabela completa com todas as colunas possíveis da API do Mercado Livre
+ * 📊 VENDAS TABLE - TanStack React Table
+ * Tabela integrada com gerenciador de colunas
  */
 
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, History, FileText } from 'lucide-react';
+import { useMemo } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -17,18 +16,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+} from '@tanstack/react-table';
 import { MLOrder } from '../types/vendas.types';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { getOrderStatusLabel, getShippingStatusLabel, getShippingSubstatusLabel, getShippingSubstatusDescription } from '../utils/statusMapping';
-import { formatShippingStatus, formatLogisticType, formatSubstatus } from '@/utils/orderFormatters';
-import { StatusAnaliseSelect } from './StatusAnaliseSelect';
+import { createVendasColumns } from './VendasTableColumns';
 import type { StatusAnalise } from '../types/venda-analise.types';
-import type { UseColumnManagerReturn } from '../types/columns.types'; // 🎯 FASE 3
+import type { UseColumnManagerReturn } from '../types/columns.types';
 
 interface VendasTableProps {
   orders: MLOrder[];
@@ -55,36 +50,41 @@ export const VendasTable = ({
   onOpenAnotacoes,
   anotacoes,
   activeTab,
-  columnManager // 🎯 CRÍTICO 1: Receber e usar columnManager
+  columnManager
 }: VendasTableProps) => {
   const totalPages = Math.ceil(total / itemsPerPage);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  // Criar colunas com contexto
+  const columns = useMemo(() => {
+    return createVendasColumns({
+      onStatusChange,
+      onOpenAnotacoes,
+      anotacoes
+    });
+  }, [onStatusChange, onOpenAnotacoes, anotacoes]);
 
-  const formatDateTime = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
-    } catch {
-      return dateString;
-    }
-  };
+  // Filtrar colunas visíveis usando columnManager
+  const visibleColumns = useMemo(() => {
+    if (!columnManager) return columns;
+    
+    const visibleKeys = new Set(columnManager.state.visibleColumns);
+    return columns.filter(col => visibleKeys.has(col.id as string));
+  }, [columns, columnManager]);
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status?.toLowerCase()) {
-      case 'paid':
-      case 'delivered':
-        return 'default';
-      case 'cancelled':
-        return 'destructive';
-      default:
-        return 'secondary';
-    }
-  };
+  // Configurar TanStack Table
+  const table = useReactTable({
+    data: orders,
+    columns: visibleColumns,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount: totalPages,
+    state: {
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize: itemsPerPage,
+      },
+    },
+  });
 
   if (loading) {
     return (
@@ -108,291 +108,46 @@ export const VendasTable = ({
     <div className="space-y-4">
       <div className="rounded-md border overflow-x-auto">
         <Table>
-          <TableHeader>
-            <TableRow>
-              {/* ANÁLISE */}
-              <TableHead className="min-w-[180px]">Análise</TableHead>
-              <TableHead className="text-center min-w-[80px]">Anotações</TableHead>
-              
-              {/* EMPRESA */}
-              <TableHead className="min-w-[150px]">Empresa</TableHead>
-              
-              {/* IDENTIFICAÇÃO */}
-              <TableHead className="min-w-[120px]">ID Pedido</TableHead>
-              <TableHead className="min-w-[100px]">Pack ID</TableHead>
-              
-              {/* STATUS */}
-              <TableHead className="min-w-[120px]">Status</TableHead>
-              
-              {/* DATAS */}
-              <TableHead className="min-w-[150px]">Data Criação</TableHead>
-              <TableHead className="min-w-[150px]">Última Atualização</TableHead>
-              <TableHead className="min-w-[150px]">Validade</TableHead>
-              
-              {/* VALORES */}
-              <TableHead className="min-w-[120px]">Total</TableHead>
-              <TableHead className="min-w-[120px]">Produto</TableHead>
-              <TableHead className="min-w-[120px]">Frete</TableHead>
-              <TableHead className="min-w-[120px]">Desconto</TableHead>
-              <TableHead className="min-w-[120px]">Taxa ML</TableHead>
-              
-              {/* COMPRADOR */}
-              <TableHead className="min-w-[100px]">ID Comprador</TableHead>
-              <TableHead className="min-w-[150px]">Nome Comprador</TableHead>
-              
-              {/* PRODUTO */}
-              <TableHead className="min-w-[100px]">ID Item</TableHead>
-              <TableHead className="min-w-[250px]">Título Produto</TableHead>
-              <TableHead className="min-w-[80px]">Quantidade</TableHead>
-              <TableHead className="min-w-[200px]">SKU</TableHead>
-              <TableHead className="min-w-[120px]">Categoria</TableHead>
-              
-              {/* PAGAMENTO */}
-              <TableHead className="min-w-[120px]">Status Pagamento</TableHead>
-              
-              {/* ENVIO */}
-              <TableHead className="min-w-[120px]">ID Envio</TableHead>
-              <TableHead className="min-w-[120px]">Status Envio</TableHead>
-              <TableHead className="min-w-[120px]">Tipo Logístico</TableHead>
-              <TableHead className="min-w-[120px]">Substatus</TableHead>
-              <TableHead className="min-w-[150px]">Método Envio</TableHead>
-              <TableHead className="min-w-[200px]">Código Rastreio</TableHead>
-              <TableHead className="min-w-[150px]">Transportadora</TableHead>
-              <TableHead className="min-w-[150px]">Previsão Entrega</TableHead>
-              <TableHead className="min-w-[120px]">Histórico Status</TableHead>
-              
-              {/* ENDEREÇO */}
-              <TableHead className="min-w-[150px]">Cidade</TableHead>
-              <TableHead className="min-w-[80px]">Estado</TableHead>
-              <TableHead className="min-w-[100px]">CEP</TableHead>
-              <TableHead className="min-w-[250px]">Endereço</TableHead>
-              
-              {/* FULFILLMENT & MEDIAÇÕES */}
-              <TableHead className="min-w-[120px]">Fulfillment</TableHead>
-              <TableHead className="min-w-[120px]">Mediações</TableHead>
-              
-              {/* SHIPPING EXTRA */}
-              <TableHead className="min-w-[120px]">Custo Frete Listado</TableHead>
-              <TableHead className="min-w-[150px]">Dimensões Pacote</TableHead>
-              
-              
-              {/* OUTROS */}
-              <TableHead className="min-w-[150px]">Tipo Pedido</TableHead>
-              <TableHead className="min-w-[80px]">Ações</TableHead>
-            </TableRow>
+          <TableHeader className="sticky top-0 z-50 bg-background">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead 
+                    key={header.id}
+                    className={(header.column.columnDef.meta as any)?.headerClassName}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
           </TableHeader>
           <TableBody>
-            {orders.map((order) => {
-              const firstItem = order.order_items?.[0];
-              const buyer = order.buyer;
-              const shipping = order.shipping;
-              const payment = order.payments?.[0];
-              const shippingAddress = shipping?.destination?.shipping_address;
-
-              return (
-                <TableRow key={order.id}>
-                  {/* ANÁLISE */}
-                  <TableCell>
-                    {onStatusChange && (
-                      <StatusAnaliseSelect
-                        value={(order as any).status_analise_local || 'pendente'}
-                        onChange={(newStatus) => onStatusChange(order.id.toString(), newStatus)}
-                      />
-                    )}
-                  </TableCell>
-                  
-                  {/* ANOTAÇÕES */}
-                  <TableCell className="text-center">
-                    {(() => {
-                      const hasAnotacao = anotacoes?.[order.id.toString()]?.trim().length > 0;
-                      return (
-                        <Button
-                          variant={hasAnotacao ? 'default' : 'ghost'}
-                          size="sm"
-                          onClick={() => onOpenAnotacoes?.(order)}
-                          className="h-8 w-8 p-0"
-                          title={hasAnotacao ? 'Ver/Editar anotações' : 'Adicionar anotações'}
-                        >
-                          <FileText className={`h-4 w-4 ${hasAnotacao ? '' : 'text-muted-foreground'}`} />
-                        </Button>
-                      );
-                    })()}
-                  </TableCell>
-                  
-                  {/* EMPRESA */}
-                  <TableCell className="font-medium">{(order as any).account_name || '-'}</TableCell>
-                  
-                  {/* IDENTIFICAÇÃO */}
-                  <TableCell className="font-mono text-xs">{order.id}</TableCell>
-                  <TableCell className="font-mono text-xs">{order.pack_id || '-'}</TableCell>
-                  
-                  {/* STATUS */}
-                  <TableCell>
-                    <Badge variant={getStatusVariant(order.status)}>
-                      {getOrderStatusLabel(order.status)}
-                    </Badge>
-                  </TableCell>
-                  
-                  {/* DATAS */}
-                  <TableCell className="text-xs">{formatDateTime(order.date_created)}</TableCell>
-                  <TableCell className="text-xs">{order.last_updated ? formatDateTime(order.last_updated) : '-'}</TableCell>
-                  <TableCell className="text-xs">{order.expiration_date ? formatDateTime(order.expiration_date) : '-'}</TableCell>
-                  
-                  {/* VALORES */}
-                  <TableCell className="font-semibold">{formatCurrency(order.total_amount || 0)}</TableCell>
-                  <TableCell>{formatCurrency(order.paid_amount || 0)}</TableCell>
-                  <TableCell>{formatCurrency(payment?.shipping_cost || shipping?.lead_time?.cost || 0)}</TableCell>
-                  <TableCell>{formatCurrency(order.coupon?.amount || order.coupon_amount || 0)}</TableCell>
-                  <TableCell>
-                    {formatCurrency(
-                      order.order_items?.reduce((sum: number, item: any) => 
-                        sum + (item.sale_fee || 0), 0
-                      ) || 0
-                    )}
-                  </TableCell>
-                  
-                  {/* COMPRADOR */}
-                  <TableCell className="font-mono text-xs">{buyer?.id || '-'}</TableCell>
-                  <TableCell>{buyer?.nickname || buyer?.first_name || '-'}</TableCell>
-                  
-                  {/* PRODUTO */}
-                  <TableCell className="font-mono text-xs">{firstItem?.item?.id || '-'}</TableCell>
-                  <TableCell className="max-w-[250px]">
-                    <div className="whitespace-normal break-words">
-                      {firstItem?.item?.title || '-'}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">{firstItem?.quantity || '-'}</TableCell>
-                  <TableCell className="font-mono text-xs">{firstItem?.item?.seller_sku || '-'}</TableCell>
-                  <TableCell className="text-xs">{firstItem?.item?.category_id || '-'}</TableCell>
-                  
-                  {/* PAGAMENTO */}
-                  <TableCell>
-                    {payment?.status && (
-                      <Badge variant={payment.status === 'approved' ? 'default' : 'secondary'}>
-                        {payment.status}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  
-                  {/* ENVIO */}
-                  <TableCell className="font-mono text-xs">{shipping?.id || '-'}</TableCell>
-                  <TableCell>
-                    {shipping?.status ? (
-                      <Badge variant={getStatusVariant(shipping.status)}>
-                        {formatShippingStatus(shipping.status)}
-                      </Badge>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {formatLogisticType(
-                      shipping?.logistic?.type || 
-                      order.logistic_type || 
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {formatSubstatus(
-                      shipping?.substatus || 
-                      order.shipping_substatus || 
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs">{shipping?.lead_time?.shipping_method?.name || '-'}</TableCell>
-                  <TableCell className="font-mono text-xs">{shipping?.tracking_number || '-'}</TableCell>
-                  <TableCell className="text-xs">{shipping?.tracking_method || '-'}</TableCell>
-                  <TableCell className="text-xs">
-                    {shipping?.lead_time?.estimated_delivery_time?.date 
-                      ? formatDateTime(shipping.lead_time.estimated_delivery_time.date) 
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {shipping?.status_history && shipping.status_history.length > 0 ? (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <History className="h-4 w-4 mr-1" />
-                            {shipping.status_history.length} eventos
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-96" align="start">
-                          <div className="space-y-3">
-                            <h4 className="font-semibold text-sm">Histórico de Status</h4>
-                            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                              {shipping.status_history.map((history: any, idx: number) => (
-                                <div key={idx} className="border-l-2 border-primary pl-3 pb-2">
-                                  <div className="text-xs font-medium">
-                                    {getShippingStatusLabel(history.status)}
-                                  </div>
-                                  {history.description && (
-                                    <div className="text-xs text-muted-foreground">
-                                      {history.description}
-                                    </div>
-                                  )}
-                                  <div className="text-xs text-muted-foreground mt-1">
-                                    {formatDateTime(history.date_time)}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    ) : '-'}
-                  </TableCell>
-                  
-                  {/* ENDEREÇO */}
-                  <TableCell>{shippingAddress?.city?.name || '-'}</TableCell>
-                  <TableCell>{shippingAddress?.state?.id || '-'}</TableCell>
-                  <TableCell className="font-mono text-xs">{shippingAddress?.zip_code || '-'}</TableCell>
-                  <TableCell className="max-w-[250px]">
-                    <div className="truncate" title={shippingAddress?.address_line}>
-                      {shippingAddress?.address_line || '-'}
-                    </div>
-                  </TableCell>
-                  
-                  {/* FULFILLMENT & MEDIAÇÕES */}
-                  <TableCell>
-                    {order.fulfilled !== null && order.fulfilled !== undefined ? (
-                      order.fulfilled ? (
-                        <Badge variant="default">Sim</Badge>
-                      ) : (
-                        <Badge variant="outline">Não</Badge>
-                      )
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {order.mediations && order.mediations.length > 0 
-                      ? `${order.mediations.length} mediação(ões)` 
-                      : '-'}
-                  </TableCell>
-                  
-                  {/* SHIPPING EXTRA */}
-                  <TableCell>
-                    {shipping?.lead_time?.list_cost
-                      ? formatCurrency(shipping.lead_time.list_cost) 
-                      : '-'}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {shipping?.dimensions 
-                      ? `${shipping.dimensions.width}x${shipping.dimensions.length}x${shipping.dimensions.height} cm (${shipping.dimensions.weight}g)`
-                      : '-'}
-                  </TableCell>
-                  
-                  {/* OUTROS */}
-                  <TableCell className="text-xs">{order.order_request?.return ? 'Devolução' : 'Normal'}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open(`https://www.mercadolivre.com.br/vendas/${order.id}/detalle`, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => {
+                const cells = row.getAllCells();
+                return (
+                  <TableRow key={row.id} className="hover:bg-muted/50">
+                    {cells.map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length} className="h-24 text-center">
+                  Nenhum pedido encontrado
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
