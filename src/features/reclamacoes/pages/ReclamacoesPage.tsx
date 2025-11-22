@@ -406,22 +406,37 @@ export function ReclamacoesPage() {
   };
 
   // 🔗 SINCRONIZAR COLUMN VISIBILITY COM TANSTACK TABLE
-  // Converter Set para Array para ReactivityconMemo poder detectar mudanças
-  const visibleColumnsArray = useMemo(() => 
-    Array.from(columnManager.state.visibleColumns).sort()
-  , [columnManager.state.visibleColumns]);
+  // Converter Set para string serializada para forçar detecção de mudanças
+  const visibleColumnsKey = useMemo(() => {
+    const sorted = Array.from(columnManager.state.visibleColumns).sort();
+    return sorted.join(',');
+  }, [columnManager.state.visibleColumns]);
 
   const columnVisibility = useMemo<VisibilityState>(() => {
     const visibility: VisibilityState = {};
+    const visibleSet = columnManager.state.visibleColumns;
+    
     columnManager.definitions.forEach(col => {
-      visibility[col.key] = visibleColumnsArray.includes(col.key);
+      visibility[col.key] = visibleSet.has(col.key);
     });
+    
+    console.log('🔄 [ReclamacoesPage] columnVisibility recalculado:', {
+      visibleCount: Object.values(visibility).filter(Boolean).length,
+      total: Object.keys(visibility).length
+    });
+    
     return visibility;
-  }, [visibleColumnsArray, columnManager.definitions]);
+  }, [visibleColumnsKey, columnManager.definitions, columnManager.state.visibleColumns]);
 
   const handleColumnVisibilityChange = useCallback((updater: any) => {
     const newVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
     const visibleKeys = Object.keys(newVisibility).filter(key => newVisibility[key]);
+    
+    console.log('🎯 [ReclamacoesPage] handleColumnVisibilityChange chamado:', {
+      newVisibleCount: visibleKeys.length,
+      keys: visibleKeys
+    });
+    
     columnManager.actions.setVisibleColumns(visibleKeys);
   }, [columnVisibility, columnManager.actions]);
 
