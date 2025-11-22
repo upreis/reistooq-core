@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { OMSNav } from "@/features/oms/components/OMSNav";
 import OrdersPage from "@/pages/oms/OrdersPage";
 import CustomersPage from "@/pages/oms/CustomersPage";
@@ -6,21 +6,16 @@ import SalesRepsPage from "@/pages/oms/SalesRepsPage";
 import OMSSettingsPage from "@/pages/oms/OMSSettingsPage";
 
 const OMS = () => {
-  const location = useLocation();
-  const currentPath = location.pathname;
-
-  const renderContent = () => {
-    if (currentPath.includes('/pedidos')) return <OrdersPage />;
-    if (currentPath.includes('/clientes')) return <CustomersPage />;
-    if (currentPath.includes('/vendedores')) return <SalesRepsPage />;
-    if (currentPath.includes('/configuracoes')) return <OMSSettingsPage />;
-    return <OrdersPage />;
-  };
-
   return (
     <div className="space-y-6">
       <OMSNav />
-      {renderContent()}
+      <Routes>
+        <Route index element={<Navigate to="pedidos" replace />} />
+        <Route path="pedidos" element={<OrdersPage />} />
+        <Route path="clientes" element={<CustomersPage />} />
+        <Route path="vendedores" element={<SalesRepsPage />} />
+        <Route path="configuracoes" element={<OMSSettingsPage />} />
+      </Routes>
     </div>
   );
 };

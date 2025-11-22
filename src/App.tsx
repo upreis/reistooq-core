@@ -148,10 +148,7 @@ function App() {
                     <Route path="vendas-online" element={<VendasOnline />} />
                     
                     {/* OMS */}
-                    <Route path="oms/pedidos" element={<OMS />} />
-                    <Route path="oms/clientes" element={<OMS />} />
-                    <Route path="oms/vendedores" element={<OMS />} />
-                    <Route path="oms/configuracoes" element={<OMS />} />
+                    <Route path="oms/*" element={<OMS />} />
                     
                     {/* Devoluções */}
                     <Route path="devolucoesdevenda" element={<DevolucoesDeVenda />} />
