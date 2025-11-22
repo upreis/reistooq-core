@@ -47,12 +47,12 @@ export const QuickAccessShortcuts = ({
         </h2>
       )}
       
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {displayShortcuts.map((shortcut) => (
           <button
             key={shortcut.id}
             onClick={() => handleShortcutClick(shortcut.route)}
-            className="group relative flex flex-col items-center gap-3 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group relative flex flex-col items-center gap-2 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={`Ir para ${shortcut.label}`}
           >
             {/* Card Icon */}
