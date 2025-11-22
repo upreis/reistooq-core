@@ -405,40 +405,16 @@ export function ReclamacoesPage() {
     });
   };
 
-  // 🔗 SINCRONIZAR COLUMN VISIBILITY COM TANSTACK TABLE
-  // Converter Set para string serializada para forçar detecção de mudanças
-  const visibleColumnsKey = useMemo(() => {
-    const sorted = Array.from(columnManager.state.visibleColumns).sort();
-    return sorted.join(',');
-  }, [columnManager.state.visibleColumns]);
+  // 🔗 FILTRAR COLUNAS VISÍVEIS (padrão de /pedidos - NÃO usa columnVisibility)
+  const visibleColumnKeys = useMemo(() => 
+    Array.from(columnManager.state.visibleColumns),
+    [columnManager.state.visibleColumns]
+  );
 
-  const columnVisibility = useMemo<VisibilityState>(() => {
-    const visibility: VisibilityState = {};
-    const visibleSet = columnManager.state.visibleColumns;
-    
-    columnManager.definitions.forEach(col => {
-      visibility[col.key] = visibleSet.has(col.key);
-    });
-    
-    console.log('🔄 [ReclamacoesPage] columnVisibility recalculado:', {
-      visibleCount: Object.values(visibility).filter(Boolean).length,
-      total: Object.keys(visibility).length
-    });
-    
-    return visibility;
-  }, [visibleColumnsKey, columnManager.definitions, columnManager.state.visibleColumns]);
-
-  const handleColumnVisibilityChange = useCallback((updater: any) => {
-    const newVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
-    const visibleKeys = Object.keys(newVisibility).filter(key => newVisibility[key]);
-    
-    console.log('🎯 [ReclamacoesPage] handleColumnVisibilityChange chamado:', {
-      newVisibleCount: visibleKeys.length,
-      keys: visibleKeys
-    });
-    
-    columnManager.actions.setVisibleColumns(visibleKeys);
-  }, [columnVisibility, columnManager.actions]);
+  console.log('🎯 [ReclamacoesPage] Colunas visíveis:', {
+    count: visibleColumnKeys.length,
+    keys: visibleColumnKeys
+  });
 
   const handleTableReady = useCallback((table: any) => {
     setTableInstance(table);
@@ -559,8 +535,7 @@ export function ReclamacoesPage() {
                       onOpenAnotacoes={handleOpenAnotacoes}
                       anotacoes={anotacoes}
                       activeTab={activeTab}
-                      columnVisibility={columnVisibility}
-                      onColumnVisibilityChange={handleColumnVisibilityChange}
+                      visibleColumnKeys={visibleColumnKeys}
                       onTableReady={handleTableReady}
                     />
                   </TabsContent>
