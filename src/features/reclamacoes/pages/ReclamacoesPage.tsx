@@ -548,7 +548,7 @@ export function ReclamacoesPage() {
                       onOpenAnotacoes={handleOpenAnotacoes}
                       anotacoes={anotacoes}
                       activeTab={activeTab}
-                      visibleColumnKeys={visibleColumnKeys}
+                      visibleColumnKeys={columnManager.visibleColumnKeys}
                       onTableReady={handleTableReady}
                     />
                   </TabsContent>
