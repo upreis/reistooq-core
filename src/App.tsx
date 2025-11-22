@@ -166,6 +166,7 @@ function App() {
                     {/* Configurações */}
                     <Route path="configuracoes/*" element={<IntegracoesPage />} />
                     <Route path="aplicativos/*" element={<AplicativosPage />} />
+                    <Route path="categorias" element={<CategoryManager />} />
                     
                     {/* Admin */}
                     <Route path="admin/*" element={
@@ -189,11 +190,11 @@ function App() {
                     {/* Outros */}
                     <Route path="calendar" element={<Calendar />} />
                     <Route path="notes" element={<Notes />} />
-                    <Route path="oms/*" element={<OMS />} />
                     <Route path="cards" element={<Cards />} />
                     <Route path="banners" element={<Banners />} />
                     <Route path="charts" element={<Charts />} />
                     <Route path="solar-icons" element={<SolarIcons />} />
+                    <Route path="account-settings" element={<AccountSettings />} />
                   </Route>
                   
                   {/* Rota 404 */}
