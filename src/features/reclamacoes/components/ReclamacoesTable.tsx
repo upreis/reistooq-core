@@ -82,7 +82,17 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    enableHiding: true, // ✅ HABILITAR OCULTAÇÃO DE COLUNAS
   });
+
+  // 🔍 DEBUG: Logar colunas visíveis
+  useEffect(() => {
+    console.log('📊 [Table] Colunas visíveis:', {
+      allColumns: table.getAllColumns().length,
+      visibleColumns: table.getVisibleLeafColumns().length,
+      columnVisibilityState: columnVisibility,
+    });
+  }, [columnVisibility, table]);
 
   // 🔗 Notificar parent quando table está pronta
   useEffect(() => {
