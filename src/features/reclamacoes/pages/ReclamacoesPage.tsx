@@ -405,11 +405,16 @@ export function ReclamacoesPage() {
     });
   };
 
-  // 🔗 FILTRAR COLUNAS VISÍVEIS (padrão de /pedidos - NÃO usa columnVisibility)
-  const visibleColumnKeys = useMemo(() => 
-    Array.from(columnManager.state.visibleColumns),
-    [columnManager.state.visibleColumns]
-  );
+  // 🔗 FILTRAR COLUNAS VISÍVEIS - CONVERTIDO EM ARRAY PARA FORÇAR RE-RENDER
+  // ✅ DEPENDÊNCIAS: size + join forçam recálculo quando Set muda
+  const visibleColumnKeys = useMemo(() => {
+    const keysArray = Array.from(columnManager.state.visibleColumns);
+    console.log('🔄 [ReclamacoesPage] visibleColumnKeys recalculado:', {
+      count: keysArray.length,
+      keys: keysArray
+    });
+    return keysArray;
+  }, [columnManager.state.visibleColumns.size, Array.from(columnManager.state.visibleColumns).join(',')]);
 
   console.log('🎯 [ReclamacoesPage] Colunas visíveis:', {
     count: visibleColumnKeys.length,
