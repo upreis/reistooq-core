@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define the shape of a single shortcut object
@@ -76,6 +77,27 @@ export const QuickAccessShortcuts = ({
             </p>
           </button>
         ))}
+        
+        {/* Add button */}
+        <button
+          onClick={() => {}} // Pode adicionar lógica aqui no futuro
+          className="group relative flex flex-col items-center gap-2 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label="Adicionar novo atalho"
+        >
+          {/* Add Card Icon */}
+          <div 
+            className="relative h-24 w-24 rounded-2xl transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:shadow-muted/20 bg-muted/50 border-2 border-dashed border-muted-foreground/30 group-hover:border-muted-foreground/50"
+          >
+            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+              <Plus className="w-8 h-8" />
+            </div>
+          </div>
+          
+          {/* Label */}
+          <p className="text-sm font-medium text-muted-foreground text-center transition-colors group-hover:text-foreground">
+            Adicionar
+          </p>
+        </button>
       </div>
     </div>
   );
