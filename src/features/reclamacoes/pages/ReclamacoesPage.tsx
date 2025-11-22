@@ -406,13 +406,18 @@ export function ReclamacoesPage() {
   };
 
   // 🔗 SINCRONIZAR COLUMN VISIBILITY COM TANSTACK TABLE
+  // Converter Set para Array para ReactivityconMemo poder detectar mudanças
+  const visibleColumnsArray = useMemo(() => 
+    Array.from(columnManager.state.visibleColumns).sort()
+  , [columnManager.state.visibleColumns]);
+
   const columnVisibility = useMemo<VisibilityState>(() => {
     const visibility: VisibilityState = {};
     columnManager.definitions.forEach(col => {
-      visibility[col.key] = columnManager.state.visibleColumns.has(col.key);
+      visibility[col.key] = visibleColumnsArray.includes(col.key);
     });
     return visibility;
-  }, [columnManager.updateCounter, columnManager.definitions]); // 🔄 Usa contador para detectar mudanças
+  }, [visibleColumnsArray, columnManager.definitions]);
 
   const handleColumnVisibilityChange = useCallback((updater: any) => {
     const newVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
