@@ -101,9 +101,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'pedidos',
     label: 'Pedidos',
     route: '/pedidos',
-    icon: <img src={pedidosIcon} alt="Pedidos" className="w-12 h-12 object-contain" />,
+    icon: <img src={pedidosIcon} alt="Pedidos" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
-    gradient: 'bg-gradient-to-br from-orange-400 to-teal-500'
+    gradient: 'bg-white border border-border'
   },
   {
     id: 'vendas-online',
