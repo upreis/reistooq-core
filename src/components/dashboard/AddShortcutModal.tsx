@@ -65,6 +65,16 @@ import devolucoesIcon from "@/assets/devolucoes.png";
 import fornecedoresIcon from "@/assets/fornecedores.png";
 import historicoFerramentasIcon from "@/assets/historico_ferramentas.png";
 import historicoIcon from "@/assets/historico.png";
+import importacaoIcon from "@/assets/importacao.png";
+import importarProdutosIcon from "@/assets/importar_produtos.png";
+import integracoesIcon from "@/assets/integracoes.png";
+import listaProdutosIcon from "@/assets/lista_produtos.png";
+import lojaIcon from "@/assets/loja.png";
+import notasIcon from "@/assets/notas.png";
+import pedidosCompraIcon from "@/assets/pedidos_compra.png";
+import pedidosOmsIcon from "@/assets/pedidos_oms.png";
+import perfilAdminIcon from "@/assets/perfil_admin.png";
+import reclamacoesIcon from "@/assets/reclamacoes.png";
 
 interface PageOption {
   id: string;
@@ -140,7 +150,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'oms-pedidos',
     label: 'OMS - Pedidos',
     route: '/oms/pedidos',
-    icon: <ClipboardList />,
+    icon: <img src={pedidosOmsIcon} alt="OMS - Pedidos" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-indigo-500 to-indigo-700'
   },
@@ -208,7 +218,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'reclamacoes',
     label: 'Reclamações',
     route: '/reclamacoes',
-    icon: <AlertCircle />,
+    icon: <img src={reclamacoesIcon} alt="Reclamações" className="w-16 h-16 object-contain" />,
     category: 'Devoluções & Reclamações',
     gradient: 'bg-gradient-to-br from-red-500 to-red-700'
   },
@@ -218,7 +228,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'compras-pedidos',
     label: 'Pedidos de Compra',
     route: '/compras/pedidos',
-    icon: <ShoppingCart />,
+    icon: <img src={pedidosCompraIcon} alt="Pedidos de Compra" className="w-16 h-16 object-contain" />,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-blue-600 to-blue-800'
   },
@@ -242,7 +252,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'compras-importacao',
     label: 'Importação',
     route: '/compras/importacao',
-    icon: <Upload />,
+    icon: <img src={importacaoIcon} alt="Importação" className="w-16 h-16 object-contain" />,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-cyan-600 to-cyan-800'
   },
@@ -260,7 +270,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'aplicativos-notas',
     label: 'Notas',
     route: '/aplicativos/notas',
-    icon: <StickyNote />,
+    icon: <img src={notasIcon} alt="Notas" className="w-16 h-16 object-contain" />,
     category: 'Aplicativos',
     gradient: 'bg-gradient-to-br from-yellow-500 to-yellow-700'
   },
@@ -270,7 +280,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'ecommerce-shop',
     label: 'Loja',
     route: '/apps/ecommerce/shop',
-    icon: <Store />,
+    icon: <img src={lojaIcon} alt="Loja" className="w-16 h-16 object-contain" />,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-purple-600 to-purple-800'
   },
@@ -278,7 +288,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'ecommerce-list',
     label: 'Lista de Produtos',
     route: '/apps/ecommerce/list',
-    icon: <List />,
+    icon: <img src={listaProdutosIcon} alt="Lista de Produtos" className="w-16 h-16 object-contain" />,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-violet-600 to-violet-800'
   },
@@ -294,7 +304,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'ecommerce-import',
     label: 'Importar Produtos',
     route: '/apps/ecommerce/import',
-    icon: <Upload />,
+    icon: <img src={importarProdutosIcon} alt="Importar Produtos" className="w-16 h-16 object-contain" />,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-pink-600 to-pink-800'
   },
@@ -304,7 +314,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'configuracoes-integracoes',
     label: 'Integrações',
     route: '/configuracoes/integracoes',
-    icon: <Link />,
+    icon: <img src={integracoesIcon} alt="Integrações" className="w-16 h-16 object-contain" />,
     category: 'Configurações',
     gradient: 'bg-gradient-to-br from-gray-500 to-gray-700'
   },
@@ -378,7 +388,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'admin-perfil',
     label: 'Perfil Admin',
     route: '/admin/perfil',
-    icon: <Users />,
+    icon: <img src={perfilAdminIcon} alt="Perfil Admin" className="w-16 h-16 object-contain" />,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-yellow-600 to-yellow-800'
   },
