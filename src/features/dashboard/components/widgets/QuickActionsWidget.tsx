@@ -153,7 +153,7 @@ export const QuickActionsWidget = () => {
                     <img
                       src={service.imageUrl}
                       alt={`${service.name} icon`}
-                      className="w-12 h-12 object-contain"
+                      className="w-16 h-16 object-contain"
                     />
                   </div>
                 </div>
@@ -177,7 +177,7 @@ export const QuickActionsWidget = () => {
                   <img
                     src="https://img.icons8.com/fluency/96/plus-math.png"
                     alt="Adicionar"
-                    className="w-8 h-8 object-contain"
+                    className="w-12 h-12 object-contain"
                   />
                 </div>
               </div>
