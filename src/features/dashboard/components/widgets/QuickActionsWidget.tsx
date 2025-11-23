@@ -35,36 +35,37 @@ const DEFAULT_SHORTCUTS: Service[] = [
 ];
 
 export const QuickActionsWidget = () => {
-  const [shortcuts, setShortcuts] = useState<Service[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Carregar atalhos do localStorage
-  useEffect(() => {
+  // Inicializar com dados do localStorage ou defaults
+  const [shortcuts, setShortcuts] = useState<Service[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      console.log('[QuickActionsWidget] Loaded from localStorage:', { key: STORAGE_KEY, raw: saved });
-
+      console.log('[QuickActionsWidget INIT] Loading from localStorage:', { key: STORAGE_KEY, raw: saved });
+      
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('[QuickActionsWidget] Parsed shortcuts:', parsed);
-        setShortcuts(parsed);
-      } else {
-        console.log('[QuickActionsWidget] No saved shortcuts found, using defaults');
-        setShortcuts(DEFAULT_SHORTCUTS);
+        console.log('[QuickActionsWidget INIT] Loaded shortcuts:', parsed);
+        return parsed;
       }
     } catch (error) {
-      console.error('[QuickActionsWidget] Error loading shortcuts, falling back to defaults', error);
-      setShortcuts(DEFAULT_SHORTCUTS);
+      console.error('[QuickActionsWidget INIT] Error loading shortcuts:', error);
     }
-  }, []);
+    
+    console.log('[QuickActionsWidget INIT] Using defaults');
+    return DEFAULT_SHORTCUTS;
+  });
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Salvar atalhos no localStorage
+  // Salvar atalhos no localStorage sempre que mudarem
   useEffect(() => {
+    if (shortcuts.length === 0) return; // Não salvar estado vazio
+    
     try {
-      console.log('[QuickActionsWidget] Saving shortcuts to localStorage:', shortcuts);
+      console.log('[QuickActionsWidget SAVE] Saving shortcuts to localStorage:', shortcuts);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcuts));
+      console.log('[QuickActionsWidget SAVE] Successfully saved');
     } catch (error) {
-      console.error('[QuickActionsWidget] Error saving shortcuts to localStorage', error);
+      console.error('[QuickActionsWidget SAVE] Error saving shortcuts:', error);
     }
   }, [shortcuts]);
 
