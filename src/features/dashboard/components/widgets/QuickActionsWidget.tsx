@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ServiceGrid, Service } from '@/components/ui/service-grid';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import pedidosIcon from '@/assets/pedidos-cart-icon.png';
+import estoqueIcon from '@/assets/estoque-icon.png';
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
@@ -13,7 +14,7 @@ const DEFAULT_SHORTCUTS: Service[] = [
   },
   {
     name: 'Estoque',
-    imageUrl: 'https://img.icons8.com/fluency/96/warehouse.png',
+    imageUrl: estoqueIcon,
     href: '/estoque'
   },
   {
