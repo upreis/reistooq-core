@@ -22,6 +22,16 @@ import devolucoesIcon from '@/assets/devolucoes.png';
 import fornecedoresIcon from '@/assets/fornecedores.png';
 import historicoFerramentasIcon from '@/assets/historico_ferramentas.png';
 import historicoIcon from '@/assets/historico.png';
+import importacaoIcon from '@/assets/importacao.png';
+import importarProdutosIcon from '@/assets/importar_produtos.png';
+import integracoesIcon from '@/assets/integracoes.png';
+import listaProdutosIcon from '@/assets/lista_produtos.png';
+import lojaIcon from '@/assets/loja.png';
+import notasIcon from '@/assets/notas.png';
+import pedidosCompraIcon from '@/assets/pedidos_compra.png';
+import pedidosOmsIcon from '@/assets/pedidos_oms.png';
+import perfilAdminIcon from '@/assets/perfil_admin.png';
+import reclamacoesIcon from '@/assets/reclamacoes.png';
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 
