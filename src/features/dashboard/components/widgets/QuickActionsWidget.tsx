@@ -185,75 +185,68 @@ export const QuickActionsWidget = () => {
             </div>
           </div>
 
-          {/* Animated Grid Section */}
-          <motion.div
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
+          {/* Grid Section */}
+          <div className="flex flex-wrap gap-x-2 gap-y-[1.5px]">
             {shortcuts.map((service, index) => (
-              <motion.div
+              <button
                 key={index}
-                className="group relative flex flex-col items-center justify-start gap-3 text-center"
-                variants={itemVariants}
-                whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                onClick={() => navigate(service.href)}
+                className="group relative flex flex-col items-center gap-2 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                aria-label={`Ir para ${service.name}`}
               >
-                {/* Remove button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveShortcut(index);
-                  }}
-                  className="absolute -top-2 -right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-
-                {/* Service card */}
-                <button
-                  onClick={() => navigate(service.href)}
-                  className="flex flex-col items-center justify-start gap-3 text-center w-full"
-                >
-                  <div className="flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28">
+                {/* Card Icon */}
+                <div className="relative h-24 w-24 rounded-2xl transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 bg-gradient-to-br from-primary to-primary/70">
+                  {/* Remove button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveShortcut(index);
+                    }}
+                    className="absolute -top-1 -right-1 z-10 h-5 w-5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center hover:bg-destructive/90"
+                    aria-label="Remover atalho"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  
+                  <div className="absolute inset-0 flex items-center justify-center text-white">
                     <img
                       src={service.imageUrl}
-                      alt={`${service.name} service icon`}
-                      width={100}
-                      height={100}
-                      className="object-contain transition-transform duration-300 group-hover:scale-110"
+                      alt={`${service.name} icon`}
+                      className="w-12 h-12 object-contain"
                     />
                   </div>
-                  <span className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-primary">
-                    {service.name}
-                  </span>
-                </button>
-              </motion.div>
+                </div>
+                
+                {/* Label */}
+                <p className="text-sm font-medium text-foreground text-center transition-colors group-hover:text-primary">
+                  {service.name}
+                </p>
+              </button>
             ))}
 
             {/* Add button */}
-            <motion.button
+            <button
               onClick={() => setIsModalOpen(true)}
-              className="group flex flex-col items-center justify-start gap-3 text-center"
-              variants={itemVariants}
-              whileHover={{ scale: 1.05, y: -5 }}
-              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+              className="group relative flex flex-col items-center gap-2 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              aria-label="Adicionar novo atalho"
             >
-              <div className="flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28">
-                <img
-                  src="https://img.icons8.com/fluency/96/plus-math.png"
-                  alt="Adicionar atalho"
-                  width={100}
-                  height={100}
-                  className="object-contain transition-transform duration-300 group-hover:scale-110"
-                />
+              {/* Add Card Icon */}
+              <div className="relative h-24 w-24 rounded-2xl transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:shadow-muted/20 bg-muted/50 border-2 border-dashed border-muted-foreground/30 group-hover:border-muted-foreground/50">
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                  <img
+                    src="https://img.icons8.com/fluency/96/plus-math.png"
+                    alt="Adicionar"
+                    className="w-8 h-8 object-contain"
+                  />
+                </div>
               </div>
-              <span className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-primary">
+              
+              {/* Label */}
+              <p className="text-sm font-medium text-muted-foreground text-center transition-colors group-hover:text-foreground">
                 Adicionar
-              </span>
-            </motion.button>
-          </motion.div>
+              </p>
+            </button>
+          </div>
         </div>
       </section>
 
