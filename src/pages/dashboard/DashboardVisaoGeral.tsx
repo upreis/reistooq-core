@@ -4,15 +4,31 @@ import { BarChart3, Users, ShoppingCart, TrendingUp, Package, FileText, Trending
 import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { QuickAccessShortcuts } from '@/components/dashboard/QuickAccessShortcuts';
-import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
 import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
 
 export default function DashboardVisaoGeral() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [shortcuts, setShortcuts] = useState([
+  
+  // Buscar dados reais de devoluções para o calendário
+  const { data: calendarDataDevolucoes, loading: calendarLoadingDevolucoes, error: calendarErrorDevolucoes, refresh: refreshDevolucoes } = useDevolucaoCalendarData();
+  
+  // Buscar dados reais de reclamações para o calendário
+  const { data: calendarDataReclamacoes, loading: calendarLoadingReclamacoes, error: calendarErrorReclamacoes, refresh: refreshReclamacoes } = useReclamacoesCalendarData();
+  
+  // Combinar dados de devoluções e reclamações
+  const calendarData = [...calendarDataDevolucoes, ...calendarDataReclamacoes];
+  const calendarLoading = calendarLoadingDevolucoes || calendarLoadingReclamacoes;
+  const calendarError = calendarErrorDevolucoes || calendarErrorReclamacoes;
+  
+  const refresh = () => {
+    refreshDevolucoes();
+    refreshReclamacoes();
+  };
+
+  // Configuração dos atalhos rápidos
+  const shortcuts = [
     {
       id: 'pedidos',
       label: 'Pedidos',
@@ -55,33 +71,7 @@ export default function DashboardVisaoGeral() {
       route: '/configuracoes',
       gradient: 'bg-gradient-to-br from-gray-500 to-gray-700'
     }
-  ]);
-  
-  // Buscar dados reais de devoluções para o calendário
-  const { data: calendarDataDevolucoes, loading: calendarLoadingDevolucoes, error: calendarErrorDevolucoes, refresh: refreshDevolucoes } = useDevolucaoCalendarData();
-  
-  // Buscar dados reais de reclamações para o calendário
-  const { data: calendarDataReclamacoes, loading: calendarLoadingReclamacoes, error: calendarErrorReclamacoes, refresh: refreshReclamacoes } = useReclamacoesCalendarData();
-  
-  // Combinar dados de devoluções e reclamações
-  const calendarData = [...calendarDataDevolucoes, ...calendarDataReclamacoes];
-  const calendarLoading = calendarLoadingDevolucoes || calendarLoadingReclamacoes;
-  const calendarError = calendarErrorDevolucoes || calendarErrorReclamacoes;
-  
-  const refresh = () => {
-    refreshDevolucoes();
-    refreshReclamacoes();
-  };
-
-  const handleRemoveShortcut = (id: string) => {
-    setShortcuts(prev => prev.filter(shortcut => shortcut.id !== id));
-  };
-
-  const handleAddShortcut = (newShortcut: any) => {
-    if (shortcuts.length < 10) {
-      setShortcuts(prev => [...prev, newShortcut]);
-    }
-  };
+  ];
 
   useEffect(() => {
     const fetchOrganizationId = async () => {
@@ -154,18 +144,7 @@ export default function DashboardVisaoGeral() {
       </div>
 
       {/* Atalhos Rápidos */}
-      <QuickAccessShortcuts 
-        shortcuts={shortcuts} 
-        onRemoveShortcut={handleRemoveShortcut}
-        onAddClick={() => setIsAddModalOpen(true)}
-      />
-
-      <AddShortcutModal
-        open={isAddModalOpen}
-        onOpenChange={setIsAddModalOpen}
-        onAddShortcut={handleAddShortcut}
-        existingShortcutIds={shortcuts.map(s => s.id)}
-      />
+      <QuickAccessShortcuts shortcuts={shortcuts} />
 
       <Card>
         <CardHeader>

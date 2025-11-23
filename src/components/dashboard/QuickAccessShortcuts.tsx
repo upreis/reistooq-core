@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define the shape of a single shortcut object
@@ -18,10 +18,6 @@ interface QuickAccessShortcutsProps {
   title?: string;
   /** An array of shortcut objects to display (max 10) */
   shortcuts: Shortcut[];
-  /** Callback when a shortcut is removed */
-  onRemoveShortcut?: (id: string) => void;
-  /** Callback when add button is clicked */
-  onAddClick?: () => void;
   /** Optional custom class names */
   className?: string;
 }
@@ -33,8 +29,6 @@ interface QuickAccessShortcutsProps {
 export const QuickAccessShortcuts = ({
   title = "Acesso Rápido",
   shortcuts,
-  onRemoveShortcut,
-  onAddClick,
   className,
 }: QuickAccessShortcutsProps) => {
   const navigate = useNavigate();
@@ -44,13 +38,6 @@ export const QuickAccessShortcuts = ({
 
   const handleShortcutClick = (route: string) => {
     navigate(route);
-  };
-
-  const handleRemove = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (onRemoveShortcut) {
-      onRemoveShortcut(id);
-    }
   };
 
   return (
@@ -77,15 +64,6 @@ export const QuickAccessShortcuts = ({
                 shortcut.gradient || "bg-gradient-to-br from-primary to-primary/70"
               )}
             >
-              {/* Remove button */}
-              <button
-                onClick={(e) => handleRemove(e, shortcut.id)}
-                className="absolute -top-1 -right-1 z-10 h-5 w-5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center hover:bg-destructive/90"
-                aria-label="Remover atalho"
-              >
-                <X className="h-3 w-3" />
-              </button>
-              
               <div className="absolute inset-0 flex items-center justify-center text-white">
                 <div className="text-3xl">
                   {shortcut.icon}
@@ -102,7 +80,7 @@ export const QuickAccessShortcuts = ({
         
         {/* Add button */}
         <button
-          onClick={onAddClick}
+          onClick={() => {}} // Pode adicionar lógica aqui no futuro
           className="group relative flex flex-col items-center gap-2 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label="Adicionar novo atalho"
         >
