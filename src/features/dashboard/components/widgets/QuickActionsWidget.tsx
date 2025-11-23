@@ -32,6 +32,11 @@ import pedidosCompraIcon from '@/assets/pedidos_compra.png';
 import pedidosOmsIcon from '@/assets/pedidos_oms.png';
 import perfilAdminIcon from '@/assets/perfil_admin.png';
 import reclamacoesIcon from '@/assets/reclamacoes.png';
+import scannerIcon from '@/assets/scanner.png';
+import segurancaIcon from '@/assets/seguranca.png';
+import usuariosIcon from '@/assets/usuarios.png';
+import vendedoresIcon from '@/assets/vendedores.png';
+import visaoGeralIcon from '@/assets/visao_geral.png';
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 
