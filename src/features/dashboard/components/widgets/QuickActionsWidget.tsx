@@ -62,12 +62,14 @@ export const QuickActionsWidget = () => {
 
   // Salvar atalhos no localStorage sempre que mudarem
   useEffect(() => {
-    if (shortcuts.length === 0) return; // Não salvar estado vazio
-    
     try {
       console.log('[QuickActionsWidget SAVE] Saving shortcuts to localStorage:', shortcuts);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcuts));
       console.log('[QuickActionsWidget SAVE] Successfully saved');
+      
+      // Verificar o que foi salvo
+      const verification = localStorage.getItem(STORAGE_KEY);
+      console.log('[QuickActionsWidget SAVE] Verification read back:', verification);
     } catch (error) {
       console.error('[QuickActionsWidget SAVE] Error saving shortcuts:', error);
     }
@@ -130,7 +132,10 @@ export const QuickActionsWidget = () => {
   };
 
   const handleRemoveShortcut = (index: number) => {
+    console.log('[QuickActionsWidget] Removing shortcut at index:', index);
+    console.log('[QuickActionsWidget] Current shortcuts:', shortcuts);
     const newShortcuts = shortcuts.filter((_, i) => i !== index);
+    console.log('[QuickActionsWidget] New shortcuts after removal:', newShortcuts);
     setShortcuts(newShortcuts);
   };
 
