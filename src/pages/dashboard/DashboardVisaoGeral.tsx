@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, Users, ShoppingCart, TrendingUp, Package, FileText, TrendingDown, Store, Settings, AlertCircle } from 'lucide-react';
+import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { QuickAccessShortcuts } from '@/components/dashboard/QuickAccessShortcuts';
-import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
 import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
@@ -12,50 +11,6 @@ import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
 export default function DashboardVisaoGeral() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [shortcuts, setShortcuts] = useState([
-    {
-      id: 'pedidos',
-      label: 'Pedidos',
-      icon: <ShoppingCart />,
-      route: '/pedidos',
-      gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
-    },
-    {
-      id: 'estoque',
-      label: 'Estoque',
-      icon: <Package />,
-      route: '/estoque',
-      gradient: 'bg-gradient-to-br from-green-500 to-green-700'
-    },
-    {
-      id: 'vendas',
-      label: 'Vendas',
-      icon: <TrendingUp />,
-      route: '/vendas-online',
-      gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
-    },
-    {
-      id: 'devolucoes',
-      label: 'Devoluções',
-      icon: <TrendingDown />,
-      route: '/devolucoesdevenda',
-      gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
-    },
-    {
-      id: 'reclamacoes',
-      label: 'Reclamações',
-      icon: <AlertCircle />,
-      route: '/reclamacoes',
-      gradient: 'bg-gradient-to-br from-red-500 to-red-700'
-    },
-    {
-      id: 'configuracoes',
-      label: 'Configurações',
-      icon: <Settings />,
-      route: '/configuracoes',
-      gradient: 'bg-gradient-to-br from-gray-500 to-gray-700'
-    }
-  ]);
   
   // Buscar dados reais de devoluções para o calendário
   const { data: calendarDataDevolucoes, loading: calendarLoadingDevolucoes, error: calendarErrorDevolucoes, refresh: refreshDevolucoes } = useDevolucaoCalendarData();
@@ -71,16 +26,6 @@ export default function DashboardVisaoGeral() {
   const refresh = () => {
     refreshDevolucoes();
     refreshReclamacoes();
-  };
-
-  const handleRemoveShortcut = (id: string) => {
-    setShortcuts(prev => prev.filter(shortcut => shortcut.id !== id));
-  };
-
-  const handleAddShortcut = (newShortcut: any) => {
-    if (shortcuts.length < 10) {
-      setShortcuts(prev => [...prev, newShortcut]);
-    }
   };
 
   useEffect(() => {
@@ -154,18 +99,7 @@ export default function DashboardVisaoGeral() {
       </div>
 
       {/* Atalhos Rápidos */}
-      <QuickAccessShortcuts 
-        shortcuts={shortcuts} 
-        onRemoveShortcut={handleRemoveShortcut}
-        onAddClick={() => setIsAddModalOpen(true)}
-      />
-
-      <AddShortcutModal
-        open={isAddModalOpen}
-        onOpenChange={setIsAddModalOpen}
-        onAddShortcut={handleAddShortcut}
-        existingShortcutIds={shortcuts.map(s => s.id)}
-      />
+      <QuickAccessShortcuts />
 
       <Card>
         <CardHeader>
