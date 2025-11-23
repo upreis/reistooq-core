@@ -40,23 +40,31 @@ export const QuickActionsWidget = () => {
 
   // Carregar atalhos do localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      console.log('[QuickActionsWidget] Loaded from localStorage:', { key: STORAGE_KEY, raw: saved });
+
+      if (saved) {
         const parsed = JSON.parse(saved);
+        console.log('[QuickActionsWidget] Parsed shortcuts:', parsed);
         setShortcuts(parsed);
-      } catch {
+      } else {
+        console.log('[QuickActionsWidget] No saved shortcuts found, using defaults');
         setShortcuts(DEFAULT_SHORTCUTS);
       }
-    } else {
+    } catch (error) {
+      console.error('[QuickActionsWidget] Error loading shortcuts, falling back to defaults', error);
       setShortcuts(DEFAULT_SHORTCUTS);
     }
   }, []);
 
   // Salvar atalhos no localStorage
   useEffect(() => {
-    if (shortcuts.length > 0) {
+    try {
+      console.log('[QuickActionsWidget] Saving shortcuts to localStorage:', shortcuts);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcuts));
+    } catch (error) {
+      console.error('[QuickActionsWidget] Error saving shortcuts to localStorage', error);
     }
   }, [shortcuts]);
 
