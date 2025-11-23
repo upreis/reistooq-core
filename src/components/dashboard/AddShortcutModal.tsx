@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import pedidosIcon from "@/assets/pedidos-cart-icon.png";
+import estoqueIcon from "@/assets/estoque-icon.png";
 
 interface PageOption {
   id: string;
@@ -153,9 +154,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'estoque',
     label: 'Estoque',
     route: '/estoque',
-    icon: <Package />,
+    icon: <img src={estoqueIcon} alt="Estoque" className="w-16 h-16 object-contain" />,
     category: 'Estoque',
-    gradient: 'bg-gradient-to-br from-green-500 to-green-700'
+    gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
   },
   {
     id: 'estoque-composicoes',
