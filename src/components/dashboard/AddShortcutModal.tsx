@@ -45,6 +45,16 @@ import {
 import { cn } from "@/lib/utils";
 import pedidosIcon from "@/assets/pedidos-cart-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
+import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
+import adminIcon from "@/assets/admin.png";
+import alertasIcon from "@/assets/alertas.png";
+import anunciosIcon from "@/assets/anuncios.png";
+import auditoriaIcon from "@/assets/auditoria.png";
+import calendarioIcon from "@/assets/calendario.png";
+import cargosIcon from "@/assets/cargos.png";
+import clientesIcon from "@/assets/clientes.png";
+import composicoesIcon from "@/assets/composicoes.png";
+import configuracoesOmsIcon from "@/assets/configuracoes_oms.png";
 
 interface PageOption {
   id: string;
@@ -128,7 +138,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'oms-clientes',
     label: 'OMS - Clientes',
     route: '/oms/clientes',
-    icon: <Users />,
+    icon: <img src={clientesIcon} alt="Clientes" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-pink-500 to-pink-700'
   },
@@ -144,7 +154,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'oms-configuracoes',
     label: 'OMS - Configurações',
     route: '/oms/configuracoes',
-    icon: <Settings />,
+    icon: <img src={configuracoesOmsIcon} alt="Configurações" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-slate-500 to-slate-700'
   },
@@ -162,7 +172,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'estoque-composicoes',
     label: 'Composições',
     route: '/estoque/composicoes',
-    icon: <Layers />,
+    icon: <img src={composicoesIcon} alt="Composições" className="w-16 h-16 object-contain" />,
     category: 'Estoque',
     gradient: 'bg-gradient-to-br from-emerald-500 to-emerald-700'
   },
@@ -232,9 +242,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'aplicativos-calendario',
     label: 'Calendário',
     route: '/aplicativos/calendario',
-    icon: <Calendar />,
+    icon: <img src={calendarioIcon} alt="Calendário" className="w-16 h-16 object-contain" />,
     category: 'Aplicativos',
-    gradient: 'bg-gradient-to-br from-sky-500 to-sky-700'
+    gradient: 'bg-gradient-to-br from-red-500 to-red-700'
   },
   {
     id: 'aplicativos-notas',
@@ -266,9 +276,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'ecommerce-add',
     label: 'Adicionar Produto',
     route: '/apps/ecommerce/addproduct',
-    icon: <Plus />,
+    icon: <img src={adicionarProdutoIcon} alt="Adicionar Produto" className="w-16 h-16 object-contain" />,
     category: 'E-commerce',
-    gradient: 'bg-gradient-to-br from-fuchsia-600 to-fuchsia-800'
+    gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
   },
   {
     id: 'ecommerce-import',
@@ -292,9 +302,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'configuracoes-anuncios',
     label: 'Anúncios',
     route: '/configuracoes/anuncios',
-    icon: <MessageSquare />,
+    icon: <img src={anunciosIcon} alt="Anúncios" className="w-16 h-16 object-contain" />,
     category: 'Configurações',
-    gradient: 'bg-gradient-to-br from-slate-500 to-slate-700'
+    gradient: 'bg-gradient-to-br from-pink-500 to-pink-700'
   },
 
   // Admin
@@ -302,9 +312,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'admin',
     label: 'Admin',
     route: '/admin',
-    icon: <Shield />,
+    icon: <img src={adminIcon} alt="Admin" className="w-16 h-16 object-contain" />,
     category: 'Administração',
-    gradient: 'bg-gradient-to-br from-red-600 to-red-800'
+    gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
   {
     id: 'admin-usuarios',
@@ -318,9 +328,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'admin-cargos',
     label: 'Cargos',
     route: '/admin/cargos',
-    icon: <Shield />,
+    icon: <img src={cargosIcon} alt="Cargos" className="w-16 h-16 object-contain" />,
     category: 'Administração',
-    gradient: 'bg-gradient-to-br from-pink-600 to-pink-800'
+    gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
   {
     id: 'admin-convites',
@@ -334,9 +344,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'admin-alertas',
     label: 'Alertas',
     route: '/admin/alertas',
-    icon: <AlertCircle />,
+    icon: <img src={alertasIcon} alt="Alertas" className="w-16 h-16 object-contain" />,
     category: 'Administração',
-    gradient: 'bg-gradient-to-br from-orange-600 to-orange-800'
+    gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
   },
   {
     id: 'admin-seguranca',
@@ -350,9 +360,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'admin-auditoria',
     label: 'Auditoria',
     route: '/admin/auditoria',
-    icon: <FileText />,
+    icon: <img src={auditoriaIcon} alt="Auditoria" className="w-16 h-16 object-contain" />,
     category: 'Administração',
-    gradient: 'bg-gradient-to-br from-amber-600 to-amber-800'
+    gradient: 'bg-gradient-to-br from-teal-500 to-teal-700'
   },
   {
     id: 'admin-perfil',
@@ -384,9 +394,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'alertas',
     label: 'Alertas',
     route: '/alertas',
-    icon: <Bell />,
+    icon: <img src={alertasIcon} alt="Alertas" className="w-16 h-16 object-contain" />,
     category: 'Ferramentas',
-    gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
+    gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
   },
   {
     id: 'historico',
