@@ -1,40 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Service } from '@/components/ui/service-grid';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import pedidosIcon from '@/assets/pedidos-cart-icon.png';
 import estoqueIcon from '@/assets/estoque-icon.png';
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
+
+interface Service {
+  name: string;
+  imageUrl: string;
+  href: string;
+  gradient: string;
+}
 
 const DEFAULT_SHORTCUTS: Service[] = [
   {
     name: 'Pedidos',
     imageUrl: pedidosIcon,
-    href: '/pedidos'
+    href: '/pedidos',
+    gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
   {
     name: 'Estoque',
     imageUrl: estoqueIcon,
-    href: '/estoque'
+    href: '/estoque',
+    gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
   },
   {
     name: 'Vendas Online',
     imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
-    href: '/vendas-online'
+    href: '/vendas-online',
+    gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
   {
     name: 'Produtos',
     imageUrl: 'https://img.icons8.com/fluency/96/package.png',
-    href: '/apps/ecommerce/list'
+    href: '/apps/ecommerce/list',
+    gradient: 'bg-gradient-to-br from-green-500 to-green-700'
   },
   {
     name: 'Clientes',
     imageUrl: 'https://img.icons8.com/fluency/96/conference-call.png',
-    href: '/oms/clientes'
+    href: '/oms/clientes',
+    gradient: 'bg-gradient-to-br from-pink-500 to-pink-700'
   }
 ];
 
@@ -78,55 +87,11 @@ export const QuickActionsWidget = () => {
   const navigate = useNavigate();
 
   const handleAddShortcut = (page: any) => {
-    // Verificar se o ícone é uma imagem
-    let imageUrl = 'https://img.icons8.com/fluency/96/documents.png';
-    
-    if (page.icon?.props?.src) {
-      imageUrl = page.icon.props.src;
-    } else {
-      // Mapear ícones para URLs de imagens do icons8
-      const iconMap: Record<string, string> = {
-        'home': 'https://img.icons8.com/fluency/96/home.png',
-        'trending-up': 'https://img.icons8.com/fluency/96/graph.png',
-        'package': 'https://img.icons8.com/fluency/96/package.png',
-        'pie-chart': 'https://img.icons8.com/fluency/96/pie-chart.png',
-        'shopping-cart': 'https://img.icons8.com/fluency/96/shopping-cart.png',
-        'clipboard-list': 'https://img.icons8.com/fluency/96/todo-list.png',
-        'users': 'https://img.icons8.com/fluency/96/conference-call.png',
-        'settings': 'https://img.icons8.com/fluency/96/settings.png',
-        'layers': 'https://img.icons8.com/fluency/96/layers.png',
-        'history': 'https://img.icons8.com/fluency/96/clock.png',
-        'alert-circle': 'https://img.icons8.com/fluency/96/error.png',
-        'truck': 'https://img.icons8.com/fluency/96/truck.png',
-        'file-text': 'https://img.icons8.com/fluency/96/documents.png',
-        'upload': 'https://img.icons8.com/fluency/96/upload.png',
-        'calendar': 'https://img.icons8.com/fluency/96/calendar.png',
-        'sticky-note': 'https://img.icons8.com/fluency/96/note.png',
-        'store': 'https://img.icons8.com/fluency/96/online-store.png',
-        'list': 'https://img.icons8.com/fluency/96/list.png',
-        'plus': 'https://img.icons8.com/fluency/96/plus-math.png',
-        'link': 'https://img.icons8.com/fluency/96/link.png',
-        'message-square': 'https://img.icons8.com/fluency/96/chat.png',
-        'shield': 'https://img.icons8.com/fluency/96/shield.png',
-        'bell': 'https://img.icons8.com/fluency/96/bell.png',
-        'scan': 'https://img.icons8.com/fluency/96/barcode-scanner.png',
-        'arrow-left-right': 'https://img.icons8.com/fluency/96/sort.png',
-      };
-
-      // Tentar encontrar um match baseado no nome da página
-      const lowercaseLabel = page.label.toLowerCase();
-      for (const [key, url] of Object.entries(iconMap)) {
-        if (lowercaseLabel.includes(key.replace('-', ' '))) {
-          imageUrl = url;
-          break;
-        }
-      }
-    }
-
     const newShortcut: Service = {
       name: page.label,
-      imageUrl: imageUrl,
-      href: page.route
+      imageUrl: page.icon?.props?.src || 'https://img.icons8.com/fluency/96/documents.png',
+      href: page.route,
+      gradient: page.gradient
     };
     setShortcuts([...shortcuts, newShortcut]);
   };
@@ -144,30 +109,6 @@ export const QuickActionsWidget = () => {
     // Converter route de volta para id
     return route.replace(/\//g, '-').substring(1);
   });
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 100,
-        damping: 10,
-      },
-    },
-  };
 
   return (
     <>
@@ -195,7 +136,7 @@ export const QuickActionsWidget = () => {
                 aria-label={`Ir para ${service.name}`}
               >
                 {/* Card Icon */}
-                <div className="relative h-24 w-24 rounded-2xl transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 bg-gradient-to-br from-primary to-primary/70">
+                <div className={`relative h-24 w-24 rounded-2xl transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 ${service.gradient || 'bg-gradient-to-br from-primary to-primary/70'}`}>
                   {/* Remove button */}
                   <button
                     onClick={(e) => {
