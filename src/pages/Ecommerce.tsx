@@ -13,14 +13,14 @@ const Ecommerce = () => {
   const renderContent = () => {
     return (
       <Routes>
-        <Route path="/" element={<Navigate to="/apps/ecommerce/shop" replace />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/detail/:id" element={<ProductDetail />} />
-        <Route path="/list" element={<ProductList />} />
-        <Route path="/addproduct" element={<AddProduct />} />
-        <Route path="/editproduct" element={<EditProduct />} />
-        <Route path="/import" element={<ProductImport />} />
-        <Route path="*" element={<Navigate to="/apps/ecommerce/shop" replace />} />
+        <Route index element={<Navigate to="shop" replace />} />
+        <Route path="shop" element={<Shop />} />
+        <Route path="detail/:id" element={<ProductDetail />} />
+        <Route path="list" element={<ProductList />} />
+        <Route path="addproduct" element={<AddProduct />} />
+        <Route path="editproduct" element={<EditProduct />} />
+        <Route path="import" element={<ProductImport />} />
+        <Route path="*" element={<Navigate to="shop" replace />} />
       </Routes>
     );
   };
