@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import pedidosIcon from '@/assets/pedidos-cart-icon.png';
 import estoqueIcon from '@/assets/estoque-icon.png';
+import adicionarProdutoIcon from '@/assets/adicionar_produto.png';
+import adminIcon from '@/assets/admin.png';
+import alertasIcon from '@/assets/alertas.png';
+import anunciosIcon from '@/assets/anuncios.png';
+import auditoriaIcon from '@/assets/auditoria.png';
+import calendarioIcon from '@/assets/calendario.png';
+import cargosIcon from '@/assets/cargos.png';
+import clientesIcon from '@/assets/clientes.png';
+import composicoesIcon from '@/assets/composicoes.png';
+import configuracoesOmsIcon from '@/assets/configuracoes_oms.png';
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 
@@ -35,13 +45,13 @@ const DEFAULT_SHORTCUTS: Service[] = [
   },
   {
     name: 'Produtos',
-    imageUrl: 'https://img.icons8.com/fluency/96/package.png',
+    imageUrl: adicionarProdutoIcon,
     href: '/apps/ecommerce/list',
     gradient: 'bg-gradient-to-br from-green-500 to-green-700'
   },
   {
     name: 'Clientes',
-    imageUrl: 'https://img.icons8.com/fluency/96/conference-call.png',
+    imageUrl: clientesIcon,
     href: '/oms/clientes',
     gradient: 'bg-gradient-to-br from-pink-500 to-pink-700'
   }
