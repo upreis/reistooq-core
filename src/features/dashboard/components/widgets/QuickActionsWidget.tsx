@@ -1,190 +1,171 @@
-// ⚡ Widget de Ações Rápidas
-// Botões para funcionalidades mais utilizadas
+import React, { useState, useEffect } from 'react';
+import { ServiceGrid, Service } from '@/components/ui/service-grid';
+import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
+import pedidosIcon from '@/assets/pedidos-icon.png';
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, Package, ShoppingCart, FileText, 
-  BarChart3, Download, Upload, Settings,
-  Scan, Calculator, Users, Bell
-} from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
-interface QuickAction {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  path?: string;
-  action?: () => void;
-  badge?: string;
-  color: 'primary' | 'success' | 'warning' | 'secondary';
-}
+const DEFAULT_SHORTCUTS: Service[] = [
+  {
+    name: 'Pedidos',
+    imageUrl: pedidosIcon,
+    href: '/pedidos'
+  },
+  {
+    name: 'Estoque',
+    imageUrl: 'https://img.icons8.com/fluency/96/warehouse.png',
+    href: '/estoque'
+  },
+  {
+    name: 'Vendas Online',
+    imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
+    href: '/vendas-online'
+  },
+  {
+    name: 'Produtos',
+    imageUrl: 'https://img.icons8.com/fluency/96/package.png',
+    href: '/apps/ecommerce/list'
+  },
+  {
+    name: 'Clientes',
+    imageUrl: 'https://img.icons8.com/fluency/96/conference-call.png',
+    href: '/oms/clientes'
+  }
+];
 
-export function QuickActionsWidget() {
-  const navigate = useNavigate();
+export const QuickActionsWidget = () => {
+  const [shortcuts, setShortcuts] = useState<Service[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const quickActions: QuickAction[] = [
+  // Carregar atalhos do localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setShortcuts(parsed);
+      } catch {
+        setShortcuts(DEFAULT_SHORTCUTS);
+      }
+    } else {
+      setShortcuts(DEFAULT_SHORTCUTS);
+    }
+  }, []);
+
+  // Salvar atalhos no localStorage
+  useEffect(() => {
+    if (shortcuts.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcuts));
+    }
+  }, [shortcuts]);
+
+  const handleAddShortcut = (page: any) => {
+    // Verificar se o ícone é uma imagem
+    let imageUrl = 'https://img.icons8.com/fluency/96/documents.png';
+    
+    if (page.icon?.props?.src) {
+      imageUrl = page.icon.props.src;
+    } else {
+      // Mapear ícones para URLs de imagens do icons8
+      const iconMap: Record<string, string> = {
+        'home': 'https://img.icons8.com/fluency/96/home.png',
+        'trending-up': 'https://img.icons8.com/fluency/96/graph.png',
+        'package': 'https://img.icons8.com/fluency/96/package.png',
+        'pie-chart': 'https://img.icons8.com/fluency/96/pie-chart.png',
+        'shopping-cart': 'https://img.icons8.com/fluency/96/shopping-cart.png',
+        'clipboard-list': 'https://img.icons8.com/fluency/96/todo-list.png',
+        'users': 'https://img.icons8.com/fluency/96/conference-call.png',
+        'settings': 'https://img.icons8.com/fluency/96/settings.png',
+        'layers': 'https://img.icons8.com/fluency/96/layers.png',
+        'history': 'https://img.icons8.com/fluency/96/clock.png',
+        'alert-circle': 'https://img.icons8.com/fluency/96/error.png',
+        'truck': 'https://img.icons8.com/fluency/96/truck.png',
+        'file-text': 'https://img.icons8.com/fluency/96/documents.png',
+        'upload': 'https://img.icons8.com/fluency/96/upload.png',
+        'calendar': 'https://img.icons8.com/fluency/96/calendar.png',
+        'sticky-note': 'https://img.icons8.com/fluency/96/note.png',
+        'store': 'https://img.icons8.com/fluency/96/online-store.png',
+        'list': 'https://img.icons8.com/fluency/96/list.png',
+        'plus': 'https://img.icons8.com/fluency/96/plus-math.png',
+        'link': 'https://img.icons8.com/fluency/96/link.png',
+        'message-square': 'https://img.icons8.com/fluency/96/chat.png',
+        'shield': 'https://img.icons8.com/fluency/96/shield.png',
+        'bell': 'https://img.icons8.com/fluency/96/bell.png',
+        'scan': 'https://img.icons8.com/fluency/96/barcode-scanner.png',
+        'arrow-left-right': 'https://img.icons8.com/fluency/96/sort.png',
+      };
+
+      // Tentar encontrar um match baseado no nome da página
+      const lowercaseLabel = page.label.toLowerCase();
+      for (const [key, url] of Object.entries(iconMap)) {
+        if (lowercaseLabel.includes(key.replace('-', ' '))) {
+          imageUrl = url;
+          break;
+        }
+      }
+    }
+
+    const newShortcut: Service = {
+      name: page.label,
+      imageUrl: imageUrl,
+      href: page.route
+    };
+    setShortcuts([...shortcuts, newShortcut]);
+  };
+
+  const handleServiceClick = (href: string) => {
+    if (href === '#add') {
+      setIsModalOpen(true);
+    }
+  };
+
+  const existingIds = shortcuts.map((s) => {
+    const route = s.href;
+    // Converter route de volta para id
+    return route.replace(/\//g, '-').substring(1);
+  });
+
+  // Adicionar botão "Adicionar" aos serviços
+  const servicesWithAdd: Service[] = [
+    ...shortcuts,
     {
-      id: 'add-product',
-      title: 'Novo Produto',
-      description: 'Cadastrar produto',
-      icon: Plus,
-      path: '/estoque/novo',
-      color: 'primary'
-    },
-    {
-      id: 'scan-product',
-      title: 'Scanner',
-      description: 'Escanear código',
-      icon: Scan,
-      path: '/scanner',
-      badge: 'Rápido',
-      color: 'success'
-    },
-    {
-      id: 'manage-orders',
-      title: 'Pedidos',
-      description: 'Gerenciar pedidos',
-      icon: ShoppingCart,
-      path: '/pedidos',
-      badge: '12 novos',
-      color: 'warning'
-    },
-    {
-      id: 'generate-report',
-      title: 'Relatórios',
-      description: 'Gerar relatório',
-      icon: FileText,
-      path: '/analytics',
-      color: 'secondary'
-    },
-    {
-      id: 'import-data',
-      title: 'Importar',
-      description: 'Importar dados',
-      icon: Upload,
-      action: () => console.log('Import action'),
-      color: 'primary'
-    },
-    {
-      id: 'export-data',
-      title: 'Exportar',
-      description: 'Exportar dados',
-      icon: Download,
-      action: () => console.log('Export action'),
-      color: 'secondary'
+      name: 'Adicionar',
+      imageUrl: 'https://img.icons8.com/fluency/96/plus-math.png',
+      href: '#add'
     }
   ];
 
-  const handleActionClick = (action: QuickAction) => {
-    if (action.path) {
-      navigate(action.path);
-    } else if (action.action) {
-      action.action();
-    }
-  };
-
-  const getColorClasses = (color: string) => {
-    switch (color) {
-      case 'success':
-        return 'hover:bg-success/10 border-success/20';
-      case 'warning':
-        return 'hover:bg-warning/10 border-warning/20';
-      case 'secondary':
-        return 'hover:bg-secondary/10 border-secondary/20';
-      default:
-        return 'hover:bg-primary/10 border-primary/20';
-    }
-  };
-
-  const getIconColor = (color: string) => {
-    switch (color) {
-      case 'success': return 'text-success';
-      case 'warning': return 'text-warning';
-      case 'secondary': return 'text-secondary';
-      default: return 'text-primary';
-    }
-  };
-
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Ações Rápidas
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent>
-        <div className="grid grid-cols-2 gap-3">
-          {quickActions.map((action) => {
-            const IconComponent = action.icon;
-            
-            return (
-              <button
-                key={action.id}
-                onClick={() => handleActionClick(action)}
-                className={`
-                  relative p-3 rounded-lg border border-border text-left
-                  transition-all duration-200 group
-                  ${getColorClasses(action.color)}
-                `}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-md bg-muted/50 ${getIconColor(action.color)}`}>
-                    <IconComponent className="h-4 w-4" />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-sm truncate">{action.title}</h4>
-                      {action.badge && (
-                        <Badge variant="outline" className="text-xs px-1 py-0">
-                          {action.badge}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{action.description}</p>
-                  </div>
-                </div>
+    <>
+      <div onClick={(e) => {
+        const target = e.target as HTMLElement;
+        const button = target.closest('button');
+        if (button) {
+          const service = servicesWithAdd.find((s) => 
+            button.textContent?.includes(s.name)
+          );
+          if (service?.href === '#add') {
+            e.preventDefault();
+            setIsModalOpen(true);
+          }
+        }
+      }}>
+        <ServiceGrid
+          title="Acesso Rápido"
+          subtitle="Acesse rapidamente suas páginas favoritas"
+          services={servicesWithAdd}
+          className="py-0"
+        />
+      </div>
 
-                {/* Indicador de hover */}
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Seção de estatísticas rápidas */}
-        <div className="mt-6 pt-4 border-t border-border">
-          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <Calculator className="h-4 w-4" />
-            Status Rápido
-          </h4>
-          
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Produtos:</span>
-              <span className="font-medium">1.247</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Alertas:</span>
-              <span className="font-medium text-warning">8</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Pedidos:</span>
-              <span className="font-medium">34</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Online:</span>
-              <span className="font-medium text-success">5</span>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      <AddShortcutModal
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          if (!open) setIsModalOpen(false);
+        }}
+        onAddShortcut={handleAddShortcut}
+        existingShortcutIds={existingIds}
+      />
+    </>
   );
-}
+};
