@@ -55,6 +55,16 @@ import cargosIcon from "@/assets/cargos.png";
 import clientesIcon from "@/assets/clientes.png";
 import composicoesIcon from "@/assets/composicoes.png";
 import configuracoesOmsIcon from "@/assets/configuracoes_oms.png";
+import convitesIcon from "@/assets/convites.png";
+import cotacoesIcon from "@/assets/cotacoes.png";
+import dashboardAnalisesIcon from "@/assets/dashboard_analises.png";
+import dashboardEstoqueIcon from "@/assets/dashboard_estoque.png";
+import dashboardVendasIcon from "@/assets/dashboard_vendas.png";
+import deParaIcon from "@/assets/de_para.png";
+import devolucoesIcon from "@/assets/devolucoes.png";
+import fornecedoresIcon from "@/assets/fornecedores.png";
+import historicoFerramentasIcon from "@/assets/historico_ferramentas.png";
+import historicoIcon from "@/assets/historico.png";
 
 interface PageOption {
   id: string;
@@ -86,7 +96,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'dashboard-vendas',
     label: 'Dashboard Vendas',
     route: '/dashboardinicial/vendas',
-    icon: <TrendingUp />,
+    icon: <img src={dashboardVendasIcon} alt="Dashboard Vendas" className="w-16 h-16 object-contain" />,
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-green-500 to-green-700'
   },
@@ -94,7 +104,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'dashboard-estoque',
     label: 'Dashboard Estoque',
     route: '/dashboardinicial/estoque',
-    icon: <Package />,
+    icon: <img src={dashboardEstoqueIcon} alt="Dashboard Estoque" className="w-16 h-16 object-contain" />,
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
@@ -102,7 +112,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'dashboard-analises',
     label: 'Dashboard Análises',
     route: '/dashboardinicial/analises',
-    icon: <PieChart />,
+    icon: <img src={dashboardAnalisesIcon} alt="Dashboard Análises" className="w-16 h-16 object-contain" />,
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
@@ -180,7 +190,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'estoque-historico',
     label: 'Histórico',
     route: '/estoque/historico',
-    icon: <History />,
+    icon: <img src={historicoFerramentasIcon} alt="Histórico" className="w-16 h-16 object-contain" />,
     category: 'Estoque',
     gradient: 'bg-gradient-to-br from-teal-500 to-teal-700'
   },
@@ -190,7 +200,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'devolucoesdevenda',
     label: 'Devoluções',
     route: '/devolucoesdevenda',
-    icon: <TrendingDown />,
+    icon: <img src={devolucoesIcon} alt="Devoluções" className="w-16 h-16 object-contain" />,
     category: 'Devoluções & Reclamações',
     gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
   },
@@ -216,7 +226,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'compras-cotacoes',
     label: 'Cotações',
     route: '/compras/cotacoes',
-    icon: <FileText />,
+    icon: <img src={cotacoesIcon} alt="Cotações" className="w-16 h-16 object-contain" />,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-indigo-600 to-indigo-800'
   },
@@ -224,7 +234,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'compras-fornecedores',
     label: 'Fornecedores',
     route: '/compras/fornecedores',
-    icon: <Truck />,
+    icon: <img src={fornecedoresIcon} alt="Fornecedores" className="w-16 h-16 object-contain" />,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-teal-600 to-teal-800'
   },
@@ -336,7 +346,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'admin-convites',
     label: 'Convites',
     route: '/admin/convites',
-    icon: <Bell />,
+    icon: <img src={convitesIcon} alt="Convites" className="w-16 h-16 object-contain" />,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-fuchsia-600 to-fuchsia-800'
   },
@@ -386,7 +396,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'de-para',
     label: 'De-Para',
     route: '/de-para',
-    icon: <ArrowLeftRight />,
+    icon: <img src={deParaIcon} alt="De-Para" className="w-16 h-16 object-contain" />,
     category: 'Ferramentas',
     gradient: 'bg-gradient-to-br from-green-600 to-green-800'
   },
@@ -402,7 +412,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'historico',
     label: 'Histórico',
     route: '/historico',
-    icon: <History />,
+    icon: <img src={historicoIcon} alt="Histórico" className="w-16 h-16 object-contain" />,
     category: 'Ferramentas',
     gradient: 'bg-gradient-to-br from-stone-500 to-stone-700'
   },
