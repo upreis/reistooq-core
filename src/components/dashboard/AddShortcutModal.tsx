@@ -75,6 +75,11 @@ import pedidosCompraIcon from "@/assets/pedidos_compra.png";
 import pedidosOmsIcon from "@/assets/pedidos_oms.png";
 import perfilAdminIcon from "@/assets/perfil_admin.png";
 import reclamacoesIcon from "@/assets/reclamacoes.png";
+import scannerIcon from "@/assets/scanner.png";
+import segurancaIcon from "@/assets/seguranca.png";
+import usuariosIcon from "@/assets/usuarios.png";
+import vendedoresIcon from "@/assets/vendedores.png";
+import visaoGeralIcon from "@/assets/visao_geral.png";
 
 interface PageOption {
   id: string;
@@ -98,7 +103,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'dashboard-visao-geral',
     label: 'Visão Geral',
     route: '/dashboardinicial/visao-geral',
-    icon: <Home />,
+    icon: <img src={visaoGeralIcon} alt="Visão Geral" className="w-16 h-16 object-contain" />,
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-cyan-500 to-cyan-700'
   },
@@ -166,7 +171,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'oms-vendedores',
     label: 'OMS - Vendedores',
     route: '/oms/vendedores',
-    icon: <Users />,
+    icon: <img src={vendedoresIcon} alt="Vendedores" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-violet-500 to-violet-700'
   },
@@ -340,9 +345,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'admin-usuarios',
     label: 'Usuários',
     route: '/admin/usuarios',
-    icon: <Users />,
+    icon: <img src={usuariosIcon} alt="Usuários" className="w-16 h-16 object-contain" />,
     category: 'Administração',
-    gradient: 'bg-gradient-to-br from-rose-600 to-rose-800'
+    gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
   {
     id: 'admin-cargos',
@@ -372,9 +377,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'admin-seguranca',
     label: 'Segurança',
     route: '/admin/seguranca',
-    icon: <Shield />,
+    icon: <img src={segurancaIcon} alt="Segurança" className="w-16 h-16 object-contain" />,
     category: 'Administração',
-    gradient: 'bg-gradient-to-br from-red-700 to-red-900'
+    gradient: 'bg-gradient-to-br from-green-500 to-green-700'
   },
   {
     id: 'admin-auditoria',
@@ -398,9 +403,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'scanner',
     label: 'Scanner',
     route: '/scanner',
-    icon: <Scan />,
+    icon: <img src={scannerIcon} alt="Scanner" className="w-16 h-16 object-contain" />,
     category: 'Ferramentas',
-    gradient: 'bg-gradient-to-br from-lime-500 to-lime-700'
+    gradient: 'bg-gradient-to-br from-cyan-500 to-cyan-700'
   },
   {
     id: 'de-para',
