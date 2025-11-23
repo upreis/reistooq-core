@@ -43,7 +43,7 @@ import {
   PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import pedidosIcon from "@/assets/pedidos-icon.png";
+import pedidosIcon from "@/assets/pedidos-cart-icon.png";
 
 interface PageOption {
   id: string;
@@ -103,7 +103,7 @@ const ALL_PAGES: PageOption[] = [
     route: '/pedidos',
     icon: <img src={pedidosIcon} alt="Pedidos" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
-    gradient: 'bg-white border border-border'
+    gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
   {
     id: 'vendas-online',

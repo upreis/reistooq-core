@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ServiceGrid, Service } from '@/components/ui/service-grid';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
-import pedidosIcon from '@/assets/pedidos-icon.png';
+import pedidosIcon from '@/assets/pedidos-cart-icon.png';
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
