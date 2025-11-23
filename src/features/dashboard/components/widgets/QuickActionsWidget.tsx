@@ -12,6 +12,16 @@ import cargosIcon from '@/assets/cargos.png';
 import clientesIcon from '@/assets/clientes.png';
 import composicoesIcon from '@/assets/composicoes.png';
 import configuracoesOmsIcon from '@/assets/configuracoes_oms.png';
+import convitesIcon from '@/assets/convites.png';
+import cotacoesIcon from '@/assets/cotacoes.png';
+import dashboardAnalisesIcon from '@/assets/dashboard_analises.png';
+import dashboardEstoqueIcon from '@/assets/dashboard_estoque.png';
+import dashboardVendasIcon from '@/assets/dashboard_vendas.png';
+import deParaIcon from '@/assets/de_para.png';
+import devolucoesIcon from '@/assets/devolucoes.png';
+import fornecedoresIcon from '@/assets/fornecedores.png';
+import historicoFerramentasIcon from '@/assets/historico_ferramentas.png';
+import historicoIcon from '@/assets/historico.png';
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 
