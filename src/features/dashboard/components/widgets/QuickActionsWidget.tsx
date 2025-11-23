@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ServiceGrid, Service } from '@/components/ui/service-grid';
+import { Service } from '@/components/ui/service-grid';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import pedidosIcon from '@/assets/pedidos-cart-icon.png';
 import estoqueIcon from '@/assets/estoque-icon.png';
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
@@ -69,6 +73,8 @@ export const QuickActionsWidget = () => {
     }
   }, [shortcuts]);
 
+  const navigate = useNavigate();
+
   const handleAddShortcut = (page: any) => {
     // Verificar se o ícone é uma imagem
     let imageUrl = 'https://img.icons8.com/fluency/96/documents.png';
@@ -123,10 +129,9 @@ export const QuickActionsWidget = () => {
     setShortcuts([...shortcuts, newShortcut]);
   };
 
-  const handleServiceClick = (href: string) => {
-    if (href === '#add') {
-      setIsModalOpen(true);
-    }
+  const handleRemoveShortcut = (index: number) => {
+    const newShortcuts = shortcuts.filter((_, i) => i !== index);
+    setShortcuts(newShortcuts);
   };
 
   const existingIds = shortcuts.map((s) => {
@@ -135,38 +140,117 @@ export const QuickActionsWidget = () => {
     return route.replace(/\//g, '-').substring(1);
   });
 
-  // Adicionar botão "Adicionar" aos serviços
-  const servicesWithAdd: Service[] = [
-    ...shortcuts,
-    {
-      name: 'Adicionar',
-      imageUrl: 'https://img.icons8.com/fluency/96/plus-math.png',
-      href: '#add'
-    }
-  ];
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring" as const,
+        stiffness: 100,
+        damping: 10,
+      },
+    },
+  };
 
   return (
     <>
-      <div onClick={(e) => {
-        const target = e.target as HTMLElement;
-        const button = target.closest('button');
-        if (button) {
-          const service = servicesWithAdd.find((s) => 
-            button.textContent?.includes(s.name)
-          );
-          if (service?.href === '#add') {
-            e.preventDefault();
-            setIsModalOpen(true);
-          }
-        }
-      }}>
-        <ServiceGrid
-          title="Acesso Rápido"
-          subtitle="Acesse rapidamente suas páginas favoritas"
-          services={servicesWithAdd}
-          className="py-0"
-        />
-      </div>
+      <section className="w-full py-0">
+        <div className="container mx-auto px-4 md:px-6">
+          {/* Header Section */}
+          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-foreground">
+                Acesso Rápido
+              </h2>
+              <p className="max-w-[700px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                Acesse rapidamente suas páginas favoritas
+              </p>
+            </div>
+          </div>
+
+          {/* Animated Grid Section */}
+          <motion.div
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {shortcuts.map((service, index) => (
+              <motion.div
+                key={index}
+                className="group relative flex flex-col items-center justify-start gap-3 text-center"
+                variants={itemVariants}
+                whileHover={{ scale: 1.05, y: -5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+              >
+                {/* Remove button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveShortcut(index);
+                  }}
+                  className="absolute -top-2 -right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+
+                {/* Service card */}
+                <button
+                  onClick={() => navigate(service.href)}
+                  className="flex flex-col items-center justify-start gap-3 text-center w-full"
+                >
+                  <div className="flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28">
+                    <img
+                      src={service.imageUrl}
+                      alt={`${service.name} service icon`}
+                      width={100}
+                      height={100}
+                      className="object-contain transition-transform duration-300 group-hover:scale-110"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-primary">
+                    {service.name}
+                  </span>
+                </button>
+              </motion.div>
+            ))}
+
+            {/* Add button */}
+            <motion.button
+              onClick={() => setIsModalOpen(true)}
+              className="group flex flex-col items-center justify-start gap-3 text-center"
+              variants={itemVariants}
+              whileHover={{ scale: 1.05, y: -5 }}
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            >
+              <div className="flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28">
+                <img
+                  src="https://img.icons8.com/fluency/96/plus-math.png"
+                  alt="Adicionar atalho"
+                  width={100}
+                  height={100}
+                  className="object-contain transition-transform duration-300 group-hover:scale-110"
+                />
+              </div>
+              <span className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-primary">
+                Adicionar
+              </span>
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
 
       <AddShortcutModal
         open={isModalOpen}
