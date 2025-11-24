@@ -192,8 +192,8 @@ export const QuickActionsWidget = () => {
                 </div>
                 
                 {/* Label */}
-                <p className="text-sm font-medium text-foreground text-center transition-colors group-hover:text-primary">
-                  {service.name}
+                <p className="text-sm font-medium text-foreground text-center transition-colors group-hover:text-primary whitespace-pre-line leading-tight">
+                  {service.name.replace(/ /g, '\n')}
                 </p>
               </button>
             ))}
@@ -214,7 +214,7 @@ export const QuickActionsWidget = () => {
               </div>
               
               {/* Label */}
-              <p className="text-sm font-medium text-muted-foreground text-center transition-colors group-hover:text-foreground">
+              <p className="text-sm font-medium text-muted-foreground text-center transition-colors group-hover:text-foreground whitespace-pre-line leading-tight">
                 Adicionar
               </p>
             </button>

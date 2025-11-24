@@ -509,8 +509,8 @@ export const AddShortcutModal = ({
                         <div className="transition-transform group-hover:scale-105">
                           {page.icon}
                         </div>
-                        <span className="text-xs font-medium text-center">
-                          {page.label}
+                        <span className="text-xs font-medium text-center whitespace-pre-line leading-tight">
+                          {page.label.replace(/ /g, '\n')}
                         </span>
                       </button>
                     ))}
