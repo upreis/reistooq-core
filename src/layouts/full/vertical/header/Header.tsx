@@ -2,6 +2,7 @@ import React from "react";
 import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import visaoGeralIcon from "@/assets/visao-geral-icon.png";
+import pedidosIcon from "@/assets/pedidos-icon.png";
 import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
@@ -67,7 +68,7 @@ export default function Header() {
     if (path.startsWith('/category-manager')) return { icon: '🏷️', label: 'Categorias' };
     
     // Pedidos e Vendas
-    if (path === '/pedidos') return { icon: '📦', label: 'Vendas' };
+    if (path === '/pedidos') return { icon: pedidosIcon, label: 'Vendas', isImage: true };
     if (path.startsWith('/vendas-online')) return { icon: '🛍️', label: 'Vendas Online' };
     
     if (path.startsWith('/devolucoesdevenda')) return { icon: '📋', label: 'Devoluções de Venda' };
