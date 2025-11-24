@@ -1,7 +1,7 @@
 import React from "react";
 import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import visaoGeralIcon from "@/assets/visao-geral-icon.png";
+import visaoGeralIcon from "@/assets/dashboard-visao-geral-icon.png";
 import pedidosIcon from "@/assets/pedidos-icon.png";
 import vendasOnlineIcon from "@/assets/vendas-online-icon.png";
 import reclamacoesIcon from "@/assets/reclamacoes-icon.png";
