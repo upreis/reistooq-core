@@ -3,6 +3,7 @@ import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDo
 import { useLocation } from "react-router-dom";
 import visaoGeralIcon from "@/assets/visao-geral-icon.png";
 import pedidosIcon from "@/assets/pedidos-icon.png";
+import vendasOnlineIcon from "@/assets/vendas-online-icon.png";
 import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
@@ -69,7 +70,7 @@ export default function Header() {
     
     // Pedidos e Vendas
     if (path === '/pedidos') return { icon: pedidosIcon, label: 'Vendas', isImage: true };
-    if (path.startsWith('/vendas-online')) return { icon: '🛍️', label: 'Vendas Online' };
+    if (path.startsWith('/vendas-online')) return { icon: vendasOnlineIcon, label: 'Vendas Online', isImage: true };
     
     if (path.startsWith('/devolucoesdevenda')) return { icon: '📋', label: 'Devoluções de Venda' };
     if (path.startsWith('/reclamacoes')) return { icon: '⚠️', label: 'Reclamações' };
