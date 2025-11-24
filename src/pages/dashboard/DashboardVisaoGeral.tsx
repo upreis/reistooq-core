@@ -52,11 +52,15 @@ export default function DashboardVisaoGeral() {
       {/* Header com notificações */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Visão Geral</h1>
-          <p className="text-muted-foreground">Acompanhe suas métricas em tempo real</p>
+          <h1 className="text-2xl font-bold">Acesso Rápido</h1>
+          <p className="text-muted-foreground">Acesse rapidamente suas páginas favoritas</p>
         </div>
         <NotificationsBell organizationId={organizationId} />
       </div>
+
+      {/* Atalhos Rápidos */}
+      <QuickAccessShortcuts />
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -97,9 +101,6 @@ export default function DashboardVisaoGeral() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Atalhos Rápidos */}
-      <QuickAccessShortcuts />
 
       <Card>
         <CardHeader>
