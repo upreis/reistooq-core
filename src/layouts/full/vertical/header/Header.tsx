@@ -140,7 +140,7 @@ export default function Header() {
           {breadcrumb && (
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               {breadcrumb.isImage ? (
-                <img src={breadcrumb.icon} alt="" className="w-5 h-5 object-contain" />
+                <img src={breadcrumb.icon} alt="" className="w-10 h-10 object-contain" />
               ) : (
                 <span>{breadcrumb.icon}</span>
               )}
