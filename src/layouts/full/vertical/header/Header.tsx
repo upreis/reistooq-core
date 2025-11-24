@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import visaoGeralIcon from "@/assets/visao-geral-icon.png";
 import pedidosIcon from "@/assets/pedidos-icon.png";
 import vendasOnlineIcon from "@/assets/vendas-online-icon.png";
+import reclamacoesIcon from "@/assets/reclamacoes-icon.png";
 import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
@@ -73,7 +74,7 @@ export default function Header() {
     if (path.startsWith('/vendas-online')) return { icon: vendasOnlineIcon, label: 'Vendas Online', isImage: true };
     
     if (path.startsWith('/devolucoesdevenda')) return { icon: '📋', label: 'Devoluções de Venda' };
-    if (path.startsWith('/reclamacoes')) return { icon: '⚠️', label: 'Reclamações' };
+    if (path.startsWith('/reclamacoes')) return { icon: reclamacoesIcon, label: 'Reclamações', isImage: true };
     
     // Ferramentas
     if (path.startsWith('/scanner')) return { icon: '📷', label: 'Scanner' };
