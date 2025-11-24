@@ -499,12 +499,12 @@ export const AddShortcutModal = ({
                   <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                     {category}
                   </h3>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-x-3 gap-y-4">
                     {pages.map((page) => (
                       <button
                         key={page.id}
                         onClick={() => handleSelectPage(page)}
-                        className="group flex flex-col items-center gap-2 p-1 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="group flex flex-col items-center gap-1 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
                         <div className="transition-transform group-hover:scale-105">
                           {page.icon}
