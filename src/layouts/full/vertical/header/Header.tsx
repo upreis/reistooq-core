@@ -10,6 +10,7 @@ import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
 import configuracoesOmsIcon from "@/assets/configuracoes-oms-icon.png";
 import vendedoresOmsIcon from "@/assets/vendedores-oms-icon.png";
+import dashboardVendasIcon from "@/assets/dashboard-vendas-icon.png";
 import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
@@ -55,7 +56,7 @@ export default function Header() {
     
     // Dashboard Inicial
     if (path.startsWith('/dashboardinicial/visao-geral')) return { icon: visaoGeralIcon, label: 'Dashboard / Visão Geral', isImage: true };
-    if (path.startsWith('/dashboardinicial/vendas')) return { icon: '💰', label: 'Dashboard / Vendas' };
+    if (path.startsWith('/dashboardinicial/vendas')) return { icon: dashboardVendasIcon, label: 'Dashboard / Vendas', isImage: true };
     if (path.startsWith('/dashboardinicial/estoque')) return { icon: '📦', label: 'Dashboard / Estoque' };
     if (path.startsWith('/dashboardinicial/analises')) return { icon: '📈', label: 'Dashboard / Análises' };
     if (path.startsWith('/dashboardinicial')) return { icon: '📊', label: 'Dashboard' };
