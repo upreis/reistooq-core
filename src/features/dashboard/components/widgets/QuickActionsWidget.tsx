@@ -54,31 +54,31 @@ const DEFAULT_SHORTCUTS: Service[] = [
     name: 'Pedidos',
     imageUrl: pedidosIcon,
     href: '/pedidos',
-    gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
+    gradient: 'bg-gradient-to-br from-blue-500 to-blue-600'
   },
   {
     name: 'Estoque',
     imageUrl: estoqueIcon,
     href: '/estoque',
-    gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
+    gradient: 'bg-gradient-to-br from-amber-500 to-orange-600'
   },
   {
     name: 'Vendas Online',
     imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
     href: '/vendas-online',
-    gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
+    gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
   },
   {
     name: 'Produtos',
     imageUrl: adicionarProdutoIcon,
     href: '/apps/ecommerce/list',
-    gradient: 'bg-gradient-to-br from-green-500 to-green-700'
+    gradient: 'bg-gradient-to-br from-green-500 to-emerald-600'
   },
   {
     name: 'Clientes',
     imageUrl: clientesIcon,
     href: '/oms/clientes',
-    gradient: 'bg-gradient-to-br from-pink-500 to-pink-700'
+    gradient: 'bg-gradient-to-br from-pink-500 to-rose-600'
   }
 ];
 
@@ -171,7 +171,7 @@ export const QuickActionsWidget = () => {
                 aria-label={`Ir para ${service.name}`}
               >
                 {/* App Icon Container */}
-                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-background to-muted shadow-lg group-hover:shadow-xl transition-all duration-300 flex items-center justify-center overflow-hidden">
+                <div className={`relative w-20 h-20 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 flex items-center justify-center overflow-hidden ${service.gradient || 'bg-gradient-to-br from-slate-500 to-slate-600'}`}>
                   {/* Remove button */}
                   <button
                     onClick={(e) => {
