@@ -292,9 +292,9 @@ const ALL_PAGES: PageOption[] = [
   },
   {
     id: 'ecommerce-list',
-    label: 'Lista de Produtos',
+    label: 'Lista Produtos',
     route: '/apps/ecommerce/list',
-    icon: <img src={listaProdutosIcon} alt="Lista de Produtos" className="w-16 h-16 object-contain" />,
+    icon: <img src={listaProdutosIcon} alt="Lista Produtos" className="w-16 h-16 object-contain" />,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-violet-600 to-violet-800'
   },
