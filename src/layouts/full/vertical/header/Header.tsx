@@ -1,6 +1,7 @@
 import React from "react";
 import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import visaoGeralIcon from "@/assets/visao-geral-icon.png";
 import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
@@ -45,7 +46,7 @@ export default function Header() {
     const path = location.pathname;
     
     // Dashboard Inicial
-    if (path.startsWith('/dashboardinicial/visao-geral')) return { icon: '📊', label: 'Dashboard / Visão Geral' };
+    if (path.startsWith('/dashboardinicial/visao-geral')) return { icon: visaoGeralIcon, label: 'Dashboard / Visão Geral', isImage: true };
     if (path.startsWith('/dashboardinicial/vendas')) return { icon: '💰', label: 'Dashboard / Vendas' };
     if (path.startsWith('/dashboardinicial/estoque')) return { icon: '📦', label: 'Dashboard / Estoque' };
     if (path.startsWith('/dashboardinicial/analises')) return { icon: '📈', label: 'Dashboard / Análises' };
@@ -137,7 +138,11 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {breadcrumb && (
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <span>{breadcrumb.icon}</span>
+              {breadcrumb.isImage ? (
+                <img src={breadcrumb.icon} alt="" className="w-5 h-5 object-contain" />
+              ) : (
+                <span>{breadcrumb.icon}</span>
+              )}
               <span>/</span>
               <span className="text-primary">{breadcrumb.label}</span>
             </div>
