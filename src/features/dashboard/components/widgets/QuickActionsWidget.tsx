@@ -162,7 +162,7 @@ export const QuickActionsWidget = () => {
           </div>
 
           {/* Grid Section */}
-          <div className="flex flex-wrap gap-x-4 gap-y-3">
+          <div className="flex flex-wrap gap-x-3 gap-y-3">
             {shortcuts.map((service, index) => (
               <button
                 key={index}
