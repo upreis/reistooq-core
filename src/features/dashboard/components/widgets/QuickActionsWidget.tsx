@@ -170,8 +170,8 @@ export const QuickActionsWidget = () => {
                 className="group relative flex flex-col items-center gap-2 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label={`Ir para ${service.name}`}
               >
-                {/* Card Icon */}
-                <div className={`relative h-24 w-24 rounded-2xl transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 ${service.gradient || 'bg-gradient-to-br from-primary to-primary/70'}`}>
+                {/* Icon */}
+                <div className="relative">
                   {/* Remove button */}
                   <button
                     onClick={(e) => {
@@ -184,13 +184,11 @@ export const QuickActionsWidget = () => {
                     <X className="h-3 w-3" />
                   </button>
                   
-                  <div className="absolute inset-0 flex items-center justify-center text-white">
-                    <img
-                      src={service.imageUrl}
-                      alt={`${service.name} icon`}
-                      className="w-16 h-16 object-contain"
-                    />
-                  </div>
+                  <img
+                    src={service.imageUrl}
+                    alt={`${service.name} icon`}
+                    className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-110"
+                  />
                 </div>
                 
                 {/* Label */}
@@ -206,15 +204,13 @@ export const QuickActionsWidget = () => {
               className="group relative flex flex-col items-center gap-2 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label="Adicionar novo atalho"
             >
-              {/* Add Card Icon */}
-              <div className="relative h-24 w-24 rounded-2xl transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:shadow-muted/20 bg-muted/50 border-2 border-dashed border-muted-foreground/30 group-hover:border-muted-foreground/50">
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                  <img
-                    src="https://img.icons8.com/fluency/96/plus-math.png"
-                    alt="Adicionar"
-                    className="w-12 h-12 object-contain"
-                  />
-                </div>
+              {/* Add Icon */}
+              <div className="relative">
+                <img
+                  src="https://img.icons8.com/fluency/96/plus-math.png"
+                  alt="Adicionar"
+                  className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-110 opacity-60 group-hover:opacity-100"
+                />
               </div>
               
               {/* Label */}
