@@ -162,7 +162,7 @@ export const QuickActionsWidget = () => {
           </div>
 
           {/* Grid Section */}
-          <div className="flex flex-wrap gap-x-3 gap-y-3">
+          <div className="flex flex-wrap gap-x-[18px] gap-y-3">
             {shortcuts.map((service, index) => (
               <button
                 key={index}
@@ -171,7 +171,7 @@ export const QuickActionsWidget = () => {
                 aria-label={`Ir para ${service.name}`}
               >
                 {/* App Icon Container */}
-                <div className="relative w-20 h-20 flex items-center justify-center">
+                <div className="relative w-[92px] h-[92px] flex items-center justify-center">
                   {/* Remove button */}
                   <button
                     onClick={(e) => {
@@ -187,7 +187,7 @@ export const QuickActionsWidget = () => {
                   <img
                     src={service.imageUrl}
                     alt={`${service.name} icon`}
-                    className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-110"
+                    className="w-[92px] h-[92px] object-contain transition-transform duration-300 group-hover:scale-110"
                   />
                 </div>
                 
@@ -205,11 +205,11 @@ export const QuickActionsWidget = () => {
               aria-label="Adicionar novo atalho"
             >
               {/* Add App Icon Container */}
-              <div className="relative w-20 h-20 flex items-center justify-center">
+              <div className="relative w-[92px] h-[92px] flex items-center justify-center">
                 <img
                   src="https://img.icons8.com/fluency/96/plus-math.png"
                   alt="Adicionar"
-                  className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-110 opacity-60 group-hover:opacity-100"
+                  className="w-[92px] h-[92px] object-contain transition-transform duration-300 group-hover:scale-110 opacity-60 group-hover:opacity-100"
                 />
               </div>
               
