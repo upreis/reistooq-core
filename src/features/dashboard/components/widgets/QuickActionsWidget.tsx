@@ -171,7 +171,7 @@ export const QuickActionsWidget = () => {
                 aria-label={`Ir para ${service.name}`}
               >
                 {/* App Icon Container */}
-                <div className="relative w-20 h-20 rounded-2xl bg-white shadow-lg group-hover:shadow-xl transition-all duration-300 flex items-center justify-center overflow-hidden">
+                <div className="relative w-20 h-20 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 flex items-center justify-center overflow-hidden">
                   {/* Remove button */}
                   <button
                     onClick={(e) => {
@@ -205,7 +205,7 @@ export const QuickActionsWidget = () => {
               aria-label="Adicionar novo atalho"
             >
               {/* Add App Icon Container */}
-              <div className="relative w-20 h-20 rounded-2xl bg-white border-2 border-dashed border-muted-foreground/30 group-hover:border-muted-foreground/50 shadow-lg group-hover:shadow-xl transition-all duration-300 flex items-center justify-center">
+              <div className="relative w-20 h-20 rounded-2xl border-2 border-dashed border-muted-foreground/30 group-hover:border-muted-foreground/50 shadow-lg group-hover:shadow-xl transition-all duration-300 flex items-center justify-center">
                 <img
                   src="https://img.icons8.com/fluency/96/plus-math.png"
                   alt="Adicionar"
