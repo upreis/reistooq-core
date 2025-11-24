@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
-import { QuickAccessShortcuts } from '@/components/dashboard/QuickAccessShortcuts';
+import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
 import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
@@ -59,7 +59,7 @@ export default function DashboardVisaoGeral() {
       </div>
 
       {/* Atalhos Rápidos */}
-      <QuickAccessShortcuts />
+      <QuickActionsWidget />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
