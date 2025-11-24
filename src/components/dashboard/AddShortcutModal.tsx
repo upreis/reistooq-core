@@ -154,15 +154,15 @@ const ALL_PAGES: PageOption[] = [
   // OMS
   {
     id: 'oms-pedidos',
-    label: 'OMS - Pedidos',
+    label: 'OMS Pedidos',
     route: '/oms/pedidos',
-    icon: <img src={pedidosOmsIcon} alt="OMS - Pedidos" className="w-16 h-16 object-contain" />,
+    icon: <img src={pedidosOmsIcon} alt="OMS Pedidos" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-indigo-500 to-indigo-700'
   },
   {
     id: 'oms-clientes',
-    label: 'OMS - Clientes',
+    label: 'OMS Clientes',
     route: '/oms/clientes',
     icon: <img src={clientesIcon} alt="Clientes" className="w-16 h-16 object-contain" />,
     category: 'OMS',
@@ -170,7 +170,7 @@ const ALL_PAGES: PageOption[] = [
   },
   {
     id: 'oms-vendedores',
-    label: 'OMS - Vendedores',
+    label: 'OMS Vendedores',
     route: '/oms/vendedores',
     icon: <img src={vendedoresIcon} alt="Vendedores" className="w-16 h-16 object-contain" />,
     category: 'OMS',
@@ -178,7 +178,7 @@ const ALL_PAGES: PageOption[] = [
   },
   {
     id: 'oms-configuracoes',
-    label: 'OMS - Configurações',
+    label: 'OMS Configurações',
     route: '/oms/configuracoes',
     icon: <img src={configuracoesOmsIcon} alt="Configurações" className="w-16 h-16 object-contain" />,
     category: 'OMS',
