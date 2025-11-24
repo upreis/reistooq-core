@@ -6,6 +6,7 @@ import pedidosIcon from "@/assets/pedidos-icon.png";
 import vendasOnlineIcon from "@/assets/vendas-online-icon.png";
 import reclamacoesIcon from "@/assets/reclamacoes-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
+import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
@@ -57,6 +58,7 @@ export default function Header() {
     if (path.startsWith('/dashboardinicial')) return { icon: '📊', label: 'Dashboard' };
     
     // OMS
+    if (path.startsWith('/oms/pedidos')) return { icon: pedidosOmsIcon, label: 'Pedidos', isImage: true };
     if (path.startsWith('/oms')) return { icon: '🎯', label: 'OMS' };
     
     // Compras
