@@ -9,6 +9,7 @@ import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
 import configuracoesOmsIcon from "@/assets/configuracoes-oms-icon.png";
+import vendedoresOmsIcon from "@/assets/vendedores-oms-icon.png";
 import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
@@ -62,6 +63,7 @@ export default function Header() {
     // OMS
     if (path.startsWith('/oms/pedidos')) return { icon: pedidosOmsIcon, label: 'Pedidos', isImage: true };
     if (path.startsWith('/oms/clientes')) return { icon: clientesOmsIcon, label: 'Clientes', isImage: true };
+    if (path.startsWith('/oms/vendedores')) return { icon: vendedoresOmsIcon, label: 'Vendedores', isImage: true };
     if (path.startsWith('/oms/configuracoes')) return { icon: configuracoesOmsIcon, label: 'Configurações', isImage: true };
     if (path.startsWith('/oms')) return { icon: '🎯', label: 'OMS' };
     
