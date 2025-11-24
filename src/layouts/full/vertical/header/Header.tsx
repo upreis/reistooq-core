@@ -5,6 +5,7 @@ import visaoGeralIcon from "@/assets/dashboard-visao-geral-icon.png";
 import pedidosIcon from "@/assets/pedidos-icon.png";
 import vendasOnlineIcon from "@/assets/vendas-online-icon.png";
 import reclamacoesIcon from "@/assets/reclamacoes-icon.png";
+import comprasPedidosIcon from "@/assets/compras-pedidos-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -71,7 +72,7 @@ export default function Header() {
     if (path.startsWith('/oms')) return { icon: '🎯', label: 'OMS' };
     
     // Compras
-    if (path.startsWith('/compras/pedidos')) return { icon: '🛒', label: 'Compras / Pedidos' };
+    if (path.startsWith('/compras/pedidos')) return { icon: comprasPedidosIcon, label: 'Compras / Pedidos', isImage: true };
     if (path.startsWith('/compras/fornecedores')) return { icon: '🏭', label: 'Compras / Fornecedores' };
     if (path.startsWith('/compras/cotacoes')) return { icon: '💵', label: 'Compras / Cotações' };
     if (path.startsWith('/compras/importacao')) return { icon: '📥', label: 'Compras / Importação' };
