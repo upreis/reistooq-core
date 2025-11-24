@@ -10,6 +10,7 @@ import comprasCotacoesIcon from "@/assets/compras-cotacoes-icon.png";
 import comprasFornecedoresIcon from "@/assets/compras-fornecedores-icon.png";
 import comprasImportacaoIcon from "@/assets/compras-importacao-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
+import estoqueComposicoesIcon from "@/assets/estoque-composicoes-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -83,6 +84,7 @@ export default function Header() {
     if (path.startsWith('/compras')) return { icon: '🛒', label: 'Compras' };
     
     // Estoque
+    if (path.startsWith('/estoque/composicoes')) return { icon: estoqueComposicoesIcon, label: 'Estoque / Composições', isImage: true };
     if (path.startsWith('/estoque')) return { icon: estoqueIcon, label: 'Estoque', isImage: true };
     if (path.startsWith('/category-manager')) return { icon: '🏷️', label: 'Categorias' };
     
