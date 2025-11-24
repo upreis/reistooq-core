@@ -336,9 +336,9 @@ const ALL_PAGES: PageOption[] = [
   // Admin
   {
     id: 'admin',
-    label: 'Admin',
+    label: 'Administração',
     route: '/admin',
-    icon: <img src={adminIcon} alt="Admin" className="w-16 h-16 object-contain" />,
+    icon: <img src={adminIcon} alt="Administração" className="w-16 h-16 object-contain" />,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
@@ -392,9 +392,9 @@ const ALL_PAGES: PageOption[] = [
   },
   {
     id: 'admin-perfil',
-    label: 'Perfil Admin',
+    label: 'Administração Perfil',
     route: '/admin/perfil',
-    icon: <img src={perfilAdminIcon} alt="Perfil Admin" className="w-16 h-16 object-contain" />,
+    icon: <img src={perfilAdminIcon} alt="Administração Perfil" className="w-16 h-16 object-contain" />,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-yellow-600 to-yellow-800'
   },
