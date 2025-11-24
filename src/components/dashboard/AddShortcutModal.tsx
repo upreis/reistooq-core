@@ -232,9 +232,9 @@ const ALL_PAGES: PageOption[] = [
   // Compras
   {
     id: 'compras-pedidos',
-    label: 'Pedidos de Compra',
+    label: 'Compras',
     route: '/compras/pedidos',
-    icon: <img src={pedidosCompraIcon} alt="Pedidos de Compra" className="w-16 h-16 object-contain" />,
+    icon: <img src={pedidosCompraIcon} alt="Compras" className="w-16 h-16 object-contain" />,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-blue-600 to-blue-800'
   },
