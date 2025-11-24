@@ -171,7 +171,7 @@ export const QuickActionsWidget = () => {
                 aria-label={`Ir para ${service.name}`}
               >
                 {/* App Icon Container */}
-                <div className="relative w-20 h-20 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 flex items-center justify-center overflow-hidden">
+                <div className="relative w-20 h-20 flex items-center justify-center">
                   {/* Remove button */}
                   <button
                     onClick={(e) => {
@@ -187,7 +187,7 @@ export const QuickActionsWidget = () => {
                   <img
                     src={service.imageUrl}
                     alt={`${service.name} icon`}
-                    className="w-14 h-14 object-contain transition-transform duration-300 group-hover:scale-110"
+                    className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-110"
                   />
                 </div>
                 
@@ -205,11 +205,11 @@ export const QuickActionsWidget = () => {
               aria-label="Adicionar novo atalho"
             >
               {/* Add App Icon Container */}
-              <div className="relative w-20 h-20 rounded-2xl border-2 border-dashed border-muted-foreground/30 group-hover:border-muted-foreground/50 shadow-lg group-hover:shadow-xl transition-all duration-300 flex items-center justify-center">
+              <div className="relative w-20 h-20 flex items-center justify-center">
                 <img
                   src="https://img.icons8.com/fluency/96/plus-math.png"
                   alt="Adicionar"
-                  className="w-12 h-12 object-contain transition-transform duration-300 group-hover:scale-110 opacity-60 group-hover:opacity-100"
+                  className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-110 opacity-60 group-hover:opacity-100"
                 />
               </div>
               
