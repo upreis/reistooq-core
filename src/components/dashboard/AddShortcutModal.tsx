@@ -504,7 +504,7 @@ export const AddShortcutModal = ({
                       <button
                         key={page.id}
                         onClick={() => handleSelectPage(page)}
-                        className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-accent transition-colors"
+                        className="group flex flex-col items-center gap-2 p-1 transition-transform duration-300 ease-in-out hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
                         <div className="transition-transform group-hover:scale-105">
                           {page.icon}
