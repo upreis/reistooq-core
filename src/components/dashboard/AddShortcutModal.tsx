@@ -506,13 +506,8 @@ export const AddShortcutModal = ({
                         onClick={() => handleSelectPage(page)}
                         className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-accent transition-colors"
                       >
-                        <div
-                          className={cn(
-                            "h-16 w-16 rounded-xl flex items-center justify-center text-white transition-transform group-hover:scale-105",
-                            page.gradient
-                          )}
-                        >
-                          <div className="text-2xl">{page.icon}</div>
+                        <div className="transition-transform group-hover:scale-105">
+                          {page.icon}
                         </div>
                         <span className="text-xs font-medium text-center">
                           {page.label}
