@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, ShoppingCart, Warehouse, Store, Package, Users, LucideIcon } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
-import { useSidebarUI } from '@/context/SidebarUIContext';
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
 interface Service {
   name: string;
-  imageUrl: string;
+  icon: LucideIcon;
   href: string;
   gradient: string;
   badge?: string;
@@ -18,31 +17,31 @@ interface Service {
 const DEFAULT_SHORTCUTS: Service[] = [
   {
     name: 'Pedidos',
-    imageUrl: 'https://img.icons8.com/fluency/96/shopping-cart.png',
+    icon: ShoppingCart,
     href: '/pedidos',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-600'
   },
   {
     name: 'Estoque',
-    imageUrl: 'https://img.icons8.com/fluency/96/warehouse.png',
+    icon: Warehouse,
     href: '/estoque',
     gradient: 'bg-gradient-to-br from-amber-500 to-orange-600'
   },
   {
     name: 'Vendas Online',
-    imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
+    icon: Store,
     href: '/vendas-online',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
   },
   {
     name: 'Produtos',
-    imageUrl: 'https://img.icons8.com/fluency/96/product.png',
+    icon: Package,
     href: '/apps/ecommerce/list',
     gradient: 'bg-gradient-to-br from-green-500 to-emerald-600'
   },
   {
     name: 'Clientes',
-    imageUrl: 'https://img.icons8.com/fluency/96/customer.png',
+    icon: Users,
     href: '/oms/clientes',
     gradient: 'bg-gradient-to-br from-pink-500 to-rose-600'
   }
@@ -71,6 +70,8 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
 
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
+
+  const IconComponent = item.icon;
 
   return (
     <motion.div
@@ -107,11 +108,10 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
           <X className="h-3 w-3" />
         </button>
 
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          className="w-full h-full object-contain rounded-2xl"
-        />
+        {/* Ícone do lucide-react com gradiente de fundo */}
+        <div className={`w-full h-full rounded-2xl ${item.gradient} flex items-center justify-center`}>
+          <IconComponent className="w-10 h-10 text-white" strokeWidth={1.5} />
+        </div>
         
         {/* Shine effect */}
         <motion.div
@@ -253,9 +253,9 @@ export const QuickActionsWidget = () => {
   const handleAddShortcut = (page: any) => {
     const newShortcut: Service = {
       name: page.label,
-      imageUrl: page.icon?.props?.src || 'https://img.icons8.com/fluency/96/documents.png',
+      icon: page.icon?.type || Package,
       href: page.route,
-      gradient: page.gradient,
+      gradient: page.gradient || 'bg-gradient-to-br from-gray-500 to-gray-600',
       badge: page.badge
     };
     setShortcuts([...shortcuts, newShortcut]);
@@ -265,7 +265,6 @@ export const QuickActionsWidget = () => {
     console.log('[QuickActionsWidget] 🗑️ Removendo atalho:', shortcuts[index]?.name);
     const newShortcuts = shortcuts.filter((_, i) => i !== index);
     setShortcuts(newShortcuts);
-    // O useEffect cuidará do salvamento
   };
 
   const existingIds = shortcuts.map((s) => {
@@ -295,7 +294,7 @@ export const QuickActionsWidget = () => {
               delay: 0.1,
             }}
           >
-            {/* Seção de Título - SEMPRE completo */}
+            {/* Seção de Título */}
             <div className="flex items-center justify-center px-6 h-full border-r-2 border-border my-3 min-w-[160px]">
               <div className="space-y-0.5">
                 <h1 className="text-base font-bold whitespace-nowrap">
