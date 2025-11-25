@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
-import YearlyLinearCalendar from '@/components/dashboard/YearlyLinearCalendar';
+import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
 import { supabase } from '@/integrations/supabase/client';
@@ -152,11 +152,11 @@ export default function DashboardVisaoGeral() {
               </div>
             </div>
           ) : (
-          <YearlyLinearCalendar 
-            data={calendarData}
-            monthsBack={6}
-            monthsForward={6}
-          />
+            <ActivityCalendar 
+              data={calendarData}
+              monthsBack={3}
+              monthsForward={3}
+            />
           )}
           
           {calendarError && (
