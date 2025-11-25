@@ -76,9 +76,9 @@ export const SidebarItemWithChildren = memo(({
         className={cn(
           'group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 border-l-2',
           'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20',
-          'hover:bg-[hsl(var(--accent))] active:bg-[hsl(var(--accent))]/80',
+          'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]',
           hasActiveChild
-            ? 'bg-[hsl(var(--accent))] border-[hsl(var(--primary))] font-medium'
+            ? 'bg-[hsl(var(--accent))] border-[hsl(var(--primary))] font-medium text-[hsl(var(--accent-foreground))]'
             : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]'
         )}
         aria-expanded={!isCollapsed ? isOpen : undefined}
@@ -87,14 +87,14 @@ export const SidebarItemWithChildren = memo(({
       >
         <Icon className={cn(
           "h-5 w-5 shrink-0 transition-colors duration-200", 
-          hasActiveChild ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
+          hasActiveChild ? "text-[hsl(var(--accent-foreground))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
         )} />
         
         {/* Label */}
         <span className={cn(
           'truncate transition-all duration-200 text-sm',
           !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
-          hasActiveChild ? 'text-[hsl(var(--foreground))] font-medium' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]'
+          hasActiveChild ? 'text-[hsl(var(--accent-foreground))] font-medium' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]'
         )}>
           {item.label}
         </span>
@@ -133,7 +133,7 @@ export const SidebarItemWithChildren = memo(({
           <ChevronDown className={cn(
             'h-4 w-4 transition-all duration-200',
             isOpen ? 'rotate-180' : 'rotate-0',
-            hasActiveChild ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--muted-foreground))]'
+            hasActiveChild ? 'text-[hsl(var(--accent-foreground))]' : 'text-[hsl(var(--muted-foreground))]'
           )} />
         </div>
       )}
@@ -201,15 +201,15 @@ export const SidebarItemWithChildren = memo(({
                 className={cn(
                   'group relative flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md text-sm transition-all duration-200',
                   'focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring))]',
-                  'hover:bg-[hsl(var(--accent))]/50',
+                  'hover:bg-[hsl(var(--accent))]/50 hover:text-[hsl(var(--foreground))]',
                   childActive
-                    ? 'bg-[hsl(var(--accent))] text-[hsl(var(--foreground))] font-medium'
+                    ? 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] font-medium'
                     : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
                 )}
               >
                 <span className={cn(
                   "truncate transition-colors duration-200",
-                  childActive ? "text-[hsl(var(--foreground))]" : ""
+                  childActive ? "text-[hsl(var(--accent-foreground))]" : ""
                 )}>
                   {child.label}
                 </span>

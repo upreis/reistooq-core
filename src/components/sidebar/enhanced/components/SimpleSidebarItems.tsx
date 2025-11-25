@@ -40,9 +40,9 @@ export const SimpleSidebarItems = memo(({
                     "group relative h-11 w-11 rounded-lg flex items-center justify-center border",
                     "transition-all duration-200",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]",
-                    "hover:bg-[hsl(var(--accent))]",
+                    "hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]",
                     itemActive 
-                      ? "bg-[hsl(var(--accent))] border-[hsl(var(--primary))] text-[hsl(var(--primary))]"
+                      ? "bg-[hsl(var(--accent))] border-[hsl(var(--primary))] text-[hsl(var(--accent-foreground))]"
                       : "border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
                   )}
                 >
@@ -82,16 +82,16 @@ export const SimpleSidebarItems = memo(({
                   'transition-all duration-200',
                   'text-sm select-none',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]',
-                  'hover:bg-[hsl(var(--accent))]',
+                  'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]',
                   itemActive
-                    ? 'bg-[hsl(var(--accent))] border-[hsl(var(--primary))] text-[hsl(var(--foreground))] font-medium'
+                    ? 'bg-[hsl(var(--accent))] border-[hsl(var(--primary))] text-[hsl(var(--accent-foreground))] font-medium'
                     : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]'
                 )}
               >
                 <Icon 
                   className={cn(
                     "h-4 w-4 shrink-0 transition-colors duration-200",
-                    itemActive ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
+                    itemActive ? "text-[hsl(var(--accent-foreground))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
                   )} 
                 />
                 
