@@ -148,7 +148,7 @@ export default function DashboardVisaoGeral() {
         </Card>
 
         {/* Cards de Estoque Agrupados */}
-        <div className="flex gap-3 self-start">
+        <div className="flex gap-1 self-start justify-end">
           {/* Card 3: Produtos com Maior Estoque */}
           <div>
             {stockLoading ? (
