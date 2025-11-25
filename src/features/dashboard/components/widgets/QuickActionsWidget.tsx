@@ -271,7 +271,7 @@ export const QuickActionsWidget = () => {
           <motion.div
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
-            className="flex h-24 items-end gap-4 rounded-3xl bg-card backdrop-blur-md px-6 pb-4 border-2 border-border shadow-xl"
+            className="flex h-24 items-end gap-4 rounded-3xl bg-background backdrop-blur-md px-6 pb-4 border-2 border-border shadow-xl"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{
