@@ -237,21 +237,8 @@ export default function Header() {
 
         {/* Right side - Actions and user menu */}
         <div className="flex items-center gap-3">
-          {/* Language/Country Flag */}
-          <Button variant="ghost" size="icon">
-            <Flag className="h-5 w-5" />
-          </Button>
-          
-          {/* Quick Apps */}
-          <QuickAppsModal />
-          
           {/* Theme Toggle */}
           <ThemeToggle />
-          
-          {/* Plus/Add Button */}
-          <Button variant="ghost" size="icon">
-            <Plus className="h-5 w-5" />
-          </Button>
 
           {/* Banner Expand Button - only show when collapsed and has announcements */}
           {hasAnnouncements && isCollapsed && (
