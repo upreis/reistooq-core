@@ -26,6 +26,7 @@ import adminAuditoriaIcon from "@/assets/admin-auditoria-icon.png";
 import adminPerfilIcon from "@/assets/admin-perfil-icon.png";
 import ecommerceShopIcon from "@/assets/ecommerce-shop-icon.png";
 import ecommerceListIcon from "@/assets/ecommerce-list-icon.png";
+import ecommerceAddProductIcon from "@/assets/ecommerce-addproduct-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -107,6 +108,7 @@ export default function Header() {
     if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Anúncios', isImage: true };
     
     // Apps/Ecommerce
+    if (path.startsWith('/apps/ecommerce/addproduct')) return { icon: ecommerceAddProductIcon, label: 'Apps / Ecommerce / Adicionar', isImage: true };
     if (path.startsWith('/apps/ecommerce/list')) return { icon: ecommerceListIcon, label: 'Apps / Ecommerce / Produtos', isImage: true };
     if (path.startsWith('/apps/ecommerce/shop')) return { icon: ecommerceShopIcon, label: 'Apps / Ecommerce / Loja', isImage: true };
     
