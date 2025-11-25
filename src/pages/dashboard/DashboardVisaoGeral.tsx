@@ -105,14 +105,7 @@ export default function DashboardVisaoGeral() {
       {/* Calendário de Devoluções */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <div className="space-y-1">
-            <CardTitle>Calendário de Devoluções</CardTitle>
-            {!calendarLoading && calendarData.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                📦 {calendarData.reduce((sum, day) => sum + day.count, 0)} devoluções em {calendarData.length} dias
-              </p>
-            )}
-          </div>
+          <CardTitle>Calendário de Devoluções</CardTitle>
           <button
             onClick={() => refresh()}
             disabled={calendarLoading}
@@ -176,7 +169,6 @@ export default function DashboardVisaoGeral() {
           ) : (
             <ActivityCalendar 
               data={calendarData}
-              title="Prazos de Entrega e Revisão (3 meses atrás - 3 meses à frente)"
               monthsBack={3}
               monthsForward={3}
             />

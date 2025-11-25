@@ -386,17 +386,6 @@ const ActivityCalendar = ({
             </div>
           </div>
           
-          <div className="flex gap-3 text-xs items-center text-muted-foreground">
-            <span className="font-medium">Intensidade:</span>
-            <div className="flex gap-1">
-              <div className="w-6 h-6 rounded-md border-2 border-border" />
-              <div className="w-6 h-6 rounded-md border-2 border-primary/50" />
-              <div className="w-6 h-6 rounded-md border-2 border-primary/70" />
-              <div className="w-6 h-6 rounded-md border-2 border-primary/90" />
-              <div className="w-6 h-6 rounded-md border-2 border-primary" />
-            </div>
-            <span>(1-2, 3-5, 6-10, 10+)</span>
-          </div>
         </div>
       </div>
 
