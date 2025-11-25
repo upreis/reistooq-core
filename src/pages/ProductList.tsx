@@ -282,12 +282,22 @@ const ProductList = () => {
   };
 
   // Funções para upload de imagem
-  const handleImageUpload = async (productId: string, field: 'imagem' | 'imagem_fornecedor', file: File) => {
+  const handleImageUpload = async (
+    productId: string, 
+    field: 'imagem' | 'imagem_fornecedor', 
+    file: File,
+    signal?: AbortSignal
+  ) => {
     try {
       setUploadingProductId(productId);
       setUploadingField(field);
 
-      const result = await uploadImage(file, `products/${productId}`);
+      const result = await uploadImage(file, `products/${productId}`, signal);
+      
+      // Verificar se foi cancelado
+      if (signal?.aborted) {
+        return;
+      }
       
       if (result.success && result.url) {
         const fieldName = field === 'imagem' ? 'url_imagem' : 'url_imagem_fornecedor';
@@ -301,18 +311,24 @@ const ProductList = () => {
         
         loadProducts(); // Recarregar para mostrar a nova imagem
       } else {
+        // Não mostrar erro se foi cancelado
+        if (result.error !== 'Upload cancelado') {
+          toast({
+            title: "Erro no upload",
+            description: result.error || "Não foi possível enviar a imagem.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error: any) {
+      // Não mostrar erro se foi cancelado
+      if (!signal?.aborted) {
         toast({
           title: "Erro no upload",
-          description: result.error || "Não foi possível enviar a imagem.",
+          description: error.message || "Ocorreu um erro ao enviar a imagem.",
           variant: "destructive",
         });
       }
-    } catch (error) {
-      toast({
-        title: "Erro no upload",
-        description: "Ocorreu um erro ao enviar a imagem.",
-        variant: "destructive",
-      });
     } finally {
       setUploadingProductId(null);
       setUploadingField(null);
@@ -428,10 +444,16 @@ const ProductList = () => {
     }).format(price);
   };
 
-  // Hook para gerenciar dialog de seleção de arquivo (FASE 1)
-  const { openDialog } = useFileDialog({
-    onFileSelected: async (file, productId, field) => {
-      await handleImageUpload(productId, field, file);
+  // Hook para gerenciar dialog de seleção de arquivo (FASE 1 + 2)
+  const { openDialog, cancelUpload, dialogState } = useFileDialog({
+    onFileSelected: async (file, productId, field, signal) => {
+      await handleImageUpload(productId, field, file, signal);
+    },
+    onCancelled: () => {
+      toast({
+        title: "Cancelado",
+        description: "Upload foi cancelado pelo usuário."
+      });
     },
     maxSize: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']

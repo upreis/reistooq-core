@@ -2,7 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface UseFileDialogOptions {
-  onFileSelected: (file: File, productId: string, field: 'imagem' | 'imagem_fornecedor') => void | Promise<void>;
+  onFileSelected: (file: File, productId: string, field: 'imagem' | 'imagem_fornecedor', signal: AbortSignal) => void | Promise<void>;
+  onCancelled?: () => void;
   maxSize?: number; // em MB
   allowedTypes?: string[];
 }
@@ -11,6 +12,7 @@ interface DialogState {
   productId: string | null;
   field: 'imagem' | 'imagem_fornecedor' | null;
   isOpen: boolean;
+  canCancel: boolean;
 }
 
 /**
@@ -20,6 +22,7 @@ interface DialogState {
 export const useFileDialog = (options: UseFileDialogOptions) => {
   const {
     onFileSelected,
+    onCancelled,
     maxSize = 5,
     allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
   } = options;
@@ -28,16 +31,28 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
   const [dialogState, setDialogState] = useState<DialogState>({
     productId: null,
     field: null,
-    isOpen: false
+    isOpen: false,
+    canCancel: false
   });
 
-  // Refs para rastrear elementos do DOM e timeouts
+  // Refs para rastrear elementos do DOM, timeouts e AbortController
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cleanupTimeoutRef = useRef<number | null>(null);
   const isProcessingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Função de cleanup - remove input e cancela timeouts
-  const cleanup = useCallback(() => {
+  // Função de cleanup - remove input, cancela timeouts e aborta operações
+  const cleanup = useCallback((aborted = false) => {
+    // Abortar operação em andamento se existir
+    if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+      abortControllerRef.current.abort();
+      
+      if (aborted && onCancelled) {
+        onCancelled();
+      }
+    }
+    abortControllerRef.current = null;
+
     // Cancelar timeout pendente
     if (cleanupTimeoutRef.current) {
       clearTimeout(cleanupTimeoutRef.current);
@@ -69,10 +84,11 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
     setDialogState({
       productId: null,
       field: null,
-      isOpen: false
+      isOpen: false,
+      canCancel: false
     });
     isProcessingRef.current = false;
-  }, []);
+  }, [onCancelled]);
 
   // Cleanup ao desmontar componente
   useEffect(() => {
@@ -125,8 +141,12 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
     setDialogState({
       productId,
       field,
-      isOpen: true
+      isOpen: true,
+      canCancel: false
     });
+
+    // Criar novo AbortController para esta operação
+    abortControllerRef.current = new AbortController();
 
     // Criar novo input
     const input = document.createElement('input');
@@ -157,18 +177,40 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
         return;
       }
 
-      // Processar arquivo
+      // Processar arquivo com AbortSignal
       try {
-        await onFileSelected(file, productId, field);
-      } catch (error) {
-        console.error('Erro ao processar arquivo:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Falha ao processar arquivo selecionado."
-        });
-      } finally {
-        cleanup();
+        // Habilitar cancelamento
+        setDialogState(prev => ({ ...prev, canCancel: true }));
+        
+        // Verificar se já foi abortado antes de iniciar
+        if (abortControllerRef.current?.signal.aborted) {
+          cleanup(false);
+          return;
+        }
+
+        await onFileSelected(file, productId, field, abortControllerRef.current!.signal);
+        
+        // Se chegou aqui, upload completou com sucesso
+        if (!abortControllerRef.current?.signal.aborted) {
+          cleanup(false);
+        }
+      } catch (error: any) {
+        // Distinguir entre erro de abort e erro real
+        if (error.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
+          console.log('Upload cancelado pelo usuário');
+          toast({
+            title: "Upload cancelado",
+            description: "O upload foi cancelado."
+          });
+        } else {
+          console.error('Erro ao processar arquivo:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: error.message || "Falha ao processar arquivo selecionado."
+          });
+        }
+        cleanup(false);
       }
     };
 
@@ -200,9 +242,21 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
     }, 60000);
   }, [dialogState.isOpen, allowedTypes, validateFile, onFileSelected, cleanup, toast]);
 
+  // Cancelar upload em andamento
+  const cancelUpload = useCallback(() => {
+    if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+      toast({
+        title: "Cancelando upload...",
+        description: "O upload está sendo cancelado."
+      });
+      cleanup(true);
+    }
+  }, [cleanup, toast]);
+
   return {
     dialogState,
     openDialog,
+    cancelUpload,
     cleanup
   };
 };

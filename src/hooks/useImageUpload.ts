@@ -11,9 +11,18 @@ interface UploadResult {
 export const useImageUpload = () => {
   const [uploading, setUploading] = useState(false);
 
-  const uploadImage = async (file: File, path?: string): Promise<UploadResult> => {
+  const uploadImage = async (
+    file: File, 
+    path?: string, 
+    signal?: AbortSignal
+  ): Promise<UploadResult> => {
     try {
       setUploading(true);
+
+      // Verificar se já foi cancelado
+      if (signal?.aborted) {
+        throw new Error('Upload cancelado');
+      }
 
       // Validar arquivo
       if (!file.type.startsWith('image/')) {
@@ -24,18 +33,34 @@ export const useImageUpload = () => {
         return { success: false, error: 'Arquivo deve ter no máximo 5MB' };
       }
 
+      // Verificar cancelamento antes de iniciar upload
+      if (signal?.aborted) {
+        throw new Error('Upload cancelado');
+      }
+
       // Gerar nome único para o arquivo
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = path ? `${path}/${fileName}` : fileName;
 
-      // Upload para o Supabase Storage
+      // Upload para o Supabase Storage com verificação de abort
       const { data, error } = await supabase.storage
         .from('product-images')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
+
+      // Verificar se foi cancelado durante upload
+      if (signal?.aborted) {
+        // Tentar deletar arquivo se upload completou mas foi cancelado
+        if (data?.path) {
+          await supabase.storage
+            .from('product-images')
+            .remove([data.path]);
+        }
+        throw new Error('Upload cancelado');
+      }
 
       if (error) {
         console.error('Upload error:', error);
@@ -49,6 +74,11 @@ export const useImageUpload = () => {
 
       return { success: true, url: publicUrl };
     } catch (error: any) {
+      // Distinguir erro de cancelamento
+      if (signal?.aborted || error.message === 'Upload cancelado') {
+        return { success: false, error: 'Upload cancelado' };
+      }
+      
       console.error('Upload error:', error);
       return { success: false, error: error.message || 'Erro no upload' };
     } finally {
