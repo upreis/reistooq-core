@@ -18,6 +18,7 @@ import configuracoesIntegracoesIcon from "@/assets/configuracoes-integracoes-ico
 import configuracoesAnunciosIcon from "@/assets/configuracoes-anuncios-icon.png";
 import adminIcon from "@/assets/admin-icon.png";
 import adminUsuariosIcon from "@/assets/admin-usuarios-icon.png";
+import adminCargosIcon from "@/assets/admin-cargos-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -99,6 +100,7 @@ export default function Header() {
     if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Anúncios', isImage: true };
     
     // Admin
+    if (path.startsWith('/admin/cargos')) return { icon: adminCargosIcon, label: 'Admin / Cargos', isImage: true };
     if (path.startsWith('/admin/usuarios')) return { icon: adminUsuariosIcon, label: 'Admin / Usuários', isImage: true };
     if (path.startsWith('/admin')) return { icon: adminIcon, label: 'Admin', isImage: true };
     
