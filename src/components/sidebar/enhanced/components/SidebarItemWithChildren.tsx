@@ -74,28 +74,27 @@ export const SidebarItemWithChildren = memo(({
         role="button"
         tabIndex={0}
         className={cn(
-          'group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
-          'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30',
-          'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
+          'group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 border-l-2',
+          'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20',
+          'hover:bg-[hsl(var(--accent))] active:bg-[hsl(var(--accent))]/80',
           hasActiveChild
-            ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/25'
-            : 'text-[hsl(var(--foreground))] hover:text-[hsl(var(--foreground))]'
+            ? 'bg-[hsl(var(--accent))] border-[hsl(var(--primary))] font-medium'
+            : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]'
         )}
         aria-expanded={!isCollapsed ? isOpen : undefined}
         aria-haspopup="true"
         aria-controls={!isCollapsed ? `submenu-${item.id}` : undefined}
       >
         <Icon className={cn(
-          "h-5 w-5 shrink-0 transition-all duration-200", 
-          hasActiveChild ? "text-[hsl(var(--brand-yellow-foreground))] drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
+          "h-5 w-5 shrink-0 transition-colors duration-200", 
+          hasActiveChild ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
         )} />
         
-        {/* Label com tipografia melhorada */}
+        {/* Label */}
         <span className={cn(
-          'font-medium truncate transition-all duration-200',
+          'truncate transition-all duration-200 text-sm',
           !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
-          hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))] font-semibold' : 'text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--foreground))]'
+          hasActiveChild ? 'text-[hsl(var(--foreground))] font-medium' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]'
         )}>
           {item.label}
         </span>
@@ -116,9 +115,9 @@ export const SidebarItemWithChildren = memo(({
           </span>
         )}
 
-        {/* Indicador ativo melhorado - sempre visível quando collapsed e tem filho ativo */}
+        {/* Indicador ativo */}
         {!isMobile && isCollapsed && hasActiveChild && (
-          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[hsl(var(--primary))] shrink-0 animate-pulse border-2 border-[hsl(var(--background))]" />
+          <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-[hsl(var(--primary))] shrink-0 border border-[hsl(var(--background))]" />
         )}
       </button>
       
@@ -132,9 +131,9 @@ export const SidebarItemWithChildren = memo(({
           aria-label={isOpen ? 'Recolher' : 'Expandir'}
         >
           <ChevronDown className={cn(
-            'h-4 w-4 transition-all duration-300',
-            isOpen ? 'rotate-180 text-[hsl(var(--primary))]' : 'rotate-0',
-            hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))]' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]'
+            'h-4 w-4 transition-all duration-200',
+            isOpen ? 'rotate-180' : 'rotate-0',
+            hasActiveChild ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--muted-foreground))]'
           )} />
         </div>
       )}
@@ -154,20 +153,19 @@ export const SidebarItemWithChildren = memo(({
                 onKeyDown={handleKeyDown}
                 type="button"
                 className={cn(
-                  'h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-200 p-1',
+                  'h-11 w-11 rounded-lg flex items-center justify-center transition-all duration-200',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20',
-                  'hover:shadow-lg hover:scale-105 active:scale-95',
-                  'backdrop-blur-sm border border-white/10',
+                  'hover:bg-[hsl(var(--accent))]',
                   hasActiveChild 
-                    ? 'bg-gradient-to-br from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/30'
-                    : 'bg-transparent hover:border-[hsl(var(--primary))] hover:border-2 text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] shadow-sm'
+                    ? 'bg-[hsl(var(--accent))] text-[hsl(var(--primary))] border-2 border-[hsl(var(--primary))]'
+                    : 'bg-transparent border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]'
                 )}
                 aria-haspopup="menu"
                 aria-label={item.label}
               >
-                <Icon className="h-5 w-5 text-current transition-transform duration-200 hover:scale-110" />
+                <Icon className="h-5 w-5 text-current" />
                 {hasActiveChild && (
-                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[hsl(var(--primary))] animate-pulse border-2 border-[hsl(var(--background))]" />
+                  <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-[hsl(var(--primary))] border border-[hsl(var(--background))]" />
                 )}
               </button>
             </TooltipTrigger>
@@ -189,9 +187,8 @@ export const SidebarItemWithChildren = memo(({
         <div
           id={`submenu-${item.id}`}
           className={cn(
-            'mt-2 ml-4 pl-4 space-y-1 overflow-hidden transition-all duration-300 ease-out',
-            'border-l-2 border-[hsl(var(--border))]/50',
-            'max-h-96 opacity-100'
+            'mt-1 ml-2 pl-6 space-y-0.5 overflow-hidden',
+            'border-l border-[hsl(var(--border))]'
           )}
         >
           {item.children?.map((child) => {
@@ -203,27 +200,23 @@ export const SidebarItemWithChildren = memo(({
                 key={child.id || child.path || child.label}
                 to={child.path || '#'}
                 className={cn(
-                  'group relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200',
-                  'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
-                  'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
+                  'group relative flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-200',
+                  'focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring))]',
+                  'hover:bg-[hsl(var(--accent))]/50',
                   childActive
-                    ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/30 font-semibold border-l-4 border-[hsl(var(--brand-yellow-foreground))]'
-                    : 'text-[hsl(var(--muted-foreground))] hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30 hover:text-[hsl(var(--foreground))] border-l-4 border-transparent'
+                    ? 'bg-[hsl(var(--accent))] text-[hsl(var(--foreground))] font-medium'
+                    : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
                 )}
               >
                 <ChildIcon className={cn(
                   "h-4 w-4 shrink-0 transition-colors duration-200", 
-                  childActive ? "text-[hsl(var(--brand-yellow-foreground))] drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
+                  childActive ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
                 )} />
                 <span className={cn(
-                  "truncate font-medium transition-colors duration-200 relative",
-                  childActive ? "text-[hsl(var(--brand-yellow-foreground))]" : ""
+                  "truncate transition-colors duration-200",
+                  childActive ? "text-[hsl(var(--foreground))]" : ""
                 )}>
                   {child.label}
-                  {/* Linha inferior para item ativo */}
-                  {childActive && (
-                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[hsl(var(--brand-yellow-foreground))]/60 rounded-full" />
-                  )}
                 </span>
                 {child.badge && (
                   <span className={cn(
