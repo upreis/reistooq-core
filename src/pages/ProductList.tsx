@@ -41,6 +41,8 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { useFileDialog } from "@/hooks/useFileDialog";
+import { useUploadQueue } from "@/hooks/useUploadQueue";
+import { UploadQueuePanel } from "@/components/upload/UploadQueuePanel";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
 
@@ -76,6 +78,40 @@ const ProductList = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  // FASE 3: Sistema de fila de uploads
+  const uploadQueue = useUploadQueue({
+    maxConcurrent: 3,
+    maxRetries: 2,
+    uploadFunction: async (file, productId, field, signal, onProgress) => {
+      // Wrapper para uploadImage com progresso
+      const result = await uploadImage(file, `products/${productId}`, signal);
+      
+      if (result.success && result.url) {
+        // Atualizar produto no banco
+        const fieldName = field === 'imagem' ? 'url_imagem' : 'url_imagem_fornecedor';
+        await updateProduct(productId, { [fieldName]: result.url });
+        
+        // Recarregar lista
+        loadProducts();
+      }
+      
+      return result;
+    },
+    onJobComplete: (job, url) => {
+      toast({
+        title: "Upload concluído",
+        description: `${job.file.name} enviado com sucesso.`
+      });
+    },
+    onJobFailed: (job, error) => {
+      toast({
+        variant: "destructive",
+        title: "Upload falhou",
+        description: `${job.file.name}: ${error}`
+      });
+    }
+  });
 
   useEffect(() => {
     // Limpar estado anterior para evitar dados misturados
@@ -281,59 +317,7 @@ const ProductList = () => {
     }
   };
 
-  // Funções para upload de imagem
-  const handleImageUpload = async (
-    productId: string, 
-    field: 'imagem' | 'imagem_fornecedor', 
-    file: File,
-    signal?: AbortSignal
-  ) => {
-    try {
-      setUploadingProductId(productId);
-      setUploadingField(field);
-
-      const result = await uploadImage(file, `products/${productId}`, signal);
-      
-      // Verificar se foi cancelado
-      if (signal?.aborted) {
-        return;
-      }
-      
-      if (result.success && result.url) {
-        const fieldName = field === 'imagem' ? 'url_imagem' : 'url_imagem_fornecedor';
-        
-        await updateProduct(productId, { [fieldName]: result.url });
-        
-        toast({
-          title: "Imagem enviada",
-          description: "A imagem foi enviada e salva com sucesso.",
-        });
-        
-        loadProducts(); // Recarregar para mostrar a nova imagem
-      } else {
-        // Não mostrar erro se foi cancelado
-        if (result.error !== 'Upload cancelado') {
-          toast({
-            title: "Erro no upload",
-            description: result.error || "Não foi possível enviar a imagem.",
-            variant: "destructive",
-          });
-        }
-      }
-    } catch (error: any) {
-      // Não mostrar erro se foi cancelado
-      if (!signal?.aborted) {
-        toast({
-          title: "Erro no upload",
-          description: error.message || "Ocorreu um erro ao enviar a imagem.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setUploadingProductId(null);
-      setUploadingField(null);
-    }
-  };
+  // Funções removidas - upload agora gerenciado por useUploadQueue (FASE 3)
 
   const handleDownloadData = () => {
     try {
@@ -447,12 +431,13 @@ const ProductList = () => {
   // Hook para gerenciar dialog de seleção de arquivo (FASE 1 + 2)
   const { openDialog, cancelUpload, dialogState } = useFileDialog({
     onFileSelected: async (file, productId, field, signal) => {
-      await handleImageUpload(productId, field, file, signal);
+      // Adicionar à fila ao invés de fazer upload direto
+      uploadQueue.addJob(productId, field, file, 0);
     },
     onCancelled: () => {
       toast({
         title: "Cancelado",
-        description: "Upload foi cancelado pelo usuário."
+        description: "Seleção de arquivo cancelada."
       });
     },
     maxSize: 5,
@@ -1646,6 +1631,15 @@ const ProductList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* FASE 3: Painel de fila de uploads */}
+      <UploadQueuePanel
+        queue={uploadQueue.queue}
+        stats={uploadQueue.stats}
+        onCancelJob={uploadQueue.cancelJob}
+        onCancelAll={uploadQueue.cancelAll}
+        onClearCompleted={uploadQueue.clearCompleted}
+      />
     </>
   );
 };
