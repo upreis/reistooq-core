@@ -178,7 +178,11 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
         }
 
         // Remover job completado após 2 segundos
-        setTimeout(() => removeJob(job.id), 2000);
+        const timeoutId = window.setTimeout(() => {
+          retryTimeoutsRef.current.delete(job.id);
+          removeJob(job.id);
+        }, 2000);
+        retryTimeoutsRef.current.set(job.id, timeoutId);
       } else {
         throw new Error(result.error || 'Upload falhou');
       }
@@ -233,8 +237,12 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
           description: `${job.file.name}: ${error.message}`
         });
 
-        // Remover job falhado após 5 segundos
-        setTimeout(() => removeJob(job.id), 5000);
+        // Remover job falhado após 5 segundos (guardar timeout para cancelar)
+        const timeoutId = window.setTimeout(() => {
+          retryTimeoutsRef.current.delete(job.id);
+          removeJob(job.id);
+        }, 5000);
+        retryTimeoutsRef.current.set(job.id, timeoutId);
       }
     } finally {
       // Remover dos ativos
@@ -244,7 +252,7 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
         return next;
       });
     }
-  }, [maxRetries, uploadFunction, updateJob, removeJob, onJobComplete, onJobFailed, toast, processQueue]);
+  }, [maxRetries, uploadFunction, updateJob, removeJob, onJobComplete, onJobFailed, toast]);
 
   // Efeito para processar fila quando estado mudar
   useEffect(() => {
