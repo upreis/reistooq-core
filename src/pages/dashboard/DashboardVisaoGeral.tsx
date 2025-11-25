@@ -54,7 +54,7 @@ export default function DashboardVisaoGeral() {
   return (
     <div className="space-y-6 p-6 bg-card w-full">
       {/* Cards Analíticos */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_0.65fr_0.65fr]">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_auto]">
         {/* Card 1: Vendas */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
@@ -147,38 +147,41 @@ export default function DashboardVisaoGeral() {
           </CardContent>
         </Card>
 
-        {/* Card 3: Produtos com Maior Estoque */}
-        <div className="self-start">
-          {stockLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <ProductStockCard 
-              products={highStockProducts}
-              title="Maior Estoque"
-              type="high"
-              cardWidth={220}
-              cardHeight={380}
-            />
-          )}
-        </div>
+        {/* Cards de Estoque Agrupados */}
+        <div className="flex gap-3 self-start">
+          {/* Card 3: Produtos com Maior Estoque */}
+          <div>
+            {stockLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ProductStockCard 
+                products={highStockProducts}
+                title="Maior Estoque"
+                type="high"
+                cardWidth={220}
+                cardHeight={380}
+              />
+            )}
+          </div>
 
-        {/* Card 4: Produtos com Menor Estoque */}
-        <div className="self-start">
-          {stockLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <ProductStockCard 
-              products={lowStockProducts}
-              title="Baixo Estoque"
-              type="low"
-              cardWidth={220}
-              cardHeight={380}
-            />
-          )}
+          {/* Card 4: Produtos com Menor Estoque */}
+          <div>
+            {stockLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ProductStockCard 
+                products={lowStockProducts}
+                title="Baixo Estoque"
+                type="low"
+                cardWidth={220}
+                cardHeight={380}
+              />
+            )}
+          </div>
         </div>
       </div>
 
