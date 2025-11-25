@@ -161,7 +161,7 @@ export default function DashboardVisaoGeral() {
                 title="Maior Estoque"
                 type="high"
                 cardWidth={220}
-                cardHeight={380}
+                cardHeight={460}
               />
             )}
           </div>
@@ -178,7 +178,7 @@ export default function DashboardVisaoGeral() {
                 title="Baixo Estoque"
                 type="low"
                 cardWidth={220}
-                cardHeight={380}
+                cardHeight={460}
               />
             )}
           </div>
