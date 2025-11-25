@@ -47,6 +47,7 @@ import pedidosIcon from "@/assets/pedidos-cart-icon.png";
 import pedidosNewIcon from "@/assets/pedidos-icon-v2.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import vendasOnlineIcon from "@/assets/vendas_online.png";
+import vendasOnlineNewIcon from "@/assets/vendas-online-icon-v2.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
 import adminIcon from "@/assets/admin.png";
 import alertasIcon from "@/assets/alertas.png";
@@ -151,7 +152,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'vendas-online',
     label: 'Vendas Online',
     route: '/vendas-online',
-    icon: <img src={vendasOnlineIcon} alt="Vendas Online" className="w-16 h-16 object-contain" />,
+    icon: <img src={vendasOnlineNewIcon} alt="Vendas Online" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
