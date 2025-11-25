@@ -60,6 +60,7 @@ import clientesIcon from "@/assets/clientes.png";
 import clientesNewIcon from "@/assets/oms-clientes-icon-v2.png";
 import composicoesIcon from "@/assets/composicoes.png";
 import configuracoesOmsIcon from "@/assets/configuracoes_oms.png";
+import configuracoesOmsNewIcon from "@/assets/oms-configuracoes-icon-v2.png";
 import convitesIcon from "@/assets/convites.png";
 import cotacoesIcon from "@/assets/cotacoes.png";
 import dashboardAnalisesIcon from "@/assets/dashboard_analises.png";
@@ -191,7 +192,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'oms-configuracoes',
     label: 'OMS Configurações',
     route: '/oms/configuracoes',
-    icon: <img src={configuracoesOmsIcon} alt="Configurações" className="w-16 h-16 object-contain" />,
+    icon: <img src={configuracoesOmsNewIcon} alt="Configurações" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-slate-500 to-slate-700'
   },
