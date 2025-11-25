@@ -94,6 +94,13 @@ const ActivityCalendar = ({
     for (let monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
       const monthStart = startOfMonth(currentDate);
       const monthNumber = getMonth(monthStart);
+      
+      // Pular meses fora do intervalo startDate-endDate
+      if (monthStart < startOfMonth(startDate) || monthStart > endDate) {
+        currentDate = addMonths(currentDate, 1);
+        continue;
+      }
+      
       const firstWeekStart = startOfWeek(monthStart, { weekStartsOn: 0 });
       
       // Calcular quantas semanas este mês precisa
@@ -201,7 +208,7 @@ const ActivityCalendar = ({
               return (
                 <div
                   key={dayIndex}
-                  className={`w-8 h-8 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden ${isDifferentMonth ? 'opacity-0 pointer-events-none' : ''}`}
+                  className={`w-6 h-6 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden ${isDifferentMonth ? 'opacity-0 pointer-events-none' : ''}`}
                   title={`${format(day, "PPP", { locale: ptBR })}`}
                   onClick={() => handleDayClick(contribution, day)}
                 >
@@ -285,7 +292,7 @@ const ActivityCalendar = ({
         </div>
       );
 
-      currentDate = addDays(currentDate, 30);
+      currentDate = addMonths(currentDate, 1);
     }
 
     return monthsArray;
@@ -298,12 +305,20 @@ const ActivityCalendar = ({
     const totalMonths = differenceInMonths(endDate, startDate) + 1;
     
     for (let i = 0; i < totalMonths; i++) {
+      const monthStart = startOfMonth(currentMonth);
+      
+      // Pular meses fora do intervalo
+      if (monthStart < startOfMonth(startDate) || monthStart > endDate) {
+        currentMonth = addMonths(currentMonth, 1);
+        continue;
+      }
+      
       months.push(
         <div key={i} className="text-xs text-muted-foreground min-w-[60px]">
           {format(currentMonth, "MMM", { locale: ptBR })}
         </div>
       );
-      currentMonth = addDays(currentMonth, 30);
+      currentMonth = addMonths(currentMonth, 1);
     }
     return months;
   };
@@ -373,7 +388,7 @@ const ActivityCalendar = ({
           <div className="flex min-w-max">
             <div className="flex flex-col justify-between mt-6 mr-2 gap-1">
               {dayLabels.map((label, index) => (
-                <div key={index} className="text-xs text-muted-foreground h-8 flex items-center">
+                <div key={index} className="text-xs text-muted-foreground h-6 flex items-center">
                   {label}
                 </div>
               ))}
