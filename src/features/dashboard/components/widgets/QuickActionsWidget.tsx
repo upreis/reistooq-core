@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
-import { X, Plus, ShoppingCart, Warehouse, Store, Package, Users, LucideIcon } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import { useSidebarUI } from '@/context/SidebarUIContext';
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
 interface Service {
   name: string;
-  icon: LucideIcon;
+  imageUrl: string;
   href: string;
   gradient: string;
   badge?: string;
@@ -17,31 +18,31 @@ interface Service {
 const DEFAULT_SHORTCUTS: Service[] = [
   {
     name: 'Pedidos',
-    icon: ShoppingCart,
+    imageUrl: 'https://img.icons8.com/fluency/96/shopping-cart.png',
     href: '/pedidos',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-600'
   },
   {
     name: 'Estoque',
-    icon: Warehouse,
+    imageUrl: 'https://img.icons8.com/fluency/96/warehouse.png',
     href: '/estoque',
     gradient: 'bg-gradient-to-br from-amber-500 to-orange-600'
   },
   {
     name: 'Vendas Online',
-    icon: Store,
+    imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
     href: '/vendas-online',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
   },
   {
     name: 'Produtos',
-    icon: Package,
+    imageUrl: 'https://img.icons8.com/fluency/96/product.png',
     href: '/apps/ecommerce/list',
     gradient: 'bg-gradient-to-br from-green-500 to-emerald-600'
   },
   {
     name: 'Clientes',
-    icon: Users,
+    imageUrl: 'https://img.icons8.com/fluency/96/customer.png',
     href: '/oms/clientes',
     gradient: 'bg-gradient-to-br from-pink-500 to-rose-600'
   }
@@ -70,11 +71,6 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
 
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
-
-  // Garantir que sempre temos um ícone válido com debug
-  console.log('[DockIcon] Item:', item.name, 'Icon type:', typeof item.icon, 'Icon:', item.icon);
-  const IconComponent = (item.icon && typeof item.icon === 'function') ? item.icon : Package;
-  console.log('[DockIcon] IconComponent final:', IconComponent);
 
   return (
     <motion.div
@@ -111,10 +107,11 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
           <X className="h-3 w-3" />
         </button>
 
-        {/* Ícone do lucide-react com gradiente de fundo */}
-        <div className={`w-full h-full rounded-2xl ${item.gradient} flex items-center justify-center`}>
-          <IconComponent className="w-10 h-10 text-white" strokeWidth={1.5} />
-        </div>
+        <img
+          src={item.imageUrl}
+          alt={item.name}
+          className="w-full h-full object-contain rounded-2xl"
+        />
         
         {/* Shine effect */}
         <motion.div
@@ -221,43 +218,15 @@ export const QuickActionsWidget = () => {
   const [shortcuts, setShortcuts] = useState<Service[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      console.log('[QuickActionsWidget] 🔍 Raw saved data:', saved);
-      
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('[QuickActionsWidget] 📦 Parsed data:', parsed);
-        
-        // Verificar se a estrutura está desatualizada (usando imageUrl ao invés de icon)
-        const hasOldStructure = parsed.some((item: any) => 'imageUrl' in item);
-        if (hasOldStructure) {
-          console.log('[QuickActionsWidget] 🔄 Old structure detected (imageUrl), clearing and using defaults');
-          localStorage.removeItem(STORAGE_KEY);
-          return DEFAULT_SHORTCUTS;
-        }
-        
-        // Remapear ícones pois funções não são serializáveis em JSON
-        const remapped = parsed.map((shortcut: any) => {
-          // Tentar encontrar o ícone padrão pelo nome
-          const defaultShortcut = DEFAULT_SHORTCUTS.find(d => d.name === shortcut.name);
-          console.log(`[QuickActionsWidget] 🔄 Remapping "${shortcut.name}":`, {
-            found: !!defaultShortcut,
-            icon: defaultShortcut?.icon,
-            iconType: typeof defaultShortcut?.icon
-          });
-          
-          return {
-            ...shortcut,
-            icon: defaultShortcut?.icon || Package // fallback para Package
-          };
-        });
-        
-        console.log('[QuickActionsWidget] ✅ Final remapped shortcuts:', remapped);
-        return Array.isArray(remapped) ? remapped : DEFAULT_SHORTCUTS;
+        console.log('[QuickActionsWidget] Restored shortcuts:', parsed.length);
+        return Array.isArray(parsed) ? parsed : DEFAULT_SHORTCUTS;
       }
     } catch (error) {
-      console.error('[QuickActionsWidget] ❌ Error loading shortcuts:', error);
+      console.error('[QuickActionsWidget] Error loading shortcuts:', error);
     }
-    console.log('[QuickActionsWidget] 📋 Using default shortcuts');
+    console.log('[QuickActionsWidget] Using default shortcuts');
     return DEFAULT_SHORTCUTS;
   });
   
@@ -282,25 +251,11 @@ export const QuickActionsWidget = () => {
   }, [shortcuts]);
 
   const handleAddShortcut = (page: any) => {
-    // Extrair o componente de ícone corretamente
-    let iconComponent: LucideIcon = Package; // fallback padrão
-    
-    if (page.icon) {
-      // Se page.icon já é um componente React válido
-      if (typeof page.icon === 'function') {
-        iconComponent = page.icon as LucideIcon;
-      }
-      // Se page.icon tem a propriedade type (componente React)
-      else if (page.icon.type && typeof page.icon.type === 'function') {
-        iconComponent = page.icon.type as LucideIcon;
-      }
-    }
-    
     const newShortcut: Service = {
       name: page.label,
-      icon: iconComponent,
+      imageUrl: page.icon?.props?.src || 'https://img.icons8.com/fluency/96/documents.png',
       href: page.route,
-      gradient: page.gradient || 'bg-gradient-to-br from-gray-500 to-gray-600',
+      gradient: page.gradient,
       badge: page.badge
     };
     setShortcuts([...shortcuts, newShortcut]);
@@ -310,6 +265,7 @@ export const QuickActionsWidget = () => {
     console.log('[QuickActionsWidget] 🗑️ Removendo atalho:', shortcuts[index]?.name);
     const newShortcuts = shortcuts.filter((_, i) => i !== index);
     setShortcuts(newShortcuts);
+    // O useEffect cuidará do salvamento
   };
 
   const existingIds = shortcuts.map((s) => {
@@ -339,7 +295,7 @@ export const QuickActionsWidget = () => {
               delay: 0.1,
             }}
           >
-            {/* Seção de Título */}
+            {/* Seção de Título - SEMPRE completo */}
             <div className="flex items-center justify-center px-6 h-full border-r-2 border-border my-3 min-w-[160px]">
               <div className="space-y-0.5">
                 <h1 className="text-base font-bold whitespace-nowrap">
@@ -354,7 +310,7 @@ export const QuickActionsWidget = () => {
             </div>
 
             {/* Seção de Ícones */}
-            <div className="flex items-center gap-4 px-8 pb-3 pt-3 min-w-[400px]">
+            <div className="flex items-center gap-4 px-6 pb-3 pt-3">
             {shortcuts.map((service, index) => (
               <DockIcon
                 key={index}
