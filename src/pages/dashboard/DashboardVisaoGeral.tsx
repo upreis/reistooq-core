@@ -122,11 +122,11 @@ export default function DashboardVisaoGeral() {
       <QuickActionsWidget />
 
       {/* Grid: Baixo Estoque + Calendário na mesma linha */}
-      <div className="grid gap-6 lg:grid-cols-[0.65fr_2fr] items-stretch">
+      <div className="grid gap-6 lg:grid-cols-[auto_1fr] items-start">
         {/* Card 4: Produtos com Menor Estoque */}
-        <div>
+        <div className="w-[280px]">
           {stockLoading ? (
-            <Card className="p-6 bg-background h-full">
+            <Card className="p-6 bg-background">
               <div className="animate-pulse space-y-3">
                 <div className="h-4 bg-muted rounded w-1/2"></div>
                 <div className="h-24 bg-muted rounded"></div>
