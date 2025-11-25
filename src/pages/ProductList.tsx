@@ -435,7 +435,9 @@ const ProductList = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.style.display = 'none';
+    
+    const handleChange = (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         handleImageUpload(productId, field, file);
@@ -443,8 +445,38 @@ const ProductList = () => {
         setUploadingProductId(null);
         setUploadingField(null);
       }
+      // Limpar evento e remover elemento
+      input.removeEventListener('change', handleChange);
+      if (input.parentNode) {
+        input.parentNode.removeChild(input);
+      }
     };
+    
+    const handleCancel = () => {
+      setUploadingProductId(null);
+      setUploadingField(null);
+      input.removeEventListener('cancel', handleCancel);
+      input.removeEventListener('change', handleChange);
+      if (input.parentNode) {
+        input.parentNode.removeChild(input);
+      }
+    };
+    
+    input.addEventListener('change', handleChange);
+    input.addEventListener('cancel', handleCancel);
+    
+    // Adicionar ao DOM, clicar e agendar remoção
+    document.body.appendChild(input);
     input.click();
+    
+    // Fallback: remover após 60 segundos se ainda existir
+    setTimeout(() => {
+      if (input.parentNode) {
+        input.removeEventListener('change', handleChange);
+        input.removeEventListener('cancel', handleCancel);
+        input.parentNode.removeChild(input);
+      }
+    }, 60000);
   };
 
   const getStockStatus = (product: Product) => {
