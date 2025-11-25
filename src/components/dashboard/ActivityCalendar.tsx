@@ -212,7 +212,7 @@ const ActivityCalendar = ({
               return (
                 <div
                   key={dayIndex}
-                  className={`w-6 h-6 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden ${isDifferentMonth ? 'opacity-0 pointer-events-none' : ''} ${isLastDayOfMonth ? 'border-r-[3px] border-r-foreground/90' : ''}`}
+                  className={`w-6 h-6 ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden ${isDifferentMonth ? 'opacity-0 pointer-events-none' : ''} ${isLastDayOfMonth ? 'rounded-l-md border-r-[4px] border-r-foreground' : 'rounded-md'}`}
                   title={`${format(day, "PPP", { locale: ptBR })}`}
                   onClick={() => handleDayClick(contribution, day)}
                 >
