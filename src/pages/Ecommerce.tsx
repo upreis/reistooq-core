@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { EcommerceNav } from "@/features/ecommerce/components/EcommerceNav";
 import Shop from "@/pages/Shop";
-import ProductDetail from "@/pages/ProductDetail";
 import ProductList from "@/pages/ProductList";
 import AddProduct from "@/pages/AddProduct";
 import EditProduct from "@/pages/EditProduct";
@@ -15,7 +14,6 @@ const Ecommerce = () => {
       <Routes>
         <Route index element={<Navigate to="shop" replace />} />
         <Route path="shop" element={<Shop />} />
-        <Route path="detail/:id" element={<ProductDetail />} />
         <Route path="list" element={<ProductList />} />
         <Route path="addproduct" element={<AddProduct />} />
         <Route path="editproduct" element={<EditProduct />} />
