@@ -209,7 +209,7 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
       
       <motion.div
         className={cn(
-          "fixed bottom-24 z-50",
+          "fixed bottom-6 z-50",
           "transition-all duration-300"
         )}
         animate={{
