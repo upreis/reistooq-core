@@ -104,7 +104,7 @@ const InnerLayout = () => {
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
             }`}>
-              <div className="w-full min-w-0 overflow-x-hidden">
+              <div className="w-full min-w-0">
                 <Outlet />
               </div>
             </main>
