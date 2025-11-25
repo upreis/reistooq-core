@@ -12,6 +12,7 @@ import { Logo } from '@/components/ui/Logo';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isRouteActive } from '../utils/sidebar-utils';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 
 interface EnhancedSidebarProps {
   navItems: NavSection[];
@@ -91,9 +92,11 @@ const SidebarContent = memo(({
 }) => {
   const { hasPermission } = useUserPermissions();
   const location = useLocation();
+  const { isSidebarHovered } = useSidebarUI();
   
   // Use external collapsed state if provided (from SidebarUIProvider)
-  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : false;
+  // But expand if hovered
+  const isCollapsed = externalIsCollapsed !== undefined ? (externalIsCollapsed && !isSidebarHovered) : false;
   
   // Memoized isActive function
   const isActive = useCallback((path: string) => {
@@ -193,7 +196,7 @@ const SidebarContent = memo(({
 SidebarContent.displayName = 'SidebarContent';
 
 export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isCollapsed: externalIsCollapsed }: EnhancedSidebarProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const { setIsSidebarHovered, isSidebarHovered } = useSidebarUI();
   
   if (isMobile) {
     return (
@@ -209,7 +212,15 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
 
   // Use external collapsed state (always controlled by SidebarUIProvider now)
   const collapsed = externalIsCollapsed ?? false;
-  const effectiveWidth = (collapsed && !isHovered) ? 72 : 288;
+  const effectiveWidth = (collapsed && !isSidebarHovered) ? 72 : 288;
+
+  const handleMouseEnter = useCallback(() => {
+    setIsSidebarHovered(true);
+  }, [setIsSidebarHovered]);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsSidebarHovered(false);
+  }, [setIsSidebarHovered]);
 
   return (
     <motion.aside
@@ -222,13 +233,13 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
         duration: 0.3, 
         ease: [0.4, 0, 0.2, 1]
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <SidebarContent 
         navItems={navItems} 
         isMobile={false} 
-        externalIsCollapsed={collapsed && !isHovered} 
+        externalIsCollapsed={collapsed} 
       />
     </motion.aside>
   );

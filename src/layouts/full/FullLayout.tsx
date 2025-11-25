@@ -32,12 +32,15 @@ const CollapsedReopenTab: React.FC = () => {
 };
 
 const InnerLayout = () => {
-  const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed } = useSidebarUI();
+  const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed, isSidebarHovered } = useSidebarUI();
   const { isHidden, isCollapsed, hasAnnouncements } = useAnnouncements();
   const location = useLocation();
   const isMobile = useIsMobile();
 
   const offset = hasAnnouncements && !isHidden && !isCollapsed ? "pt-12" : "";
+  
+  // Calcula se o sidebar está efetivamente expandido (collapsed mas com hover, ou não collapsed)
+  const isSidebarEffectivelyExpanded = !isSidebarCollapsed || isSidebarHovered;
 
   // Fechar drawer mobile ao trocar de rota
   useEffect(() => { setIsMobileSidebarOpen(false); }, [location.pathname, setIsMobileSidebarOpen]);
@@ -67,7 +70,7 @@ const InnerLayout = () => {
         
         {/* Desktop Layout */}
         {!isMobile && (
-          <div className={`${isSidebarCollapsed ? 'ml-[72px]' : 'ml-72'}`}>
+          <div className={`transition-all duration-300 ${isSidebarEffectivelyExpanded ? 'ml-72' : 'ml-[72px]'}`}>
             <AnnouncementTicker />
           </div>
         )}
@@ -90,8 +93,8 @@ const InnerLayout = () => {
           {!isMobile && <FloatingQuickAccessDock isSidebarCollapsed={isSidebarCollapsed} />}
 
           {/* Conteúdo principal com margem para sidebar */}
-          <div className={`flex flex-col min-w-0 min-h-screen ${
-            !isMobile ? (isSidebarCollapsed ? 'ml-[72px]' : 'ml-72') : ''
+          <div className={`flex flex-col min-w-0 min-h-screen transition-all duration-300 ${
+            !isMobile ? (isSidebarEffectivelyExpanded ? 'ml-72' : 'ml-[72px]') : ''
           } ${!isMobile ? offset : ''}`}>
             {/* Desktop Header */}
             {!isMobile && <Header />}
