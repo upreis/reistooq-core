@@ -159,8 +159,8 @@ export default function DashboardVisaoGeral() {
                 products={highStockProducts}
                 title="Maior Estoque"
                 type="high"
-                cardWidth={180}
-                cardHeight={240}
+                cardWidth={220}
+                cardHeight={380}
               />
             )}
           </CardContent>
@@ -178,8 +178,8 @@ export default function DashboardVisaoGeral() {
                 products={lowStockProducts}
                 title="Baixo Estoque"
                 type="low"
-                cardWidth={180}
-                cardHeight={240}
+                cardWidth={220}
+                cardHeight={380}
               />
             )}
           </CardContent>

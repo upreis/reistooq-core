@@ -208,7 +208,7 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
             >
               <div className="w-full h-full p-4 flex flex-col">
                 {/* Imagem do produto */}
-                <div className="w-full h-32 bg-muted rounded-lg overflow-hidden mb-3 flex items-center justify-center">
+                <div className="w-full h-48 bg-muted rounded-lg overflow-hidden mb-3 flex items-center justify-center">
                   {product.url_imagem ? (
                     <img
                       src={product.url_imagem}
