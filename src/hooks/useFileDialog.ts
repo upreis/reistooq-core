@@ -194,24 +194,29 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
           return;
         }
 
-        // Verificar cancelamento DURANTE o upload usando listener
+        // Adicionar listener de abort ANTES de chamar onFileSelected
         const checkAborted = () => {
           if (abortControllerRef.current?.signal.aborted) {
             throw new Error('Upload cancelado');
           }
         };
         
-        // Adicionar listener de abort
         abortControllerRef.current!.signal.addEventListener('abort', checkAborted);
 
-        await onFileSelected(file, productId, field, abortControllerRef.current!.signal);
-        
-        // Remover listener
-        abortControllerRef.current?.signal.removeEventListener('abort', checkAborted);
-        
-        // Se chegou aqui, upload completou com sucesso
-        if (!abortControllerRef.current?.signal.aborted) {
-          cleanup(false);
+        try {
+          await onFileSelected(file, productId, field, abortControllerRef.current!.signal);
+          
+          // Se chegou aqui, upload completou com sucesso
+          if (!abortControllerRef.current?.signal.aborted) {
+            cleanup(false);
+          }
+        } finally {
+          // Garantir remoção do listener mesmo se onFileSelected lançar erro
+          try {
+            abortControllerRef.current?.signal.removeEventListener('abort', checkAborted);
+          } catch (e) {
+            // Ignorar erro se signal já foi aborted
+          }
         }
       } catch (error: any) {
         // Distinguir entre erro de abort e erro real

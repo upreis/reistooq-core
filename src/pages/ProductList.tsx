@@ -1643,13 +1643,15 @@ const ProductList = () => {
         onClearCompleted={uploadQueue.clearCompleted}
       />
 
-      {/* FASE 2: Indicador de upload individual (opcional) */}
-      <UploadProgress
-        isUploading={dialogState.isOpen && dialogState.canCancel}
-        canCancel={dialogState.canCancel}
-        onCancel={cancelUpload}
-        fileName={dialogState.isOpen ? 'Selecionando arquivo...' : undefined}
-      />
+      {/* FASE 2: Indicador de upload individual (renderização condicional) */}
+      {dialogState.isOpen && (
+        <UploadProgress
+          isUploading={dialogState.canCancel}
+          canCancel={dialogState.canCancel}
+          onCancel={cancelUpload}
+          fileName={dialogState.isOpen ? 'Selecionando arquivo...' : undefined}
+        />
+      )}
     </>
   );
 };
