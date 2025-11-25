@@ -168,7 +168,7 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <h3 className="text-sm font-semibold mb-3">{title}</h3>
+      {type === 'high' && <h3 className="text-sm font-semibold mb-3">{title}</h3>}
       <section
         className={`relative grid place-content-center select-none ${className}`}
         ref={cardStackRef}
