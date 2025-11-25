@@ -83,6 +83,7 @@ import notasIcon from "@/assets/notas.png";
 import pedidosCompraIcon from "@/assets/pedidos_compra.png";
 import pedidosCompraNewIcon from "@/assets/pedidos-compra-icon-v2.png";
 import pedidosOmsIcon from "@/assets/pedidos_oms.png";
+import pedidosOmsNewIcon from "@/assets/oms-pedidos-icon-v2.png";
 import perfilAdminIcon from "@/assets/perfil_admin.png";
 import reclamacoesIcon from "@/assets/reclamacoes.png";
 import scannerIcon from "@/assets/scanner.png";
@@ -165,7 +166,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'oms-pedidos',
     label: 'OMS Pedidos',
     route: '/oms/pedidos',
-    icon: <img src={pedidosOmsIcon} alt="OMS Pedidos" className="w-16 h-16 object-contain" />,
+    icon: <img src={pedidosOmsNewIcon} alt="OMS Pedidos" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-indigo-500 to-indigo-700'
   },
