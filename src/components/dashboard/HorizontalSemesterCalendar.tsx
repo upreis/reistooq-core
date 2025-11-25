@@ -86,9 +86,9 @@ export function HorizontalSemesterCalendar({
 
   return (
     <>
-      <Card className="p-6 bg-background">
+      <Card className="p-6 bg-background w-full">
         <div className="space-y-4">
-          <div>
+          <div className="w-full">
             <h3 className="text-lg font-semibold mb-1">Calendário de Atividades</h3>
           </div>
 
