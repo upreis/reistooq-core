@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import pedidosIcon from "@/assets/pedidos-cart-icon.png";
-import pedidosNewIcon from "@/assets/pedidos-new-icon.png";
+import pedidosNewIcon from "@/assets/pedidos-icon-v2.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import vendasOnlineIcon from "@/assets/vendas_online.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
