@@ -80,7 +80,7 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
       onMouseDown={() => setIsClicked(true)}
       onMouseUp={() => setIsClicked(false)}
       onClick={onClick}
-      className="aspect-square cursor-pointer flex items-center justify-center relative group"
+      className="aspect-square cursor-pointer flex items-center justify-center relative group z-50"
       whileTap={{ scale: 0.95 }}
     >
       <motion.div
@@ -177,7 +177,7 @@ function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) 
       onMouseDown={() => setIsClicked(true)}
       onMouseUp={() => setIsClicked(false)}
       onClick={onClick}
-      className="aspect-square cursor-pointer flex items-center justify-center relative group"
+      className="aspect-square cursor-pointer flex items-center justify-center relative group z-50"
       whileTap={{ scale: 0.95 }}
     >
       <motion.div
@@ -266,12 +266,12 @@ export const QuickActionsWidget = () => {
         .group:hover .tooltip{opacity:1;transform:translateY(0)}
       `}</style>
       
-      <section className="w-full">
-        <div className="container mx-auto flex items-center justify-center">
+      <section className="w-full overflow-visible">
+        <div className="container mx-auto flex items-center justify-center overflow-visible">
           <motion.div
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
-            className="flex h-24 items-center gap-0 rounded-3xl bg-background backdrop-blur-md border-2 border-border shadow-xl overflow-hidden"
+            className="flex h-32 items-center gap-0 rounded-3xl bg-background backdrop-blur-md border-2 border-border shadow-xl overflow-visible"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{
@@ -293,7 +293,7 @@ export const QuickActionsWidget = () => {
             </div>
 
             {/* Seção de Ícones */}
-            <div className="flex items-end gap-4 px-6 pb-4 pt-4">
+            <div className="flex items-end gap-4 px-6 pb-4 pt-8">
             {shortcuts.map((service, index) => (
               <DockIcon
                 key={index}
