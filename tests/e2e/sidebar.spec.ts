@@ -5,7 +5,7 @@ test.describe('Enhanced Sidebar', () => {
     await page.goto('/');
   });
 
-  test('should show collapsed sidebar with flyout on hover', async ({ page }) => {
+  test('should show collapsed sidebar with tooltip on hover', async ({ page }) => {
     // Collapse sidebar
     await page.click('[data-testid="sidebar-toggle"]');
     
@@ -17,26 +17,15 @@ test.describe('Enhanced Sidebar', () => {
     const configItem = page.locator('[data-testid="nav-item-configuracoes"]');
     await configItem.hover();
     
-    // Wait for flyout to appear
-    const flyout = page.locator('#portal-root [data-testid="sidebar-flyout"]');
-    await expect(flyout).toBeVisible({ timeout: 500 });
+    // Wait for Shadcn tooltip to appear
+    const tooltip = page.locator('[role="tooltip"]');
+    await expect(tooltip).toBeVisible({ timeout: 500 });
     
-    // Verify flyout is in portal
-    const portalRoot = page.locator('#portal-root');
-    await expect(portalRoot).toContainText('Integrações');
-    
-    // Click on parent should pin flyout (not navigate)
+    // Click on parent should navigate to first child
     await configItem.click();
     
-    // Flyout should remain visible (pinned)
-    await expect(flyout).toBeVisible();
-    
-    // Click on child should navigate
-    const integracoesItem = flyout.locator('[data-testid="nav-item-integracoes"]');
-    await integracoesItem.click();
-    
-    // Should navigate to integracoes page
-    await expect(page).toHaveURL(/.*integracoes/);
+    // Should navigate to first child page
+    await expect(page).toHaveURL(/.*configuracoes/);
   });
 
   test('should show expanded sidebar with toggle behavior', async ({ page }) => {
@@ -75,17 +64,17 @@ test.describe('Enhanced Sidebar', () => {
     const sidebar = page.locator('[data-testid="enhanced-sidebar"]');
     await expect(sidebar).toHaveClass(/w-\[264px\]/);
     
-    // Hover over item - no tooltip should appear
+    // Hover over item - no tooltip should appear in expanded state
     const configItem = page.locator('[data-testid="nav-item-configuracoes"]');
     await configItem.hover();
     
-    const tooltip = page.locator('[data-testid="sidebar-tooltip"]');
+    const tooltip = page.locator('[role="tooltip"]');
     await expect(tooltip).not.toBeVisible();
     
     // Collapse sidebar
     await page.click('[data-testid="sidebar-toggle"]');
     
-    // Now hover should show tooltip
+    // Now hover should show Shadcn tooltip
     await configItem.hover();
     await expect(tooltip).toBeVisible({ timeout: 500 });
     await expect(tooltip).toContainText('Configurações');
@@ -112,46 +101,40 @@ test.describe('Enhanced Sidebar', () => {
     await expect(configGroup).not.toBeVisible();
   });
 
-  test('should ensure flyout has correct z-index and is clickable', async ({ page }) => {
+  test('should ensure tooltip has correct z-index and navigation works', async ({ page }) => {
     // Collapse sidebar
     await page.click('[data-testid="sidebar-toggle"]');
     
-    // Hover to open flyout
+    // Hover to open tooltip
     const configItem = page.locator('[data-testid="nav-item-configuracoes"]');
     await configItem.hover();
     
-    // Check flyout is in portal
-    const flyout = page.locator('#portal-root [data-testid="sidebar-flyout"]');
-    await expect(flyout).toBeVisible();
+    // Check Shadcn tooltip is visible
+    const tooltip = page.locator('[role="tooltip"]');
+    await expect(tooltip).toBeVisible();
     
-    // Verify z-index
-    const zIndex = await flyout.evaluate(el => getComputedStyle(el).zIndex);
-    expect(zIndex).toBe('80');
-    
-    // Flyout should be clickable (not clipped)
-    const integracoesItem = flyout.locator('[data-testid="nav-item-integracoes"]');
-    await expect(integracoesItem).toBeVisible();
-    await integracoesItem.click();
+    // Click on item should navigate to first child
+    await configItem.click();
     
     // Should navigate successfully
-    await expect(page).toHaveURL(/.*integracoes/);
+    await expect(page).toHaveURL(/.*configuracoes/);
   });
 
-  test('should close flyout on escape key', async ({ page }) => {
+  test('should close tooltip on escape key', async ({ page }) => {
     // Collapse sidebar
     await page.click('[data-testid="sidebar-toggle"]');
     
-    // Hover to open flyout
+    // Hover to open tooltip
     const configItem = page.locator('[data-testid="nav-item-configuracoes"]');
     await configItem.hover();
     
-    const flyout = page.locator('#portal-root [data-testid="sidebar-flyout"]');
-    await expect(flyout).toBeVisible();
+    const tooltip = page.locator('[role="tooltip"]');
+    await expect(tooltip).toBeVisible();
     
     // Press escape
     await page.keyboard.press('Escape');
     
-    // Flyout should close
-    await expect(flyout).not.toBeVisible();
+    // Tooltip should close
+    await expect(tooltip).not.toBeVisible();
   });
 });

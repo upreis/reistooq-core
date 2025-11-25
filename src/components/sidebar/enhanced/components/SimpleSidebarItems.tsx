@@ -77,8 +77,8 @@ export const SimpleSidebarItems = memo(({
                       {
                         'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]': item.badge.variant === 'default',
                         'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]': item.badge.variant === 'destructive',
-                        'bg-yellow-500 text-yellow-50': item.badge.variant === 'warning',
-                        'bg-green-500 text-green-50': item.badge.variant === 'success'
+                        'bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]': item.badge.variant === 'warning',
+                        'bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]': item.badge.variant === 'success'
                       }
                     )}>
                       {item.badge.content}
@@ -128,8 +128,8 @@ export const SimpleSidebarItems = memo(({
                     {
                       'bg-[hsl(var(--primary))]/20': item.badge.variant === 'default',
                       'bg-[hsl(var(--destructive))]/20': item.badge.variant === 'destructive',
-                      'bg-yellow-500/20': item.badge.variant === 'warning',
-                      'bg-green-500/20': item.badge.variant === 'success'
+                      'bg-[hsl(var(--warning))]/20': item.badge.variant === 'warning',
+                      'bg-[hsl(var(--success))]/20': item.badge.variant === 'success'
                     }
                   )}>
                     {item.badge.content}
