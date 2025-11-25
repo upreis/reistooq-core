@@ -59,8 +59,13 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
       if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
         abortControllerRef.current.abort();
         
+        // Callback de cancelamento protegido para não interromper cleanup
         if (aborted && onCancelled) {
-          onCancelled();
+          try {
+            onCancelled();
+          } catch (error) {
+            console.error('[useFileDialog] Erro no callback onCancelled:', error);
+          }
         }
       }
       abortControllerRef.current = null;
