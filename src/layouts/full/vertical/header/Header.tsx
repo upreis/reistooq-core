@@ -16,6 +16,7 @@ import aplicativosCalendarioIcon from "@/assets/aplicativos-calendario-icon.png"
 import aplicativosNotasIcon from "@/assets/aplicativos-notas-icon.png";
 import configuracoesIntegracoesIcon from "@/assets/configuracoes-integracoes-icon.png";
 import configuracoesAnunciosIcon from "@/assets/configuracoes-anuncios-icon.png";
+import adminIcon from "@/assets/admin-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -95,6 +96,9 @@ export default function Header() {
     // Configurações
     if (path.startsWith('/configuracoes/integracoes')) return { icon: configuracoesIntegracoesIcon, label: 'Configurações / Integrações', isImage: true };
     if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Anúncios', isImage: true };
+    
+    // Admin
+    if (path.startsWith('/admin')) return { icon: adminIcon, label: 'Admin', isImage: true };
     
     // Estoque
     if (path.startsWith('/estoque/historico')) return { icon: estoqueHistoricoIcon, label: 'Estoque / Histórico', isImage: true };
