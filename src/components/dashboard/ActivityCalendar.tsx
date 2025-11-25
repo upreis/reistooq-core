@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { format, subDays, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, getDate, getMonth, startOfMonth, isToday } from "date-fns";
+import { format, subDays, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, getDate, getMonth, startOfMonth, isToday, differenceInMonths, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -40,8 +40,10 @@ const ActivityCalendar = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'delivery' | 'review' | 'claim_created' | 'claim_deadline'>('all');
   const today = new Date();
-  const startDate = subDays(today, monthsBack * 30); // Aproximado
-  const endDate = addDays(today, monthsForward * 30); // Aproximado
+  // 2 meses e 10 dias para trás
+  const startDate = subDays(subMonths(today, 2), 10);
+  // 2 meses e 10 dias para frente
+  const endDate = addDays(addMonths(today, 2), 10);
   const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   const weeks = Math.ceil(totalDays / 7);
 
@@ -86,7 +88,8 @@ const ActivityCalendar = ({
   const renderCalendar = () => {
     const monthsArray = [];
     let currentDate = new Date(startDate);
-    const totalMonths = monthsBack + monthsForward;
+    // Calcular total de meses baseado no intervalo
+    const totalMonths = differenceInMonths(endDate, startDate) + 1;
 
     for (let monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
       const monthStart = startOfMonth(currentDate);
@@ -292,7 +295,7 @@ const ActivityCalendar = ({
   const renderMonthLabels = () => {
     const months = [];
     let currentMonth = startDate;
-    const totalMonths = monthsBack + monthsForward;
+    const totalMonths = differenceInMonths(endDate, startDate) + 1;
     
     for (let i = 0; i < totalMonths; i++) {
       months.push(
