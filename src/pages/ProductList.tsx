@@ -43,6 +43,7 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { useFileDialog } from "@/hooks/useFileDialog";
 import { useUploadQueue } from "@/hooks/useUploadQueue";
 import { UploadQueuePanel } from "@/components/upload/UploadQueuePanel";
+import { UploadProgress } from "@/components/upload/UploadProgress";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
 
@@ -1640,6 +1641,14 @@ const ProductList = () => {
         onCancelJob={uploadQueue.cancelJob}
         onCancelAll={uploadQueue.cancelAll}
         onClearCompleted={uploadQueue.clearCompleted}
+      />
+
+      {/* FASE 2: Indicador de upload individual (opcional) */}
+      <UploadProgress
+        isUploading={dialogState.isOpen && dialogState.canCancel}
+        canCancel={dialogState.canCancel}
+        onCancel={cancelUpload}
+        fileName={dialogState.isOpen ? 'Selecionando arquivo...' : undefined}
       />
     </>
   );
