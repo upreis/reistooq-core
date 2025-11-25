@@ -71,6 +71,7 @@ import fornecedoresIcon from "@/assets/fornecedores.png";
 import fornecedoresNewIcon from "@/assets/fornecedores-new-icon.png";
 import historicoFerramentasIcon from "@/assets/historico_ferramentas.png";
 import estoqueHistoricoIcon from "@/assets/estoque-historico-icon.png";
+import estoqueHistoricoNewIcon from "@/assets/historico-estoque-icon-v2.png";
 import historicoIcon from "@/assets/historico.png";
 import importacaoIcon from "@/assets/importacao.png";
 import importarProdutosIcon from "@/assets/importar_produtos.png";
@@ -213,7 +214,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'estoque-historico',
     label: 'Histórico',
     route: '/estoque/historico',
-    icon: <img src={estoqueHistoricoIcon} alt="Histórico" className="w-16 h-16 object-contain" />,
+    icon: <img src={estoqueHistoricoNewIcon} alt="Histórico" className="w-16 h-16 object-contain" />,
     category: 'Estoque',
     gradient: 'bg-gradient-to-br from-teal-500 to-teal-700'
   },
