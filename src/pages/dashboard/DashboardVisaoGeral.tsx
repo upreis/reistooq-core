@@ -53,8 +53,8 @@ export default function DashboardVisaoGeral() {
 
   return (
     <div className="space-y-6 p-6 bg-card w-full">
-      {/* Linha 1: 4 Cards principais */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+      {/* Cards Analíticos */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_0.65fr_0.65fr]">
         {/* Card 1: Vendas */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
@@ -186,10 +186,8 @@ export default function DashboardVisaoGeral() {
         </Card>
       </div>
 
-      {/* Linha 2: Atalhos Rápidos posicionado abaixo do card Vendas */}
-      <div className="w-full flex justify-start">
-        <QuickActionsWidget />
-      </div>
+      {/* Atalhos Rápidos */}
+      <QuickActionsWidget />
 
       {/* Calendário de Atividades */}
       {calendarLoading ? (
