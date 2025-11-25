@@ -3,13 +3,18 @@ import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HorizontalSemesterCalendar } from '@/components/dashboard/HorizontalSemesterCalendar';
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
+import { ProductStockCard } from '@/components/dashboard/ProductStockCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
 import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
+import { useEstoqueProducts } from '@/hooks/useEstoqueProducts';
 
 export default function DashboardVisaoGeral() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  // Buscar dados de estoque
+  const { highStockProducts, lowStockProducts, loading: stockLoading } = useEstoqueProducts();
   
   // Buscar dados reais de devoluções para o calendário
   const { data: calendarDataDevolucoes, loading: calendarLoadingDevolucoes, error: calendarErrorDevolucoes, refresh: refreshDevolucoes } = useDevolucaoCalendarData();
@@ -142,56 +147,41 @@ export default function DashboardVisaoGeral() {
           </CardContent>
         </Card>
 
-        {/* Card 3: Meta de Vendas */}
+        {/* Card 3: Produtos com Maior Estoque */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Meta do Mês</p>
-                  <h3 className="text-base font-semibold mt-1">Novembro 2025</h3>
-                </div>
-                <span className="inline-flex items-center text-sm font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded-full">
-                  78.5%
-                </span>
+            {stockLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-              
-              <div className="space-y-3 pt-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">R$ 314k</span>
-                  <span className="text-xs text-muted-foreground">de</span>
-                  <span className="text-lg font-semibold text-muted-foreground">R$ 400k</span>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500" style={{ width: '78.5%' }} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">Faltam R$ 86k para atingir a meta</p>
-                </div>
-              </div>
-            </div>
+            ) : (
+              <ProductStockCard 
+                products={highStockProducts}
+                title="Maior Estoque"
+                type="high"
+                cardWidth={180}
+                cardHeight={240}
+              />
+            )}
           </CardContent>
         </Card>
 
-        {/* Card 4: Top Vendedores */}
+        {/* Card 4: Produtos com Menor Estoque */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
-            <div className="space-y-4 h-full flex flex-col justify-between">
-              <div>
-                <p className="text-sm font-medium mb-3">Top Vendedores</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-background flex items-center justify-center text-xs font-semibold hover:scale-110 transition-transform cursor-pointer">
-                      {String.fromCharCode(64 + i)}
-                    </div>
-                  ))}
-                </div>
+            {stockLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-              <div className="w-12 h-12 rounded-full bg-muted border-2 border-background flex items-center justify-center text-sm font-semibold hover:scale-110 transition-transform cursor-pointer mt-2">
-                +8
-              </div>
-            </div>
+            ) : (
+              <ProductStockCard 
+                products={lowStockProducts}
+                title="Baixo Estoque"
+                type="low"
+                cardWidth={180}
+                cardHeight={240}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
