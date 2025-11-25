@@ -11,6 +11,7 @@ interface Service {
   imageUrl: string;
   href: string;
   gradient: string;
+  badge?: string;
 }
 
 const DEFAULT_SHORTCUTS: Service[] = [
@@ -121,23 +122,17 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
         />
       </motion.div>
 
+      {/* Badge de notificação */}
+      {item.badge && (
+        <span className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-full bg-white text-[10px] font-semibold text-neutral-900 ring-1 ring-white/80 sm:h-5 sm:w-5 sm:text-[10px]">
+          {item.badge}
+        </span>
+      )}
+
       {/* Tooltip */}
-      <motion.div
-        initial={{ opacity: 0, y: 5, scale: 0.8 }}
-        animate={{
-          opacity: isHovered ? 1 : 0,
-          y: isHovered ? -15 : 5,
-          scale: isHovered ? 1 : 0.8,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 500,
-          damping: 30,
-        }}
-        className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800/90 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none backdrop-blur-sm z-50"
-      >
+      <span className="tooltip pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 text-[9px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[10px]">
         {item.name}
-      </motion.div>
+      </span>
 
       {/* Active indicator dot */}
       <motion.div
@@ -211,22 +206,9 @@ function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) 
       </motion.div>
 
       {/* Tooltip */}
-      <motion.div
-        initial={{ opacity: 0, y: 5, scale: 0.8 }}
-        animate={{
-          opacity: isHovered ? 1 : 0,
-          y: isHovered ? -15 : 5,
-          scale: isHovered ? 1 : 0.8,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 500,
-          damping: 30,
-        }}
-        className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800/90 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none backdrop-blur-sm z-50"
-      >
+      <span className="tooltip pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 text-[9px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[10px]">
         Adicionar
-      </motion.div>
+      </span>
     </motion.div>
   );
 }
@@ -261,7 +243,8 @@ export const QuickActionsWidget = () => {
       name: page.label,
       imageUrl: page.icon?.props?.src || 'https://img.icons8.com/fluency/96/documents.png',
       href: page.route,
-      gradient: page.gradient
+      gradient: page.gradient,
+      badge: page.badge
     };
     setShortcuts([...shortcuts, newShortcut]);
   };
@@ -278,6 +261,11 @@ export const QuickActionsWidget = () => {
 
   return (
     <>
+      <style>{`
+        .tooltip{opacity:0;transform:translateY(6px);transition:opacity .2s, transform .2s}
+        .group:hover .tooltip{opacity:1;transform:translateY(0)}
+      `}</style>
+      
       <section className="w-full py-6">
         <div className="container mx-auto px-4 md:px-6 flex items-center justify-center">
           <motion.div
