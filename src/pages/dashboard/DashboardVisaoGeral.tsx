@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
-import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
 import { HorizontalSemesterCalendar } from '@/components/dashboard/HorizontalSemesterCalendar';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
@@ -153,17 +152,9 @@ export default function DashboardVisaoGeral() {
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              <ActivityCalendar 
-                data={calendarData}
-                monthsBack={3}
-                monthsForward={3}
-              />
-              
-              <HorizontalSemesterCalendar 
-                data={calendarData}
-              />
-            </div>
+            <HorizontalSemesterCalendar 
+              data={calendarData}
+            />
           )}
           
           {calendarError && (
