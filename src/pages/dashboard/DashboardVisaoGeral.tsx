@@ -187,9 +187,7 @@ export default function DashboardVisaoGeral() {
       </div>
 
       {/* Atalhos Rápidos */}
-      <div className="flex justify-start">
-        <QuickActionsWidget />
-      </div>
+      <QuickActionsWidget />
 
       {/* Calendário de Atividades */}
       {calendarLoading ? (
