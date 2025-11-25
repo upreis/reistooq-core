@@ -95,61 +95,6 @@ export function HorizontalSemesterCalendar({
             </p>
           </div>
 
-          {/* Filtros */}
-          <div className="flex gap-2 items-center flex-wrap">
-            <span className="text-xs text-muted-foreground font-medium">Filtrar por:</span>
-            <button
-              onClick={() => setFilterType('all')}
-              className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                filterType === 'all' 
-                  ? 'bg-primary text-primary-foreground border-primary' 
-                  : 'bg-background border-border hover:bg-accent'
-              }`}
-            >
-              Todos
-            </button>
-            <button
-              onClick={() => setFilterType('delivery')}
-              className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                filterType === 'delivery' 
-                  ? 'bg-blue-500 text-white border-blue-500' 
-                  : 'bg-background border-blue-400/50 hover:bg-blue-50 dark:hover:bg-blue-950'
-              }`}
-            >
-              📦 Devoluções Recebidas
-            </button>
-            <button
-              onClick={() => setFilterType('review')}
-              className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                filterType === 'review' 
-                  ? 'bg-orange-500 text-white border-orange-500' 
-                  : 'bg-background border-orange-400/50 hover:bg-orange-50 dark:hover:bg-orange-950'
-              }`}
-            >
-              ⏰ Devoluções a Revisar
-            </button>
-            <button
-              onClick={() => setFilterType('claim_created')}
-              className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                filterType === 'claim_created' 
-                  ? 'bg-green-500 text-white border-green-500' 
-                  : 'bg-background border-green-400/50 hover:bg-green-50 dark:hover:bg-green-950'
-              }`}
-            >
-              📝 Reclamações Criadas
-            </button>
-            <button
-              onClick={() => setFilterType('claim_deadline')}
-              className={`px-3 py-1 text-xs rounded-md border transition-colors ${
-                filterType === 'claim_deadline' 
-                  ? 'bg-red-500 text-white border-red-500' 
-                  : 'bg-background border-red-400/50 hover:bg-red-50 dark:hover:bg-red-950'
-              }`}
-            >
-              🔔 Prazos de Análise
-            </button>
-          </div>
-
           <div ref={scrollContainerRef} className="overflow-x-auto pb-4">
             <div className="inline-flex gap-6 min-w-max">
               {months.map((monthStart, monthIndex) => {
@@ -349,6 +294,63 @@ export function HorizontalSemesterCalendar({
             </div>
           </div>
 
+          {/* Filtros */}
+          <div className="pt-4 border-t">
+            <div className="flex gap-2 items-center flex-wrap">
+              <span className="text-xs text-muted-foreground font-medium">Filtrar por:</span>
+              <button
+                onClick={() => setFilterType('all')}
+                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                  filterType === 'all' 
+                    ? 'bg-primary text-primary-foreground border-primary' 
+                    : 'bg-background border-border hover:bg-accent'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setFilterType('delivery')}
+                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                  filterType === 'delivery' 
+                    ? 'bg-blue-500 text-white border-blue-500' 
+                    : 'bg-background border-blue-400/50 hover:bg-blue-50 dark:hover:bg-blue-950'
+                }`}
+              >
+                📦 Devoluções Recebidas
+              </button>
+              <button
+                onClick={() => setFilterType('review')}
+                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                  filterType === 'review' 
+                    ? 'bg-orange-500 text-white border-orange-500' 
+                    : 'bg-background border-orange-400/50 hover:bg-orange-50 dark:hover:bg-orange-950'
+                }`}
+              >
+                ⏰ Devoluções a Revisar
+              </button>
+              <button
+                onClick={() => setFilterType('claim_created')}
+                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                  filterType === 'claim_created' 
+                    ? 'bg-green-500 text-white border-green-500' 
+                    : 'bg-background border-green-400/50 hover:bg-green-50 dark:hover:bg-green-950'
+                }`}
+              >
+                📝 Reclamações Criadas
+              </button>
+              <button
+                onClick={() => setFilterType('claim_deadline')}
+                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                  filterType === 'claim_deadline' 
+                    ? 'bg-red-500 text-white border-red-500' 
+                    : 'bg-background border-red-400/50 hover:bg-red-50 dark:hover:bg-red-950'
+                }`}
+              >
+                🔔 Prazos de Análise
+              </button>
+            </div>
+          </div>
+          
           {/* Legenda */}
           <div className="pt-4 border-t space-y-3">
             <div className="text-xs text-muted-foreground">
