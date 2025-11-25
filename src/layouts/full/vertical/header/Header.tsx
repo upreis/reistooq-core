@@ -23,6 +23,7 @@ import adminConvitesIcon from "@/assets/admin-convites-icon.png";
 import adminAlertasIcon from "@/assets/admin-alertas-icon.png";
 import adminSegurancaIcon from "@/assets/admin-seguranca-icon.png";
 import adminAuditoriaIcon from "@/assets/admin-auditoria-icon.png";
+import adminPerfilIcon from "@/assets/admin-perfil-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -104,6 +105,7 @@ export default function Header() {
     if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Anúncios', isImage: true };
     
     // Admin
+    if (path.startsWith('/admin/perfil')) return { icon: adminPerfilIcon, label: 'Admin / Perfil', isImage: true };
     if (path.startsWith('/admin/auditoria')) return { icon: adminAuditoriaIcon, label: 'Admin / Auditoria', isImage: true };
     if (path.startsWith('/admin/seguranca')) return { icon: adminSegurancaIcon, label: 'Admin / Segurança', isImage: true };
     if (path.startsWith('/admin/alertas')) return { icon: adminAlertasIcon, label: 'Admin / Alertas', isImage: true };
