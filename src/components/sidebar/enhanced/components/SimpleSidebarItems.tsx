@@ -1,9 +1,8 @@
 import React, { memo } from 'react';
 import { NavLink } from 'react-router-dom';
-import * as LucideIcons from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { NavItem } from '../types/sidebar.types';
+import { getIconComponent } from '../utils/sidebar-utils';
 
 interface SimpleSidebarItemsProps {
   items: NavItem[];
@@ -12,12 +11,7 @@ interface SimpleSidebarItemsProps {
   isActive: (path: string) => boolean;
 }
 
-const getIconComponent = (iconName: string) => {
-  const IconComponent = (LucideIcons as any)[iconName];
-  return IconComponent || LucideIcons.Package;
-};
-
-export const SimpleSidebarItems = memo(({ 
+export const SimpleSidebarItems = memo(({
   items, 
   isCollapsed, 
   isMobile, 

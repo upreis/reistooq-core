@@ -1,22 +1,17 @@
 import React, { memo, useRef, useCallback, useEffect } from 'react';
-import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavItem } from '../types/sidebar.types';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useSidebarUI } from '@/context/SidebarUIContext';
+import { getIconComponent, isRouteActive } from '../utils/sidebar-utils';
 
 interface SidebarItemWithChildrenProps {
   item: NavItem;
   isCollapsed: boolean;
   isMobile: boolean;
 }
-
-const getIconComponent = (iconName: string) => {
-  const IconComponent = (LucideIcons as any)[iconName];
-  return IconComponent || LucideIcons.Package;
-};
 
 export const SidebarItemWithChildren = memo(({
   item,
@@ -33,7 +28,7 @@ export const SidebarItemWithChildren = memo(({
   
   // Check if this item has active children
   const hasActiveChild = item.children?.some(child => 
-    child.path && matchPath({ path: child.path, end: false }, location.pathname)
+    child.path && isRouteActive(location.pathname, child.path)
   ) ?? false;
 
   // Check if this group is open
@@ -201,11 +196,7 @@ export const SidebarItemWithChildren = memo(({
         >
           {item.children?.map((child) => {
             const ChildIcon = getIconComponent(child.icon);
-            // Verificação precisa: exact match ou startsWith para subpaths
-            const childActive = child.path ? (
-              location.pathname === child.path || 
-              location.pathname.startsWith(child.path + '/')
-            ) : false;
+            const childActive = child.path ? isRouteActive(location.pathname, child.path) : false;
 
             return (
               <NavLink
