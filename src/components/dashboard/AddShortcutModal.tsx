@@ -63,6 +63,7 @@ import dashboardEstoqueIcon from "@/assets/dashboard_estoque.png";
 import dashboardVendasIcon from "@/assets/dashboard_vendas.png";
 import deParaIcon from "@/assets/de_para.png";
 import devolucoesIcon from "@/assets/devolucoes.png";
+import devolucoesDevendaNewIcon from "@/assets/devolucoes-devenda-new-icon.png";
 import fornecedoresIcon from "@/assets/fornecedores.png";
 import fornecedoresNewIcon from "@/assets/fornecedores-new-icon.png";
 import historicoFerramentasIcon from "@/assets/historico_ferramentas.png";
@@ -219,7 +220,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'devolucoesdevenda',
     label: 'Devoluções',
     route: '/devolucoesdevenda',
-    icon: <img src={devolucoesIcon} alt="Devoluções" className="w-16 h-16 object-contain" />,
+    icon: <img src={devolucoesDevendaNewIcon} alt="Devoluções" className="w-16 h-16 object-contain" />,
     category: 'Devoluções & Reclamações',
     gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
   },
