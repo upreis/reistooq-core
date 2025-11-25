@@ -48,7 +48,7 @@ export default function DashboardVisaoGeral() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 bg-card rounded-lg">
       {/* Header com notificações */}
       <div className="flex items-center justify-between">
         <div>
@@ -62,7 +62,7 @@ export default function DashboardVisaoGeral() {
       <QuickActionsWidget />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="bg-background">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Resumo do Dia</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -75,7 +75,7 @@ export default function DashboardVisaoGeral() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-background">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pedidos</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -88,7 +88,7 @@ export default function DashboardVisaoGeral() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-background">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Crescimento</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -104,7 +104,7 @@ export default function DashboardVisaoGeral() {
 
       {/* Calendário de Atividades */}
       {calendarLoading ? (
-        <Card className="p-6">
+        <Card className="p-6 bg-background">
           <div className="space-y-4">
             {/* Loading Skeleton */}
             <div className="flex gap-2 items-center">
