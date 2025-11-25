@@ -49,7 +49,7 @@ export default function DashboardVisaoGeral() {
   return (
     <div className="space-y-6 p-6 bg-card w-full">
       {/* Cards Analíticos */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_1.3fr]">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_0.65fr_0.65fr]">
         {/* Card 1: Vendas */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
@@ -149,7 +149,7 @@ export default function DashboardVisaoGeral() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Meta do Mês</p>
-                  <h3 className="text-lg font-semibold mt-1">Novembro 2025</h3>
+                  <h3 className="text-base font-semibold mt-1">Novembro 2025</h3>
                 </div>
                 <span className="inline-flex items-center text-sm font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded-full">
                   78.5%
@@ -157,10 +157,10 @@ export default function DashboardVisaoGeral() {
               </div>
               
               <div className="space-y-3 pt-2">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-3xl font-bold">R$ 314k</span>
-                  <span className="text-muted-foreground">de</span>
-                  <span className="text-xl font-semibold text-muted-foreground">R$ 400k</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">R$ 314k</span>
+                  <span className="text-xs text-muted-foreground">de</span>
+                  <span className="text-lg font-semibold text-muted-foreground">R$ 400k</span>
                 </div>
                 
                 <div className="space-y-2">
@@ -170,19 +170,26 @@ export default function DashboardVisaoGeral() {
                   <p className="text-xs text-muted-foreground">Faltam R$ 86k para atingir a meta</p>
                 </div>
               </div>
-              
-              <div className="pt-3 border-t">
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Top Vendedores */}
+        <Card className="bg-background border-border overflow-hidden">
+          <CardContent className="p-6">
+            <div className="space-y-4 h-full flex flex-col justify-between">
+              <div>
                 <p className="text-sm font-medium mb-3">Top Vendedores</p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-background flex items-center justify-center text-xs font-semibold -ml-2 first:ml-0 hover:scale-110 transition-transform cursor-pointer">
+                    <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-background flex items-center justify-center text-xs font-semibold hover:scale-110 transition-transform cursor-pointer">
                       {String.fromCharCode(64 + i)}
                     </div>
                   ))}
-                  <div className="w-10 h-10 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-semibold -ml-2 hover:scale-110 transition-transform cursor-pointer">
-                    +8
-                  </div>
                 </div>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-muted border-2 border-background flex items-center justify-center text-sm font-semibold hover:scale-110 transition-transform cursor-pointer mt-2">
+                +8
               </div>
             </div>
           </CardContent>
