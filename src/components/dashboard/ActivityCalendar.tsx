@@ -82,26 +82,40 @@ const ActivityCalendar = ({
     }
   };
 
-  // Render weeks
-  const renderWeeks = () => {
-    const weeksArray = [];
-    let currentWeekStart = startOfWeek(startDate, { weekStartsOn: 0 });
-    let lastMonth: number | null = null;
+  // Render calendar by months
+  const renderCalendar = () => {
+    const monthsArray = [];
+    let currentDate = new Date(startDate);
+    const totalMonths = monthsBack + monthsForward;
 
-    for (let i = 0; i < weeks; i++) {
-      const weekDays = eachDayOfInterval({
-        start: currentWeekStart,
-        end: endOfWeek(currentWeekStart, { weekStartsOn: 0 }),
-      });
-
-      // Check if this week starts a new month
-      const firstDayOfWeek = weekDays[0];
-      const currentMonth = getMonth(firstDayOfWeek);
-      const isNewMonth = lastMonth !== null && currentMonth !== lastMonth;
+    for (let monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
+      const monthStart = startOfMonth(currentDate);
+      const firstWeekStart = startOfWeek(monthStart, { weekStartsOn: 0 });
       
-      weeksArray.push(
-        <div key={i} className={`flex flex-col gap-1 ${isNewMonth ? 'ml-3 pl-3 border-l-2 border-primary/30' : ''}`}>
-          {weekDays.map((day, index) => {
+      // Calcular quantas semanas este mês precisa
+      let weeksInMonth = 0;
+      let tempDate = new Date(monthStart);
+      const monthNumber = getMonth(monthStart);
+      
+      while (getMonth(tempDate) === monthNumber || weeksInMonth === 0) {
+        weeksInMonth++;
+        tempDate = addDays(tempDate, 7);
+        if (weeksInMonth > 6) break; // máximo 6 semanas por mês
+      }
+
+      const weekColumns = [];
+      let weekStart = firstWeekStart;
+
+      for (let weekIndex = 0; weekIndex < weeksInMonth; weekIndex++) {
+        const weekDays = eachDayOfInterval({
+          start: weekStart,
+          end: endOfWeek(weekStart, { weekStartsOn: 0 }),
+        });
+
+        weekColumns.push(
+          <div key={weekIndex} className="flex flex-col gap-1">
+            {weekDays.map((day, dayIndex) => {
+              const dayMonth = getMonth(day);
             const contribution = contributions.find((c) => isSameDay(new Date(c.date), day));
             const dayNumber = getDate(day);
             const isFirstOfMonth = getDate(day) === 1;
@@ -177,10 +191,13 @@ const ActivityCalendar = ({
               borderWidth = 'border-2';
             }
 
-            return (
-              <div
-                key={index}
-                className={`w-8 h-8 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden`}
+              // Ocultar dias que não pertencem ao mês atual
+              const isDifferentMonth = dayMonth !== monthNumber;
+
+              return (
+                <div
+                  key={dayIndex}
+                  className={`w-8 h-8 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden ${isDifferentMonth ? 'opacity-0 pointer-events-none' : ''}`}
                 title={`${format(day, "PPP", { locale: ptBR })}`}
                 onClick={() => handleDayClick(contribution, day)}
               >
@@ -249,17 +266,24 @@ const ActivityCalendar = ({
                   )}
                 </div>
               </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        );
+
+        weekStart = addDays(weekStart, 7);
+      }
+
+      monthsArray.push(
+        <div key={monthIndex} className={`flex gap-1 ${monthIndex > 0 ? 'ml-3 pl-3 border-l-2 border-primary/30' : ''}`}>
+          {weekColumns}
         </div>
       );
-      
-      // Update lastMonth for next iteration
-      lastMonth = currentMonth;
-      currentWeekStart = addDays(currentWeekStart, 7);
+
+      currentDate = addDays(currentDate, 30);
     }
 
-    return weeksArray;
+    return monthsArray;
   };
 
   // Render month labels with numbers
@@ -351,7 +375,7 @@ const ActivityCalendar = ({
             </div>
             <div className="flex-1">
               <div className="flex justify-between gap-2 mb-2">{renderMonthLabels()}</div>
-              <div className="flex gap-1">{renderWeeks()}</div>
+              <div className="flex gap-1">{renderCalendar()}</div>
             </div>
           </div>
         </div>
