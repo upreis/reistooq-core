@@ -71,8 +71,10 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
 
-  // Garantir que sempre temos um ícone válido
+  // Garantir que sempre temos um ícone válido com debug
+  console.log('[DockIcon] Item:', item.name, 'Icon type:', typeof item.icon, 'Icon:', item.icon);
   const IconComponent = (item.icon && typeof item.icon === 'function') ? item.icon : Package;
+  console.log('[DockIcon] IconComponent final:', IconComponent);
 
   return (
     <motion.div
@@ -219,26 +221,43 @@ export const QuickActionsWidget = () => {
   const [shortcuts, setShortcuts] = useState<Service[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
+      console.log('[QuickActionsWidget] 🔍 Raw saved data:', saved);
+      
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('[QuickActionsWidget] Restored shortcuts:', parsed.length);
+        console.log('[QuickActionsWidget] 📦 Parsed data:', parsed);
+        
+        // Verificar se a estrutura está desatualizada (usando imageUrl ao invés de icon)
+        const hasOldStructure = parsed.some((item: any) => 'imageUrl' in item);
+        if (hasOldStructure) {
+          console.log('[QuickActionsWidget] 🔄 Old structure detected (imageUrl), clearing and using defaults');
+          localStorage.removeItem(STORAGE_KEY);
+          return DEFAULT_SHORTCUTS;
+        }
         
         // Remapear ícones pois funções não são serializáveis em JSON
         const remapped = parsed.map((shortcut: any) => {
           // Tentar encontrar o ícone padrão pelo nome
           const defaultShortcut = DEFAULT_SHORTCUTS.find(d => d.name === shortcut.name);
+          console.log(`[QuickActionsWidget] 🔄 Remapping "${shortcut.name}":`, {
+            found: !!defaultShortcut,
+            icon: defaultShortcut?.icon,
+            iconType: typeof defaultShortcut?.icon
+          });
+          
           return {
             ...shortcut,
             icon: defaultShortcut?.icon || Package // fallback para Package
           };
         });
         
+        console.log('[QuickActionsWidget] ✅ Final remapped shortcuts:', remapped);
         return Array.isArray(remapped) ? remapped : DEFAULT_SHORTCUTS;
       }
     } catch (error) {
-      console.error('[QuickActionsWidget] Error loading shortcuts:', error);
+      console.error('[QuickActionsWidget] ❌ Error loading shortcuts:', error);
     }
-    console.log('[QuickActionsWidget] Using default shortcuts');
+    console.log('[QuickActionsWidget] 📋 Using default shortcuts');
     return DEFAULT_SHORTCUTS;
   });
   
