@@ -124,13 +124,13 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
 
       {/* Badge de notificação */}
       {item.badge && (
-        <span className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-full bg-white text-[10px] font-semibold text-neutral-900 ring-1 ring-white/80 sm:h-5 sm:w-5 sm:text-[10px]">
+        <span className="absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-full bg-white text-[10px] font-semibold text-neutral-900 ring-1 ring-white/80 sm:h-5 sm:w-5 sm:text-[10px] z-10">
           {item.badge}
         </span>
       )}
 
       {/* Tooltip */}
-      <span className="tooltip pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 text-[9px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[10px]">
+      <span className="tooltip pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[11px]">
         {item.name}
       </span>
 
@@ -206,7 +206,7 @@ function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) 
       </motion.div>
 
       {/* Tooltip */}
-      <span className="tooltip pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 text-[9px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[10px]">
+      <span className="tooltip pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[11px]">
         Adicionar
       </span>
     </motion.div>
