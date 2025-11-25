@@ -88,7 +88,11 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
   const removeFile = (index: number) => {
     const file = files[index];
     if (file?.preview) {
-      URL.revokeObjectURL(file.preview);
+      try {
+        URL.revokeObjectURL(file.preview);
+      } catch (error) {
+        console.debug('Erro ao revogar URL:', error);
+      }
     }
     onFileRemoved(index);
   };
@@ -112,7 +116,11 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
       // Substituir o arquivo na lista
       const updatedFiles = [...files];
       if (updatedFiles[fileIndex].preview) {
-        URL.revokeObjectURL(updatedFiles[fileIndex].preview);
+        try {
+          URL.revokeObjectURL(updatedFiles[fileIndex].preview);
+        } catch (error) {
+          console.debug('Erro ao revogar URL anterior:', error);
+        }
       }
       updatedFiles[fileIndex] = processedFile;
       
@@ -147,11 +155,16 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
     return () => {
       files.forEach(file => {
         if (file.preview) {
-          URL.revokeObjectURL(file.preview);
+          try {
+            URL.revokeObjectURL(file.preview);
+          } catch (error) {
+            // Silenciar erros de revogação se já foi revogado
+            console.debug('URL já foi revogado ou é inválido:', error);
+          }
         }
       });
     };
-  }, []);
+  }, [files]);
 
   return (
     <div className="space-y-4">
