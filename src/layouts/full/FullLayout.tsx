@@ -72,7 +72,7 @@ const InnerLayout = () => {
           </div>
         )}
         
-        <div className={`w-full bg-background min-h-screen`}>
+        <div className={`w-full bg-card min-h-screen`}>
           {/* Enhanced Sidebar - agora será renderizada como fixed */}
           {!isMobile && (
             <EnhancedSidebar 
