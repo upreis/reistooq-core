@@ -226,7 +226,7 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-              "flex h-24 items-end rounded-3xl bg-card backdrop-blur-md border-2 border-border shadow-xl overflow-hidden",
+              "flex h-24 items-end rounded-3xl bg-card backdrop-blur-md border-2 border-border shadow-xl overflow-visible",
               active ? "gap-4 px-6 pb-4" : "gap-0"
             )}
             animate={{
@@ -245,6 +245,7 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
             {shortcuts.map((service, index) => (
               <motion.div
                 key={index}
+                className="relative z-50"
                 animate={{
                   filter: active ? "blur(0px)" : "blur(2px)",
                   scale: active ? 1 : 0.9,
