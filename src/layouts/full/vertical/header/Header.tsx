@@ -187,7 +187,7 @@ export default function Header() {
   const breadcrumb = getBreadcrumb();
 
   return (
-    <header className={`sticky z-40 bg-background border-b transition-all duration-300 ${hasAnnouncements && !isCollapsed && !isHidden ? 'top-12' : 'top-0'}`}>
+    <header className={`sticky z-40 bg-card border-b transition-all duration-300 ${hasAnnouncements && !isCollapsed && !isHidden ? 'top-12' : 'top-0'}`}>
       <div className="flex items-center gap-2 h-14" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
         {/* Desktop Sidebar Toggle */}
         <button
