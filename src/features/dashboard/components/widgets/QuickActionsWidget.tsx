@@ -281,7 +281,7 @@ export const QuickActionsWidget = () => {
       `}</style>
       
       <section className="w-full overflow-visible">
-        <div className="flex items-center justify-end overflow-visible">
+        <div className="flex items-center justify-start overflow-visible">
           <motion.div
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
