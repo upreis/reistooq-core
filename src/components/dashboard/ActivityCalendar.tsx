@@ -116,80 +116,80 @@ const ActivityCalendar = ({
           <div key={weekIndex} className="flex flex-col gap-1">
             {weekDays.map((day, dayIndex) => {
               const dayMonth = getMonth(day);
-            const contribution = contributions.find((c) => isSameDay(new Date(c.date), day));
-            const dayNumber = getDate(day);
-            const isFirstOfMonth = getDate(day) === 1;
-            const isTodayDay = isToday(day);
-            
-            // Contar tipos de eventos
-            const allDeliveries = contribution?.returns?.filter(r => r.dateType === 'delivery') || [];
-            const allReviews = contribution?.returns?.filter(r => r.dateType === 'review') || [];
-            const allClaimCreated = contribution?.claims?.filter(c => c.dateType === 'created') || [];
-            const allClaimDeadline = contribution?.claims?.filter(c => c.dateType === 'deadline') || [];
-            
-            // Aplicar filtro
-            let deliveryCount = allDeliveries.length;
-            let reviewCount = allReviews.length;
-            let claimCreatedCount = allClaimCreated.length;
-            let claimDeadlineCount = allClaimDeadline.length;
-            
-            if (filterType === 'delivery') {
-              reviewCount = 0;
-              claimCreatedCount = 0;
-              claimDeadlineCount = 0;
-            } else if (filterType === 'review') {
-              deliveryCount = 0;
-              claimCreatedCount = 0;
-              claimDeadlineCount = 0;
-            } else if (filterType === 'claim_created') {
-              deliveryCount = 0;
-              reviewCount = 0;
-              claimDeadlineCount = 0;
-            } else if (filterType === 'claim_deadline') {
-              deliveryCount = 0;
-              reviewCount = 0;
-              claimCreatedCount = 0;
-            }
-            
-            const hasMultipleTypes = [deliveryCount, reviewCount, claimCreatedCount, claimDeadlineCount].filter(c => c > 0).length > 1;
-            const totalCount = deliveryCount + reviewCount + claimCreatedCount + claimDeadlineCount;
-            
-            // Determinar estilo do quadrado
-            let borderStyle = '';
-            let backgroundStyle = '';
-            let borderWidth = hasMultipleTypes ? 'border-[3px]' : 'border-2';
-            
-            if (isTodayDay) {
-              backgroundStyle = 'bg-yellow-400 dark:bg-yellow-500';
-              borderStyle = 'border-yellow-600 dark:border-yellow-700';
-            } else if (hasMultipleTypes) {
-              // Gradiente para múltiplos tipos com fundo mais escuro
-              backgroundStyle = 'bg-gradient-to-br from-blue-600 via-orange-600 to-purple-600';
-              borderStyle = 'border-blue-600';
-            } else if (deliveryCount > 0) {
-              // Apenas entregas - borda azul
-              borderStyle = deliveryCount <= 2 ? 'border-blue-400/60' : 
-                           deliveryCount <= 5 ? 'border-blue-500/80' : 
-                           'border-blue-600';
-            } else if (reviewCount > 0) {
-              // Apenas revisões - borda laranja
-              borderStyle = reviewCount <= 2 ? 'border-orange-400/60' : 
-                           reviewCount <= 5 ? 'border-orange-500/80' : 
-                           'border-orange-600';
-            } else if (claimCreatedCount > 0) {
-              // Reclamações criadas - borda verde
-              borderStyle = claimCreatedCount <= 2 ? 'border-green-400/60' : 
-                           claimCreatedCount <= 5 ? 'border-green-500/80' : 
-                           'border-green-600';
-            } else if (claimDeadlineCount > 0) {
-              // Prazos de reclamação - borda vermelha
-              borderStyle = claimDeadlineCount <= 2 ? 'border-red-400/60' : 
-                           claimDeadlineCount <= 5 ? 'border-red-500/80' : 
-                           'border-red-600';
-            } else {
-              borderStyle = 'border-border';
-              borderWidth = 'border-2';
-            }
+              const contribution = contributions.find((c) => isSameDay(new Date(c.date), day));
+              const dayNumber = getDate(day);
+              const isFirstOfMonth = getDate(day) === 1;
+              const isTodayDay = isToday(day);
+              
+              // Contar tipos de eventos
+              const allDeliveries = contribution?.returns?.filter(r => r.dateType === 'delivery') || [];
+              const allReviews = contribution?.returns?.filter(r => r.dateType === 'review') || [];
+              const allClaimCreated = contribution?.claims?.filter(c => c.dateType === 'created') || [];
+              const allClaimDeadline = contribution?.claims?.filter(c => c.dateType === 'deadline') || [];
+              
+              // Aplicar filtro
+              let deliveryCount = allDeliveries.length;
+              let reviewCount = allReviews.length;
+              let claimCreatedCount = allClaimCreated.length;
+              let claimDeadlineCount = allClaimDeadline.length;
+              
+              if (filterType === 'delivery') {
+                reviewCount = 0;
+                claimCreatedCount = 0;
+                claimDeadlineCount = 0;
+              } else if (filterType === 'review') {
+                deliveryCount = 0;
+                claimCreatedCount = 0;
+                claimDeadlineCount = 0;
+              } else if (filterType === 'claim_created') {
+                deliveryCount = 0;
+                reviewCount = 0;
+                claimDeadlineCount = 0;
+              } else if (filterType === 'claim_deadline') {
+                deliveryCount = 0;
+                reviewCount = 0;
+                claimCreatedCount = 0;
+              }
+              
+              const hasMultipleTypes = [deliveryCount, reviewCount, claimCreatedCount, claimDeadlineCount].filter(c => c > 0).length > 1;
+              const totalCount = deliveryCount + reviewCount + claimCreatedCount + claimDeadlineCount;
+              
+              // Determinar estilo do quadrado
+              let borderStyle = '';
+              let backgroundStyle = '';
+              let borderWidth = hasMultipleTypes ? 'border-[3px]' : 'border-2';
+              
+              if (isTodayDay) {
+                backgroundStyle = 'bg-yellow-400 dark:bg-yellow-500';
+                borderStyle = 'border-yellow-600 dark:border-yellow-700';
+              } else if (hasMultipleTypes) {
+                // Gradiente para múltiplos tipos com fundo mais escuro
+                backgroundStyle = 'bg-gradient-to-br from-blue-600 via-orange-600 to-purple-600';
+                borderStyle = 'border-blue-600';
+              } else if (deliveryCount > 0) {
+                // Apenas entregas - borda azul
+                borderStyle = deliveryCount <= 2 ? 'border-blue-400/60' : 
+                             deliveryCount <= 5 ? 'border-blue-500/80' : 
+                             'border-blue-600';
+              } else if (reviewCount > 0) {
+                // Apenas revisões - borda laranja
+                borderStyle = reviewCount <= 2 ? 'border-orange-400/60' : 
+                             reviewCount <= 5 ? 'border-orange-500/80' : 
+                             'border-orange-600';
+              } else if (claimCreatedCount > 0) {
+                // Reclamações criadas - borda verde
+                borderStyle = claimCreatedCount <= 2 ? 'border-green-400/60' : 
+                             claimCreatedCount <= 5 ? 'border-green-500/80' : 
+                             'border-green-600';
+              } else if (claimDeadlineCount > 0) {
+                // Prazos de reclamação - borda vermelha
+                borderStyle = claimDeadlineCount <= 2 ? 'border-red-400/60' : 
+                             claimDeadlineCount <= 5 ? 'border-red-500/80' : 
+                             'border-red-600';
+              } else {
+                borderStyle = 'border-border';
+                borderWidth = 'border-2';
+              }
 
               // Ocultar dias que não pertencem ao mês atual
               const isDifferentMonth = dayMonth !== monthNumber;
@@ -198,74 +198,74 @@ const ActivityCalendar = ({
                 <div
                   key={dayIndex}
                   className={`w-8 h-8 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden ${isDifferentMonth ? 'opacity-0 pointer-events-none' : ''}`}
-                title={`${format(day, "PPP", { locale: ptBR })}`}
-                onClick={() => handleDayClick(contribution, day)}
-              >
-                {/* Ícones pequenos quando há eventos */}
-                {!isTodayDay && hasMultipleTypes && (
-                  <div className="absolute top-0 left-0 right-0 flex justify-between px-0.5 gap-0.5">
-                    {deliveryCount > 0 && <span className="text-[5px]">📦</span>}
-                    {reviewCount > 0 && <span className="text-[5px]">⏰</span>}
-                    {claimCreatedCount > 0 && <span className="text-[5px]">📝</span>}
-                    {claimDeadlineCount > 0 && <span className="text-[5px]">🔔</span>}
+                  title={`${format(day, "PPP", { locale: ptBR })}`}
+                  onClick={() => handleDayClick(contribution, day)}
+                >
+                  {/* Ícones pequenos quando há eventos */}
+                  {!isTodayDay && hasMultipleTypes && (
+                    <div className="absolute top-0 left-0 right-0 flex justify-between px-0.5 gap-0.5">
+                      {deliveryCount > 0 && <span className="text-[5px]">📦</span>}
+                      {reviewCount > 0 && <span className="text-[5px]">⏰</span>}
+                      {claimCreatedCount > 0 && <span className="text-[5px]">📝</span>}
+                      {claimDeadlineCount > 0 && <span className="text-[5px]">🔔</span>}
+                    </div>
+                  )}
+                  {!isTodayDay && !hasMultipleTypes && deliveryCount > 0 && (
+                    <span className="absolute top-0 left-0.5 text-[6px]">📦</span>
+                  )}
+                  {!isTodayDay && !hasMultipleTypes && reviewCount > 0 && (
+                    <span className="absolute top-0 left-0.5 text-[6px]">⏰</span>
+                  )}
+                  {!isTodayDay && !hasMultipleTypes && claimCreatedCount > 0 && (
+                    <span className="absolute top-0 left-0.5 text-[6px]">📝</span>
+                  )}
+                  {!isTodayDay && !hasMultipleTypes && claimDeadlineCount > 0 && (
+                    <span className="absolute top-0 left-0.5 text-[6px]">🔔</span>
+                  )}
+                  
+                  <span className={`text-[9px] font-medium z-10 ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : hasMultipleTypes ? 'text-white font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
+                    {dayNumber}
+                  </span>
+                  
+                  {/* Tooltip detalhado */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-20 border min-w-[200px]">
+                    <div className="font-semibold mb-1 border-b pb-1">
+                      {format(day, "dd/MM/yyyy", { locale: ptBR })}
+                    </div>
+                    {deliveryCount > 0 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                        <span>📦 {deliveryCount} Entrega{deliveryCount > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    {reviewCount > 0 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
+                        <span>⏰ {reviewCount} Revisã{reviewCount > 1 ? 'ões' : 'o'}</span>
+                      </div>
+                    )}
+                    {claimCreatedCount > 0 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="w-3 h-3 rounded-sm bg-green-500"></div>
+                        <span>📝 {claimCreatedCount} Reclamaçã{claimCreatedCount > 1 ? 'ões criadas' : 'o criada'}</span>
+                      </div>
+                    )}
+                    {claimDeadlineCount > 0 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="w-3 h-3 rounded-sm bg-red-500"></div>
+                        <span>🔔 {claimDeadlineCount} Prazo{claimDeadlineCount > 1 ? 's' : ''} de análise</span>
+                      </div>
+                    )}
+                    {totalCount === 0 && (
+                      <div className="text-muted-foreground">Sem devoluções</div>
+                    )}
+                    {totalCount > 0 && (
+                      <div className="text-[10px] text-muted-foreground mt-1.5 pt-1 border-t">
+                        Clique para detalhes
+                      </div>
+                    )}
                   </div>
-                )}
-                {!isTodayDay && !hasMultipleTypes && deliveryCount > 0 && (
-                  <span className="absolute top-0 left-0.5 text-[6px]">📦</span>
-                )}
-                {!isTodayDay && !hasMultipleTypes && reviewCount > 0 && (
-                  <span className="absolute top-0 left-0.5 text-[6px]">⏰</span>
-                )}
-                {!isTodayDay && !hasMultipleTypes && claimCreatedCount > 0 && (
-                  <span className="absolute top-0 left-0.5 text-[6px]">📝</span>
-                )}
-                {!isTodayDay && !hasMultipleTypes && claimDeadlineCount > 0 && (
-                  <span className="absolute top-0 left-0.5 text-[6px]">🔔</span>
-                )}
-                
-                <span className={`text-[9px] font-medium z-10 ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : hasMultipleTypes ? 'text-white font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
-                  {dayNumber}
-                </span>
-                
-                {/* Tooltip detalhado */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-20 border min-w-[200px]">
-                  <div className="font-semibold mb-1 border-b pb-1">
-                    {format(day, "dd/MM/yyyy", { locale: ptBR })}
-                  </div>
-                  {deliveryCount > 0 && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-                      <span>📦 {deliveryCount} Entrega{deliveryCount > 1 ? 's' : ''}</span>
-                    </div>
-                  )}
-                  {reviewCount > 0 && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
-                      <span>⏰ {reviewCount} Revisã{reviewCount > 1 ? 'ões' : 'o'}</span>
-                    </div>
-                  )}
-                  {claimCreatedCount > 0 && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="w-3 h-3 rounded-sm bg-green-500"></div>
-                      <span>📝 {claimCreatedCount} Reclamaçã{claimCreatedCount > 1 ? 'ões criadas' : 'o criada'}</span>
-                    </div>
-                  )}
-                  {claimDeadlineCount > 0 && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="w-3 h-3 rounded-sm bg-red-500"></div>
-                      <span>🔔 {claimDeadlineCount} Prazo{claimDeadlineCount > 1 ? 's' : ''} de análise</span>
-                    </div>
-                  )}
-                  {totalCount === 0 && (
-                    <div className="text-muted-foreground">Sem devoluções</div>
-                  )}
-                  {totalCount > 0 && (
-                    <div className="text-[10px] text-muted-foreground mt-1.5 pt-1 border-t">
-                      Clique para detalhes
-                    </div>
-                  )}
                 </div>
-              </div>
               );
             })}
           </div>
