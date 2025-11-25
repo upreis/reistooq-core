@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HorizontalSemesterCalendar } from '@/components/dashboard/HorizontalSemesterCalendar';
-import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
@@ -49,11 +48,6 @@ export default function DashboardVisaoGeral() {
 
   return (
     <div className="space-y-6 p-6 bg-card">
-      {/* Header com notificações */}
-      <div className="flex items-center justify-end">
-        <NotificationsBell organizationId={organizationId} />
-      </div>
-
       {/* Atalhos Rápidos */}
       <QuickActionsWidget />
 
