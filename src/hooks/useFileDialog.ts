@@ -41,59 +41,92 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
   const clickTimeoutRef = useRef<number | null>(null);
   const isProcessingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const cleanupInProgressRef = useRef(false);
 
   // Função de cleanup - remove input, cancela timeouts e aborta operações
   const cleanup = useCallback((aborted = false) => {
-    // Abortar operação em andamento se existir
-    if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-      abortControllerRef.current.abort();
-      
-      if (aborted && onCancelled) {
-        onCancelled();
-      }
-    }
-    abortControllerRef.current = null;
-
-    // Cancelar todos os timeouts pendentes
-    if (cleanupTimeoutRef.current) {
-      clearTimeout(cleanupTimeoutRef.current);
-      cleanupTimeoutRef.current = null;
-    }
-    
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-      clickTimeoutRef.current = null;
+    // Prevenir múltiplas execuções simultâneas de cleanup
+    if (cleanupInProgressRef.current) {
+      console.debug('⚠️ Cleanup já em andamento, ignorando chamada duplicada');
+      return;
     }
 
-    // Remover input do DOM
-    if (inputRef.current) {
-      try {
-        // Remover event listeners antes de remover do DOM
-        const input = inputRef.current;
-        const changeHandler = (input as any)._changeHandler;
-        const cancelHandler = (input as any)._cancelHandler;
+    cleanupInProgressRef.current = true;
+
+    try {
+      // Abortar operação em andamento se existir
+      if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+        abortControllerRef.current.abort();
         
-        if (changeHandler) input.removeEventListener('change', changeHandler);
-        if (cancelHandler) input.removeEventListener('cancel', cancelHandler);
-        
-        // Remover do DOM
-        if (input.parentNode) {
-          input.parentNode.removeChild(input);
+        if (aborted && onCancelled) {
+          onCancelled();
         }
-      } catch (error) {
-        console.debug('Erro ao limpar input:', error);
       }
-      inputRef.current = null;
-    }
+      abortControllerRef.current = null;
 
-    // Reset estado
-    setDialogState({
-      productId: null,
-      field: null,
-      isOpen: false,
-      canCancel: false
-    });
-    isProcessingRef.current = false;
+      // Cancelar todos os timeouts pendentes
+      if (cleanupTimeoutRef.current) {
+        clearTimeout(cleanupTimeoutRef.current);
+        cleanupTimeoutRef.current = null;
+      }
+      
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+      }
+
+      // Remover input do DOM de forma defensiva
+      if (inputRef.current) {
+        try {
+          const input = inputRef.current;
+          
+          // Remover event listeners antes de remover do DOM
+          const changeHandler = (input as any)._changeHandler;
+          const cancelHandler = (input as any)._cancelHandler;
+          
+          if (changeHandler) {
+            try {
+              input.removeEventListener('change', changeHandler);
+            } catch (e) {
+              console.debug('Erro ao remover changeHandler:', e);
+            }
+          }
+          
+          if (cancelHandler) {
+            try {
+              input.removeEventListener('cancel', cancelHandler);
+            } catch (e) {
+              console.debug('Erro ao remover cancelHandler:', e);
+            }
+          }
+          
+          // Remover do DOM com verificação defensiva
+          if (input.parentNode) {
+            try {
+              input.parentNode.removeChild(input);
+            } catch (error) {
+              // Se falhar, pode ser porque já foi removido - não é crítico
+              console.debug('Input já foi removido do DOM:', error);
+            }
+          }
+        } catch (error) {
+          console.debug('Erro ao limpar input:', error);
+        }
+        inputRef.current = null;
+      }
+
+      // Reset estado
+      setDialogState({
+        productId: null,
+        field: null,
+        isOpen: false,
+        canCancel: false
+      });
+      isProcessingRef.current = false;
+    } finally {
+      // SEMPRE resetar flag de cleanup, mesmo se houver erro
+      cleanupInProgressRef.current = false;
+    }
   }, [onCancelled]);
 
   // Cleanup ao desmontar componente
