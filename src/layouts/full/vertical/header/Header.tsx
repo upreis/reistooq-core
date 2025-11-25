@@ -188,11 +188,11 @@ export default function Header() {
 
   return (
     <header className={`sticky z-40 bg-background border-b transition-all duration-300 ${hasAnnouncements && !isCollapsed && !isHidden ? 'top-12' : 'top-0'}`}>
-      <div className="flex items-center gap-2 px-4 h-14">
+      <div className="flex items-center gap-2 h-14" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
         {/* Desktop Sidebar Toggle */}
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded p-2 border ml-2"
+          className="inline-flex items-center justify-center rounded p-2 border"
           aria-label={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           data-testid="sidebar-desktop-toggle"
