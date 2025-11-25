@@ -124,7 +124,7 @@ const ActivityCalendar = ({
         }
 
         weekColumns.push(
-          <div key={weekIndex} className="flex flex-col gap-1">
+          <div key={weekIndex} className="flex flex-col gap-0.5">
             {weekDays.map((day, dayIndex) => {
               const dayMonth = getMonth(day);
               const contribution = contributions.find((c) => isSameDay(new Date(c.date), day));
@@ -204,11 +204,15 @@ const ActivityCalendar = ({
 
               // Ocultar dias que não pertencem ao mês atual
               const isDifferentMonth = dayMonth !== monthNumber;
+              
+              // Detectar se é o último dia do mês atual (para border de separação)
+              const nextDay = addDays(day, 1);
+              const isLastDayOfMonth = getMonth(nextDay) !== dayMonth && !isDifferentMonth;
 
               return (
                 <div
                   key={dayIndex}
-                  className={`w-6 h-6 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden ${isDifferentMonth ? 'opacity-0 pointer-events-none' : ''}`}
+                  className={`w-6 h-6 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden ${isDifferentMonth ? 'opacity-0 pointer-events-none' : ''} ${isLastDayOfMonth ? 'border-r-[3px] border-r-foreground/90' : ''}`}
                   title={`${format(day, "PPP", { locale: ptBR })}`}
                   onClick={() => handleDayClick(contribution, day)}
                 >
@@ -287,7 +291,7 @@ const ActivityCalendar = ({
       }
 
       monthsArray.push(
-        <div key={monthIndex} className={`flex gap-1 ${monthIndex > 0 ? 'ml-3 pl-3 border-l-2 border-primary/30' : ''}`}>
+        <div key={monthIndex} className="flex gap-0.5">
           {weekColumns}
         </div>
       );
@@ -333,14 +337,14 @@ const ActivityCalendar = ({
         weekStart = addDays(weekStart, 7);
       }
       
-      // Largura baseada no número de semanas (28px por semana: 24px gap + 4px extra)
-      const monthWidth = weeksInMonth * 28 + (monthIndex > 0 ? 24 : 0); // adicionar espaçamento ml-3 pl-3
+      // Largura baseada no número de semanas (26px por semana: 24px cell + 2px gap)
+      const monthWidth = weeksInMonth * 26;
       
       months.push(
         <div 
           key={monthIndex} 
-          className="text-xs text-muted-foreground text-left"
-          style={{ width: `${monthWidth}px`, marginLeft: monthIndex > 0 ? '12px' : '0' }}
+          className="text-xs text-muted-foreground text-left font-semibold"
+          style={{ width: `${monthWidth}px` }}
         >
           {format(currentDate, "MMM", { locale: ptBR })}
         </div>
