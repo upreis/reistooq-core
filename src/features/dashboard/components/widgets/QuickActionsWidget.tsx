@@ -83,7 +83,7 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
       whileTap={{ scale: 0.95 }}
     >
       <motion.div
-        className={`w-full h-full rounded-2xl shadow-lg flex items-center justify-center text-white relative overflow-hidden ${item.gradient}`}
+        className="w-full h-full relative"
         animate={{
           y: isClicked ? 2 : isHovered ? -8 : 0,
         }}
@@ -108,12 +108,12 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
         <img
           src={item.imageUrl}
           alt={item.name}
-          className="w-3/5 h-3/5 object-contain"
+          className="w-full h-full object-contain rounded-2xl"
         />
         
         {/* Shine effect */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-2xl"
+          className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-2xl pointer-events-none"
           animate={{
             opacity: isHovered ? 0.3 : 0.1,
           }}
