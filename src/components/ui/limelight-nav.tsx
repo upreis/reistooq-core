@@ -73,7 +73,7 @@ export const LimelightNav = ({
   };
 
   return (
-    <nav className={`relative inline-flex items-center h-20 rounded-2xl bg-background/80 backdrop-blur-sm text-foreground border border-border/50 px-2 ${className}`}>
+    <nav className={`relative inline-flex items-center h-20 rounded-2xl bg-background/80 backdrop-blur-sm text-foreground border-2 border-border px-2 ${className}`}>
       {items.map(({ id, icon, label, onClick }, index) => (
           <a
             key={id}
