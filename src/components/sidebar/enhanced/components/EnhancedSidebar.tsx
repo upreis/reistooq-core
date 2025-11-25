@@ -4,7 +4,7 @@ import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { SidebarItemWithChildren } from './SidebarItemWithChildren';
-import { AnimatedSidebarSection } from './AnimatedSidebarSection';
+import { SimpleSidebarItems } from './SimpleSidebarItems';
 import { useLocation } from 'react-router-dom';
 import { /* Tooltip, TooltipContent, TooltipTrigger, */ TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
@@ -72,8 +72,8 @@ const SidebarSection = memo(({
           />
         ))}
         
-        {/* Single items (no children) - with animated menu style */}
-        <AnimatedSidebarSection
+        {/* Single items (no children) */}
+        <SimpleSidebarItems
           items={section.items}
           isCollapsed={isCollapsed}
           isMobile={isMobile}
