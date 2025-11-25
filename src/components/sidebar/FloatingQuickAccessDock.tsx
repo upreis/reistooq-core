@@ -280,7 +280,7 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
             ))}
 
             {/* Botão toggle - sempre visível, muda entre + e X */}
-            <TooltipProvider>
+            <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <motion.button
@@ -320,7 +320,7 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
                     </motion.div>
                   </motion.button>
                 </TooltipTrigger>
-                <TooltipContent side="right">
+                <TooltipContent side="right" className="z-[60]">
                   <p>Acesso Rápido</p>
                 </TooltipContent>
               </Tooltip>
