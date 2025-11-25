@@ -24,6 +24,7 @@ import adminAlertasIcon from "@/assets/admin-alertas-icon.png";
 import adminSegurancaIcon from "@/assets/admin-seguranca-icon.png";
 import adminAuditoriaIcon from "@/assets/admin-auditoria-icon.png";
 import adminPerfilIcon from "@/assets/admin-perfil-icon.png";
+import ecommerceShopIcon from "@/assets/ecommerce-shop-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -103,6 +104,9 @@ export default function Header() {
     // Configurações
     if (path.startsWith('/configuracoes/integracoes')) return { icon: configuracoesIntegracoesIcon, label: 'Configurações / Integrações', isImage: true };
     if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Anúncios', isImage: true };
+    
+    // Apps/Ecommerce
+    if (path.startsWith('/apps/ecommerce/shop')) return { icon: ecommerceShopIcon, label: 'Apps / Ecommerce / Loja', isImage: true };
     
     // Admin
     if (path.startsWith('/admin/perfil')) return { icon: adminPerfilIcon, label: 'Admin / Perfil', isImage: true };
