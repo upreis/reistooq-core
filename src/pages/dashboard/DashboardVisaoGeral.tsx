@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HorizontalSemesterCalendar } from '@/components/dashboard/HorizontalSemesterCalendar';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
@@ -102,68 +102,63 @@ export default function DashboardVisaoGeral() {
         </Card>
       </div>
 
-      {/* Calendário de Devoluções */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Calendário de Devoluções</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {calendarLoading ? (
-            <div className="space-y-4">
-              {/* Loading Skeleton */}
-              <div className="flex gap-2 items-center">
-                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                <div className="h-6 w-16 bg-muted animate-pulse rounded" />
-                <div className="h-6 w-20 bg-muted animate-pulse rounded" />
-                <div className="h-6 w-20 bg-muted animate-pulse rounded" />
-              </div>
-              
-              <div className="overflow-x-auto pb-2">
-                <div className="flex min-w-max gap-2">
-                  <div className="flex flex-col gap-1">
-                    {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                      <div key={i} className="h-8 w-8 bg-muted animate-pulse rounded" />
-                    ))}
-                  </div>
-                  <div className="flex gap-1">
-                    {Array.from({ length: 26 }).map((_, weekIndex) => (
-                      <div key={weekIndex} className="flex flex-col gap-1">
-                        {[1, 2, 3, 4, 5, 6, 7].map((dayIndex) => (
-                          <div 
-                            key={dayIndex} 
-                            className="w-8 h-8 bg-muted animate-pulse rounded-md"
-                            style={{ animationDelay: `${(weekIndex * 7 + dayIndex) * 20}ms` }}
-                          />
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+      {/* Calendário de Atividades */}
+      {calendarLoading ? (
+        <Card className="p-6">
+          <div className="space-y-4">
+            {/* Loading Skeleton */}
+            <div className="flex gap-2 items-center">
+              <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+              <div className="h-6 w-16 bg-muted animate-pulse rounded" />
+              <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+              <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+            </div>
+            
+            <div className="overflow-x-auto pb-2">
+              <div className="flex min-w-max gap-2">
+                <div className="flex flex-col gap-1">
+                  {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                    <div key={i} className="h-8 w-8 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
+                <div className="flex gap-1">
+                  {Array.from({ length: 26 }).map((_, weekIndex) => (
+                    <div key={weekIndex} className="flex flex-col gap-1">
+                      {[1, 2, 3, 4, 5, 6, 7].map((dayIndex) => (
+                        <div 
+                          key={dayIndex} 
+                          className="w-8 h-8 bg-muted animate-pulse rounded-md"
+                          style={{ animationDelay: `${(weekIndex * 7 + dayIndex) * 20}ms` }}
+                        />
+                      ))}
+                    </div>
+                  ))}
                 </div>
               </div>
-              
-              <div className="flex gap-4 items-center">
-                <div className="h-3 w-32 bg-muted animate-pulse rounded" />
-                <div className="h-6 w-40 bg-muted animate-pulse rounded" />
-                <div className="h-6 w-40 bg-muted animate-pulse rounded" />
-              </div>
-              
-              <div className="text-center text-sm text-muted-foreground mt-4">
-                Carregando dados de devoluções...
-              </div>
             </div>
-          ) : (
-            <HorizontalSemesterCalendar 
-              data={calendarData}
-            />
-          )}
-          
-          {calendarError && (
-            <div className="text-center text-sm text-destructive mt-4">
-              ⚠️ {calendarError}
+            
+            <div className="flex gap-4 items-center">
+              <div className="h-3 w-32 bg-muted animate-pulse rounded" />
+              <div className="h-6 w-40 bg-muted animate-pulse rounded" />
+              <div className="h-6 w-40 bg-muted animate-pulse rounded" />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            
+            <div className="text-center text-sm text-muted-foreground mt-4">
+              Carregando dados de atividades...
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <HorizontalSemesterCalendar 
+          data={calendarData}
+        />
+      )}
+      
+      {calendarError && (
+        <div className="text-center text-sm text-destructive mt-4">
+          ⚠️ {calendarError}
+        </div>
+      )}
     </div>
   );
 }
