@@ -90,9 +90,6 @@ export function HorizontalSemesterCalendar({
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold mb-1">Calendário de Atividades</h3>
-            <p className="text-sm text-muted-foreground">
-              Centralizado em hoje • 2 meses e 15 dias para cada lado
-            </p>
           </div>
 
           <div ref={scrollContainerRef} className="overflow-x-auto pb-4">
