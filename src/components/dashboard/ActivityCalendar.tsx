@@ -90,27 +90,28 @@ const ActivityCalendar = ({
 
     for (let monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
       const monthStart = startOfMonth(currentDate);
+      const monthNumber = getMonth(monthStart);
       const firstWeekStart = startOfWeek(monthStart, { weekStartsOn: 0 });
       
       // Calcular quantas semanas este mês precisa
-      let weeksInMonth = 0;
-      let tempDate = new Date(monthStart);
-      const monthNumber = getMonth(monthStart);
-      
-      while (getMonth(tempDate) === monthNumber || weeksInMonth === 0) {
-        weeksInMonth++;
-        tempDate = addDays(tempDate, 7);
-        if (weeksInMonth > 6) break; // máximo 6 semanas por mês
-      }
-
       const weekColumns = [];
       let weekStart = firstWeekStart;
+      let weekIndex = 0;
 
-      for (let weekIndex = 0; weekIndex < weeksInMonth; weekIndex++) {
+      // Iterar enquanto a semana contém pelo menos um dia do mês atual
+      while (weekIndex < 6) { // máximo 6 semanas
+        const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
         const weekDays = eachDayOfInterval({
           start: weekStart,
-          end: endOfWeek(weekStart, { weekStartsOn: 0 }),
+          end: weekEnd,
         });
+        
+        // Verificar se esta semana contém pelo menos um dia do mês atual
+        const hasCurrentMonthDay = weekDays.some(day => getMonth(day) === monthNumber);
+        
+        if (!hasCurrentMonthDay && weekIndex > 0) {
+          break; // Parar se não há dias do mês atual (exceto primeira semana)
+        }
 
         weekColumns.push(
           <div key={weekIndex} className="flex flex-col gap-1">
@@ -272,6 +273,7 @@ const ActivityCalendar = ({
         );
 
         weekStart = addDays(weekStart, 7);
+        weekIndex++;
       }
 
       monthsArray.push(
