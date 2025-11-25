@@ -220,57 +220,20 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
           ease: [0.4, 0, 0.2, 1]
         }}
       >
-        <div className="flex items-center justify-center relative gap-4">
-          {/* Main toggle button - sempre visível */}
-          <motion.div
-            className="absolute left-0 bg-background w-full rounded-full z-10"
-            animate={{
-              x: active ? "calc(100% + 16px)" : 0,
-            }}
-            transition={{ type: "tween", ease: "easeIn", duration: 0.5 }}
-          >
-            <motion.button
-              className={cn(
-                "size-16 rounded-full flex items-center justify-center",
-                "bg-primary hover:bg-primary/90 transition-colors shadow-xl"
-              )}
-              onClick={() => setActive(!active)}
-              animate={{ rotate: active ? 45 : 0 }}
-              transition={{
-                type: "tween",
-                ease: "easeIn",
-                duration: 0.5,
-              }}
-            >
-              {active ? (
-                <X 
-                  size={24} 
-                  strokeWidth={3} 
-                  className="text-primary-foreground" 
-                />
-              ) : (
-                <Plus 
-                  size={24} 
-                  strokeWidth={3} 
-                  className="text-primary-foreground" 
-                />
-              )}
-            </motion.button>
-          </motion.div>
-
+        <div className="flex items-center justify-center relative">
           {/* Dock container - expande quando ativo */}
           <motion.div
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-              "flex h-24 items-end rounded-3xl bg-card backdrop-blur-md border-2 border-border shadow-xl",
-              active ? "gap-4 px-6 pb-4" : "gap-0 px-0 pb-0"
+              "flex h-24 items-end rounded-3xl bg-card backdrop-blur-md border-2 border-border shadow-xl overflow-hidden",
+              active ? "gap-4 px-6 pb-4" : "gap-0"
             )}
             animate={{
-              width: active ? "auto" : 0,
-              opacity: active ? 1 : 0,
+              width: active ? "auto" : 80,
               paddingLeft: active ? "1.5rem" : 0,
               paddingRight: active ? "1.5rem" : 0,
+              paddingBottom: active ? "1rem" : 0,
             }}
             transition={{
               type: "spring",
@@ -278,6 +241,7 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
               damping: 20,
             }}
           >
+            {/* Ícones dos atalhos - apenas visíveis quando expandido */}
             {shortcuts.map((service, index) => (
               <motion.div
                 key={index}
@@ -286,11 +250,15 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
                   scale: active ? 1 : 0.9,
                   rotate: active ? 0 : 45,
                   opacity: active ? 1 : 0,
+                  width: active ? "auto" : 0,
                 }}
                 transition={{
                   type: "tween",
                   ease: "easeIn",
                   duration: 0.4,
+                }}
+                style={{
+                  display: active ? "block" : "none"
                 }}
               >
                 <DockIcon
@@ -303,6 +271,44 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
                 />
               </motion.div>
             ))}
+
+            {/* Botão toggle - sempre visível, muda entre + e X */}
+            <motion.button
+              className={cn(
+                "size-16 rounded-full flex items-center justify-center flex-shrink-0",
+                "bg-primary hover:bg-primary/90 transition-colors shadow-xl"
+              )}
+              onClick={() => setActive(!active)}
+              animate={{ 
+                rotate: active ? 180 : 0,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <motion.div
+                animate={{
+                  rotate: active ? 0 : 0,
+                }}
+              >
+                {active ? (
+                  <X 
+                    size={24} 
+                    strokeWidth={3} 
+                    className="text-primary-foreground" 
+                  />
+                ) : (
+                  <Plus 
+                    size={24} 
+                    strokeWidth={3} 
+                    className="text-primary-foreground" 
+                  />
+                )}
+              </motion.div>
+            </motion.button>
           </motion.div>
         </div>
       </motion.div>
