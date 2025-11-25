@@ -48,49 +48,149 @@ export default function DashboardVisaoGeral() {
 
   return (
     <div className="space-y-6 p-6 bg-card">
-      {/* Atalhos Rápidos */}
-      <QuickActionsWidget />
-
+      {/* Cards Analíticos */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="bg-background">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resumo do Dia</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 45.231</div>
-            <p className="text-xs text-muted-foreground">
-              Total de vendas hoje
-            </p>
+        {/* Card 1: Vendas */}
+        <Card className="bg-background border-border overflow-hidden">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Vendas</p>
+                  <h3 className="text-3xl font-bold mt-1">R$ 45.231</h3>
+                  <span className="inline-flex items-center text-xs text-green-500 bg-green-500/10 px-2 py-1 rounded-full mt-2">
+                    +8.2%
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-end justify-between h-32 gap-2">
+                {[40, 60, 45, 70, 55, 80, 65].map((height, i) => (
+                  <div key={i} className="flex-1 flex flex-col justify-end">
+                    <div 
+                      className="w-full bg-primary/80 rounded-t-sm hover:bg-primary transition-colors"
+                      style={{ height: `${height}%` }}
+                    />
+                    <span className="text-[10px] text-muted-foreground text-center mt-1">
+                      {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'][i]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary" />
+                    <span className="text-muted-foreground">Mercado Livre</span>
+                  </div>
+                  <span className="font-medium">58%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-accent" />
+                    <span className="text-muted-foreground">Shopee</span>
+                  </div>
+                  <span className="font-medium">42%</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-background">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pedidos</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">123</div>
-            <p className="text-xs text-muted-foreground">
-              Pedidos processados hoje
-            </p>
+        {/* Card 2: Status dos Pedidos */}
+        <Card className="bg-background border-border overflow-hidden">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Status dos Pedidos</h3>
+                <p className="text-sm text-muted-foreground">Visão geral de hoje</p>
+              </div>
+              
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <ShoppingCart className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-2xl font-bold">84</p>
+                    <p className="text-xs text-muted-foreground">Novos pedidos</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/5 hover:bg-amber-500/10 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <BarChart3 className="h-5 w-5 text-amber-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-2xl font-bold">12</p>
+                    <p className="text-xs text-muted-foreground">Em separação</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/5 hover:bg-green-500/10 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-2xl font-bold">156</p>
+                    <p className="text-xs text-muted-foreground">Entregues</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-background">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Crescimento</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+15%</div>
-            <p className="text-xs text-muted-foreground">
-              Em relação ao mês anterior
-            </p>
+        {/* Card 3: Meta de Vendas */}
+        <Card className="bg-background border-border overflow-hidden">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Meta do Mês</p>
+                  <h3 className="text-lg font-semibold mt-1">Novembro 2025</h3>
+                </div>
+                <span className="inline-flex items-center text-sm font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded-full">
+                  78.5%
+                </span>
+              </div>
+              
+              <div className="space-y-3 pt-2">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-bold">R$ 314k</span>
+                  <span className="text-muted-foreground">de</span>
+                  <span className="text-xl font-semibold text-muted-foreground">R$ 400k</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500" style={{ width: '78.5%' }} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Faltam R$ 86k para atingir a meta</p>
+                </div>
+              </div>
+              
+              <div className="pt-3 border-t">
+                <p className="text-sm font-medium mb-3">Top Vendedores</p>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-background flex items-center justify-center text-xs font-semibold -ml-2 first:ml-0 hover:scale-110 transition-transform cursor-pointer">
+                      {String.fromCharCode(64 + i)}
+                    </div>
+                  ))}
+                  <div className="w-10 h-10 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-semibold -ml-2 hover:scale-110 transition-transform cursor-pointer">
+                    +8
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Atalhos Rápidos */}
+      <QuickActionsWidget />
 
       {/* Calendário de Atividades */}
       {calendarLoading ? (
