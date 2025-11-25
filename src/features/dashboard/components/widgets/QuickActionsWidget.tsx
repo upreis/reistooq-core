@@ -354,7 +354,7 @@ export const QuickActionsWidget = () => {
             </div>
 
             {/* Seção de Ícones */}
-            <div className="flex items-center gap-4 px-6 pb-3 pt-3">
+            <div className="flex items-center gap-4 px-8 pb-3 pt-3 min-w-[400px]">
             {shortcuts.map((service, index) => (
               <DockIcon
                 key={index}
