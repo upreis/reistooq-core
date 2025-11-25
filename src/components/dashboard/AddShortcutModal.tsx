@@ -64,6 +64,7 @@ import dashboardVendasIcon from "@/assets/dashboard_vendas.png";
 import deParaIcon from "@/assets/de_para.png";
 import devolucoesIcon from "@/assets/devolucoes.png";
 import fornecedoresIcon from "@/assets/fornecedores.png";
+import fornecedoresNewIcon from "@/assets/fornecedores-new-icon.png";
 import historicoFerramentasIcon from "@/assets/historico_ferramentas.png";
 import estoqueHistoricoIcon from "@/assets/estoque-historico-icon.png";
 import historicoIcon from "@/assets/historico.png";
@@ -251,7 +252,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'compras-fornecedores',
     label: 'Fornecedores',
     route: '/compras/fornecedores',
-    icon: <img src={fornecedoresIcon} alt="Fornecedores" className="w-16 h-16 object-contain" />,
+    icon: <img src={fornecedoresNewIcon} alt="Fornecedores" className="w-16 h-16 object-contain" />,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-teal-600 to-teal-800'
   },
