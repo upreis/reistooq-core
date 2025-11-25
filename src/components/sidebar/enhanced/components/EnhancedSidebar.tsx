@@ -148,29 +148,32 @@ const SidebarContent = memo(({
     return null;
   };
 
-  // Memoized filter function - only recalculate when permissions change
+  // Filter navigation by permissions
   const filteredNav = useMemo(() => {
     const filterItems = (items: NavItem[]): NavItem[] => {
       const result: NavItem[] = [];
+      
       for (const item of items) {
         const children = item.children ? filterItems(item.children) : undefined;
         const required = getPermissionForPath(item.path);
         const visible = required ? hasPermission(required) : true;
+        
         if (children && children.length > 0) {
           result.push({ ...item, children });
         } else if (visible) {
           result.push({ ...item, children: undefined });
         }
       }
+      
       return result;
     };
 
     return navItems
-      .map((section) => ({
+      .map(section => ({
         ...section,
         items: filterItems(section.items)
       }))
-      .filter((section) => section.items.length > 0);
+      .filter(section => section.items.length > 0);
   }, [navItems, hasPermission]);
 
   return (

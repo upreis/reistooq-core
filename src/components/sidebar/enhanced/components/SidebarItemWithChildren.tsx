@@ -1,10 +1,10 @@
-import React, { memo, useRef, useCallback, useMemo, useEffect } from 'react';
+import React, { memo, useRef, useCallback, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavItem } from '../types/sidebar.types';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 
 interface SidebarItemWithChildrenProps {
@@ -24,75 +24,51 @@ export const SidebarItemWithChildren = memo(({
   isMobile
 }: SidebarItemWithChildrenProps) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const hasAutoExpandedRef = useRef(false);
   
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleGroup, openGroup, closeGroup, isGroupOpen, openGroups } = useSidebarUI();
+  const { toggleGroup, openGroup, isGroupOpen, openGroups } = useSidebarUI();
   
   const Icon = getIconComponent(item.icon);
   
   // Check if this item has active children
-  const hasActiveChild = useMemo(() => {
-    if (!item.children) return false;
-    return item.children.some(child => 
-      child.path && matchPath({ path: child.path, end: false }, location.pathname)
-    );
-  }, [location.pathname, item.children]);
+  const hasActiveChild = item.children?.some(child => 
+    child.path && matchPath({ path: child.path, end: false }, location.pathname)
+  ) ?? false;
 
   // Check if this group is open
-  const isOpen = useMemo(() => isGroupOpen(item.id), [isGroupOpen, item.id, openGroups]);
+  const isOpen = isGroupOpen(item.id);
   
   // Auto-expand group when child is active
   useEffect(() => {
-    if (hasActiveChild && !hasAutoExpandedRef.current) {
-      hasAutoExpandedRef.current = true;
+    if (hasActiveChild && !isOpen) {
       openGroup(item.id);
     }
-    if (!hasActiveChild && hasAutoExpandedRef.current) {
-      hasAutoExpandedRef.current = false;
-    }
-  }, [hasActiveChild, item.id, openGroup]);
+  }, [hasActiveChild, isOpen, item.id, openGroup]);
 
   const handleParentClick = useCallback((e: React.MouseEvent) => {
-    // Navegação para o primeiro filho disponível
-    const hasChildren = item.children && item.children.length > 0;
-    
-    if (hasChildren) {
-      e.preventDefault();
-      const firstChild = item.children?.[0];
-      
-      if (firstChild?.path) {
-        console.log(`🔄 Navegando para primeira página filho: ${firstChild.path}`);
-        navigate(firstChild.path);
-      }
+    e.preventDefault();
+    const firstChild = item.children?.[0];
+    if (firstChild?.path) {
+      navigate(firstChild.path);
     }
   }, [item.children, navigate]);
 
   const handleChevronClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log(`🔽 Toggle grupo "${item.label}" (${item.id})`);
     toggleGroup(item.id);
-  }, [item.id, item.label, toggleGroup]);
+  }, [item.id, toggleGroup]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleParentClick(e as any);
     }
-    if (e.key === 'ArrowRight') {
-      if (!isCollapsed) {
-        // Open group when expanded
-        openGroup(item.id);
-      }
+    if (e.key === 'ArrowRight' && !isCollapsed && !isOpen) {
+      openGroup(item.id);
     }
-    if (e.key === 'ArrowLeft') {
-      if (!isCollapsed) {
-        closeGroup(item.id);
-      }
-    }
-  }, [handleParentClick, isCollapsed, openGroup, closeGroup, item.id]);
+  }, [handleParentClick, isCollapsed, isOpen, openGroup, item.id]);
 
   const button = (
     <div className="relative">
@@ -172,11 +148,11 @@ export const SidebarItemWithChildren = memo(({
 
   return (
     <div>
-      {/* For items with children, use HoverCard when collapsed instead of tooltip */}
+      {/* Collapsed: Use Tooltip instead of HoverCard */}
       {!isMobile && isCollapsed ? (
-        <div className="relative">
-          <HoverCard openDelay={80} closeDelay={120}>
-            <HoverCardTrigger asChild>
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <button
                 ref={buttonRef}
                 onClick={handleParentClick}
@@ -194,60 +170,22 @@ export const SidebarItemWithChildren = memo(({
                 aria-haspopup="menu"
                 aria-label={item.label}
               >
-                <Icon className="h-5 w-5 text-current transition-transform duration-200 group-hover:scale-110" />
-                {/* Indicador ativo para collapsed hover card */}
+                <Icon className="h-5 w-5 text-current transition-transform duration-200 hover:scale-110" />
                 {hasActiveChild && (
                   <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[hsl(var(--primary))] animate-pulse border-2 border-[hsl(var(--background))]" />
                 )}
               </button>
-            </HoverCardTrigger>
-            <HoverCardContent
-              side="right"
-              align="start"
-              sideOffset={12}
-              onPointerDownOutside={(e) => e.currentTarget?.dispatchEvent?.(new Event("mouseleave"))}
-              className="w-72 p-0 z-[60] border border-white/10 rounded-xl overflow-hidden"
-            >
-              {/* Header replaces tooltip */}
-              <div className="px-4 py-3 text-sm font-medium bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))]">
-                {item.label}
-              </div>
-              <div className="p-2 space-y-1">
-                {item.children?.map((child) => {
-                  const ChildIcon = getIconComponent(child.icon);
-                  // Verificação precisa: exact match ou startsWith para subpaths
-                  const childActive = child.path ? (
-                    location.pathname === child.path || 
-                    location.pathname.startsWith(child.path + '/')
-                  ) : false;
-                  
-                  return (
-                    <NavLink
-                      key={child.id || child.path || child.label}
-                      to={child.path || '#'}
-                      className={cn(
-                        'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                        'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                        childActive
-                          ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))] shadow-lg font-semibold border-l-4 border-[hsl(var(--brand-yellow-foreground))]'
-                          : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))] border-l-4 border-transparent'
-                      )}
-                    >
-                      <ChildIcon className="h-4 w-4 shrink-0" />
-                      <span className="truncate relative">
-                        {child.label}
-                        {/* Linha inferior para item ativo no hover card */}
-                        {childActive && (
-                          <span className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-[hsl(var(--brand-yellow-foreground))]/60 rounded-full" />
-                        )}
-                      </span>
-                    </NavLink>
-                  );
-                })}
-              </div>
-            </HoverCardContent>
-          </HoverCard>
-        </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="z-[60]">
+              <p className="font-medium">{item.label}</p>
+              {item.children && item.children.length > 0 && (
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                  {item.children.length} {item.children.length === 1 ? 'item' : 'itens'}
+                </p>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ) : (
         button
       )}
