@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -138,67 +138,6 @@ function DockIcon({ item, mouseX, onClick }: DockIconProps) {
   );
 }
 
-function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  
-  const distance = useTransform(mouseX, (val: number) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    return val - bounds.x - bounds.width / 2;
-  });
-
-  const widthSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
-  const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
-
-  const heightSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
-  const height = useSpring(heightSync, { mass: 0.1, stiffness: 150, damping: 12 });
-
-  const [isHovered, setIsHovered] = useState(false);
-  const [isClicked, setIsClicked] = useState(false);
-
-  return (
-    <motion.div
-      ref={ref}
-      style={{ width, height }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onMouseDown={() => setIsClicked(true)}
-      onMouseUp={() => setIsClicked(false)}
-      onClick={onClick}
-      className="aspect-square cursor-pointer flex items-center justify-center relative group"
-      whileTap={{ scale: 0.95 }}
-    >
-      <motion.div
-        className="w-full h-full rounded-2xl shadow-lg flex items-center justify-center text-muted-foreground relative overflow-hidden bg-muted/50 border-2 border-muted"
-        animate={{
-          y: isClicked ? 2 : isHovered ? -8 : 0,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 17,
-        }}
-      >
-        <motion.div
-          animate={{
-            scale: isHovered ? 1.1 : 1,
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 17,
-          }}
-        >
-          <Plus className="w-8 h-8" />
-        </motion.div>
-      </motion.div>
-
-      {/* Tooltip */}
-      <span className="tooltip pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[11px]">
-        Adicionar
-      </span>
-    </motion.div>
-  );
-}
 
 interface FloatingQuickAccessDockProps {
   isSidebarCollapsed: boolean;
@@ -303,11 +242,19 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
                 duration: 0.5,
               }}
             >
-              <Plus 
-                size={24} 
-                strokeWidth={3} 
-                className="text-primary-foreground" 
-              />
+              {active ? (
+                <X 
+                  size={24} 
+                  strokeWidth={3} 
+                  className="text-primary-foreground" 
+                />
+              ) : (
+                <Plus 
+                  size={24} 
+                  strokeWidth={3} 
+                  className="text-primary-foreground" 
+                />
+              )}
             </motion.button>
           </motion.div>
 
@@ -356,28 +303,6 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
                 />
               </motion.div>
             ))}
-            
-            <motion.div
-              animate={{
-                filter: active ? "blur(0px)" : "blur(2px)",
-                scale: active ? 1 : 0.9,
-                rotate: active ? 0 : 45,
-                opacity: active ? 1 : 0,
-              }}
-              transition={{
-                type: "tween",
-                ease: "easeIn",
-                duration: 0.4,
-              }}
-            >
-              <AddDockIcon
-                mouseX={mouseX}
-                onClick={() => {
-                  navigate('/dashboardinicial/visao-geral');
-                  setActive(false);
-                }}
-              />
-            </motion.div>
           </motion.div>
         </div>
       </motion.div>
