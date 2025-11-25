@@ -77,7 +77,7 @@ import listaProdutosIcon from "@/assets/lista_produtos.png";
 import lojaIcon from "@/assets/loja.png";
 import notasIcon from "@/assets/notas.png";
 import pedidosCompraIcon from "@/assets/pedidos_compra.png";
-import pedidosCompraNewIcon from "@/assets/pedidos-compra-new-icon.png";
+import pedidosCompraNewIcon from "@/assets/pedidos-compra-icon-v2.png";
 import pedidosOmsIcon from "@/assets/pedidos_oms.png";
 import perfilAdminIcon from "@/assets/perfil_admin.png";
 import reclamacoesIcon from "@/assets/reclamacoes.png";
