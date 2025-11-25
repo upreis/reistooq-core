@@ -71,7 +71,8 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
 
-  const IconComponent = item.icon;
+  // Garantir que sempre temos um ícone válido
+  const IconComponent = (item.icon && typeof item.icon === 'function') ? item.icon : Package;
 
   return (
     <motion.div
@@ -221,7 +222,18 @@ export const QuickActionsWidget = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         console.log('[QuickActionsWidget] Restored shortcuts:', parsed.length);
-        return Array.isArray(parsed) ? parsed : DEFAULT_SHORTCUTS;
+        
+        // Remapear ícones pois funções não são serializáveis em JSON
+        const remapped = parsed.map((shortcut: any) => {
+          // Tentar encontrar o ícone padrão pelo nome
+          const defaultShortcut = DEFAULT_SHORTCUTS.find(d => d.name === shortcut.name);
+          return {
+            ...shortcut,
+            icon: defaultShortcut?.icon || Package // fallback para Package
+          };
+        });
+        
+        return Array.isArray(remapped) ? remapped : DEFAULT_SHORTCUTS;
       }
     } catch (error) {
       console.error('[QuickActionsWidget] Error loading shortcuts:', error);
