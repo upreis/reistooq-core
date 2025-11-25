@@ -285,8 +285,6 @@ const ActivityCalendar = ({
   return (
     <>
       <div className="space-y-4">
-        {title && <h3 className="text-sm font-medium text-foreground">{title}</h3>}
-        
         {/* Filtros */}
         <div className="flex gap-2 items-center flex-wrap">
           <span className="text-xs text-muted-foreground font-medium">Filtrar por:</span>
