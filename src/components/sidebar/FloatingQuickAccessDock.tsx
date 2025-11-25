@@ -205,6 +205,7 @@ interface FloatingQuickAccessDockProps {
 }
 
 export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAccessDockProps) {
+  const [active, setActive] = useState(false);
   const [shortcuts, setShortcuts] = useState<Service[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -280,36 +281,105 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
           ease: [0.4, 0, 0.2, 1]
         }}
       >
-        <motion.div
-          onMouseMove={(e) => mouseX.set(e.pageX)}
-          onMouseLeave={() => mouseX.set(Infinity)}
-          className="flex h-24 items-end gap-4 rounded-3xl bg-card backdrop-blur-md px-6 pb-4 border-2 border-border shadow-xl"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{
-            type: "spring",
-            stiffness: 260,
-            damping: 20,
-            delay: 0.2,
-          }}
-        >
-          {shortcuts.map((service, index) => (
-            <DockIcon
-              key={index}
-              item={service}
-              mouseX={mouseX}
-              onClick={() => navigate(service.href)}
-            />
-          ))}
-          
-          <AddDockIcon
-            mouseX={mouseX}
-            onClick={() => {
-              // Navigate to dashboard to add shortcuts
-              navigate('/dashboardinicial/visao-geral');
+        <div className="flex items-center justify-center relative gap-4">
+          {/* Main toggle button - sempre visível */}
+          <motion.div
+            className="absolute left-0 bg-background w-full rounded-full z-10"
+            animate={{
+              x: active ? "calc(100% + 16px)" : 0,
             }}
-          />
-        </motion.div>
+            transition={{ type: "tween", ease: "easeIn", duration: 0.5 }}
+          >
+            <motion.button
+              className={cn(
+                "size-16 rounded-full flex items-center justify-center",
+                "bg-primary hover:bg-primary/90 transition-colors shadow-xl"
+              )}
+              onClick={() => setActive(!active)}
+              animate={{ rotate: active ? 45 : 0 }}
+              transition={{
+                type: "tween",
+                ease: "easeIn",
+                duration: 0.5,
+              }}
+            >
+              <Plus 
+                size={24} 
+                strokeWidth={3} 
+                className="text-primary-foreground" 
+              />
+            </motion.button>
+          </motion.div>
+
+          {/* Dock container - expande quando ativo */}
+          <motion.div
+            onMouseMove={(e) => mouseX.set(e.pageX)}
+            onMouseLeave={() => mouseX.set(Infinity)}
+            className={cn(
+              "flex h-24 items-end rounded-3xl bg-card backdrop-blur-md border-2 border-border shadow-xl",
+              active ? "gap-4 px-6 pb-4" : "gap-0 px-0 pb-0"
+            )}
+            animate={{
+              width: active ? "auto" : 0,
+              opacity: active ? 1 : 0,
+              paddingLeft: active ? "1.5rem" : 0,
+              paddingRight: active ? "1.5rem" : 0,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+            }}
+          >
+            {shortcuts.map((service, index) => (
+              <motion.div
+                key={index}
+                animate={{
+                  filter: active ? "blur(0px)" : "blur(2px)",
+                  scale: active ? 1 : 0.9,
+                  rotate: active ? 0 : 45,
+                  opacity: active ? 1 : 0,
+                }}
+                transition={{
+                  type: "tween",
+                  ease: "easeIn",
+                  duration: 0.4,
+                }}
+              >
+                <DockIcon
+                  item={service}
+                  mouseX={mouseX}
+                  onClick={() => {
+                    navigate(service.href);
+                    setActive(false);
+                  }}
+                />
+              </motion.div>
+            ))}
+            
+            <motion.div
+              animate={{
+                filter: active ? "blur(0px)" : "blur(2px)",
+                scale: active ? 1 : 0.9,
+                rotate: active ? 0 : 45,
+                opacity: active ? 1 : 0,
+              }}
+              transition={{
+                type: "tween",
+                ease: "easeIn",
+                duration: 0.4,
+              }}
+            >
+              <AddDockIcon
+                mouseX={mouseX}
+                onClick={() => {
+                  navigate('/dashboardinicial/visao-geral');
+                  setActive(false);
+                }}
+              />
+            </motion.div>
+          </motion.div>
+        </div>
       </motion.div>
     </>
   );
