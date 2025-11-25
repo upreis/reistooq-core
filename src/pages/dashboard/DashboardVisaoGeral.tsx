@@ -102,42 +102,6 @@ export default function DashboardVisaoGeral() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Atividade Recente</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Novo pedido #1234</p>
-                <p className="text-xs text-muted-foreground">Cliente: João Silva - R$ 299,90</p>
-              </div>
-              <span className="text-xs text-muted-foreground">2 min</span>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Estoque atualizado</p>
-                <p className="text-xs text-muted-foreground">Produto XYZ - 50 unidades adicionadas</p>
-              </div>
-              <span className="text-xs text-muted-foreground">5 min</span>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Alerta de estoque baixo</p>
-                <p className="text-xs text-muted-foreground">Produto ABC - apenas 5 unidades restantes</p>
-              </div>
-              <span className="text-xs text-muted-foreground">1h</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Calendário de Devoluções */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
