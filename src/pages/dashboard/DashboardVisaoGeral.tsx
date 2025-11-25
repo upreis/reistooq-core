@@ -167,21 +167,19 @@ export default function DashboardVisaoGeral() {
         </Card>
 
         {/* Card 4: Produtos com Menor Estoque */}
-        <div className="bg-background border-border overflow-hidden">
-          {stockLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <ProductStockCard 
-              products={lowStockProducts}
-              title="Baixo Estoque"
-              type="low"
-              cardWidth={220}
-              cardHeight={380}
-            />
-          )}
-        </div>
+        {stockLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <ProductStockCard 
+            products={lowStockProducts}
+            title="Baixo Estoque"
+            type="low"
+            cardWidth={220}
+            cardHeight={380}
+          />
+        )}
       </div>
 
       {/* Atalhos Rápidos */}
