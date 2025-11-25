@@ -79,7 +79,65 @@ const ProductList = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // FASE 3: Sistema de fila de uploads
+  // Definir loadProducts ANTES de useUploadQueue para evitar ReferenceError
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      console.log('📋 Carregando produtos - página:', currentPage, 'filtros:', { searchTerm, selectedCategory });
+      
+      // Calcular offset baseado na página atual
+      const offset = (currentPage - 1) * itemsPerPage;
+      
+      // Buscar produtos com paginação - APENAS PRODUTOS ATIVOS
+      const data = await getProducts({
+        search: searchTerm || undefined,
+        categoria: selectedCategory === "all" ? undefined : selectedCategory,
+        limit: itemsPerPage,
+        offset: offset,
+        ativo: true
+      });
+      
+      console.log('📋 Produtos carregados:', data.length, 'produtos ativos');
+      setProducts(data);
+      
+      // Buscar total de produtos para calcular páginas
+      await loadTotalProducts();
+      
+      // Limpar seleções quando recarregar produtos
+      setSelectedProducts([]);
+      setSelectAll(false);
+    } catch (error) {
+      console.error('❌ Erro ao carregar produtos:', error);
+      toast({
+        title: "Erro ao carregar produtos",
+        description: "Não foi possível carregar a lista de produtos.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTotalProducts = async () => {
+    try {
+      console.log('🔢 Contando total de produtos ativos...');
+      // Buscar total sem limit/offset para calcular páginas
+      const data = await getProducts({
+        search: searchTerm || undefined,
+        categoria: selectedCategory === "all" ? undefined : selectedCategory,
+        ativo: true
+      });
+      
+      const total = data.length;
+      console.log('🔢 Total de produtos ativos encontrados:', total);
+      setTotalProducts(total);
+      setTotalPages(Math.ceil(total / itemsPerPage));
+    } catch (error) {
+      console.error("❌ Error loading total products:", error);
+    }
+  };
+
+  // FASE 3: Sistema de fila de uploads (agora loadProducts já está definido)
   const uploadQueue = useUploadQueue({
     maxConcurrent: 3,
     maxRetries: 2,
@@ -130,63 +188,6 @@ const ProductList = () => {
     // Recarregar quando página ou itens por página mudarem
     loadProducts();
   }, [currentPage, itemsPerPage]);
-
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      console.log('📋 Carregando produtos - página:', currentPage, 'filtros:', { searchTerm, selectedCategory });
-      
-      // Calcular offset baseado na página atual
-      const offset = (currentPage - 1) * itemsPerPage;
-      
-      // Buscar produtos com paginação - APENAS PRODUTOS ATIVOS
-      const data = await getProducts({
-        search: searchTerm || undefined,
-        categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        limit: itemsPerPage,
-        offset: offset,
-        ativo: true // Mostrar apenas produtos ativos
-      });
-      
-      console.log('📋 Produtos carregados:', data.length, 'produtos ativos');
-      setProducts(data);
-      
-      // Buscar total de produtos para calcular páginas
-      await loadTotalProducts();
-      
-      // Limpar seleções quando recarregar produtos
-      setSelectedProducts([]);
-      setSelectAll(false);
-    } catch (error) {
-      console.error('❌ Erro ao carregar produtos:', error);
-      toast({
-        title: "Erro ao carregar produtos",
-        description: "Não foi possível carregar a lista de produtos.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTotalProducts = async () => {
-    try {
-      console.log('🔢 Contando total de produtos ativos...');
-      // Buscar total sem limit/offset para calcular páginas - APENAS PRODUTOS ATIVOS
-      const data = await getProducts({
-        search: searchTerm || undefined,
-        categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        ativo: true // Contar apenas produtos ativos
-      });
-      
-      const total = data.length;
-      console.log('🔢 Total de produtos ativos encontrados:', total);
-      setTotalProducts(total);
-      setTotalPages(Math.ceil(total / itemsPerPage));
-    } catch (error) {
-      console.error("❌ Error loading total products:", error);
-    }
-  };
 
   const loadCategories = async () => {
     try {

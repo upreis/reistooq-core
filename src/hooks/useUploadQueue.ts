@@ -55,31 +55,78 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
   const [activeJobs, setActiveJobs] = useState<Set<string>>(new Set());
   const processingRef = useRef(false);
   const queueRef = useRef<UploadJob[]>([]);
+  const retryTimeoutsRef = useRef<Map<string, number>>(new Map());
 
-  // Sincronizar ref com state para acesso em callbacks
-  useEffect(() => {
-    queueRef.current = queue;
-  }, [queue]);
+  // Sincronizar ref com state IMEDIATAMENTE ao setar
+  const setQueueWithSync = useCallback((updater: UploadJob[] | ((prev: UploadJob[]) => UploadJob[])) => {
+    setQueue(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      queueRef.current = next; // Sincronizar ANTES do render
+      return next;
+    });
+  }, []);
 
   // Atualizar job na fila
   const updateJob = useCallback((jobId: string, updates: Partial<UploadJob>) => {
-    setQueue(prev => prev.map(job => 
+    setQueueWithSync(prev => prev.map(job => 
       job.id === jobId ? { ...job, ...updates } : job
     ));
-  }, []);
+  }, [setQueueWithSync]);
 
   // Remover job da fila
   const removeJob = useCallback((jobId: string) => {
-    setQueue(prev => prev.filter(job => job.id !== jobId));
+    // Cancelar timeout de retry se existir
+    const timeoutId = retryTimeoutsRef.current.get(jobId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      retryTimeoutsRef.current.delete(jobId);
+    }
+    
+    setQueueWithSync(prev => prev.filter(job => job.id !== jobId));
     setActiveJobs(prev => {
       const next = new Set(prev);
       next.delete(jobId);
       return next;
     });
-  }, []);
+  }, [setQueueWithSync]);
 
-  // Processar um job individual
-  const processJob = useCallback(async (job: UploadJob) => {
+  // Processar fila (DEFINIR ANTES de processJob para evitar ReferenceError)
+  const processQueue = useCallback(async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    try {
+      const currentQueue = queueRef.current;
+      const currentActive = activeJobs.size;
+
+      // Verificar quantos slots disponíveis
+      const availableSlots = maxConcurrent - currentActive;
+      if (availableSlots <= 0) return;
+
+      // Buscar jobs pendentes ordenados por prioridade e data
+      const pendingJobs = currentQueue
+        .filter(job => job.status === 'pending')
+        .sort((a, b) => {
+          // Prioridade maior primeiro
+          if (a.priority !== b.priority) {
+            return b.priority - a.priority;
+          }
+          // Depois por data de criação (mais antigo primeiro)
+          return a.createdAt - b.createdAt;
+        })
+        .slice(0, availableSlots);
+
+      // Processar jobs em paralelo (declaração forward)
+      await Promise.all(
+        pendingJobs.map(job => processJobInternal(job))
+      );
+    } finally {
+      processingRef.current = false;
+    }
+  }, [activeJobs.size, maxConcurrent]);
+
+  // Processar um job individual (renomeado para evitar referência circular)
+  const processJobInternal = useCallback(async (job: UploadJob) => {
     try {
       // Marcar como ativo
       setActiveJobs(prev => new Set(prev).add(job.id));
@@ -154,14 +201,20 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
           description: `Upload falhou. Tentativa ${job.retryCount + 1} de ${maxRetries}`
         });
 
-        // Aguardar antes de reprocessar
-        setTimeout(() => {
+        // Aguardar antes de reprocessar (guardar timeout ref para cancelar depois)
+        const timeoutId = window.setTimeout(() => {
+          // Remover do map de timeouts
+          retryTimeoutsRef.current.delete(job.id);
+          
           // Apenas reprocessar se ainda estiver na fila
           const stillInQueue = queueRef.current.find(j => j.id === job.id);
           if (stillInQueue) {
             processQueue();
           }
         }, delayMs);
+        
+        // Guardar timeout ref para poder cancelar
+        retryTimeoutsRef.current.set(job.id, timeoutId);
       } else {
         // Falha definitiva
         updateJob(job.id, {
@@ -191,42 +244,7 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
         return next;
       });
     }
-  }, [maxRetries, uploadFunction, updateJob, removeJob, onJobComplete, onJobFailed, toast]);
-
-  // Processar fila (executar até maxConcurrent jobs)
-  const processQueue = useCallback(async () => {
-    if (processingRef.current) return;
-    processingRef.current = true;
-
-    try {
-      const currentQueue = queueRef.current;
-      const currentActive = activeJobs.size;
-
-      // Verificar quantos slots disponíveis
-      const availableSlots = maxConcurrent - currentActive;
-      if (availableSlots <= 0) return;
-
-      // Buscar jobs pendentes ordenados por prioridade e data
-      const pendingJobs = currentQueue
-        .filter(job => job.status === 'pending')
-        .sort((a, b) => {
-          // Prioridade maior primeiro
-          if (a.priority !== b.priority) {
-            return b.priority - a.priority;
-          }
-          // Depois por data de criação (mais antigo primeiro)
-          return a.createdAt - b.createdAt;
-        })
-        .slice(0, availableSlots);
-
-      // Processar jobs em paralelo
-      await Promise.all(
-        pendingJobs.map(job => processJob(job))
-      );
-    } finally {
-      processingRef.current = false;
-    }
-  }, [activeJobs.size, maxConcurrent, processJob]);
+  }, [maxRetries, uploadFunction, updateJob, removeJob, onJobComplete, onJobFailed, toast, processQueue]);
 
   // Efeito para processar fila quando estado mudar
   useEffect(() => {
@@ -237,6 +255,15 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
       processQueue();
     }
   }, [queue, activeJobs, maxConcurrent, processQueue]);
+
+  // Cleanup de timeouts ao desmontar
+  useEffect(() => {
+    return () => {
+      // Cancelar todos os timeouts pendentes
+      retryTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      retryTimeoutsRef.current.clear();
+    };
+  }, []);
 
   // Adicionar job à fila
   const addJob = useCallback((
@@ -257,7 +284,7 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
       createdAt: Date.now()
     };
 
-    setQueue(prev => [...prev, job]);
+    setQueueWithSync(prev => [...prev, job]);
 
     toast({
       title: "Adicionado à fila",
@@ -265,7 +292,7 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
     });
 
     return job.id;
-  }, [toast]);
+  }, [toast, setQueueWithSync]);
 
   // Cancelar job específico
   const cancelJob = useCallback((jobId: string) => {
@@ -303,10 +330,21 @@ export const useUploadQueue = (options: UseUploadQueueOptions) => {
 
   // Limpar jobs completados/falhados/cancelados
   const clearCompleted = useCallback(() => {
-    setQueue(prev => prev.filter(job => 
+    // Cancelar timeouts dos jobs que serão removidos
+    queueRef.current.forEach(job => {
+      if (job.status !== 'pending' && job.status !== 'uploading') {
+        const timeoutId = retryTimeoutsRef.current.get(job.id);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          retryTimeoutsRef.current.delete(job.id);
+        }
+      }
+    });
+    
+    setQueueWithSync(prev => prev.filter(job => 
       job.status === 'pending' || job.status === 'uploading'
     ));
-  }, []);
+  }, [setQueueWithSync]);
 
   // Estatísticas da fila
   const stats = {
