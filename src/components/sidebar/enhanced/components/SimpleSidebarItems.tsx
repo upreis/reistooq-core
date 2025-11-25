@@ -42,17 +42,14 @@ export const SimpleSidebarItems = memo(({
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]",
                     "hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]",
                     itemActive 
-                      ? "bg-[hsl(var(--accent))] border-[hsl(var(--primary))] text-[hsl(var(--accent-foreground))]"
+                      ? "bg-[hsl(var(--primary))] border-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
                       : "border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
                   )}
                 >
                   <Icon className={cn(
-                    "h-5 w-5 shrink-0 transition-colors duration-200"
+                    "h-5 w-5 shrink-0 transition-colors duration-200",
+                    itemActive ? "text-[hsl(var(--primary-foreground))]" : ""
                   )} />
-                  
-                  {itemActive && (
-                    <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-[hsl(var(--primary))] border border-[hsl(var(--background))]" />
-                  )}
                   
                   {item.badge && (
                     <span className={cn(
