@@ -6,6 +6,10 @@ interface SidebarUIContextType {
   setIsSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
   
+  // Desktop sidebar hover
+  isSidebarHovered: boolean;
+  setIsSidebarHovered: (hovered: boolean) => void;
+  
   // Mobile sidebar  
   isMobileSidebarOpen: boolean;
   setIsMobileSidebarOpen: (open: boolean) => void;
@@ -26,6 +30,9 @@ export function SidebarUIProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem('ui.sidebar.collapsed');
     return stored ? JSON.parse(stored) : false;
   });
+
+  // Desktop hover state
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   // Mobile open state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -72,6 +79,8 @@ export function SidebarUIProvider({ children }: { children: ReactNode }) {
       isSidebarCollapsed,
       setIsSidebarCollapsed,
       toggleSidebar,
+      isSidebarHovered,
+      setIsSidebarHovered,
       isMobileSidebarOpen,
       setIsMobileSidebarOpen,
       openGroups,
