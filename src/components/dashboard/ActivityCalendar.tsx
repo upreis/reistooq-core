@@ -300,25 +300,53 @@ const ActivityCalendar = ({
 
   // Render month labels with numbers
   const renderMonthLabels = () => {
-    const months = [];
-    let currentMonth = startDate;
+    const months: JSX.Element[] = [];
+    let currentDate = startOfMonth(startDate);
     const totalMonths = differenceInMonths(endDate, startDate) + 1;
     
-    for (let i = 0; i < totalMonths; i++) {
-      const monthStart = startOfMonth(currentMonth);
+    for (let monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
+      const monthStart = startOfMonth(currentDate);
+      const monthNumber = getMonth(monthStart);
       
       // Pular meses fora do intervalo
       if (monthStart < startOfMonth(startDate) || monthStart > endDate) {
-        currentMonth = addMonths(currentMonth, 1);
+        currentDate = addMonths(currentDate, 1);
         continue;
       }
       
+      const firstWeekStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+      
+      // Calcular quantas semanas este mês precisa (mesma lógica de renderCalendar)
+      let weeksInMonth = 0;
+      let weekStart = firstWeekStart;
+      
+      while (weeksInMonth < 6) {
+        const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
+        const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+        const hasCurrentMonthDay = weekDays.some(day => getMonth(day) === monthNumber);
+        
+        if (!hasCurrentMonthDay && weeksInMonth > 0) {
+          break;
+        }
+        
+        weeksInMonth++;
+        weekStart = addDays(weekStart, 7);
+      }
+      
+      // Largura baseada no número de semanas (28px por semana: 24px gap + 4px extra)
+      const monthWidth = weeksInMonth * 28 + (monthIndex > 0 ? 24 : 0); // adicionar espaçamento ml-3 pl-3
+      
       months.push(
-        <div key={i} className="text-xs text-muted-foreground min-w-[60px]">
-          {format(currentMonth, "MMM", { locale: ptBR })}
+        <div 
+          key={monthIndex} 
+          className="text-xs text-muted-foreground text-left"
+          style={{ width: `${monthWidth}px`, marginLeft: monthIndex > 0 ? '12px' : '0' }}
+        >
+          {format(currentDate, "MMM", { locale: ptBR })}
         </div>
       );
-      currentMonth = addMonths(currentMonth, 1);
+      
+      currentDate = addMonths(currentDate, 1);
     }
     return months;
   };
