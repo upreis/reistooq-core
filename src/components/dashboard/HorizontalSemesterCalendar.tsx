@@ -217,28 +217,6 @@ export function HorizontalSemesterCalendar({
                             onClick={() => handleDayClick(contribution, day)}
                             title={`${format(day, "PPP", { locale: ptBR })}`}
                           >
-                            {/* Ícones pequenos quando há eventos */}
-                            {!isToday && hasMultipleTypes && (
-                              <div className="absolute top-0 left-0 right-0 flex justify-between px-0.5 gap-0.5">
-                                {deliveryCount > 0 && <span className="text-[5px]">📦</span>}
-                                {reviewCount > 0 && <span className="text-[5px]">⏰</span>}
-                                {claimCreatedCount > 0 && <span className="text-[5px]">📝</span>}
-                                {claimDeadlineCount > 0 && <span className="text-[5px]">🔔</span>}
-                              </div>
-                            )}
-                            {!isToday && !hasMultipleTypes && deliveryCount > 0 && (
-                              <span className="absolute top-0 left-0.5 text-[6px]">📦</span>
-                            )}
-                            {!isToday && !hasMultipleTypes && reviewCount > 0 && (
-                              <span className="absolute top-0 left-0.5 text-[6px]">⏰</span>
-                            )}
-                            {!isToday && !hasMultipleTypes && claimCreatedCount > 0 && (
-                              <span className="absolute top-0 left-0.5 text-[6px]">📝</span>
-                            )}
-                            {!isToday && !hasMultipleTypes && claimDeadlineCount > 0 && (
-                              <span className="absolute top-0 left-0.5 text-[6px]">🔔</span>
-                            )}
-                            
                             <span className={`text-[9px] font-medium z-10 ${isToday ? 'text-blue-700 dark:text-blue-900 font-bold' : hasMultipleTypes ? 'text-white font-bold' : 'text-foreground/70'}`}>
                               {format(day, "d")}
                             </span>
