@@ -151,7 +151,7 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
   };
 
   React.useEffect(() => {
-    // Cleanup preview URLs on unmount
+    // Cleanup preview URLs on unmount ONLY
     return () => {
       files.forEach(file => {
         if (file.preview) {
@@ -164,7 +164,7 @@ export const DragDropUpload: React.FC<DragDropUploadProps> = ({
         }
       });
     };
-  }, [files]);
+  }, []); // ✅ Array vazio - executar apenas no unmount
 
   return (
     <div className="space-y-4">
