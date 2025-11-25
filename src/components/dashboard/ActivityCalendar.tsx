@@ -124,7 +124,7 @@ const ActivityCalendar = ({
         }
 
         weekColumns.push(
-          <div key={weekIndex} className="flex flex-col gap-1">
+          <div key={weekIndex} className="flex flex-col gap-0.5">
             {weekDays.map((day, dayIndex) => {
               const dayMonth = getMonth(day);
               const contribution = contributions.find((c) => isSameDay(new Date(c.date), day));
@@ -287,7 +287,7 @@ const ActivityCalendar = ({
       }
 
       monthsArray.push(
-        <div key={monthIndex} className={`flex gap-1 ${monthIndex > 0 ? 'ml-3 pl-3 border-l-2 border-primary/30' : ''}`}>
+        <div key={monthIndex} className={`flex gap-0.5 ${monthIndex > 0 ? 'border-l-[2px] border-foreground/80' : ''}`}>
           {weekColumns}
         </div>
       );
@@ -333,14 +333,14 @@ const ActivityCalendar = ({
         weekStart = addDays(weekStart, 7);
       }
       
-      // Largura baseada no número de semanas (28px por semana: 24px gap + 4px extra)
-      const monthWidth = weeksInMonth * 28 + (monthIndex > 0 ? 24 : 0); // adicionar espaçamento ml-3 pl-3
+      // Largura baseada no número de semanas (26px por semana: 24px cell + 2px gap)
+      const monthWidth = weeksInMonth * 26;
       
       months.push(
         <div 
           key={monthIndex} 
-          className="text-xs text-muted-foreground text-left"
-          style={{ width: `${monthWidth}px`, marginLeft: monthIndex > 0 ? '12px' : '0' }}
+          className="text-xs text-muted-foreground text-left font-semibold"
+          style={{ width: `${monthWidth}px`, marginLeft: monthIndex > 0 ? '2px' : '0' }}
         >
           {format(currentDate, "MMM", { locale: ptBR })}
         </div>
