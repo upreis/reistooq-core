@@ -23,16 +23,8 @@ export const SimpleSidebarItems = memo(({
   if (singleItems.length === 0) return null;
 
   return (
-    <div 
-      className={cn(
-        "relative rounded-lg p-1",
-        "bg-[hsl(var(--muted))]/30",
-        "after:content-[''] after:absolute after:inset-0",
-        "after:bg-gradient-to-br after:from-white/5 after:to-transparent",
-        "after:rounded-lg after:border after:border-white/5 after:pointer-events-none"
-      )}
-    >
-      <menu className="relative space-y-0.5">
+    <div className="space-y-0.5">
+      <menu className="space-y-0.5">
         {singleItems.map((item) => {
           const Icon = getIconComponent(item.icon);
           const itemActive = item.path ? isActive(item.path) : false;
@@ -45,24 +37,21 @@ export const SimpleSidebarItems = memo(({
                   to={item.path || '#'}
                   title={item.label}
                   className={cn(
-                    "group relative h-11 w-11 rounded-lg flex items-center justify-center",
-                    "transition-all duration-150",
+                    "group relative h-11 w-11 rounded-lg flex items-center justify-center border",
+                    "transition-all duration-200",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]",
-                    "hover:scale-105 active:scale-95",
+                    "hover:bg-[hsl(var(--accent))]",
                     itemActive 
-                      ? "text-[hsl(var(--brand-yellow-foreground))]"
-                      : "text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]/50"
+                      ? "bg-[hsl(var(--accent))] border-[hsl(var(--primary))] text-[hsl(var(--primary))]"
+                      : "border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
                   )}
                 >
                   <Icon className={cn(
-                    "h-5 w-5 shrink-0 transition-all duration-200",
-                    "group-hover:scale-110",
-                    itemActive && "text-[hsl(var(--brand-yellow-foreground))]",
-                    !itemActive && "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
+                    "h-5 w-5 shrink-0 transition-colors duration-200"
                   )} />
                   
                   {itemActive && (
-                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[hsl(var(--brand-yellow))] border border-[hsl(var(--background))]" />
+                    <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-[hsl(var(--primary))] border border-[hsl(var(--background))]" />
                   )}
                   
                   {item.badge && (
@@ -89,26 +78,24 @@ export const SimpleSidebarItems = memo(({
               <NavLink
                 to={item.path || '#'}
                 className={cn(
-                  'group relative flex items-center gap-2.5 h-[38px] px-3 py-2 rounded-lg',
-                  'transition-all duration-150',
-                  'text-sm font-medium select-none',
+                  'group relative flex items-center gap-2.5 h-9 px-3 py-2 rounded-lg border-l-2',
+                  'transition-all duration-200',
+                  'text-sm select-none',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]',
-                  'hover:bg-[hsl(var(--accent))]/50 active:bg-[hsl(var(--accent))]/60',
+                  'hover:bg-[hsl(var(--accent))]',
                   itemActive
-                    ? 'text-[hsl(var(--brand-yellow-foreground))]'
-                    : 'text-[hsl(var(--foreground))]/90 hover:text-[hsl(var(--foreground))]'
+                    ? 'bg-[hsl(var(--accent))] border-[hsl(var(--primary))] text-[hsl(var(--foreground))] font-medium'
+                    : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]'
                 )}
               >
                 <Icon 
                   className={cn(
-                    "h-5 w-5 shrink-0 transition-all duration-200",
-                    "group-hover:scale-110",
-                    itemActive && "text-[hsl(var(--brand-yellow-foreground))]",
-                    !itemActive && "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
+                    "h-4 w-4 shrink-0 transition-colors duration-200",
+                    itemActive ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
                   )} 
                 />
                 
-                <span className="truncate">
+                <span className="truncate text-sm">
                   {item.label}
                 </span>
 
@@ -130,10 +117,6 @@ export const SimpleSidebarItems = memo(({
                   </span>
                 )}
 
-                {/* Active indicator when collapsed */}
-                {itemActive && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[hsl(var(--brand-yellow))] shrink-0 border border-[hsl(var(--background))]" />
-                )}
               </NavLink>
             </li>
           );

@@ -52,7 +52,7 @@ const SidebarSection = memo(({
       </AnimatePresence>
 
       {/* Section Items */}
-      <div className="space-y-1">
+      <div className="space-y-1 mt-2">
         {/* Items with children (groups) */}
         {section.items.filter(item => item.children && item.children.length > 0).map((item) => (
           <SidebarItemWithChildren
@@ -166,18 +166,23 @@ const SidebarContent = memo(({
 
         {/* Navigation */}
         <nav 
-          className="p-4 space-y-6 flex-1 overflow-y-auto"
+          className="p-4 space-y-4 flex-1 overflow-y-auto"
           role="navigation"
           aria-label="Navegação principal"
         >
-          {filteredNav.map((section) => (
-            <SidebarSection
-              key={section.id}
-              section={section}
-              isCollapsed={isCollapsed}
-              isMobile={isMobile}
-              isActive={isActive}
-            />
+          {filteredNav.map((section, index) => (
+            <div key={section.id}>
+              <SidebarSection
+                section={section}
+                isCollapsed={isCollapsed}
+                isMobile={isMobile}
+                isActive={isActive}
+              />
+              {/* Divider sutil entre seções */}
+              {index < filteredNav.length - 1 && (
+                <div className="h-px bg-[hsl(var(--border))]/50 my-4" />
+              )}
+            </div>
           ))}
         </nav>
       </div>
