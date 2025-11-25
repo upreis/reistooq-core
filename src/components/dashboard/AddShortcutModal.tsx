@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import pedidosIcon from "@/assets/pedidos-cart-icon.png";
+import pedidosNewIcon from "@/assets/pedidos-new-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import vendasOnlineIcon from "@/assets/vendas_online.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
@@ -142,7 +143,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'pedidos',
     label: 'Pedidos',
     route: '/pedidos',
-    icon: <img src={pedidosIcon} alt="Pedidos" className="w-16 h-16 object-contain" />,
+    icon: <img src={pedidosNewIcon} alt="Pedidos" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
