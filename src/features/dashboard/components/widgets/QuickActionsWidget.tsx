@@ -251,9 +251,23 @@ export const QuickActionsWidget = () => {
   }, [shortcuts]);
 
   const handleAddShortcut = (page: any) => {
+    // Extrair o componente de ícone corretamente
+    let iconComponent: LucideIcon = Package; // fallback padrão
+    
+    if (page.icon) {
+      // Se page.icon já é um componente React válido
+      if (typeof page.icon === 'function') {
+        iconComponent = page.icon as LucideIcon;
+      }
+      // Se page.icon tem a propriedade type (componente React)
+      else if (page.icon.type && typeof page.icon.type === 'function') {
+        iconComponent = page.icon.type as LucideIcon;
+      }
+    }
+    
     const newShortcut: Service = {
       name: page.label,
-      icon: page.icon?.type || Package,
+      icon: iconComponent,
       href: page.route,
       gradient: page.gradient || 'bg-gradient-to-br from-gray-500 to-gray-600',
       badge: page.badge
