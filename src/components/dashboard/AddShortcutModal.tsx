@@ -75,6 +75,7 @@ import listaProdutosIcon from "@/assets/lista_produtos.png";
 import lojaIcon from "@/assets/loja.png";
 import notasIcon from "@/assets/notas.png";
 import pedidosCompraIcon from "@/assets/pedidos_compra.png";
+import pedidosCompraNewIcon from "@/assets/pedidos-compra-new-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos_oms.png";
 import perfilAdminIcon from "@/assets/perfil_admin.png";
 import reclamacoesIcon from "@/assets/reclamacoes.png";
@@ -236,7 +237,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'compras-pedidos',
     label: 'Compras',
     route: '/compras/pedidos',
-    icon: <img src={pedidosCompraIcon} alt="Compras" className="w-16 h-16 object-contain" />,
+    icon: <img src={pedidosCompraNewIcon} alt="Compras" className="w-16 h-16 object-contain" />,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-blue-600 to-blue-800'
   },
