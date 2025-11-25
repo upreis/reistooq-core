@@ -102,45 +102,6 @@ const SidebarContent = memo(({
     return isRouteActive(location.pathname, path);
   }, [location.pathname]);
 
-  // Map route paths to permission keys
-  const getPermissionForPath = (path?: string): string | null => {
-    if (!path) return null;
-    
-    // Dashboard permissions - todos sob dashboard:view
-    if (path === '/' || path.startsWith('/dashboard')) return 'dashboard:view';
-    
-    // OMS/Vendas permissions - todos sob oms:view
-    if (path.startsWith('/pedidos')) return 'oms:view';
-    if (path.startsWith('/oms')) return 'oms:view';
-    
-    // Compras permissions
-    if (path.startsWith('/compras/pedidos')) return 'compras:view';
-    if (path.startsWith('/compras/cotacoes')) return 'compras:view';
-    if (path.startsWith('/compras/fornecedores')) return 'compras:view';
-    if (path.startsWith('/compras/importacao')) return 'compras:view';
-    
-    // Aplicações permissions
-    if (path.startsWith('/apps/ecommerce')) return 'ecommerce:view';
-    if (path.startsWith('/aplicativos/calendario')) return 'calendar:view';
-    if (path.startsWith('/aplicativos/notas')) return 'notes:view';
-    if (path.startsWith('/estoque')) return 'estoque:view';
-    if (path.startsWith('/scanner')) return 'scanner:use';
-    if (path.startsWith('/de-para')) return 'depara:view';
-    if (path.startsWith('/alertas')) return 'alerts:view';
-    if (path.startsWith('/historico')) return 'historico:view';
-    
-    // Configurações permissions - todas sob configuracoes:view
-    if (path.startsWith('/configuracoes')) return 'configuracoes:view';
-    
-    // Admin permissions
-    if (path.startsWith('/admin')) return 'admin:access';
-    
-    // Demo permissions
-    if (path.startsWith('/_demo') || path.startsWith('/theme-pages') || path.startsWith('/widgets') || path.startsWith('/icons')) return 'demo:access';
-    
-    return null;
-  };
-
   // Filter navigation by permissions
   const filteredNav = useMemo(() => {
     const filterItems = (items: NavItem[]): NavItem[] => {
@@ -148,8 +109,7 @@ const SidebarContent = memo(({
       
       for (const item of items) {
         const children = item.children ? filterItems(item.children) : undefined;
-        const required = getPermissionForPath(item.path);
-        const visible = required ? hasPermission(required) : true;
+        const visible = item.permission ? hasPermission(item.permission) : true;
         
         if (children && children.length > 0) {
           result.push({ ...item, children });
