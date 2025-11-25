@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -49,43 +49,55 @@ const YearlyLinearCalendar: React.FC<YearlyLinearCalendarProps> = ({
     const monthStart = startOfMonth(monthDate);
     const monthEnd = endOfMonth(monthDate);
     
-    // Get first day of week for this month
-    const firstDayOfWeek = monthStart.getDay();
+    // Get the day of week the month starts (0 = Sunday, 1 = Monday, etc)
+    const startDayOfWeek = getDay(monthStart);
     
     // Get all days in the month
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const totalDaysInMonth = daysInMonth.length;
     
-    // Create array with 31 slots (max days in a month)
-    const cells = Array(31).fill(null);
+    // Create array with 31 slots (max days possible)
+    const cells = [];
+    
+    // Fill empty cells before the first day
+    for (let i = 0; i < startDayOfWeek; i++) {
+      cells.push({ type: 'empty', key: `empty-start-${i}` });
+    }
     
     // Fill in the actual days
     daysInMonth.forEach((day) => {
-      const dayOfMonth = day.getDate();
-      cells[dayOfMonth - 1] = day;
+      cells.push({ type: 'day', day, key: format(day, 'yyyy-MM-dd') });
     });
+    
+    // Fill empty cells after the last day to reach 31 total cells
+    const remainingCells = 31 - cells.length;
+    for (let i = 0; i < remainingCells; i++) {
+      cells.push({ type: 'empty', key: `empty-end-${i}` });
+    }
 
     return (
       <div key={format(monthDate, 'yyyy-MM')} className="flex items-center gap-1 mb-1">
         <div className="w-16 text-xs font-medium text-muted-foreground uppercase flex-shrink-0">
           {format(monthDate, 'MMM', { locale: ptBR }).replace('.', '')}
         </div>
-        <div className="flex gap-[2px] flex-1 overflow-x-auto">
-          {cells.map((day, index) => {
-            if (!day) {
+        <div className="flex gap-[2px] flex-1">
+          {cells.map((cell) => {
+            if (cell.type === 'empty') {
               return (
                 <div
-                  key={`empty-${index}`}
+                  key={cell.key}
                   className="w-6 h-6 bg-muted/20 flex-shrink-0"
                 />
               );
             }
 
+            const day = cell.day!;
             const dayData = getDayData(day);
             const count = dayData?.count || 0;
             const isToday = isSameDay(day, today);
 
             return (
-              <TooltipProvider key={format(day, 'yyyy-MM-dd')}>
+              <TooltipProvider key={cell.key}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
@@ -116,13 +128,23 @@ const YearlyLinearCalendar: React.FC<YearlyLinearCalendarProps> = ({
     );
   };
 
+  // Generate repeating weekday headers (31 cells)
+  const weekdayHeaders = useMemo(() => {
+    const days = ['Dom', 'S', 'T', 'Q', 'Q', 'S', 'Sáb'];
+    const headers = [];
+    for (let i = 0; i < 31; i++) {
+      headers.push(days[i % 7]);
+    }
+    return headers;
+  }, []);
+
   return (
     <div className="space-y-4">
-      {/* Header with weekdays */}
+      {/* Header with repeating weekdays */}
       <div className="flex items-center gap-1 pb-2 border-b">
         <div className="w-16 flex-shrink-0" />
         <div className="flex gap-[2px] flex-1">
-          {['Dom', 'S', 'T', 'Q', 'Q', 'S', 'Sáb'].map((day, i) => (
+          {weekdayHeaders.map((day, i) => (
             <div
               key={i}
               className="w-6 h-6 flex-shrink-0 flex items-center justify-center text-[10px] font-semibold text-primary bg-primary/10"
@@ -130,19 +152,6 @@ const YearlyLinearCalendar: React.FC<YearlyLinearCalendarProps> = ({
               {day}
             </div>
           ))}
-          {/* Repeat pattern to fill 31 days */}
-          {Array(24).fill(null).map((_, i) => {
-            const dayIndex = (i + 7) % 7;
-            const day = ['Dom', 'S', 'T', 'Q', 'Q', 'S', 'Sáb'][dayIndex];
-            return (
-              <div
-                key={`extra-${i}`}
-                className="w-6 h-6 flex-shrink-0 flex items-center justify-center text-[10px] font-semibold text-primary bg-primary/10"
-              >
-                {day}
-              </div>
-            );
-          })}
         </div>
       </div>
 
