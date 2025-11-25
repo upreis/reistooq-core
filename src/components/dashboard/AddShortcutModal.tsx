@@ -57,6 +57,7 @@ import auditoriaIcon from "@/assets/auditoria.png";
 import calendarioIcon from "@/assets/calendario.png";
 import cargosIcon from "@/assets/cargos.png";
 import clientesIcon from "@/assets/clientes.png";
+import clientesNewIcon from "@/assets/oms-clientes-icon-v2.png";
 import composicoesIcon from "@/assets/composicoes.png";
 import configuracoesOmsIcon from "@/assets/configuracoes_oms.png";
 import convitesIcon from "@/assets/convites.png";
@@ -172,7 +173,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'oms-clientes',
     label: 'OMS Clientes',
     route: '/oms/clientes',
-    icon: <img src={clientesIcon} alt="Clientes" className="w-16 h-16 object-contain" />,
+    icon: <img src={clientesNewIcon} alt="Clientes" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-pink-500 to-pink-700'
   },
