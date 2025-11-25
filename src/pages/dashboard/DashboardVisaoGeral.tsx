@@ -150,7 +150,8 @@ export default function DashboardVisaoGeral() {
         {/* Cards de Estoque Agrupados */}
         <div className="flex gap-1 self-start justify-end">
           {/* Card 3: Produtos com Maior Estoque */}
-          <div>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-foreground">Estoque Alto</h3>
             {stockLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -167,7 +168,8 @@ export default function DashboardVisaoGeral() {
           </div>
 
           {/* Card 4: Produtos com Menor Estoque */}
-          <div>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-foreground">Estoque Baixo</h3>
             {stockLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
