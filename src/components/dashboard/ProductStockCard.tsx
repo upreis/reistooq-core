@@ -192,7 +192,7 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
             <article
               key={`${product.id}-${originalIndex}`}
               className="stock-card absolute cursor-grab active:cursor-grabbing
-                         place-self-center border border-border rounded-xl
+                         place-self-center border-2 border-border rounded-xl
                          shadow-md overflow-hidden will-change-transform bg-background"
               style={{
                 '--i': (displayIndex + 1).toString(),
