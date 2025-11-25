@@ -266,12 +266,12 @@ export const QuickActionsWidget = () => {
         .group:hover .tooltip{opacity:1;transform:translateY(0)}
       `}</style>
       
-      <section className="w-full py-6">
-        <div className="container mx-auto px-4 md:px-6 flex items-center justify-center">
+      <section className="w-full">
+        <div className="container mx-auto flex items-center justify-center">
           <motion.div
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
-            className="flex h-24 items-end gap-4 rounded-3xl bg-background backdrop-blur-md px-6 pb-4 border-2 border-border shadow-xl"
+            className="flex h-24 items-end gap-4 rounded-3xl bg-transparent px-6 pb-4"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{
