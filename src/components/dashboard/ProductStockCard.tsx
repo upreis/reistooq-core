@@ -205,9 +205,9 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
                            rotateY(var(--swipe-rotate, 0deg))`
               } as React.CSSProperties}
             >
-              <div className="w-full h-full p-4 flex flex-col">
+              <div className="w-full h-full p-4 flex flex-col justify-between">
                 {/* Imagem do produto */}
-                <div className="w-full h-48 bg-muted rounded-lg overflow-hidden mb-3 flex items-center justify-center">
+                <div className="w-full flex-1 bg-muted rounded-lg overflow-hidden mb-3 flex items-center justify-center">
                   {product.url_imagem ? (
                     <img
                       src={product.url_imagem}
@@ -221,7 +221,7 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
                 </div>
 
                 {/* Informações do produto */}
-                <div className="flex-1 space-y-2">
+                <div className="space-y-2">
                   <h4 className="text-xs font-semibold truncate">{product.nome}</h4>
                   
                   <div className="space-y-1">
@@ -243,15 +243,6 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
                       </span>
                     </div>
                   </div>
-                </div>
-
-                {/* Badge indicador */}
-                <div className={`mt-2 text-center text-xs font-medium py-1 px-2 rounded-full ${
-                  type === 'high' 
-                    ? 'bg-green-500/10 text-green-500' 
-                    : 'bg-destructive/10 text-destructive'
-                }`}>
-                  {type === 'high' ? 'Alto Estoque' : 'Baixo Estoque'}
                 </div>
               </div>
             </article>
