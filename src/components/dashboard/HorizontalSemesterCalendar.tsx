@@ -86,10 +86,10 @@ export function HorizontalSemesterCalendar({
 
   return (
     <>
-      <Card className="p-6 bg-background w-full">
-        <div className="space-y-4">
+      <Card className="p-6 bg-background w-full overflow-visible">
+        <div className="space-y-4 w-full">
           <div className="w-full">
-            <h3 className="text-lg font-semibold mb-1">Calendário de Atividades</h3>
+            <h3 className="text-lg font-semibold mb-1 whitespace-nowrap">Calendário de Atividades</h3>
           </div>
 
           <div ref={scrollContainerRef} className="overflow-x-auto pb-4">
