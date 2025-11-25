@@ -54,7 +54,7 @@ export default function DashboardVisaoGeral() {
   return (
     <div className="space-y-6 p-6 bg-card w-full">
       {/* Cards Analíticos */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_0.65fr]">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_0.65fr_0.65fr]">
         {/* Card 1: Vendas */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
@@ -163,14 +163,8 @@ export default function DashboardVisaoGeral() {
             />
           )}
         </div>
-      </div>
 
-      {/* Atalhos Rápidos */}
-      <QuickActionsWidget />
-
-      {/* Card Baixo Estoque + Calendário de Atividades */}
-      <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
-        {/* Card: Produtos com Menor Estoque */}
+        {/* Card 4: Produtos com Menor Estoque */}
         <div className="self-start">
           {stockLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -186,9 +180,12 @@ export default function DashboardVisaoGeral() {
             />
           )}
         </div>
+      </div>
 
-        {/* Calendário de Atividades */}
-        <div>
+      {/* Atalhos Rápidos */}
+      <QuickActionsWidget />
+
+      {/* Calendário de Atividades */}
       {calendarLoading ? (
         <Card className="p-6 bg-background">
           <div className="space-y-4">
@@ -240,13 +237,11 @@ export default function DashboardVisaoGeral() {
         />
       )}
       
-        {calendarError && (
-          <div className="text-center text-sm text-destructive mt-4">
-            ⚠️ {calendarError}
-          </div>
-        )}
+      {calendarError && (
+        <div className="text-center text-sm text-destructive mt-4">
+          ⚠️ {calendarError}
         </div>
-      </div>
+      )}
     </div>
   );
 }
