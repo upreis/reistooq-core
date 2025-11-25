@@ -54,26 +54,8 @@ export default function DashboardVisaoGeral() {
         <NotificationsBell organizationId={organizationId} />
       </div>
 
-      {/* Atalhos Rápidos - Card Unificado */}
-      <Card className="bg-background p-0 overflow-hidden">
-        <div className="flex items-stretch">
-          {/* Seção de Título */}
-          <div className="flex items-center justify-center px-8 py-6 border-r-2 border-border min-w-[240px]">
-            <div className="space-y-1">
-              <h1 className="text-xl font-bold whitespace-nowrap">Acesso Rápido</h1>
-              <p className="text-sm text-muted-foreground">
-                Acesse rapidamente<br />
-                suas páginas favoritas
-              </p>
-            </div>
-          </div>
-
-          {/* Seção de Ícones */}
-          <div className="flex-1 flex items-center py-2">
-            <QuickActionsWidget />
-          </div>
-        </div>
-      </Card>
+      {/* Atalhos Rápidos */}
+      <QuickActionsWidget />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="bg-background">
