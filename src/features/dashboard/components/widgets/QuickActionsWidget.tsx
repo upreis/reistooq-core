@@ -233,10 +233,6 @@ export const QuickActionsWidget = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const mouseX = useMotionValue(Infinity);
   const navigate = useNavigate();
-  const { isSidebarCollapsed, isSidebarHovered } = useSidebarUI();
-  
-  // Determina se temos espaço suficiente (sidebar retraída OU expandida)
-  const hasSpaceForFullText = !isSidebarCollapsed || isSidebarHovered;
 
   // Salva SEMPRE que shortcuts mudar
   useEffect(() => {
@@ -298,23 +294,17 @@ export const QuickActionsWidget = () => {
               delay: 0.1,
             }}
           >
-            {/* Seção de Título - Responsiva */}
-            <div className={`flex items-center justify-center h-full border-r-2 border-border my-3 transition-all ${
-              hasSpaceForFullText ? 'px-8 min-w-[180px]' : 'px-4 min-w-[120px]'
-            }`}>
+            {/* Seção de Título - SEMPRE completo */}
+            <div className="flex items-center justify-center px-6 h-full border-r-2 border-border my-3 min-w-[160px]">
               <div className="space-y-0.5">
-                <h1 className={`font-bold whitespace-nowrap transition-all ${
-                  hasSpaceForFullText ? 'text-base' : 'text-sm'
-                }`}>
-                  {hasSpaceForFullText ? 'Acesso Rápido' : 'Acesso Q'}
+                <h1 className="text-base font-bold whitespace-nowrap">
+                  Acesso Rápido
                 </h1>
-                {hasSpaceForFullText && (
-                  <p className="text-[11px] text-muted-foreground leading-tight whitespace-nowrap">
-                    Acesse rapidamente
-                    <br />
-                    suas páginas favoritas
-                  </p>
-                )}
+                <p className="text-[11px] text-muted-foreground leading-tight whitespace-nowrap">
+                  Acesse rapidamente
+                  <br />
+                  suas páginas favoritas
+                </p>
               </div>
             </div>
 

@@ -41,10 +41,6 @@ export function HorizontalSemesterCalendar({
   const [selectedDay, setSelectedDay] = useState<ContributionDay | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'delivery' | 'review' | 'claim_created' | 'claim_deadline'>('all');
-  const { isSidebarCollapsed, isSidebarHovered } = useSidebarUI();
-  
-  // Determina se temos espaço suficiente
-  const hasSpaceForFullText = !isSidebarCollapsed || isSidebarHovered;
   
   // Calcular intervalo: hoje -2m15d até hoje +2m15d
   const today = new Date();
@@ -95,7 +91,7 @@ export function HorizontalSemesterCalendar({
         <div className="space-y-4 w-full">
           <div className="w-full">
             <h3 className="text-lg font-semibold mb-1 whitespace-nowrap">
-              {hasSpaceForFullText ? 'Calendário de Atividades' : 'Calendário'}
+              Calendário de Atividades
             </h3>
           </div>
 
