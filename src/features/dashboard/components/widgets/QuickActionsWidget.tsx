@@ -271,7 +271,7 @@ export const QuickActionsWidget = () => {
           <motion.div
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
-            className="flex h-24 items-end gap-4 rounded-3xl bg-transparent px-6 pb-4"
+            className="flex h-24 items-center gap-0 rounded-3xl bg-background backdrop-blur-md border-2 border-border shadow-xl overflow-hidden"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{
@@ -281,6 +281,19 @@ export const QuickActionsWidget = () => {
               delay: 0.1,
             }}
           >
+            {/* Seção de Título */}
+            <div className="flex items-center justify-center px-6 h-full border-r-2 border-border">
+              <div className="space-y-1">
+                <h1 className="text-lg font-bold whitespace-nowrap">Acesso Rápido</h1>
+                <p className="text-xs text-muted-foreground">
+                  Acesse rapidamente<br />
+                  suas páginas favoritas
+                </p>
+              </div>
+            </div>
+
+            {/* Seção de Ícones */}
+            <div className="flex items-end gap-4 px-6 pb-4 pt-4">
             {shortcuts.map((service, index) => (
               <DockIcon
                 key={index}
@@ -295,6 +308,7 @@ export const QuickActionsWidget = () => {
               mouseX={mouseX}
               onClick={() => setIsModalOpen(true)}
             />
+            </div>
           </motion.div>
         </div>
       </section>
