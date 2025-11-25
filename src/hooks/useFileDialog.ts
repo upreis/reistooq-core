@@ -61,6 +61,12 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
 
     cleanupInProgressRef.current = true;
 
+    // Abortar AbortController se existir e ainda não foi abortado
+    if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+      debugLog('🛑 Abortando AbortController durante cleanup');
+      abortControllerRef.current.abort();
+    }
+
     try {
       // Abortar operação em andamento se existir
       if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
