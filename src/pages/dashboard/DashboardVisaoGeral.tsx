@@ -50,16 +50,28 @@ export default function DashboardVisaoGeral() {
   return (
     <div className="space-y-6 p-6 bg-card">
       {/* Header com notificações */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Acesso Rápido</h1>
-          <p className="text-muted-foreground">Acesse rapidamente suas páginas favoritas</p>
-        </div>
+      <div className="flex items-center justify-end">
         <NotificationsBell organizationId={organizationId} />
       </div>
 
-      {/* Atalhos Rápidos */}
-      <QuickActionsWidget />
+      {/* Atalhos Rápidos com Card de Título */}
+      <div className="flex gap-6">
+        {/* Card de Título */}
+        <Card className="flex-shrink-0 bg-background flex items-center justify-center p-8">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold whitespace-nowrap">Acesso Rápido</h1>
+            <p className="text-muted-foreground">
+              Acesse rapidamente<br />
+              suas páginas favoritas
+            </p>
+          </div>
+        </Card>
+
+        {/* Widget de Atalhos */}
+        <div className="flex-1">
+          <QuickActionsWidget />
+        </div>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="bg-background">
