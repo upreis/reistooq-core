@@ -12,6 +12,7 @@ import comprasImportacaoIcon from "@/assets/compras-importacao-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueComposicoesIcon from "@/assets/estoque-composicoes-icon.png";
 import estoqueHistoricoIcon from "@/assets/estoque-historico-icon.png";
+import aplicativosCalendarioIcon from "@/assets/aplicativos-calendario-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -83,6 +84,9 @@ export default function Header() {
     if (path.startsWith('/compras/cotacoes')) return { icon: comprasCotacoesIcon, label: 'Compras / Cotações', isImage: true };
     if (path.startsWith('/compras/importacao')) return { icon: comprasImportacaoIcon, label: 'Compras / Importação', isImage: true };
     if (path.startsWith('/compras')) return { icon: '🛒', label: 'Compras' };
+    
+    // Aplicativos
+    if (path.startsWith('/aplicativos/calendario')) return { icon: aplicativosCalendarioIcon, label: 'Aplicativos / Calendário', isImage: true };
     
     // Estoque
     if (path.startsWith('/estoque/historico')) return { icon: estoqueHistoricoIcon, label: 'Estoque / Histórico', isImage: true };
