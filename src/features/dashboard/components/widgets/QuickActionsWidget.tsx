@@ -123,10 +123,10 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
 
       {/* Tooltip */}
       <motion.div
-        initial={{ opacity: 0, y: 10, scale: 0.8 }}
+        initial={{ opacity: 0, y: 5, scale: 0.8 }}
         animate={{
           opacity: isHovered ? 1 : 0,
-          y: isHovered ? -30 : 10,
+          y: isHovered ? -15 : 5,
           scale: isHovered ? 1 : 0.8,
         }}
         transition={{
@@ -134,7 +134,7 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
           stiffness: 500,
           damping: 30,
         }}
-        className="absolute -top-16 left-1/2 -translate-x-1/2 bg-gray-800/90 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap pointer-events-none backdrop-blur-sm z-50"
+        className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800/90 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none backdrop-blur-sm z-50"
       >
         {item.name}
       </motion.div>
@@ -212,10 +212,10 @@ function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) 
 
       {/* Tooltip */}
       <motion.div
-        initial={{ opacity: 0, y: 10, scale: 0.8 }}
+        initial={{ opacity: 0, y: 5, scale: 0.8 }}
         animate={{
           opacity: isHovered ? 1 : 0,
-          y: isHovered ? -30 : 10,
+          y: isHovered ? -15 : 5,
           scale: isHovered ? 1 : 0.8,
         }}
         transition={{
@@ -223,7 +223,7 @@ function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) 
           stiffness: 500,
           damping: 30,
         }}
-        className="absolute -top-16 left-1/2 -translate-x-1/2 bg-gray-800/90 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap pointer-events-none backdrop-blur-sm z-50"
+        className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800/90 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none backdrop-blur-sm z-50"
       >
         Adicionar
       </motion.div>
