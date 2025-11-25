@@ -247,6 +247,43 @@
     --warn: #F59E0B;
     --error: #DC2626;
   }
+
+  /* Dark theme tokens - cores ajustadas para melhor contraste */
+  .dark,
+  :root[data-theme="dark"],
+  :root[data-theme="materialm-dark"] {
+    /* Brand Colors - Amarelo mais suave no dark mode */
+    --brand: 43 76% 56%; /* Reduzida saturação de 96% para 76% */
+    --brand-foreground: 220 13% 9%; /* Texto escuro para amarelo */
+    --brand-hover-bg: 43 76% 56% / 0.15; /* Hover mais suave */
+    --brand-active-bg: 210 100% 70%; /* Azul suave ao invés de amarelo forte */
+    --brand-active-foreground: 220 13% 9%; /* Texto escuro */
+
+    /* Interactive States - Ajustados para dark mode */
+    --interactive-hover-bg: 43 76% 56% / 0.15;
+    --interactive-hover-text: 0 0% 98%;
+    --interactive-active-bg: 210 100% 70%; /* Azul suave */
+    --interactive-active-text: 220 13% 9%;
+
+    /* Button State Colors - Ajustados para dark mode */
+    --button-hover-bg: 43 76% 56% / 0.15;
+    --button-hover-text: 0 0% 98%;
+    --button-active-bg: 210 100% 70%; /* Azul suave */
+    --button-active-text: 220 13% 9%;
+
+    /* Table - Ajustados para dark mode */
+    --table-row-hover: 43 76% 56% / 0.08;
+    --table-row-selected: 210 100% 70%; /* Azul suave */
+    --table-row-selected-text: 220 13% 9%;
+
+    /* Accent suavizado */
+    --accent: 43 76% 56%;
+    --accent-foreground: 220 13% 9%;
+
+    /* Warning suavizado */
+    --warning: 43 76% 56%;
+    --warning-foreground: 220 13% 9%;
+  }
 }
 
 @layer base {
