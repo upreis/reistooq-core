@@ -1,6 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+// Helper para logs apenas em desenvolvimento
+const debugLog = (...args: any[]) => {
+  if (import.meta.env.DEV) {
+    console.debug(...args);
+  }
+};
+
 interface UseFileDialogOptions {
   onFileSelected: (file: File, productId: string, field: 'imagem' | 'imagem_fornecedor', signal: AbortSignal) => void | Promise<void>;
   onCancelled?: () => void;
@@ -48,7 +55,7 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
   const cleanup = useCallback((aborted = false) => {
     // Prevenir múltiplas execuções simultâneas de cleanup
     if (cleanupInProgressRef.current) {
-      console.debug('⚠️ Cleanup já em andamento, ignorando chamada duplicada');
+      debugLog('⚠️ Cleanup já em andamento, ignorando chamada duplicada');
       return;
     }
 
@@ -94,7 +101,7 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
             try {
               input.removeEventListener('change', changeHandler);
             } catch (e) {
-              console.debug('Erro ao remover changeHandler:', e);
+              debugLog('Erro ao remover changeHandler:', e);
             }
           }
           
@@ -102,7 +109,7 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
             try {
               input.removeEventListener('cancel', cancelHandler);
             } catch (e) {
-              console.debug('Erro ao remover cancelHandler:', e);
+              debugLog('Erro ao remover cancelHandler:', e);
             }
           }
           
@@ -112,11 +119,11 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
               input.parentNode.removeChild(input);
             } catch (error) {
               // Se falhar, pode ser porque já foi removido - não é crítico
-              console.debug('Input já foi removido do DOM:', error);
+              debugLog('Input já foi removido do DOM:', error);
             }
           }
         } catch (error) {
-          console.debug('Erro ao limpar input:', error);
+          debugLog('Erro ao limpar input:', error);
         }
         inputRef.current = null;
       }
