@@ -151,7 +151,7 @@ export default function DashboardVisaoGeral() {
         <div className="flex gap-1 self-start justify-end">
           {/* Card 3: Produtos com Maior Estoque */}
           <div className="relative">
-            <h3 className="absolute top-2 left-0 right-0 text-xs font-semibold text-foreground text-center z-10">Estoque Alto</h3>
+            <h3 className="absolute top-2 left-0 right-0 text-sm font-semibold text-green-500 text-center z-10">Estoque Alto</h3>
             {stockLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -169,7 +169,7 @@ export default function DashboardVisaoGeral() {
 
           {/* Card 4: Produtos com Menor Estoque */}
           <div className="relative">
-            <h3 className="absolute top-2 left-0 right-0 text-xs font-semibold text-foreground text-center z-10">Estoque Baixo</h3>
+            <h3 className="absolute top-2 left-0 right-0 text-sm font-semibold text-red-500 text-center z-10">Estoque Baixo</h3>
             {stockLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
