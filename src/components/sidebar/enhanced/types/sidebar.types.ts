@@ -6,6 +6,7 @@ export interface NavItem {
   children?: NavItem[];
   roles?: string[];
   feature?: string;
+  permission?: string;
   badge?: {
     content: string | number;
     variant: 'default' | 'destructive' | 'warning' | 'success';
