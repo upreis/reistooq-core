@@ -11,6 +11,7 @@ import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { motion, AnimatePresence } from 'framer-motion';
+import { isRouteActive } from '../utils/sidebar-utils';
 
 interface EnhancedSidebarProps {
   navItems: NavSection[];
@@ -18,11 +19,6 @@ interface EnhancedSidebarProps {
   onMobileClose?: () => void;
   isCollapsed?: boolean; // Allow external control from SidebarUIProvider
 }
-
-const getIconComponent = (iconName: string) => {
-  const IconComponent = (LucideIcons as any)[iconName];
-  return IconComponent || LucideIcons.Package;
-};
 
 // Memoized section component (extracted to separate file for better organization)
 const SidebarSection = memo(({ 
@@ -103,7 +99,7 @@ const SidebarContent = memo(({
   
   // Memoized isActive function
   const isActive = useCallback((path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    return isRouteActive(location.pathname, path);
   }, [location.pathname]);
 
   // Map route paths to permission keys

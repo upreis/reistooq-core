@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { useMemo } from 'react';
 import { NavItem, NavSection } from '../types/sidebar.types';
+import { isRouteActive } from '../utils/sidebar-utils';
 
 export function useActiveRoute(navItems: NavSection[]) {
   const location = useLocation();
@@ -46,11 +47,11 @@ export function useActiveRoute(navItems: NavSection[]) {
       hasActiveChild: (item: NavItem) => {
         if (!item.children) return false;
         return item.children.some(child => 
-          child.path && (currentPath === child.path || currentPath.startsWith(child.path + '/'))
+          child.path && isRouteActive(currentPath, child.path)
         );
       },
       isActive: (path: string) => {
-        return currentPath === path || currentPath.startsWith(path + '/');
+        return isRouteActive(currentPath, path);
       }
     };
   }, [location.pathname, navItems]);
