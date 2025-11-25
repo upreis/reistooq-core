@@ -6,7 +6,7 @@ import { useActiveRoute } from '../hooks/useActiveRoute';
 import { SidebarItemWithChildren } from './SidebarItemWithChildren';
 import { SimpleSidebarItems } from './SimpleSidebarItems';
 import { useLocation } from 'react-router-dom';
-import { /* Tooltip, TooltipContent, TooltipTrigger, */ TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -23,9 +23,6 @@ const getIconComponent = (iconName: string) => {
   const IconComponent = (LucideIcons as any)[iconName];
   return IconComponent || LucideIcons.Package;
 };
-
-// ✅ REMOVIDO: SidebarSingleItem não é mais necessário
-// AnimatedSidebarSection renderiza itens simples corretamente
 
 // Memoized section component (extracted to separate file for better organization)
 const SidebarSection = memo(({ 
