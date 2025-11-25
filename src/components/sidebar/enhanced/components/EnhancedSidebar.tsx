@@ -32,8 +32,6 @@ const SidebarSection = memo(({
   isMobile: boolean;
   isActive: (path: string) => boolean;
 }) => {
-  const hasActiveChild = useActiveRoute();
-
   return (
     <div key={section.id}>
       {/* Section Label */}
