@@ -282,7 +282,7 @@ export const QuickActionsWidget = () => {
             }}
           >
             {/* Seção de Título */}
-            <div className="flex items-center justify-center px-6 h-full border-r-2 border-border">
+            <div className="flex items-center justify-center px-6 h-full border-r-2 border-border my-3">
               <div className="space-y-0.5">
                 <h1 className="text-base font-bold whitespace-nowrap">Acesso Rápido</h1>
                 <p className="text-[11px] text-muted-foreground leading-tight">
