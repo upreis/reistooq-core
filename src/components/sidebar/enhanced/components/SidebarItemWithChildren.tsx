@@ -192,7 +192,6 @@ export const SidebarItemWithChildren = memo(({
           )}
         >
           {item.children?.map((child) => {
-            const ChildIcon = getIconComponent(child.icon);
             const childActive = child.path ? isRouteActive(location.pathname, child.path) : false;
 
             return (
@@ -200,7 +199,7 @@ export const SidebarItemWithChildren = memo(({
                 key={child.id || child.path || child.label}
                 to={child.path || '#'}
                 className={cn(
-                  'group relative flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-200',
+                  'group relative flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md text-sm transition-all duration-200',
                   'focus:outline-none focus:ring-1 focus:ring-[hsl(var(--ring))]',
                   'hover:bg-[hsl(var(--accent))]/50',
                   childActive
@@ -208,10 +207,6 @@ export const SidebarItemWithChildren = memo(({
                     : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
                 )}
               >
-                <ChildIcon className={cn(
-                  "h-4 w-4 shrink-0 transition-colors duration-200", 
-                  childActive ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
-                )} />
                 <span className={cn(
                   "truncate transition-colors duration-200",
                   childActive ? "text-[hsl(var(--foreground))]" : ""
