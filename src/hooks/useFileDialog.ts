@@ -42,6 +42,7 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
   const isProcessingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const cleanupInProgressRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   // Função de cleanup - remove input, cancela timeouts e aborta operações
   const cleanup = useCallback((aborted = false) => {
@@ -115,13 +116,15 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
         inputRef.current = null;
       }
 
-      // Reset estado
-      setDialogState({
-        productId: null,
-        field: null,
-        isOpen: false,
-        canCancel: false
-      });
+      // Reset estado apenas se componente ainda está montado
+      if (isMountedRef.current) {
+        setDialogState({
+          productId: null,
+          field: null,
+          isOpen: false,
+          canCancel: false
+        });
+      }
       isProcessingRef.current = false;
     } finally {
       // SEMPRE resetar flag de cleanup, mesmo se houver erro
@@ -131,8 +134,10 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
 
   // Cleanup ao desmontar componente
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      cleanup();
+      isMountedRef.current = false;
+      cleanup(true);
     };
   }, [cleanup]);
 
