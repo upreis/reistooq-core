@@ -187,10 +187,8 @@ export default function DashboardVisaoGeral() {
       </div>
 
       {/* Linha 2: Atalhos Rápidos posicionado abaixo do card Vendas */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        <div className="lg:col-span-1">
-          <QuickActionsWidget />
-        </div>
+      <div className="w-full flex justify-start">
+        <QuickActionsWidget />
       </div>
 
       {/* Calendário de Atividades */}
