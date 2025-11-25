@@ -1,6 +1,7 @@
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, isSameDay, startOfYear } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, addDays, subDays, isSameDay, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
+import { useEffect, useRef } from "react";
 
 interface ContributionDay {
   date: string;
@@ -11,14 +12,19 @@ interface ContributionDay {
 interface HorizontalSemesterCalendarProps {
   data: ContributionDay[];
   onDayClick?: (contribution: ContributionDay, date: Date) => void;
-  startDate?: Date;
 }
 
 export function HorizontalSemesterCalendar({ 
   data = [], 
-  onDayClick,
-  startDate = startOfYear(new Date())
+  onDayClick
 }: HorizontalSemesterCalendarProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLDivElement>(null);
+  
+  // Calcular intervalo: hoje -2m15d até hoje +2m15d
+  const today = new Date();
+  const startDate = subDays(subMonths(today, 2), 15);
+  const endDate = addDays(addMonths(today, 2), 15);
   
   const getIntensityColor = (count: number) => {
     if (count === 0) return "bg-muted/30";
@@ -36,20 +42,39 @@ export function HorizontalSemesterCalendar({
 
   const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   
-  // Gera 6 meses a partir da data inicial
-  const months = Array.from({ length: 6 }, (_, i) => addMonths(startDate, i));
+  // Gerar meses entre startDate e endDate
+  const months: Date[] = [];
+  let currentMonth = startOfMonth(startDate);
+  const lastMonth = startOfMonth(endDate);
+  
+  while (currentMonth <= lastMonth) {
+    months.push(currentMonth);
+    currentMonth = addMonths(currentMonth, 1);
+  }
+  
+  // Scroll para centralizar a data de hoje
+  useEffect(() => {
+    if (scrollContainerRef.current && todayRef.current) {
+      const container = scrollContainerRef.current;
+      const todayElement = todayRef.current;
+      
+      // Centralizar o elemento de hoje
+      const scrollLeft = todayElement.offsetLeft - (container.clientWidth / 2) + (todayElement.clientWidth / 2);
+      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+    }
+  }, []);
 
   return (
     <Card className="p-6">
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold mb-1">Calendário Semestral de Atividades</h3>
+          <h3 className="text-lg font-semibold mb-1">Calendário de Atividades</h3>
           <p className="text-sm text-muted-foreground">
-            Visualização horizontal dos últimos 6 meses
+            Centralizado em hoje • 2 meses e 15 dias para cada lado
           </p>
         </div>
 
-        <div className="overflow-x-auto pb-4">
+        <div ref={scrollContainerRef} className="overflow-x-auto pb-4">
           <div className="inline-flex gap-6 min-w-max">
             {months.map((monthStart, monthIndex) => {
               const monthEnd = endOfMonth(monthStart);
@@ -96,10 +121,11 @@ export function HorizontalSemesterCalendar({
                     {daysInMonth.map((day, dayIndex) => {
                       const contribution = getDayContribution(day);
                       const colorClass = getIntensityColor(contribution.count);
-                      const isToday = isSameDay(day, new Date());
+                      const isToday = isSameDay(day, today);
 
                       return (
                         <div
+                          ref={isToday ? todayRef : undefined}
                           key={dayIndex}
                           className={`
                             w-8 h-8 rounded-md flex items-center justify-center
