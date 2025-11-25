@@ -3,18 +3,14 @@ import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NavItem, FlyoutPosition } from '../types/sidebar.types';
-import { SidebarFlyout } from './SidebarFlyout';
+import { NavItem } from '../types/sidebar.types';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { useSidebarUI } from '@/context/SidebarUIContext';
-import { SIDEBAR_BEHAVIOR } from '@/config/sidebar-behavior';
 
 interface SidebarItemWithChildrenProps {
   item: NavItem;
   isCollapsed: boolean;
   isMobile: boolean;
-  pointerType: 'mouse' | 'touch' | 'pen';
-  calculateFlyoutPosition: (element: HTMLElement) => FlyoutPosition;
 }
 
 const getIconComponent = (iconName: string) => {
@@ -25,9 +21,7 @@ const getIconComponent = (iconName: string) => {
 export const SidebarItemWithChildren = memo(({
   item,
   isCollapsed,
-  isMobile,
-  pointerType,
-  calculateFlyoutPosition
+  isMobile
 }: SidebarItemWithChildrenProps) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const hasAutoExpandedRef = useRef(false);
@@ -41,22 +35,15 @@ export const SidebarItemWithChildren = memo(({
   // Check if this item has active children
   const hasActiveChild = useMemo(() => {
     if (!item.children) return false;
-    const isChildActive = item.children.some(child => 
+    return item.children.some(child => 
       child.path && matchPath({ path: child.path, end: false }, location.pathname)
     );
-    
-    // Debug log para verificar detecção de páginas ativas
-    if (isChildActive) {
-      console.log(`🎯 Item "${item.label}" tem filho ativo na rota: ${location.pathname}`);
-    }
-    
-    return isChildActive;
-  }, [location.pathname, item.children, item.label]);
+  }, [location.pathname, item.children]);
 
-  // Check if this group is open (força re-renderização com openGroups como dependência)
+  // Check if this group is open
   const isOpen = useMemo(() => isGroupOpen(item.id), [isGroupOpen, item.id, openGroups]);
   
-  // Auto-expand group when child is active (uma única vez)
+  // Auto-expand group when child is active
   useEffect(() => {
     if (hasActiveChild && !hasAutoExpandedRef.current) {
       hasAutoExpandedRef.current = true;
@@ -66,9 +53,6 @@ export const SidebarItemWithChildren = memo(({
       hasAutoExpandedRef.current = false;
     }
   }, [hasActiveChild, item.id, openGroup]);
-
-  // Remove flyout functionality temporarily as it's not used in the unified context
-  const isFlyoutPinned = false;
 
   const handleParentClick = useCallback((e: React.MouseEvent) => {
     // Navegação para o primeiro filho disponível

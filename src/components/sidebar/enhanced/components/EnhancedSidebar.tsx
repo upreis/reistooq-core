@@ -32,16 +32,12 @@ const SidebarSection = memo(({
   section, 
   isCollapsed, 
   isMobile, 
-  isActive,
-  getPointerType,
-  calculateFlyoutPosition
+  isActive
 }: {
   section: NavSection;
   isCollapsed: boolean;
   isMobile: boolean;
   isActive: (path: string) => boolean;
-  getPointerType: () => 'mouse' | 'touch' | 'pen';
-  calculateFlyoutPosition: (element: HTMLElement) => any;
 }) => {
   const { hasActiveChild } = useActiveRoute([section]);
 
@@ -73,8 +69,6 @@ const SidebarSection = memo(({
             item={item}
             isCollapsed={isCollapsed}
             isMobile={isMobile}
-            pointerType={getPointerType()}
-            calculateFlyoutPosition={calculateFlyoutPosition}
           />
         ))}
         
@@ -114,26 +108,6 @@ const SidebarContent = memo(({
   const isActive = useCallback((path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   }, [location.pathname]);
-  
-  // Memoized getPointerType
-  const getPointerType = useCallback((): 'mouse' | 'touch' | 'pen' => {
-    if (window.matchMedia('(pointer: coarse)').matches) return 'touch';
-    if (window.matchMedia('(pointer: fine)').matches) return 'mouse';
-    return 'mouse';
-  }, []);
-  
-  // Memoized calculateFlyoutPosition
-  const calculateFlyoutPosition = useCallback((element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const flyoutMaxHeight = Math.min(300, viewportHeight - 40);
-    
-    return {
-      top: Math.max(10, Math.min(rect.top, viewportHeight - flyoutMaxHeight - 10)),
-      left: rect.right + 8,
-      maxHeight: flyoutMaxHeight
-    };
-  }, []);
 
   // Map route paths to permission keys
   const getPermissionForPath = (path?: string): string | null => {
@@ -249,8 +223,6 @@ const SidebarContent = memo(({
               isCollapsed={isCollapsed}
               isMobile={isMobile}
               isActive={isActive}
-              getPointerType={getPointerType}
-              calculateFlyoutPosition={calculateFlyoutPosition}
             />
           ))}
         </nav>
