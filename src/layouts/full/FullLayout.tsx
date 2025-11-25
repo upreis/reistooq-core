@@ -10,6 +10,7 @@ import { useLayoutSingleton } from "@/layouts/guards/LayoutSingleton";
 import AppMobileHeader from "@/components/layout/AppMobileHeader";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { FloatingQuickAccessDock } from "@/components/sidebar/FloatingQuickAccessDock";
 
 const CollapsedReopenTab: React.FC = () => {
   const { setIsSidebarCollapsed } = useSidebarUI();
@@ -84,6 +85,9 @@ const InnerLayout = () => {
 
           {/* Rail button when collapsed - desktop only */}
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
+
+          {/* Floating Quick Access Dock - desktop only */}
+          {!isMobile && <FloatingQuickAccessDock isSidebarCollapsed={isSidebarCollapsed} />}
 
           {/* Conteúdo principal com margem para sidebar */}
           <div className={`flex flex-col min-w-0 min-h-screen ${

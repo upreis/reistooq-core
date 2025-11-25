@@ -11,7 +11,6 @@ import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QuickAccessDock } from '@/components/sidebar/QuickAccessDock';
 
 interface EnhancedSidebarProps {
   navItems: NavSection[];
@@ -255,21 +254,6 @@ const SidebarContent = memo(({
             />
           ))}
         </nav>
-
-        {/* Quick Access Dock - alinhado com o botão do chat */}
-        <AnimatePresence>
-          {(!isMobile && !isCollapsed) && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="border-t border-[hsl(var(--border))] px-4 pt-4"
-            >
-              <QuickAccessDock />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </TooltipProvider>
   );
