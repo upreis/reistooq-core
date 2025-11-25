@@ -3,6 +3,12 @@ import { Plus, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
@@ -274,42 +280,51 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
             ))}
 
             {/* Botão toggle - sempre visível, muda entre + e X */}
-            <motion.button
-              className={cn(
-                "size-16 rounded-full flex items-center justify-center flex-shrink-0",
-                "bg-primary hover:bg-primary/90 transition-colors shadow-xl"
-              )}
-              onClick={() => setActive(!active)}
-              animate={{ 
-                rotate: active ? 180 : 0,
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <motion.div
-                animate={{
-                  rotate: active ? 0 : 0,
-                }}
-              >
-                {active ? (
-                  <X 
-                    size={24} 
-                    strokeWidth={3} 
-                    className="text-primary-foreground" 
-                  />
-                ) : (
-                  <Plus 
-                    size={24} 
-                    strokeWidth={3} 
-                    className="text-primary-foreground" 
-                  />
-                )}
-              </motion.div>
-            </motion.button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.button
+                    className={cn(
+                      "size-16 rounded-full flex items-center justify-center flex-shrink-0",
+                      "bg-primary hover:bg-primary/90 transition-colors shadow-xl"
+                    )}
+                    onClick={() => setActive(!active)}
+                    animate={{ 
+                      rotate: active ? 180 : 0,
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 260,
+                      damping: 20,
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <motion.div
+                      animate={{
+                        rotate: active ? 0 : 0,
+                      }}
+                    >
+                      {active ? (
+                        <X 
+                          size={24} 
+                          strokeWidth={3} 
+                          className="text-primary-foreground" 
+                        />
+                      ) : (
+                        <Plus 
+                          size={24} 
+                          strokeWidth={3} 
+                          className="text-primary-foreground" 
+                        />
+                      )}
+                    </motion.div>
+                  </motion.button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Acesso Rápido</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </motion.div>
         </div>
       </motion.div>
