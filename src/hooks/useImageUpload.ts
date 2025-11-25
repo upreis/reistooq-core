@@ -55,9 +55,22 @@ export const useImageUpload = () => {
       if (signal?.aborted) {
         // Tentar deletar arquivo se upload completou mas foi cancelado
         if (data?.path) {
-          await supabase.storage
-            .from('product-images')
-            .remove([data.path]);
+          try {
+            console.log('🗑️ Removendo arquivo órfão após cancelamento:', data.path);
+            const { error: deleteError } = await supabase.storage
+              .from('product-images')
+              .remove([data.path]);
+            
+            if (deleteError) {
+              console.error('⚠️ Erro ao deletar arquivo órfão:', deleteError);
+              // Não bloquear o fluxo, apenas logar
+            } else {
+              console.log('✅ Arquivo órfão removido com sucesso');
+            }
+          } catch (deleteErr) {
+            console.error('⚠️ Falha ao deletar arquivo após cancelamento:', deleteErr);
+            // Não bloquear o fluxo
+          }
         }
         throw new Error('Upload cancelado');
       }

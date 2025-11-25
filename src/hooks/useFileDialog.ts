@@ -38,6 +38,7 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
   // Refs para rastrear elementos do DOM, timeouts e AbortController
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cleanupTimeoutRef = useRef<number | null>(null);
+  const clickTimeoutRef = useRef<number | null>(null);
   const isProcessingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -53,10 +54,15 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
     }
     abortControllerRef.current = null;
 
-    // Cancelar timeout pendente
+    // Cancelar todos os timeouts pendentes
     if (cleanupTimeoutRef.current) {
       clearTimeout(cleanupTimeoutRef.current);
       cleanupTimeoutRef.current = null;
+    }
+    
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
     }
 
     // Remover input do DOM
@@ -188,7 +194,20 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
           return;
         }
 
+        // Verificar cancelamento DURANTE o upload usando listener
+        const checkAborted = () => {
+          if (abortControllerRef.current?.signal.aborted) {
+            throw new Error('Upload cancelado');
+          }
+        };
+        
+        // Adicionar listener de abort
+        abortControllerRef.current!.signal.addEventListener('abort', checkAborted);
+
         await onFileSelected(file, productId, field, abortControllerRef.current!.signal);
+        
+        // Remover listener
+        abortControllerRef.current?.signal.removeEventListener('abort', checkAborted);
         
         // Se chegou aqui, upload completou com sucesso
         if (!abortControllerRef.current?.signal.aborted) {
@@ -196,7 +215,7 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
         }
       } catch (error: any) {
         // Distinguir entre erro de abort e erro real
-        if (error.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
+        if (error.name === 'AbortError' || error.message === 'Upload cancelado' || abortControllerRef.current?.signal.aborted) {
           console.log('Upload cancelado pelo usuário');
           toast({
             title: "Upload cancelado",
@@ -230,8 +249,9 @@ export const useFileDialog = (options: UseFileDialogOptions) => {
     // Adicionar ao DOM e clicar
     document.body.appendChild(input);
     
-    // Delay mínimo para garantir que input foi adicionado ao DOM
-    setTimeout(() => {
+    // Delay mínimo para garantir que input foi adicionado ao DOM (guardar ref para cancelar)
+    clickTimeoutRef.current = window.setTimeout(() => {
+      clickTimeoutRef.current = null;
       input.click();
     }, 0);
 
