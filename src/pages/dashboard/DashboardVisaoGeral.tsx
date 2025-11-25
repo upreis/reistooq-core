@@ -54,7 +54,7 @@ export default function DashboardVisaoGeral() {
   return (
     <div className="space-y-6 p-6 bg-card w-full">
       {/* Cards Analíticos */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_0.65fr]">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_0.65fr_0.65fr]">
         {/* Card 1: Vendas */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
@@ -163,13 +163,7 @@ export default function DashboardVisaoGeral() {
             />
           )}
         </div>
-      </div>
 
-      {/* Atalhos Rápidos */}
-      <QuickActionsWidget />
-
-      {/* Grid: Baixo Estoque + Calendário */}
-      <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
         {/* Card 4: Produtos com Menor Estoque */}
         <div className="self-start">
           {stockLoading ? (
@@ -186,10 +180,14 @@ export default function DashboardVisaoGeral() {
             />
           )}
         </div>
+      </div>
 
-        {/* Calendário de Atividades */}
-        {calendarLoading ? (
-          <Card className="p-6 bg-background">
+      {/* Atalhos Rápidos */}
+      <QuickActionsWidget />
+
+      {/* Calendário de Atividades */}
+      {calendarLoading ? (
+        <Card className="p-6 bg-background">
           <div className="space-y-4">
             {/* Loading Skeleton */}
             <div className="flex gap-2 items-center">
@@ -244,7 +242,6 @@ export default function DashboardVisaoGeral() {
           ⚠️ {calendarError}
         </div>
       )}
-      </div>
     </div>
   );
 }
