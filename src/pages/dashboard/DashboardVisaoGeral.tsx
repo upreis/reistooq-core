@@ -49,7 +49,7 @@ export default function DashboardVisaoGeral() {
   return (
     <div className="space-y-6 p-6 bg-card">
       {/* Cards Analíticos */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[1fr_1.5fr_1fr]">
         {/* Card 1: Vendas */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
