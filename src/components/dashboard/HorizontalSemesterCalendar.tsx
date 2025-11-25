@@ -352,11 +352,7 @@ export function HorizontalSemesterCalendar({
           </div>
           
           {/* Legenda */}
-          <div className="pt-4 border-t space-y-3">
-            <div className="text-xs text-muted-foreground">
-              Clique em qualquer dia para ver detalhes das atividades
-            </div>
-            
+          <div className="pt-4 border-t">
             <div className="flex flex-wrap gap-4 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded border-2 border-blue-500"></div>
