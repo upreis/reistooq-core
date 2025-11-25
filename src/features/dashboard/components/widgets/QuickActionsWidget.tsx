@@ -130,7 +130,7 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
       )}
 
       {/* Tooltip */}
-      <span className="tooltip pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[11px]">
+      <span className="tooltip pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[11px]">
         {item.name}
       </span>
 
@@ -206,7 +206,7 @@ function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) 
       </motion.div>
 
       {/* Tooltip */}
-      <span className="tooltip pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[11px]">
+      <span className="tooltip pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-foreground/70 whitespace-nowrap sm:text-[11px]">
         Adicionar
       </span>
     </motion.div>
@@ -262,7 +262,7 @@ export const QuickActionsWidget = () => {
   return (
     <>
       <style>{`
-        .tooltip{opacity:0;transform:translateY(6px);transition:opacity .2s, transform .2s}
+        .tooltip{opacity:0;transform:translateY(-6px);transition:opacity .2s, transform .2s}
         .group:hover .tooltip{opacity:1;transform:translateY(0)}
       `}</style>
       
