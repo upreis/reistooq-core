@@ -61,10 +61,10 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [60, 90, 60]);
+  const widthSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
   const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
-  const heightSync = useTransform(distance, [-150, 0, 150], [60, 90, 60]);
+  const heightSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
   const height = useSpring(heightSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
   const [isHovered, setIsHovered] = useState(false);
@@ -164,10 +164,10 @@ function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) 
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [60, 90, 60]);
+  const widthSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
   const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
-  const heightSync = useTransform(distance, [-150, 0, 150], [60, 90, 60]);
+  const heightSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
   const height = useSpring(heightSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
   const [isHovered, setIsHovered] = useState(false);
