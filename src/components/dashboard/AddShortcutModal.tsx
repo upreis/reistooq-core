@@ -90,6 +90,7 @@ import scannerIcon from "@/assets/scanner.png";
 import segurancaIcon from "@/assets/seguranca.png";
 import usuariosIcon from "@/assets/usuarios.png";
 import vendedoresIcon from "@/assets/vendedores.png";
+import vendedoresNewIcon from "@/assets/oms-vendedores-icon-v2.png";
 import visaoGeralIcon from "@/assets/visao_geral.png";
 
 interface PageOption {
@@ -182,7 +183,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'oms-vendedores',
     label: 'OMS Vendedores',
     route: '/oms/vendedores',
-    icon: <img src={vendedoresIcon} alt="Vendedores" className="w-16 h-16 object-contain" />,
+    icon: <img src={vendedoresNewIcon} alt="Vendedores" className="w-16 h-16 object-contain" />,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-violet-500 to-violet-700'
   },
