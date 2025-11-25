@@ -13,7 +13,5 @@ export { getIconComponent, isRouteActive } from './utils/sidebar-utils';
 export type {
   NavItem,
   NavSection,
-  SidebarState,
-  SidebarConfig,
-  SidebarContextValue
+  SidebarState
 } from './types/sidebar.types';
