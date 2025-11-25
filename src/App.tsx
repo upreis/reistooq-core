@@ -34,7 +34,6 @@ import Alertas from "./pages/Alertas";
 import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
 import Historico from "./pages/Historico";
 import Shop from "./pages/Shop";
-import ProductDetail from "./pages/ProductDetail";
 import ProductList from "./pages/ProductList";
 
 import AddProduct from "./pages/AddProduct";
@@ -177,7 +176,6 @@ function App() {
                     
                     {/* E-commerce */}
                     <Route path="shop" element={<Shop />} />
-                    <Route path="shop/:id" element={<ProductDetail />} />
                     <Route path="apps/ecommerce/*" element={<Ecommerce />} />
                     <Route path="product-list" element={<ProductList />} />
                     <Route path="add-product" element={<AddProduct />} />

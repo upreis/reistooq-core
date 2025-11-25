@@ -1,11 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Store, FileText, Package, PlusSquare, Edit, Upload } from "lucide-react";
+import { Store, Package, PlusSquare, Edit, Upload } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const navigation = [
   { name: "Loja", href: "/apps/ecommerce/shop", icon: Store },
-  { name: "Detalhes", href: "/apps/ecommerce/detail/1", icon: FileText },
   { name: "Lista de Produtos", href: "/apps/ecommerce/list", icon: Package },
   { name: "Adicionar Produto", href: "/apps/ecommerce/addproduct", icon: PlusSquare },
   { name: "Editar Produtos", href: "/apps/ecommerce/editproduct", icon: Edit },
@@ -17,10 +16,7 @@ export function EcommerceNav() {
   const navigate = useNavigate();
 
   // Determina a tab ativa baseada na rota atual
-  const activeTab = navigation.find(item => 
-    location.pathname === item.href || 
-    (item.href === "/apps/ecommerce/detail/1" && location.pathname.startsWith("/apps/ecommerce/detail/"))
-  )?.href || navigation[0].href;
+  const activeTab = navigation.find(item => location.pathname === item.href)?.href || navigation[0].href;
 
   const handleTabChange = (value: string) => {
     navigate(value);
