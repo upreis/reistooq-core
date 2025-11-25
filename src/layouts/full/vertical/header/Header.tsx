@@ -28,6 +28,7 @@ import ecommerceShopIcon from "@/assets/ecommerce-shop-icon.png";
 import ecommerceListIcon from "@/assets/ecommerce-list-icon.png";
 import ecommerceAddProductIcon from "@/assets/ecommerce-addproduct-icon.png";
 import ecommerceImportIcon from "@/assets/ecommerce-import-icon.png";
+import scannerIcon from "@/assets/scanner-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -103,6 +104,9 @@ export default function Header() {
     // Aplicativos
     if (path.startsWith('/aplicativos/calendario')) return { icon: aplicativosCalendarioIcon, label: 'Aplicativos / Calendário', isImage: true };
     if (path.startsWith('/aplicativos/notas')) return { icon: aplicativosNotasIcon, label: 'Aplicativos / Notas', isImage: true };
+    
+    // Misc
+    if (path.startsWith('/scanner')) return { icon: scannerIcon, label: 'Scanner', isImage: true };
     
     // Configurações
     if (path.startsWith('/configuracoes/integracoes')) return { icon: configuracoesIntegracoesIcon, label: 'Configurações / Integrações', isImage: true };
