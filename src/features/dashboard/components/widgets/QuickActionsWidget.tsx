@@ -220,27 +220,33 @@ export const QuickActionsWidget = () => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Se existe algo salvo, usa o que foi salvo (mesmo que seja array vazio)
-        return parsed;
+        console.log('[QuickActionsWidget] Restored shortcuts:', parsed.length);
+        return Array.isArray(parsed) ? parsed : DEFAULT_SHORTCUTS;
       }
     } catch (error) {
       console.error('[QuickActionsWidget] Error loading shortcuts:', error);
     }
-    // Primeira vez: usa atalhos padrão
+    console.log('[QuickActionsWidget] Using default shortcuts');
     return DEFAULT_SHORTCUTS;
   });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const mouseX = useMotionValue(Infinity);
   const navigate = useNavigate();
+  const isFirstRenderRef = useRef(true);
 
-  // Salva SEMPRE que shortcuts mudar
+  // Salva apenas quando shortcuts mudar (não na montagem inicial)
   useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcuts));
-      console.log('[QuickActionsWidget] Shortcuts salvos:', shortcuts.length);
+      console.log('[QuickActionsWidget] ✅ Shortcuts salvos:', shortcuts.length, shortcuts.map(s => s.name));
     } catch (error) {
-      console.error('[QuickActionsWidget] Error saving shortcuts:', error);
+      console.error('[QuickActionsWidget] ❌ Error saving shortcuts:', error);
     }
   }, [shortcuts]);
 
@@ -256,15 +262,10 @@ export const QuickActionsWidget = () => {
   };
 
   const handleRemoveShortcut = (index: number) => {
+    console.log('[QuickActionsWidget] 🗑️ Removendo atalho:', shortcuts[index]?.name);
     const newShortcuts = shortcuts.filter((_, i) => i !== index);
     setShortcuts(newShortcuts);
-    // Salva imediatamente após deletar
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newShortcuts));
-      console.log('[QuickActionsWidget] Atalho removido, restam:', newShortcuts.length);
-    } catch (error) {
-      console.error('[QuickActionsWidget] Error saving after remove:', error);
-    }
+    // O useEffect cuidará do salvamento
   };
 
   const existingIds = shortcuts.map((s) => {
