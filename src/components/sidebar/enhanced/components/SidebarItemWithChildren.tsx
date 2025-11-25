@@ -157,7 +157,7 @@ export const SidebarItemWithChildren = memo(({
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20',
                   'hover:bg-[hsl(var(--accent))]',
                   hasActiveChild 
-                    ? 'bg-[hsl(var(--accent))] text-[hsl(var(--primary))] border-2 border-[hsl(var(--primary))]'
+                    ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-2 border-[hsl(var(--primary))]'
                     : 'bg-transparent border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]'
                 )}
                 aria-haspopup="menu"
