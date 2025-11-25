@@ -31,6 +31,7 @@ import ecommerceImportIcon from "@/assets/ecommerce-import-icon.png";
 import scannerIcon from "@/assets/scanner-icon.png";
 import deParaIcon from "@/assets/de-para-icon.png";
 import alertasIcon from "@/assets/alertas-icon.png";
+import historicoIcon from "@/assets/historico-icon.png";
 import devolucoesdevendaIcon from "@/assets/devolucoesdevenda-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
@@ -108,6 +109,7 @@ export default function Header() {
     if (path.startsWith('/aplicativos/notas')) return { icon: aplicativosNotasIcon, label: 'Aplicativos / Notas', isImage: true };
     
     // Misc
+    if (path.startsWith('/historico')) return { icon: historicoIcon, label: 'Histórico', isImage: true };
     if (path.startsWith('/alertas')) return { icon: alertasIcon, label: 'Alertas', isImage: true };
     if (path.startsWith('/de-para')) return { icon: deParaIcon, label: 'De-Para', isImage: true };
     if (path.startsWith('/scanner')) return { icon: scannerIcon, label: 'Scanner', isImage: true };
