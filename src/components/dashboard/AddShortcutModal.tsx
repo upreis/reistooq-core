@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import pedidosIcon from "@/assets/pedidos-cart-icon.png";
 import pedidosNewIcon from "@/assets/pedidos-icon-v2.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
+import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
 import vendasOnlineIcon from "@/assets/vendas_online.png";
 import vendasOnlineNewIcon from "@/assets/vendas-online-icon-v2.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
@@ -196,7 +197,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'estoque',
     label: 'Estoque',
     route: '/estoque',
-    icon: <img src={estoqueIcon} alt="Estoque" className="w-16 h-16 object-contain" />,
+    icon: <img src={estoqueNewIcon} alt="Estoque" className="w-16 h-16 object-contain" />,
     category: 'Estoque',
     gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
   },
