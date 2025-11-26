@@ -300,18 +300,7 @@ export const Devolucao2025Page = () => {
     console.log('🔄 Aplicando filtros e buscando dados...');
     setIsManualSearching(true);
     setShouldFetch(true);
-    
-    try {
-      const result = await refetch();
-      console.log('✅ Busca concluída:', result.data?.length || 0, 'devoluções');
-    } catch (error) {
-      console.error('❌ Erro na busca:', error);
-    }
-    
-    // Reset imediato após refetch (não esperar isLoading)
-    setTimeout(() => {
-      setIsManualSearching(false);
-    }, 500);
+    await refetch();
   }, [refetch]);
 
   const handleCancelSearch = useCallback(() => {
@@ -320,6 +309,14 @@ export const Devolucao2025Page = () => {
     setIsManualSearching(false);
     toast.info('Busca cancelada');
   }, []);
+
+  // Reset isManualSearching quando isLoading do React Query muda para false
+  useEffect(() => {
+    if (!isLoading && isManualSearching) {
+      console.log('✅ Busca concluída, resetando estado manual');
+      setIsManualSearching(false);
+    }
+  }, [isLoading, isManualSearching]);
 
   // Handler para mudança de status de análise
   const handleStatusChange = useCallback((orderId: string, newStatus: StatusAnalise) => {
