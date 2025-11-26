@@ -25,35 +25,34 @@ export const authInterceptor: RequestInterceptor = async (url, config) => {
 };
 
 /**
- * Interceptor que trata erros 401 (não autorizado) tentando refresh do token
+ * Interceptor que trata erros 401 (não autorizado)
+ * 
+ * IMPORTANTE: Este interceptor apenas loga 401 e redireciona para login.
+ * Para retry automático com token refresh, use manualmente:
+ * 
+ * try {
+ *   return await apiClient.get('/protected');
+ * } catch (error) {
+ *   if (error.status === 401) {
+ *     await supabase.auth.refreshSession();
+ *     return await apiClient.get('/protected'); // Retry
+ *   }
+ *   throw error;
+ * }
  */
-export const tokenRefreshInterceptor: ErrorInterceptor = async (error) => {
+export const unauthorizedInterceptor: ErrorInterceptor = async (error) => {
   if (error.status === 401) {
-    console.warn('[tokenRefreshInterceptor] Token expirado, tentando refresh...');
+    console.error('[unauthorizedInterceptor] 401 Unauthorized - token inválido ou expirado');
     
-    try {
-      // Tentar refresh automático via Supabase
-      const { data, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError || !data.session) {
-        console.error('[tokenRefreshInterceptor] Refresh falhou:', refreshError);
-        // Redirecionar para login se refresh falhar
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-        throw error;
-      }
-      
-      console.log('[tokenRefreshInterceptor] Token refreshed com sucesso');
-      // Token foi refreshed, mas requisição original deve ser retentada pelo caller
-      throw error; // Re-throw para retry logic pegar
-    } catch (refreshError) {
-      console.error('[tokenRefreshInterceptor] Erro ao tentar refresh:', refreshError);
-      throw error;
+    // Redirecionar para login após pequeno delay
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
     }
   }
   
-  // Outros erros passam direto
+  // Sempre re-throw para caller tratar
   throw error;
 };
 
