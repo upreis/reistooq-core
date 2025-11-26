@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { ErrorHandler } from '@/core/errors';
 
 export interface ProductWithStock {
   id: string;
@@ -76,8 +77,11 @@ export const useEstoqueProducts = () => {
         setLowStockProducts(sortedByLowStock.slice(0, 10));
 
       } catch (err) {
-        console.error('Error fetching stock products:', err);
-        setError(err instanceof Error ? err.message : 'Erro ao buscar produtos');
+        const errorDetails = ErrorHandler.capture(err, {
+          component: 'useEstoqueProducts',
+          action: 'fetchProducts'
+        });
+        setError(errorDetails.userMessage);
       } finally {
         setLoading(false);
       }
