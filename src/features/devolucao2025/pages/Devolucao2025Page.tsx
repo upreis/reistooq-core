@@ -302,14 +302,16 @@ export const Devolucao2025Page = () => {
     setShouldFetch(true);
     
     try {
-      await refetch();
-      console.log('✅ Busca concluída');
+      const result = await refetch();
+      console.log('✅ Busca concluída:', result.data?.length || 0, 'devoluções');
     } catch (error) {
       console.error('❌ Erro na busca:', error);
-    } finally {
-      // Garantir que botão sempre volta ao normal
-      setIsManualSearching(false);
     }
+    
+    // Reset imediato após refetch (não esperar isLoading)
+    setTimeout(() => {
+      setIsManualSearching(false);
+    }, 500);
   }, [refetch]);
 
   const handleCancelSearch = useCallback(() => {
