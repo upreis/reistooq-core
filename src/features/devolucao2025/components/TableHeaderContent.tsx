@@ -31,26 +31,22 @@ export const TableHeaderContent = ({ visibleColumns, isVisible }: TableHeaderCon
       {/* GRUPO 2: FINANCEIRO */}
       {isVisible('valor_total') && <TableHead>Valor Total</TableHead>}
       {isVisible('valor_produto') && <TableHead>Valor Produto</TableHead>}
-      {isVisible('percentual_reemb') && <TableHead>% Reemb.</TableHead>}
-      {isVisible('metodo_pagamento') && <TableHead>Método Pagto</TableHead>}
-      {isVisible('tipo_pagamento') && <TableHead>Tipo Pagto</TableHead>}
 
       {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
       {isVisible('status_dev') && <TableHead>Status Dev</TableHead>}
       {isVisible('status_return') && <TableHead>Status Return</TableHead>}
       {isVisible('status_entrega') && <TableHead>Status Entrega</TableHead>}
       {isVisible('destino') && <TableHead>Destino</TableHead>}
-      {isVisible('evidencias') && <TableHead>Evidências</TableHead>}
       {isVisible('resolucao') && <TableHead>Resolução</TableHead>}
 
       {/* GRUPO 4: DATAS */}
       {isVisible('data_criacao') && <TableHead>Data Criação</TableHead>}
       {isVisible('data_venda') && <TableHead>Data Venda</TableHead>}
-      {isVisible('data_fechamento') && <TableHead>Data Fechamento</TableHead>}
+      {isVisible('data_fechamento') && <TableHead>Devolução Cancelada</TableHead>}
       {isVisible('data_inicio_return') && <TableHead>Início Return</TableHead>}
       {isVisible('data_atualizacao') && <TableHead>Última Atualização Return</TableHead>}
       {isVisible('prazo_analise') && <TableHead>Prazo Análise</TableHead>}
-      {isVisible('data_chegada') && <TableHead>Data Chegada</TableHead>}
+      {isVisible('data_chegada') && <TableHead>Devolução Recebida</TableHead>}
       {isVisible('ultima_msg') && <TableHead>Última Msg</TableHead>}
 
       {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
@@ -63,17 +59,8 @@ export const TableHeaderContent = ({ visibleColumns, isVisible }: TableHeaderCon
       {/* GRUPO 8: COMUNICAÇÃO */}
       {isVisible('num_interacoes') && <TableHead>Nº Interações</TableHead>}
       {isVisible('qualidade_com') && <TableHead>Qualidade Com</TableHead>}
-      {isVisible('moderacao') && <TableHead>Moderação</TableHead>}
-      {isVisible('anexos_comprador') && <TableHead>Anexos Comprador</TableHead>}
-      {isVisible('anexos_vendedor') && <TableHead>Anexos Vendedor</TableHead>}
-      {isVisible('anexos_ml') && <TableHead>Anexos ML</TableHead>}
 
-      {/* GRUPO 9: REVIEW & AÇÕES */}
-      {isVisible('review_resource_id') && <TableHead>Review Resource ID</TableHead>}
-      {isVisible('reason_id') && <TableHead>Reason ID</TableHead>}
-
-      {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-      {isVisible('custo_total_log') && <TableHead>Custo Total Log</TableHead>}
+      {/* GRUPO 9: CUSTOS OPERACIONAIS */}
       {isVisible('custo_envio_orig') && <TableHead>Custo Envio Orig</TableHead>}
     </TableRow>
   );
