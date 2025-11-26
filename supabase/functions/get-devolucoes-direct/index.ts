@@ -311,7 +311,33 @@ serve(async (req) => {
           resolution: claim.resolution
         };
 
-        return mapDevolucaoCompleta(item, accountId, accountName, null);
+        const devCompleta = mapDevolucaoCompleta(item, accountId, accountName, null);
+        
+        // 🔍 DEBUG: Log APENAS primeira devolução para diagnóstico
+        if (mappedClaims.length === 0) {
+          console.log('🔍 [RAW DATA] claim:', {
+            return_details_v2: !!claim.return_details_v2,
+            return_status: claim.return_details_v2?.status,
+            return_date_created: claim.return_details_v2?.date_created,
+            claim_messages: !!claim.claim_messages,
+            total_messages: claim.claim_messages?.messages?.length,
+            order_data_shipping: !!item.order_data?.shipping,
+            shipment_id: item.order_data?.shipping?.id
+          });
+          
+          console.log('🔍 [MAPPED DATA]:', {
+            produto_titulo: devCompleta.produto_titulo,
+            status_return: devCompleta.status_return,
+            status_envio: devCompleta.status_envio,
+            codigo_rastreamento: devCompleta.codigo_rastreamento,
+            tipo_logistica: devCompleta.tipo_logistica,
+            data_fechamento_devolucao: devCompleta.data_fechamento_devolucao,
+            data_inicio_return: devCompleta.data_inicio_return,
+            ultima_mensagem_data: devCompleta.ultima_mensagem_data
+          });
+        }
+        
+        return devCompleta;
       }).filter(Boolean);
 
       logger.progress(`✅ [${accountId.slice(0, 8)}] ${mappedClaims.length} claims mapeados`);
