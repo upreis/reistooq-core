@@ -135,10 +135,10 @@ export const Devolucao2025Page = () => {
     }
   });
 
-  // ✅ ESTRATÉGIA HÍBRIDA: Buscar automático SEMPRE (60 dias + todas contas)
+  // ✅ BUSCA INICIAL AUTOMÁTICA (apenas uma vez no mount)
   useEffect(() => {
     if (organizationId && accounts.length > 0 && !shouldFetch) {
-      console.log('🚀 Busca híbrida: carregando 60 dias completos (filtros aplicados localmente)');
+      console.log('🚀 Busca híbrida inicial: carregando 60 dias completos');
       setShouldFetch(true);
     }
   }, [organizationId, accounts.length]);
@@ -152,7 +152,7 @@ export const Devolucao2025Page = () => {
       
       const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
         body: {
-          integration_account_ids: accounts.map(a => a.id), // 🆕 Array de contas
+          integration_account_ids: accounts.map(a => a.id),
           date_from: backendDateRange.from.toISOString(),
           date_to: backendDateRange.to.toISOString()
         }
@@ -162,6 +162,10 @@ export const Devolucao2025Page = () => {
       
       const results = data?.data || [];
       console.log(`✅ ${results.length} devoluções agregadas`);
+      
+      // Reset shouldFetch após busca completa
+      setShouldFetch(false);
+      
       return results;
     },
     enabled: organizationId !== null && shouldFetch && accounts.length > 0,
@@ -300,7 +304,13 @@ export const Devolucao2025Page = () => {
     console.log('🔄 Aplicando filtros e buscando dados...');
     setIsManualSearching(true);
     setShouldFetch(true);
-    await refetch();
+    
+    try {
+      await refetch();
+    } finally {
+      // Garantir reset IMEDIATO após refetch
+      setIsManualSearching(false);
+    }
   }, [refetch]);
 
   const handleCancelSearch = useCallback(() => {
@@ -309,14 +319,6 @@ export const Devolucao2025Page = () => {
     setIsManualSearching(false);
     toast.info('Busca cancelada');
   }, []);
-
-  // Reset isManualSearching quando isLoading do React Query muda para false
-  useEffect(() => {
-    if (!isLoading && isManualSearching) {
-      console.log('✅ Busca concluída, resetando estado manual');
-      setIsManualSearching(false);
-    }
-  }, [isLoading, isManualSearching]);
 
   // Handler para mudança de status de análise
   const handleStatusChange = useCallback((orderId: string, newStatus: StatusAnalise) => {
