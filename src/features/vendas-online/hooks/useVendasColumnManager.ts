@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ColumnDefinition, ColumnProfile, ColumnState, ColumnActions, UseColumnManagerReturn } from '../types/columns.types';
 import { COLUMN_DEFINITIONS, DEFAULT_PROFILES } from '../config/columns.config';
+import { loadColumnPreferences, createDebouncedSave } from '@/core/columns';
 
 const STORAGE_KEY = 'vendas-column-preferences';
 const STORAGE_VERSION = 1;
+
+// 💾 DEBOUNCED SAVE usando utility compartilhada
+const savePreferences = createDebouncedSave({
+  storageKey: STORAGE_KEY,
+  version: STORAGE_VERSION,
+}, 500);
 
 // 🔧 DEFAULT VISIBLE COLUMNS (keys only)
 const getDefaultVisibleColumns = (): string[] => [
@@ -20,8 +27,27 @@ const getDefaultVisibleColumns = (): string[] => [
   'sku_mapeado',
 ];
 
-// 🔧 INITIAL STATE
+// 🔧 INITIAL STATE usando utility compartilhada
 const getInitialState = (): ColumnState => {
+  const stored = loadColumnPreferences({
+    storageKey: STORAGE_KEY,
+    version: STORAGE_VERSION,
+  });
+  
+  if (stored?.visibleColumns && stored.columnOrder) {
+    console.log('🔄 [VENDAS COLUMNS] Restaurando do cache:', {
+      visibleCount: stored.visibleColumns.size,
+      profile: stored.activeProfile
+    });
+    return {
+      visibleColumns: stored.visibleColumns,
+      columnOrder: stored.columnOrder,
+      activeProfile: stored.activeProfile || 'standard',
+      customProfiles: stored.customProfiles || [],
+    };
+  }
+
+  // Default
   const defaultColumns = getDefaultVisibleColumns();
   const columnOrder = COLUMN_DEFINITIONS.map(col => col.key);
   
@@ -31,63 +57,6 @@ const getInitialState = (): ColumnState => {
     activeProfile: 'standard',
     customProfiles: []
   };
-};
-
-// 📥 LOAD FROM STORAGE
-const loadStoredPreferences = (): Partial<ColumnState> => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return {};
-    
-    const parsed = JSON.parse(stored);
-    
-    // Version check
-    if (parsed.version !== STORAGE_VERSION) {
-      console.log('🔄 [VENDAS COLUMNS] Version mismatch, clearing cache');
-      localStorage.removeItem(STORAGE_KEY);
-      return {};
-    }
-    
-    const validColumnKeys = new Set(COLUMN_DEFINITIONS.map(col => col.key));
-    const visibleSet = new Set<string>(
-      Array.isArray(parsed.visibleColumns) 
-        ? parsed.visibleColumns.filter((key: string) => validColumnKeys.has(key))
-        : []
-    );
-    
-    const filteredOrder = Array.isArray(parsed.columnOrder)
-      ? parsed.columnOrder.filter((key: string) => validColumnKeys.has(key))
-      : COLUMN_DEFINITIONS.map(col => col.key);
-    
-    return {
-      visibleColumns: visibleSet,
-      columnOrder: filteredOrder,
-      activeProfile: typeof parsed.activeProfile === 'string' ? parsed.activeProfile : null,
-      customProfiles: Array.isArray(parsed.customProfiles) ? parsed.customProfiles : []
-    };
-  } catch (error) {
-    console.warn('❌ Error loading column preferences:', error);
-    localStorage.removeItem(STORAGE_KEY);
-    return {};
-  }
-};
-
-// 💾 SAVE TO STORAGE
-const savePreferences = (state: ColumnState) => {
-  try {
-    const toSave = {
-      version: STORAGE_VERSION,
-      visibleColumns: Array.from(state.visibleColumns),
-      columnOrder: state.columnOrder,
-      activeProfile: state.activeProfile,
-      customProfiles: state.customProfiles,
-      timestamp: Date.now()
-    };
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  } catch (error) {
-    console.warn('❌ Error saving column preferences:', error);
-  }
 };
 
 // 🔄 RESET CACHE
@@ -103,22 +72,8 @@ export const resetVendasColumnCache = () => {
 };
 
 export function useVendasColumnManager(): UseColumnManagerReturn {
-  // 🔄 STATE - Initialize with defaults + stored preferences
-  const [state, setState] = useState<ColumnState>(() => {
-    const initial = getInitialState();
-    const stored = loadStoredPreferences();
-    
-    if (stored.visibleColumns && stored.visibleColumns.size > 0) {
-      return {
-        ...initial,
-        ...stored,
-        columnOrder: initial.columnOrder,
-        visibleColumns: stored.visibleColumns
-      };
-    }
-    
-    return initial;
-  });
+  // 🔄 STATE - Initialize
+  const [state, setState] = useState<ColumnState>(getInitialState);
 
   // 📥 RECONCILE NEW COLUMNS
   useEffect(() => {
@@ -141,13 +96,9 @@ export function useVendasColumnManager(): UseColumnManagerReturn {
     });
   }, []);
 
-  // 💾 AUTO-SAVE (debounced)
+  // 💾 AUTO-SAVE usando utility compartilhada
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      savePreferences(state);
-    }, 500);
-    
-    return () => clearTimeout(timeoutId);
+    savePreferences(state);
   }, [state]);
 
   // 🎬 ACTIONS

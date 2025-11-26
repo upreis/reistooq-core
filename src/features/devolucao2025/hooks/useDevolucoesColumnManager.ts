@@ -12,16 +12,42 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ColumnState, ColumnActions, UseColumnManagerReturn, ColumnProfile, ColumnDefinition } from '../types/columns.types';
 import { COLUMN_DEFINITIONS, DEFAULT_PROFILES, getDefaultVisibleColumns } from '../config/columns.config';
+import { loadColumnPreferences, createDebouncedSave } from '@/core/columns';
 
 const STORAGE_KEY = 'devolucoes-venda-column-preferences-v1';
 const STORAGE_VERSION = 1;
 
-// Estado inicial baseado nas configurações padrão
+// 💾 DEBOUNCED SAVE usando utility compartilhada
+const savePreferences = createDebouncedSave({
+  storageKey: STORAGE_KEY,
+  version: STORAGE_VERSION,
+}, 500);
+
+// Estado inicial baseado nas configurações padrão usando utility compartilhada
 const getInitialState = (): ColumnState => {
+  const stored = loadColumnPreferences({
+    storageKey: STORAGE_KEY,
+    version: STORAGE_VERSION,
+  });
+  
+  if (stored?.visibleColumns && stored.columnOrder) {
+    console.log('🔄 [DEVOLUÇÕES COLUMNS] Restaurando do cache:', {
+      visibleCount: stored.visibleColumns.size,
+      profile: stored.activeProfile
+    });
+    return {
+      visibleColumns: stored.visibleColumns,
+      columnOrder: stored.columnOrder,
+      activeProfile: stored.activeProfile || 'standard',
+      customProfiles: stored.customProfiles || [],
+    };
+  }
+
+  // Default
   const defaultColumns = getDefaultVisibleColumns();
   const columnOrder = COLUMN_DEFINITIONS.map(col => col.key);
   
-  console.log('🎛️ [DEVOLUÇÕES COLUMNS] Estado inicial:', {
+  console.log('✨ [DEVOLUÇÕES COLUMNS] Estado inicial padrão:', {
     defaultColumns: defaultColumns.map(col => col.key),
     totalDefinitions: COLUMN_DEFINITIONS.length,
     columnOrder
@@ -35,97 +61,16 @@ const getInitialState = (): ColumnState => {
   };
 };
 
-// Carregar preferências persistidas
-const loadStoredPreferences = (): Partial<ColumnState> => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return {};
-    
-    const parsed = JSON.parse(stored);
-    
-    // Validar versão
-    if (parsed.version !== STORAGE_VERSION) {
-      console.log('🔄 [DEVOLUÇÕES COLUMNS] Versão de cache desatualizada, limpando...');
-      localStorage.removeItem(STORAGE_KEY);
-      return {};
-    }
-    
-    // Validar estrutura
-    if (!parsed || typeof parsed !== 'object') return {};
-    
-    const validColumnKeys = new Set(COLUMN_DEFINITIONS.map(col => col.key));
-    
-    // Filtrar colunas que não existem mais
-    const visibleSet = new Set<string>(
-      Array.isArray(parsed.visibleColumns) 
-        ? parsed.visibleColumns.filter((key: string) => validColumnKeys.has(key))
-        : []
-    );
-    
-    const filteredOrder = Array.isArray(parsed.columnOrder)
-      ? parsed.columnOrder.filter((key: string) => validColumnKeys.has(key))
-      : COLUMN_DEFINITIONS.map(col => col.key);
-    
-    console.log('💾 [DEVOLUÇÕES COLUMNS] Preferências carregadas:', {
-      visible: Array.from(visibleSet),
-      order: filteredOrder,
-      profile: parsed.activeProfile
-    });
-    
-    return {
-      visibleColumns: visibleSet,
-      columnOrder: filteredOrder,
-      activeProfile: typeof parsed.activeProfile === 'string' ? parsed.activeProfile : null,
-      customProfiles: Array.isArray(parsed.customProfiles) ? parsed.customProfiles : []
-    };
-  } catch (error) {
-    console.warn('❌ [DEVOLUÇÕES COLUMNS] Erro ao carregar preferências:', error);
-    return {};
-  }
-};
-
-// Salvar preferências
-const savePreferences = (state: ColumnState) => {
-  try {
-    const toSave = {
-      version: STORAGE_VERSION,
-      visibleColumns: Array.from(state.visibleColumns),
-      columnOrder: state.columnOrder,
-      activeProfile: state.activeProfile,
-      customProfiles: state.customProfiles
-    };
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-    console.log('💾 [DEVOLUÇÕES COLUMNS] Preferências salvas');
-  } catch (error) {
-    console.warn('❌ [DEVOLUÇÕES COLUMNS] Erro ao salvar preferências:', error);
-  }
-};
-
 /**
  * Hook principal de gerenciamento de colunas
  */
 export function useDevolucoesColumnManager(): UseColumnManagerReturn {
-  // Inicializar estado com preferências salvas ou padrões
-  const [state, setState] = useState<ColumnState>(() => {
-    const initial = getInitialState();
-    const stored = loadStoredPreferences();
-    
-    return {
-      ...initial,
-      ...stored,
-      visibleColumns: stored.visibleColumns || initial.visibleColumns,
-      columnOrder: stored.columnOrder || initial.columnOrder
-    };
-  });
+  // Inicializar estado
+  const [state, setState] = useState<ColumnState>(getInitialState);
 
-  // Persistir mudanças automaticamente
+  // Persistir mudanças automaticamente usando utility compartilhada
   useEffect(() => {
-    const timer = setTimeout(() => {
-      savePreferences(state);
-    }, 500); // Debounce de 500ms
-    
-    return () => clearTimeout(timer);
+    savePreferences(state);
   }, [state]);
 
   // ====== AÇÕES ======
