@@ -1,24 +1,33 @@
 import React from 'react';
+import { performanceMonitor } from '@/lib/performance/performanceMonitor';
+import { renderTracker } from '@/lib/performance/renderTracker';
+import { memoryMonitor } from '@/lib/performance/memoryMonitor';
 
 /**
  * 🚀 OTIMIZAÇÃO DE BUNDLE E PERFORMANCE
  * 
  * Configurações para reduzir tamanho do bundle e melhorar performance
+ * 
+ * NOTA: measurePerformance, trackRender e getMemoryUsage agora usam
+ * os novos monitors de @/lib/performance internamente para consolidação.
  */
 
 // Re-exports otimizados para reduzir duplicação
 export { memo, useCallback, useMemo, lazy, Suspense } from 'react';
 
 // Utilitários de performance
+/**
+ * Mede performance de função síncrona
+ * NOTA: Agora usa performanceMonitor internamente para consolidação
+ */
 export const measurePerformance = (name: string, fn: () => void) => {
   if (process.env.NODE_ENV === 'development') {
-    performance.mark(`${name}-start`);
+    performanceMonitor.start(name);
     fn();
-    performance.mark(`${name}-end`);
-    performance.measure(name, `${name}-start`, `${name}-end`);
-    
-    const measure = performance.getEntriesByName(name)[0];
-    console.log(`⚡ ${name}: ${measure.duration.toFixed(2)}ms`);
+    const duration = performanceMonitor.end(name);
+    if (duration) {
+      console.log(`⚡ ${name}: ${duration.toFixed(2)}ms`);
+    }
   } else {
     fn();
   }
@@ -107,21 +116,30 @@ export const getBundleInfo = () => {
 };
 
 // Memory usage tracking
+/**
+ * @deprecated Use memoryMonitor.takeSnapshot() from @/lib/performance instead
+ * Mantido para retrocompatibilidade
+ */
 export const getMemoryUsage = () => {
-  if ('memory' in performance) {
-    const memory = (performance as any).memory;
+  const snapshot = memoryMonitor.takeSnapshot();
+  if (snapshot) {
     return {
-      used: memory.usedJSHeapSize,
-      total: memory.totalJSHeapSize,
-      limit: memory.jsHeapSizeLimit
+      used: snapshot.usedJSHeapSize,
+      total: snapshot.totalJSHeapSize,
+      limit: snapshot.jsHeapSizeLimit
     };
   }
   return null;
 };
 
 // Component render tracking
+/**
+ * Rastreia re-renders de componentes
+ * NOTA: Agora usa renderTracker internamente para consolidação
+ */
 export const trackRender = (componentName: string) => {
   if (process.env.NODE_ENV === 'development') {
+    renderTracker.track(componentName);
     console.log(`🔄 Render: ${componentName} at ${Date.now()}`);
   }
 };

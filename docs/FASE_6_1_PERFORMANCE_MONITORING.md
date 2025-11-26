@@ -262,4 +262,6 @@ if (memoryMonitor.detectLeak(50)) {
 - ✅ Desabilitado em produção por padrão
 - ✅ ZERO impacto em código existente
 - ✅ API/tokens/autenticação 100% intactos
+- ✅ Consolidação com `performanceUtils.ts` existente
+- ✅ Retrocompatibilidade garantida
 - ✅ Pronto para uso em desenvolvimento
