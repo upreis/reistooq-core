@@ -9,20 +9,23 @@ export const mapTrackingData = (item: any) => {
   const returnData = claim.return_details_v2 || claim.return_details;
   const orderData = claim.order_data; // 🎯 Dados do pedido original
   
-  // 🐛 DEBUG: Log dados de tracking recebidos
-  console.log('📦 TrackingDataMapper - Dados recebidos:', JSON.stringify({
-    claim_id: claim.id,
-    has_return_details_v2: !!claim.return_details_v2,
+  // 🐛 DEBUG: Log estrutura COMPLETA do shipping
+  console.log(`📦 [Claim ${claim.id}] TrackingDataMapper - Estrutura completa:`, JSON.stringify({
     has_order_data: !!orderData,
-    // ✅ Tracking do PEDIDO ORIGINAL (não da devolução)
-    order_tracking_number: orderData?.shipping?.tracking_number,
-    order_logistic_type: orderData?.shipping?.logistic?.type,
-    order_shipping_id: orderData?.shipping?.id,
-    // Dados da devolução
-    return_status: returnData?.status,
-    return_date_created: returnData?.date_created,
-    return_shipping_tracking: returnData?.shipping?.tracking_number
-  }));
+    has_shipping: !!orderData?.shipping,
+    shipping_keys: orderData?.shipping ? Object.keys(orderData.shipping) : [],
+    // Tentar múltiplos caminhos para tracking
+    tracking_v1: orderData?.shipping?.tracking_number,
+    tracking_v2: orderData?.shipping?.tracking_code,
+    tracking_v3: orderData?.tracking_number,
+    // Tentar múltiplos caminhos para logistic_type
+    logistic_v1: orderData?.shipping?.logistic?.type,
+    logistic_v2: orderData?.shipping?.logistic_type,
+    logistic_v3: orderData?.logistic_type,
+    logistic_v4: orderData?.shipping?.shipment_type,
+    // Estrutura completa do shipping (primeiros 500 chars)
+    shipping_sample: orderData?.shipping ? JSON.stringify(orderData.shipping).substring(0, 500) : null
+  }, null, 2));
   
   return {
     // ===== STATUS =====
@@ -32,14 +35,38 @@ export const mapTrackingData = (item: any) => {
     shipping_mode: claim.shipping?.mode || claim.shipping?.shipping_mode || returnData?.shipping_mode || null,
     
     // ===== RASTREAMENTO BÁSICO =====
-    // 🎯 CORREÇÃO: Buscar tracking do PEDIDO ORIGINAL (não da devolução)
-    tracking_number: orderData?.shipping?.tracking_number || returnData?.shipping?.tracking_number || null,
+    // 🎯 Buscar tracking do PEDIDO ORIGINAL com múltiplos fallbacks
+    tracking_number: (() => {
+      const tracking = orderData?.shipping?.tracking_number 
+        || orderData?.shipping?.tracking_code
+        || orderData?.tracking_number
+        || returnData?.shipping?.tracking_number 
+        || null;
+      console.log(`📦 [Claim ${claim.id}] tracking_number extraído: ${tracking}`);
+      return tracking;
+    })(),
     tracking_status: returnData?.status || claim.status || null,
-    codigo_rastreamento: orderData?.shipping?.tracking_number || returnData?.shipping?.tracking_number || null,
+    codigo_rastreamento: (() => {
+      const codigo = orderData?.shipping?.tracking_number 
+        || orderData?.shipping?.tracking_code
+        || orderData?.tracking_number
+        || returnData?.shipping?.tracking_number 
+        || null;
+      console.log(`📦 [Claim ${claim.id}] codigo_rastreamento extraído: ${codigo}`);
+      return codigo;
+    })(),
     tracking_method: orderData?.shipping?.tracking_method || returnData?.tracking_method || null,
     
-    // 🚚 TIPO LOGÍSTICA: Buscar do pedido original
-    tipo_logistica: orderData?.shipping?.logistic?.type || orderData?.logistic_type || null,
+    // 🚚 TIPO LOGÍSTICA: Buscar do pedido original com múltiplos fallbacks
+    tipo_logistica: (() => {
+      const tipo = orderData?.shipping?.logistic?.type 
+        || orderData?.shipping?.logistic_type
+        || orderData?.logistic_type 
+        || orderData?.shipping?.shipment_type
+        || null;
+      console.log(`📦 [Claim ${claim.id}] tipo_logistica extraído: ${tipo}`);
+      return tipo;
+    })(),
     
     // ===== DADOS DE ENVIO DA DEVOLUÇÃO (doc ML) =====
     // ✅ CORREÇÃO: shipping é objeto, não array
