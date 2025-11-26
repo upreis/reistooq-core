@@ -1,17 +1,14 @@
 /**
  * 🎛️ HOOK PARA GERENCIAMENTO AVANÇADO DE COLUNAS - VENDAS ONLINE
- * Inspirado na arquitetura de referência /pedidos
+ * 🔄 MIGRADO para usar hook unificado (FASE 2.1)
  * 
- * Features:
- * - Persistência automática em localStorage
- * - Versionamento de cache com cleanup
- * - Perfis pré-definidos e personalizados
- * - Sincronização com sistema de filtros
+ * ⚠️ WRAPPER: Este arquivo agora usa useUnifiedColumnManager
+ * Mantido para compatibilidade - não quebra código existente
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { ColumnState, ColumnActions, UseColumnManagerReturn, ColumnProfile } from '../types/columns.types';
-import { COLUMN_DEFINITIONS, DEFAULT_PROFILES, getDefaultVisibleColumns } from '../config/columns.config';
+import { useUnifiedColumnManager } from '@/core/columns';
+import type { UseColumnManagerReturn } from '@/core/columns';
+import { COLUMN_DEFINITIONS, DEFAULT_PROFILES } from '../config/columns.config';
 
 const STORAGE_KEY = 'vendas-online-column-preferences-v1';
 const STORAGE_VERSION = 1;
