@@ -31,9 +31,13 @@ serve(async (req) => {
   }
 
   try {
+    // 🔥🔥🔥 HARD DEPLOYMENT CHECK - VERSION 17:52 🔥🔥🔥
+    console.log('🔥🔥🔥🔥🔥 INÍCIO DA FUNÇÃO - VERSION 2025-11-26-17:52 🔥🔥🔥🔥🔥');
+    
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
+    console.log('🔥 PARSING REQUEST BODY...');
     const { 
       integration_account_id,      // ✅ Single account (retrocompatibilidade)
       integration_account_ids,      // 🆕 Multiple accounts (nova feature)
@@ -41,20 +45,22 @@ serve(async (req) => {
       date_to
     } = await req.json();
 
-    // 🚨🚨🚨 DEBUG DEPLOYMENT - SE ESTE LOG APARECE = DEPLOYMENT OK 🚨🚨🚨
-    console.log('🚨🚨🚨 [DEPLOYMENT TEST] get-devolucoes-direct VERSION 2025-11-26-17:45 - CÓDIGO NOVO RODANDO! 🚨🚨🚨');
+    console.log('🔥 REQUEST PARSED - PARAMS:', { integration_account_id, integration_account_ids, date_from, date_to });
     
     // 🔄 Normalizar para array sempre (simplifica lógica)
     const accountIds = integration_account_ids 
       ? (Array.isArray(integration_account_ids) ? integration_account_ids : [integration_account_ids])
       : (integration_account_id ? [integration_account_id] : []);
 
+    console.log('🔥 ACCOUNTS NORMALIZADOS:', accountIds);
+    
     // ✅ Validar se temos ao menos uma conta
     if (accountIds.length === 0 || accountIds.some(id => !id)) {
+      console.log('🔥 ERRO: Nenhuma conta válida');
       throw new Error('Nenhuma conta válida fornecida. Envie integration_account_id ou integration_account_ids.');
     }
-
-    console.log('🚨 [DEPLOYMENT TEST] accountIds recebidos:', JSON.stringify(accountIds));
+    
+    console.log('🔥 VALIDAÇÃO OK - Prosseguindo com', accountIds.length, 'conta(s)');
     
     logger.progress(`[get-devolucoes-direct] Iniciando busca para ${accountIds.length} conta(s)`);
     logger.debug('Parâmetros:', { accountIds, date_from, date_to });
