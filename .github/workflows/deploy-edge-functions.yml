@@ -21,15 +21,35 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy Edge Functions
+      - name: Force Deploy Edge Functions (Delete + Redeploy)
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_ID: tdjyfqnxvjgossuncpwm
         run: |
+          echo "🔗 Linking to project..."
           supabase link --project-ref $PROJECT_ID
+          
+          echo "🗑️ Deleting all Edge Functions to clear cache..."
+          supabase functions delete get-devolucoes-direct --project-ref $PROJECT_ID || echo "Function doesn't exist"
+          supabase functions delete unified-orders --project-ref $PROJECT_ID || echo "Function doesn't exist"
+          supabase functions delete get-ml-token --project-ref $PROJECT_ID || echo "Function doesn't exist"
+          supabase functions delete ml-webhook --project-ref $PROJECT_ID || echo "Function doesn't exist"
+          
+          echo "⏳ Waiting 10 seconds for cleanup..."
+          sleep 10
+          
+          echo "🚀 Deploying fresh Edge Functions..."
           supabase functions deploy --no-verify-jwt
+          
+          echo "✅ Force deployment completed - cache cleared!"
 
       - name: Deployment Summary
         run: |
-          echo "✅ Edge Functions deployed successfully to project $PROJECT_ID"
-          echo "🔗 View functions: https://supabase.com/dashboard/project/$PROJECT_ID/functions"
+          echo "================================================"
+          echo "✅ EDGE FUNCTIONS FORCE DEPLOYED (Cache Cleared)"
+          echo "================================================"
+          echo ""
+          echo "All functions deleted and redeployed fresh to avoid cache issues."
+          echo "Wait 2-3 minutes for propagation, then test your endpoints."
+          echo ""
+          echo "🔗 View functions: https://supabase.com/dashboard/project/tdjyfqnxvjgossuncpwm/functions"
