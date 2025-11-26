@@ -278,7 +278,7 @@ export function HorizontalSemesterCalendar({
               <span className="text-xs text-muted-foreground font-medium">Filtrar por:</span>
               <button
                 onClick={() => setFilterType('all')}
-                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                className={`px-3 py-1 text-xs rounded-md border-3 transition-colors ${
                   filterType === 'all' 
                     ? 'bg-primary text-primary-foreground border-primary' 
                     : 'bg-background border-border hover:bg-accent'
@@ -288,68 +288,46 @@ export function HorizontalSemesterCalendar({
               </button>
               <button
                 onClick={() => setFilterType('delivery')}
-                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                className={`px-3 py-1 text-xs rounded-md border-3 transition-colors ${
                   filterType === 'delivery' 
                     ? 'bg-blue-500 text-white border-blue-500' 
-                    : 'bg-background border-blue-400/50 hover:bg-blue-50 dark:hover:bg-blue-950'
+                    : 'bg-background border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950'
                 }`}
               >
                 📦 Devoluções Recebidas
               </button>
               <button
                 onClick={() => setFilterType('review')}
-                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                className={`px-3 py-1 text-xs rounded-md border-3 transition-colors ${
                   filterType === 'review' 
                     ? 'bg-orange-500 text-white border-orange-500' 
-                    : 'bg-background border-orange-400/50 hover:bg-orange-50 dark:hover:bg-orange-950'
+                    : 'bg-background border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950'
                 }`}
               >
                 ⏰ Devoluções a Revisar
               </button>
               <button
                 onClick={() => setFilterType('claim_created')}
-                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                className={`px-3 py-1 text-xs rounded-md border-3 transition-colors ${
                   filterType === 'claim_created' 
                     ? 'bg-green-500 text-white border-green-500' 
-                    : 'bg-background border-green-400/50 hover:bg-green-50 dark:hover:bg-green-950'
+                    : 'bg-background border-green-500 hover:bg-green-50 dark:hover:bg-green-950'
                 }`}
               >
                 📝 Reclamações Criadas
               </button>
               <button
                 onClick={() => setFilterType('claim_deadline')}
-                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                className={`px-3 py-1 text-xs rounded-md border-3 transition-colors ${
                   filterType === 'claim_deadline' 
                     ? 'bg-red-500 text-white border-red-500' 
-                    : 'bg-background border-red-400/50 hover:bg-red-50 dark:hover:bg-red-950'
+                    : 'bg-background border-red-500 hover:bg-red-50 dark:hover:bg-red-950'
                 }`}
               >
                 🔔 Prazos de Análise
               </button>
-            </div>
-          </div>
-          
-          {/* Legenda */}
-          <div className="pt-4 border-t">
-            <div className="flex flex-wrap gap-4 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded border-2 border-blue-500"></div>
-                <span>📦 Devoluções Recebidas</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded border-2 border-orange-500"></div>
-                <span>⏰ Devoluções a Revisar</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded border-2 border-green-500"></div>
-                <span>📝 Reclamações Criadas</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded border-2 border-red-500"></div>
-                <span>🔔 Prazos de Análise</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-gradient-to-br from-blue-600 via-orange-600 to-purple-600"></div>
+              <div className="px-3 py-1 text-xs rounded-md border-3 bg-gradient-to-r from-blue-500/10 via-orange-500/10 to-purple-500/10 border-purple-500 flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-gradient-to-br from-blue-600 via-orange-600 to-purple-600"></div>
                 <span>Múltiplos tipos</span>
               </div>
             </div>
