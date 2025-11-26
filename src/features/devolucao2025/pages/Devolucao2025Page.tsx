@@ -127,13 +127,20 @@ export const Devolucao2025Page = () => {
     }
   });
 
-  // ✅ Buscar automaticamente ao carregar página (quando organizationId carregado e accounts disponíveis)
+  // ✅ CORREÇÃO: Buscar automaticamente APENAS se não houver cache válido
   useEffect(() => {
     if (organizationId && accounts.length > 0 && !shouldFetch) {
-      console.log('🚀 Primeira carga: ativando busca automática de 60 dias');
-      setShouldFetch(true);
+      const hasCache = persistentCache.hasValidPersistedState();
+      
+      if (!hasCache) {
+        console.log('🚀 Primeira visita (sem cache): ativando busca automática de 60 dias');
+        setShouldFetch(true);
+      } else {
+        console.log('📦 Cache válido encontrado: usando dados salvos da última busca do usuário');
+        // Não faz busca automática - usa initialData do cache
+      }
     }
-  }, [organizationId, accounts.length]);
+  }, [organizationId, accounts.length, persistentCache]);
 
   // Buscar devoluções via Edge Function
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
