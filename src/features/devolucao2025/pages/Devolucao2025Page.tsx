@@ -296,11 +296,20 @@ export const Devolucao2025Page = () => {
   }, [currentPage, itemsPerPage, periodo, devolucoesCompletas.length, persistentCache.isStateLoaded]);
 
   // Handler para aplicar filtros (força refetch dos 60 dias completos)
-  const handleApplyFilters = useCallback(() => {
+  const handleApplyFilters = useCallback(async () => {
     console.log('🔄 Aplicando filtros e buscando dados...');
     setIsManualSearching(true);
     setShouldFetch(true);
-    refetch();
+    
+    try {
+      await refetch();
+      console.log('✅ Busca concluída');
+    } catch (error) {
+      console.error('❌ Erro na busca:', error);
+    } finally {
+      // Garantir que botão sempre volta ao normal
+      setIsManualSearching(false);
+    }
   }, [refetch]);
 
   const handleCancelSearch = useCallback(() => {
@@ -321,13 +330,7 @@ export const Devolucao2025Page = () => {
     setSelectedOrderForAnotacoes(orderId);
   }, []);
 
-  // Resetar estado de busca manual após completar
-  useEffect(() => {
-    if (!isLoading && isManualSearching) {
-      setIsManualSearching(false);
-      console.log('✅ Busca concluída');
-    }
-  }, [isLoading, isManualSearching]);
+  // ✅ REMOVIDO: useEffect que resetava isManualSearching (agora é feito no finally do handleApplyFilters)
 
   // Sistema de Alertas (sobre dados completos)
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoesCompletas);
@@ -398,15 +401,9 @@ export const Devolucao2025Page = () => {
                     onPeriodoChange={(p) => updateFilter('periodo', p)}
                     searchTerm={searchTerm}
                     onSearchChange={(term) => updateFilter('searchTerm', term)}
-                    onBuscar={() => {
-                      setIsManualSearching(true);
-                      handleApplyFilters();
-                    }}
+                    onBuscar={handleApplyFilters}
                     isLoading={isManualSearching}
-                    onCancel={() => {
-                      setIsManualSearching(false);
-                      handleCancelSearch();
-                    }}
+                    onCancel={handleCancelSearch}
                     allColumns={COLUMNS_CONFIG}
                     visibleColumns={Array.from(columnManager.state.visibleColumns)}
                     onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
