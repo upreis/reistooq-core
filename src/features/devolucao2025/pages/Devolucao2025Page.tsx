@@ -82,6 +82,9 @@ export const Devolucao2025Page = () => {
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
+  // ✅ Filtros aplicados (só atualizam ao clicar em "Aplicar Filtros")
+  const [appliedAccounts, setAppliedAccounts] = useState<string[]>([]);
+  
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
     const hoje = new Date();
@@ -141,14 +144,14 @@ export const Devolucao2025Page = () => {
 
   // 🚀 BUSCA AGREGADA NO BACKEND (arquitetura como /pedidos - SEM bloqueio manual)
   const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025-completas', backendDateRange, selectedAccounts],
+    queryKey: ['devolucoes-2025-completas', backendDateRange, appliedAccounts],
     queryFn: async () => {
-      // ✅ Usar selectedAccounts se houver seleção, senão todas as contas
-      const accountIds = selectedAccounts.length > 0 
-        ? selectedAccounts 
+      // ✅ Usar appliedAccounts (filtros confirmados pelo usuário)
+      const accountIds = appliedAccounts.length > 0 
+        ? appliedAccounts 
         : accounts.map(a => a.id).filter(Boolean);
       
-      console.log(`🔍 Buscando ${accountIds.length} contas selecionadas no backend...`, accountIds);
+      console.log(`🔍 Buscando ${accountIds.length} contas aplicadas no backend...`, accountIds);
       
       const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
         body: {
@@ -164,7 +167,7 @@ export const Devolucao2025Page = () => {
       console.log(`✅ ${results.length} devoluções agregadas`);
       return results;
     },
-    enabled: !!organizationId && accounts.length > 0,
+    enabled: false, // ✅ Desabilitado - só busca manualmente via refetch
     retry: 1,
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000,
@@ -288,12 +291,15 @@ export const Devolucao2025Page = () => {
     console.log('🔄 Aplicando filtros e buscando dados...');
     setIsManualSearching(true);
     
+    // ✅ Aplicar os filtros selecionados pelo usuário
+    setAppliedAccounts(selectedAccounts);
+    
     try {
       await refetch();
     } finally {
       setIsManualSearching(false);
     }
-  }, [refetch]);
+  }, [refetch, selectedAccounts]);
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
