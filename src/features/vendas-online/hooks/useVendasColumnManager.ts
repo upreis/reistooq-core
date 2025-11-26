@@ -1,38 +1,39 @@
-/**
- * 🎛️ HOOK PARA GERENCIAMENTO AVANÇADO DE COLUNAS - VENDAS ONLINE
- * 🔄 MIGRADO para usar hook unificado (FASE 2.1)
- * 
- * ⚠️ WRAPPER: Este arquivo agora usa useUnifiedColumnManager
- * Mantido para compatibilidade - não quebra código existente
- */
-
-import { useUnifiedColumnManager } from '@/core/columns';
-import type { UseColumnManagerReturn } from '@/core/columns';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { ColumnDefinition, ColumnProfile, ColumnState, ColumnActions, UseColumnManagerReturn } from '../types/columns.types';
 import { COLUMN_DEFINITIONS, DEFAULT_PROFILES } from '../config/columns.config';
 
-const STORAGE_KEY = 'vendas-online-column-preferences-v1';
+const STORAGE_KEY = 'vendas-column-preferences';
 const STORAGE_VERSION = 1;
 
-// Estado inicial baseado nas configurações padrão
+// 🔧 DEFAULT VISIBLE COLUMNS (keys only)
+const getDefaultVisibleColumns = (): string[] => [
+  'order_id',
+  'empresa',
+  'data_compra',
+  'comprador',
+  'produto',
+  'quantidade',
+  'valor_total',
+  'status',
+  'analise',
+  'tipo_logistico',
+  'sku_mapeado',
+];
+
+// 🔧 INITIAL STATE
 const getInitialState = (): ColumnState => {
   const defaultColumns = getDefaultVisibleColumns();
   const columnOrder = COLUMN_DEFINITIONS.map(col => col.key);
   
-  console.log('🎛️ [VENDAS COLUMNS] Estado inicial:', {
-    defaultColumns: defaultColumns.map(col => col.key),
-    totalDefinitions: COLUMN_DEFINITIONS.length,
-    columnOrder
-  });
-  
   return {
-    visibleColumns: new Set(defaultColumns.map(col => col.key)),
+    visibleColumns: new Set(defaultColumns),
     columnOrder,
     activeProfile: 'standard',
     customProfiles: []
   };
 };
 
-// Carregar preferências persistidas
+// 📥 LOAD FROM STORAGE
 const loadStoredPreferences = (): Partial<ColumnState> => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -40,19 +41,14 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
     
     const parsed = JSON.parse(stored);
     
-    // Validar versão
+    // Version check
     if (parsed.version !== STORAGE_VERSION) {
-      console.log('🔄 [VENDAS COLUMNS] Versão de cache desatualizada, limpando...');
+      console.log('🔄 [VENDAS COLUMNS] Version mismatch, clearing cache');
       localStorage.removeItem(STORAGE_KEY);
       return {};
     }
     
-    // Validar estrutura
-    if (!parsed || typeof parsed !== 'object') return {};
-    
     const validColumnKeys = new Set(COLUMN_DEFINITIONS.map(col => col.key));
-    
-    // Filtrar colunas que não existem mais
     const visibleSet = new Set<string>(
       Array.isArray(parsed.visibleColumns) 
         ? parsed.visibleColumns.filter((key: string) => validColumnKeys.has(key))
@@ -63,12 +59,6 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
       ? parsed.columnOrder.filter((key: string) => validColumnKeys.has(key))
       : COLUMN_DEFINITIONS.map(col => col.key);
     
-    console.log('💾 [VENDAS COLUMNS] Preferências carregadas:', {
-      visible: Array.from(visibleSet),
-      order: filteredOrder,
-      profile: parsed.activeProfile
-    });
-    
     return {
       visibleColumns: visibleSet,
       columnOrder: filteredOrder,
@@ -76,13 +66,13 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
       customProfiles: Array.isArray(parsed.customProfiles) ? parsed.customProfiles : []
     };
   } catch (error) {
-    console.warn('❌ Erro ao carregar preferências de colunas:', error);
+    console.warn('❌ Error loading column preferences:', error);
     localStorage.removeItem(STORAGE_KEY);
     return {};
   }
 };
 
-// Salvar preferências com versionamento
+// 💾 SAVE TO STORAGE
 const savePreferences = (state: ColumnState) => {
   try {
     const toSave = {
@@ -95,26 +85,25 @@ const savePreferences = (state: ColumnState) => {
     };
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-    console.log('✅ [VENDAS COLUMNS] Preferências salvas');
   } catch (error) {
-    console.warn('❌ Erro ao salvar preferências de colunas:', error);
+    console.warn('❌ Error saving column preferences:', error);
   }
 };
 
-// Função para resetar cache
+// 🔄 RESET CACHE
 export const resetVendasColumnCache = () => {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    console.log('🔄 [VENDAS COLUMNS] Cache limpo');
+    console.log('🔄 [VENDAS COLUMNS] Cache cleared');
     return true;
   } catch (error) {
-    console.warn('❌ Erro ao limpar cache de colunas:', error);
+    console.warn('❌ Error clearing column cache:', error);
     return false;
   }
 };
 
-export const useVendasColumnManager = (): UseColumnManagerReturn => {
-  // Inicializar estado combinando padrões com preferências salvas
+export function useVendasColumnManager(): UseColumnManagerReturn {
+  // 🔄 STATE - Initialize with defaults + stored preferences
   const [state, setState] = useState<ColumnState>(() => {
     const initial = getInitialState();
     const stored = loadStoredPreferences();
@@ -123,7 +112,7 @@ export const useVendasColumnManager = (): UseColumnManagerReturn => {
       return {
         ...initial,
         ...stored,
-        columnOrder: initial.columnOrder, // Sempre usar ordem das definições
+        columnOrder: initial.columnOrder,
         visibleColumns: stored.visibleColumns
       };
     }
@@ -131,7 +120,7 @@ export const useVendasColumnManager = (): UseColumnManagerReturn => {
     return initial;
   });
 
-  // Reconciliar novas colunas adicionadas após preferências salvas
+  // 📥 RECONCILE NEW COLUMNS
   useEffect(() => {
     setState(prev => {
       const currentOrderSet = new Set(prev.columnOrder);
@@ -152,16 +141,16 @@ export const useVendasColumnManager = (): UseColumnManagerReturn => {
     });
   }, []);
 
-  // Salvar automaticamente quando o estado mudar (com debounce)
+  // 💾 AUTO-SAVE (debounced)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       savePreferences(state);
-    }, 500); // Debounce de 500ms
+    }, 500);
     
     return () => clearTimeout(timeoutId);
   }, [state]);
 
-  // Ações para manipular colunas
+  // 🎬 ACTIONS
   const toggleColumn = useCallback((key: string) => {
     setState(prev => {
       const newVisible = new Set(prev.visibleColumns);
@@ -238,7 +227,7 @@ export const useVendasColumnManager = (): UseColumnManagerReturn => {
     const defaultColumns = getDefaultVisibleColumns();
     setState(prev => ({
       ...prev,
-      visibleColumns: new Set(defaultColumns.map(col => col.key)),
+      visibleColumns: new Set(defaultColumns),
       activeProfile: 'standard'
     }));
   }, []);
@@ -277,7 +266,7 @@ export const useVendasColumnManager = (): UseColumnManagerReturn => {
     resetToEssentials,
   ]);
 
-  // Definições de colunas visíveis na ordem correta
+  // 🔍 DERIVED STATE
   const visibleDefinitions = useMemo(() => {
     return state.columnOrder
       .map(key => COLUMN_DEFINITIONS.find(col => col.key === key))
@@ -286,7 +275,6 @@ export const useVendasColumnManager = (): UseColumnManagerReturn => {
       );
   }, [state.visibleColumns, state.columnOrder]);
 
-  // Todos os perfis disponíveis
   const profiles = useMemo(() => {
     return [...DEFAULT_PROFILES, ...state.customProfiles];
   }, [state.customProfiles]);
@@ -298,4 +286,4 @@ export const useVendasColumnManager = (): UseColumnManagerReturn => {
     visibleDefinitions,
     profiles
   };
-};
+}
