@@ -25,8 +25,10 @@ export async function runSupabaseHealthCheck(context: string) {
   };
 
   // Optional org id from global context if available
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orgId = (window as any)?.__ORG_ID__ ?? null;
+  interface WindowWithOrgId extends Window {
+    __ORG_ID__?: string | null;
+  }
+  const orgId = (window as WindowWithOrgId).__ORG_ID__ ?? null;
 
   async function probe(table: string, withOrg?: boolean): Promise<ProbeResult> {
     const path = `/rest/v1/${table}`;

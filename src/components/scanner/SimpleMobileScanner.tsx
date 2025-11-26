@@ -97,8 +97,8 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
         v.setAttribute('muted', 'true');
         v.setAttribute('playsinline', 'true');
         v.muted = true;
-        // @ts-ignore - playsInline pode não existir em alguns tipos
-        v.playsInline = true;
+        // Type-safe: playsInline existe em HTMLVideoElement
+        (v as HTMLVideoElement & { playsInline?: boolean }).playsInline = true;
       }
 
       // Parar stream anterior

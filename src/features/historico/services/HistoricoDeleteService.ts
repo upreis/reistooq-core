@@ -65,26 +65,37 @@ export class HistoricoDeleteService {
         console.warn('⚠️ Registro antigo sem local de estoque - buscando local padrão da organização');
         
         try {
-          // @ts-ignore - Evitar erro de tipos profundos do Supabase
-          const resultado = await supabase
+          // Interface para tipo de retorno
+          interface LocalEstoque {
+            id: string;
+            nome: string;
+          }
+          
+          // NOTA: Type annotation `: any` necessária devido a limitação conhecida do Supabase TypeScript
+          // onde queries com .maybeSingle() causam "Type instantiation is excessively deep"
+          // Ref: https://github.com/supabase/supabase-js/issues/743
+          const query1: any = (supabase as any)
             .from('locais_estoque')
             .select('id, nome')
             .eq('organization_id', organizationId)
             .eq('padrao', true)
             .maybeSingle();
           
+          const resultado = (await query1) as { data: LocalEstoque | null; error: any };
+          
           if (resultado.data) {
             localEstoqueId = resultado.data.id;
             localEstoqueNome = resultado.data.nome;
             console.log(`✅ Local padrão encontrado: ${localEstoqueNome}`);
           } else {
-            // @ts-ignore - Evitar erro de tipos profundos do Supabase
-            const primeiro = await supabase
+            const query2: any = (supabase as any)
               .from('locais_estoque')
               .select('id, nome')
               .eq('organization_id', organizationId)
               .limit(1)
               .maybeSingle();
+            
+            const primeiro = (await query2) as { data: LocalEstoque | null; error: any };
             
             if (primeiro.data) {
               localEstoqueId = primeiro.data.id;
