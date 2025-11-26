@@ -311,30 +311,24 @@ serve(async (req) => {
           resolution: claim.resolution
         };
 
+        // 🔍 DEBUG CRÍTICO: Log primeira devolução
+        if (mappedClaims.length === 0) {
+          console.log('🔍 [DEBUG INÍCIO] Primeira devolução - Claim ID:', claim.id);
+          console.log('🔍 [RAW] return_details_v2 existe?', !!claim.return_details_v2);
+          console.log('🔍 [RAW] claim_messages existe?', !!claim.claim_messages);
+          console.log('🔍 [RAW] order_data existe?', !!item.order_data);
+          console.log('🔍 [RAW] product_info existe?', !!item.product_info);
+        }
+
         const devCompleta = mapDevolucaoCompleta(item, accountId, accountName, null);
         
-        // 🔍 DEBUG: Log APENAS primeira devolução para diagnóstico
+        // 🔍 DEBUG: Campos mapeados da primeira devolução
         if (mappedClaims.length === 0) {
-          console.log('🔍 [RAW DATA] claim:', {
-            return_details_v2: !!claim.return_details_v2,
-            return_status: claim.return_details_v2?.status,
-            return_date_created: claim.return_details_v2?.date_created,
-            claim_messages: !!claim.claim_messages,
-            total_messages: claim.claim_messages?.messages?.length,
-            order_data_shipping: !!item.order_data?.shipping,
-            shipment_id: item.order_data?.shipping?.id
-          });
-          
-          console.log('🔍 [MAPPED DATA]:', {
-            produto_titulo: devCompleta.produto_titulo,
-            status_return: devCompleta.status_return,
-            status_envio: devCompleta.status_envio,
-            codigo_rastreamento: devCompleta.codigo_rastreamento,
-            tipo_logistica: devCompleta.tipo_logistica,
-            data_fechamento_devolucao: devCompleta.data_fechamento_devolucao,
-            data_inicio_return: devCompleta.data_inicio_return,
-            ultima_mensagem_data: devCompleta.ultima_mensagem_data
-          });
+          console.log('🔍 [MAPPED] produto_titulo:', devCompleta.produto_titulo);
+          console.log('🔍 [MAPPED] status_return:', devCompleta.status_return);
+          console.log('🔍 [MAPPED] codigo_rastreamento:', devCompleta.codigo_rastreamento);
+          console.log('🔍 [MAPPED] tipo_logistica:', devCompleta.tipo_logistica);
+          console.log('🔍 [MAPPED] ultima_mensagem_data:', devCompleta.ultima_mensagem_data);
         }
         
         return devCompleta;
