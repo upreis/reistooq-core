@@ -174,120 +174,62 @@ serve(async (req) => {
         logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro: ${claims.length} claims`);
       }
 
-      // ✅ ENRIQUECIMENTO EM BATCH PARALELO
-      logger.progress(`🔄 [${accountId.slice(0, 8)}] Enriquecendo ${claims.length} claims...`);
-      const sellerReputationCache = new Map<string, any>();
+      // ⚡ ENRIQUECIMENTO MÍNIMO E RÁPIDO (sem delays pesados)
+      logger.progress(`⚡ [${accountId.slice(0, 8)}] Processando ${claims.length} claims rapidamente...`);
+      
+      // Buscar apenas order_data básico em paralelo controlado (batch de 10)
+      const BATCH_SIZE = 10; // Aumentado para 10 (mais rápido)
       const allEnrichedClaims: any[] = [];
-      const BATCH_SIZE = 5;
-      const DELAY_BETWEEN_BATCHES = 200;
-      const enrichClaim = async (claim: any) => {
-        try {
-          // 1. Buscar ordem e shipment
-          let orderData = null;
-          let shipmentData = null;
-          
-          if (claim.resource_id) {
-            try {
-              const { response: orderRes } = await validateAndFetch(
-                'orders',
-                accessToken,
-                { id: claim.resource_id },
-                { retryOnFail: true, logResults: false }
-              );
-              
-              if (orderRes?.ok) {
-                orderData = await orderRes.json();
-                
-                if (orderData?.shipping?.id) {
-                  try {
-                    const { response: shipmentRes } = await validateAndFetch(
-                      'shipments',
-                      accessToken,
-                      { id: orderData.shipping.id.toString() },
-                      { retryOnFail: true, logResults: false }
-                    );
-                    
-                    if (shipmentRes?.ok) {
-                      shipmentData = await shipmentRes.json();
-                    }
-                  } catch (err) {
-                    // Silencioso
-                  }
-                }
-              }
-            } catch (err) {
-              // Silencioso
-            }
-          }
-
-          // 2. Mensagens
-          let messagesData = null;
-          try {
-            const { response: messagesRes } = await validateAndFetch(
-              'claimMessages',
-              accessToken,
-              { id: claim.id.toString() },
-              { retryOnFail: true, logResults: false }
-            );
-            
-            if (messagesRes?.ok) {
-              messagesData = await messagesRes.json();
-            }
-          } catch (err) {
-            // Silencioso
-          }
-
-          // 3. Return details
-          let returnData = null;
-          try {
-            const { response: returnRes } = await validateAndFetch(
-              'returnDetailsV2',
-              accessToken,
-              { id: claim.id.toString() },
-              { retryOnFail: true, logResults: false }
-            );
-            
-            if (returnRes?.ok) {
-              returnData = await returnRes.json();
-            }
-          } catch (err) {
-            // Silencioso
-          }
-
-          // Pular logs detalhados em massa - retornar enriquecido
-          return {
-            ...claim,
-            order_data: orderData,
-            shipment_data: shipmentData,
-            claim_messages: messagesData,
-            return_details_v2: returnData,
-            review_details: null,
-            product_info: null,
-            billing_info: null,
-            seller_reputation_data: null,
-            shipment_history_enriched: null,
-            shipping_costs_enriched: null,
-            return_cost_enriched: null,
-            change_details: null,
-            attachments: null
-          };
-        } catch (err) {
-          return claim;
-        }
-      };
-
-      // Processar claims em batches
+      
       for (let i = 0; i < claims.length; i += BATCH_SIZE) {
         const batch = claims.slice(i, i + BATCH_SIZE);
-        const enrichedBatch = await Promise.all(batch.map(enrichClaim));
-        allEnrichedClaims.push(...enrichedBatch);
         
-        if (i + BATCH_SIZE < claims.length) {
-          await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
-        }
+        const enrichedBatch = await Promise.all(
+          batch.map(async (claim: any) => {
+            let orderData = null;
+            
+            // Buscar APENAS order data básico (sem shipment, messages, return details)
+            if (claim.resource_id) {
+              try {
+                const { response: orderRes } = await validateAndFetch(
+                  'orders',
+                  accessToken,
+                  { id: claim.resource_id },
+                  { retryOnFail: false, logResults: false }
+                );
+                
+                if (orderRes?.ok) {
+                  orderData = await orderRes.json();
+                }
+              } catch (err) {
+                // Silencioso - continua sem order data
+              }
+            }
+            
+            return {
+              ...claim,
+              order_data: orderData,
+              // Pular enriquecimento pesado - dados virão do Realtime depois
+              shipment_data: null,
+              claim_messages: null,
+              return_details_v2: null,
+              review_details: null,
+              product_info: null,
+              billing_info: null,
+              seller_reputation_data: null,
+              shipment_history_enriched: null,
+              shipping_costs_enriched: null,
+              return_cost_enriched: null,
+              change_details: null,
+              attachments: null
+            };
+          })
+        );
+        
+        allEnrichedClaims.push(...enrichedBatch);
       }
       
-      logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims enriquecidos`);
+      logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims processados`);
 
       // Mapear dados
       const mappedClaims = allEnrichedClaims.map((claim: any) => {
