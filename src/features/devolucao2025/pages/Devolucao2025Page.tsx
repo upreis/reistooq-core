@@ -156,7 +156,7 @@ export const Devolucao2025Page = () => {
         ? appliedAccounts 
         : accounts.map(a => a.id).filter(Boolean);
       
-      console.log(`🔍 Buscando ${accountIds.length} contas aplicadas no backend...`, accountIds);
+      console.log(`🔍 [API] Buscando ${accountIds.length} contas aplicadas no backend...`, accountIds);
       
       const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
         body: {
@@ -166,10 +166,15 @@ export const Devolucao2025Page = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [API] Erro ao buscar:', error);
+        throw error;
+      }
       
-      const results = data?.data || [];
-      console.log(`✅ ${results.length} devoluções agregadas`);
+      // ✅ CORREÇÃO: Edge Function retorna { success, data, total }
+      const results = Array.isArray(data) ? data : (data?.data || []);
+      console.log(`✅ [API] ${results.length} devoluções retornadas da API`);
+      console.log('📦 [API] Primeiras 3 devoluções:', results.slice(0, 3));
       return results;
     },
     enabled: false, // ✅ Desabilitado - só busca manualmente via refetch
@@ -181,42 +186,44 @@ export const Devolucao2025Page = () => {
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
+    console.log(`🔍 [FILTRO LOCAL] Iniciando com ${devolucoesCompletas.length} devoluções completas`);
     let filtered = devolucoesCompletas;
     
     // Filtro de período (local)
     if (dateRange.from && dateRange.to) {
+      const beforeFilter = filtered.length;
       filtered = filtered.filter(dev => {
         if (!dev.data_criacao) return false;
         const dataCriacao = parseISO(dev.data_criacao);
         return dataCriacao >= dateRange.from && dataCriacao <= dateRange.to;
       });
+      console.log(`📅 [FILTRO PERÍODO] ${beforeFilter} → ${filtered.length} (período: ${dateRange.from.toLocaleDateString()} a ${dateRange.to.toLocaleDateString()})`);
     }
     
     // ✅ Filtro de contas removido - já filtrado no backend via selectedAccounts
     
-    console.log(`🎯 Filtros locais aplicados: ${filtered.length}/${devolucoesCompletas.length} devoluções exibidas`);
+    console.log(`🎯 [FILTRO LOCAL FINAL] ${filtered.length}/${devolucoesCompletas.length} devoluções após todos os filtros`);
     return filtered;
   }, [devolucoesCompletas, dateRange]);
 
   // Enriquecer devoluções com status de análise local
   const devolucoesEnriquecidas = useMemo(() => {
-    return devolucoes.map(dev => ({
+    const enriched = devolucoes.map(dev => ({
       ...dev,
       status_analise_local: analiseStatus[dev.order_id] || 'pendente' as StatusAnalise
     }));
+    console.log(`✨ [ENRIQUECIMENTO] ${enriched.length} devoluções enriquecidas com status de análise`);
+    return enriched;
   }, [devolucoes, analiseStatus]);
 
   // Filtrar por aba ativa
   const devolucoesFiltradasPorAba = useMemo(() => {
-    if (activeTab === 'ativas') {
-      return devolucoesEnriquecidas.filter(dev => 
-        STATUS_ATIVOS.includes(dev.status_analise_local)
-      );
-    } else {
-      return devolucoesEnriquecidas.filter(dev => 
-        STATUS_HISTORICO.includes(dev.status_analise_local)
-      );
-    }
+    const filtered = activeTab === 'ativas'
+      ? devolucoesEnriquecidas.filter(dev => STATUS_ATIVOS.includes(dev.status_analise_local))
+      : devolucoesEnriquecidas.filter(dev => STATUS_HISTORICO.includes(dev.status_analise_local));
+    
+    console.log(`📑 [FILTRO ABA] Aba "${activeTab}": ${devolucoesEnriquecidas.length} → ${filtered.length} devoluções`);
+    return filtered;
   }, [devolucoesEnriquecidas, activeTab]);
 
   // Aplicar filtro do resumo
@@ -261,9 +268,14 @@ export const Devolucao2025Page = () => {
 
   // Paginação dos dados
   const paginatedDevolucoes = useMemo(() => {
-    if (itemsPerPage === -1) return devolucoesComFiltroResumo; // "Todas"
+    if (itemsPerPage === -1) {
+      console.log(`📄 [PAGINAÇÃO] Exibindo TODAS as ${devolucoesComFiltroResumo.length} devoluções`);
+      return devolucoesComFiltroResumo;
+    }
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return devolucoesComFiltroResumo.slice(startIndex, startIndex + itemsPerPage);
+    const paginated = devolucoesComFiltroResumo.slice(startIndex, startIndex + itemsPerPage);
+    console.log(`📄 [PAGINAÇÃO] Página ${currentPage}: exibindo ${paginated.length} de ${devolucoesComFiltroResumo.length} devoluções (${itemsPerPage} por página)`);
+    return paginated;
   }, [devolucoesComFiltroResumo, currentPage, itemsPerPage]);
 
   const filteredCount = devolucoesComFiltroResumo.length;
