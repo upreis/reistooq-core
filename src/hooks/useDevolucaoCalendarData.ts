@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import { format, parseISO } from 'date-fns';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { format, parseISO, subDays } from 'date-fns';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface ContributionDay {
   date: string;
@@ -13,34 +15,40 @@ interface ContributionDay {
   }>;
 }
 
-const STORAGE_KEY = 'devolucoes_venda_persistent_state';
-
 export const useDevolucaoCalendarData = () => {
   const [data, setData] = useState<ContributionDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
-  const fetchData = () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Buscar dados do cache (mesma estratégia da página de devoluções)
-      const cached = localStorage.getItem(STORAGE_KEY);
+      // Buscar últimos 60 dias
+      const sixtyDaysAgo = subDays(new Date(), 60).toISOString();
       
-      if (!cached) {
-        console.log('📊 Sem dados em cache para o calendário');
+      const { data: devolucoes, error: fetchError } = await supabase
+        .from('devolucoes_avancadas')
+        .select('*')
+        .gte('data_criacao', sixtyDaysAgo)
+        .order('data_criacao', { ascending: false });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!devolucoes || devolucoes.length === 0) {
+        console.log('📊 Sem devoluções encontradas (últimos 60 dias)');
         setData([]);
         setLoading(false);
         return;
       }
 
-      const parsed = JSON.parse(cached);
-      const devolucoes = parsed.devolucoes || [];
-      
-      console.log('📊 Carregando dados do cache para calendário:', {
+      console.log('📊 🔄 Carregando dados de devoluções para calendário (REALTIME):', {
         totalDevolucoes: devolucoes.length,
-        cacheAge: Math.round((Date.now() - parsed.cachedAt) / 1000) + 's'
+        periodo: '60 dias'
       });
 
       // Agrupar devoluções por data (chegada e análise)
@@ -93,40 +101,62 @@ export const useDevolucaoCalendarData = () => {
       }, {});
 
       const finalData = Object.values(groupedByDate) as ContributionDay[];
-      console.log('📊 Dados do calendário processados do cache:', {
+      console.log('✅ Dados do calendário de devoluções processados:', {
         total: finalData.length,
         entregas: finalData.filter((d: ContributionDay) => d.returns?.some(r => r.dateType === 'delivery')).length,
-        revisoes: finalData.filter((d: ContributionDay) => d.returns?.some(r => r.dateType === 'review')).length,
-        sample: finalData.slice(0, 3)
+        revisoes: finalData.filter((d: ContributionDay) => d.returns?.some(r => r.dateType === 'review')).length
       });
       setData(finalData);
     } catch (err: any) {
-      console.error('❌ Erro ao processar dados do calendário:', err);
+      console.error('❌ Erro ao processar dados do calendário de devoluções:', err);
       setError(err.message || 'Erro ao carregar dados');
       setData([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-    
-    // Escutar mudanças no localStorage (quando a página de devoluções atualiza)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        console.log('🔄 Cache atualizado, recarregando calendário...');
-        fetchData();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const refresh = () => {
+  useEffect(() => {
+    // Buscar dados iniciais
     fetchData();
-  };
+
+    // Configurar Supabase Realtime para atualizações automáticas
+    console.log('🔄 Ativando Realtime para calendário de devoluções...');
+    
+    const channel = supabase
+      .channel('devolucoes-calendar-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'devolucoes_avancadas'
+        },
+        (payload) => {
+          console.log('🔄 Mudança detectada em devoluções:', payload.eventType);
+          fetchData(); // Recarregar dados automaticamente
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime conectado para calendário de devoluções');
+        }
+      });
+
+    channelRef.current = channel;
+
+    // Cleanup
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        console.log('🔴 Realtime desconectado para calendário de devoluções');
+      }
+    };
+  }, [fetchData]);
+
+  const refresh = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
 
   return { data, loading, error, refresh };
 };
