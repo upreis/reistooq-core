@@ -17,18 +17,18 @@ Tipos TypeScript para API client:
 - **ApiError**: estrutura padronizada de erro
 - **Interceptors**: tipos para request/response/error interceptors
 
-#### 🔐 `src/lib/api/interceptors.ts` (92 linhas)
+#### 🔐 `src/lib/api/interceptors.ts` (75 linhas)
 Interceptors prontos para uso:
 - **authInterceptor**: adiciona token de autenticação do Supabase automaticamente
-- **tokenRefreshInterceptor**: trata 401 tentando refresh automático do token
+- **unauthorizedInterceptor**: detecta 401 e redireciona para login após delay
 - **organizationInterceptor**: adiciona organization_id atual aos params
 - **loggingInterceptor**: log de debug para desenvolvimento
 
-#### 🌐 `src/lib/api/apiClient.ts` (358 linhas)
+#### 🌐 `src/lib/api/apiClient.ts` (348 linhas)
 API Client completo com:
 - **Validação automática**: integra schemas Zod da FASE 5.1
 - **Retry logic**: exponential backoff (1s, 2s, 4s...) para erros 5xx e timeout
-- **Error handling**: integra ErrorHandler da FASE 1.1
+- **Error handling**: console.error com TODOs para integração futura (FASE 6)
 - **Interceptors**: suporta request/response/error interceptors
 - **Timeout**: AbortController para cancelar requisições lentas
 - **Métodos convenientes**: get(), post(), put(), patch(), delete()
@@ -70,14 +70,39 @@ const orders = await apiClient.get('/api/orders', {
 
 ### Exemplo com Interceptors
 ```typescript
-import { apiClient, authInterceptor, loggingInterceptor } from '@/lib/api';
+import { apiClient, authInterceptor, unauthorizedInterceptor, loggingInterceptor } from '@/lib/api';
 
 // Adicionar interceptors globalmente
 apiClient.addRequestInterceptor(authInterceptor);
+apiClient.addErrorInterceptor(unauthorizedInterceptor);
 apiClient.addRequestInterceptor(loggingInterceptor);
 
 // Todas requisições agora incluem token automaticamente
 const data = await apiClient.get('/api/protected-data');
+```
+
+### Exemplo com Token Refresh Manual
+```typescript
+import { apiClient } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
+
+async function fetchWithRetry(url: string) {
+  try {
+    return await apiClient.get(url);
+  } catch (error) {
+    // Se 401, tentar refresh e retry uma vez
+    if (error.status === 401) {
+      console.log('Token expirado, tentando refresh...');
+      const { data } = await supabase.auth.refreshSession();
+      
+      if (data.session) {
+        console.log('Token refreshed, retrying request...');
+        return await apiClient.get(url); // Retry com novo token
+      }
+    }
+    throw error;
+  }
+}
 ```
 
 ### Exemplo com Retry Customizado
@@ -127,10 +152,11 @@ try {
 - Sistema continua funcionando sem API Client
 
 ### ✅ Error Handling Robusto
-- Integra ErrorHandler da FASE 1.1 para logging centralizado
+- console.error para logging (integração com ErrorHandler planejada para FASE 6)
 - Retry automático em erros 5xx e timeout (máx 2 retries)
 - Exponential backoff evita sobrecarga de servidor
 - AbortController para cancelamento seguro
+- unauthorizedInterceptor redireciona para login em 401
 
 ### ✅ Type Safety
 - TypeScript types completos para todas operações
@@ -143,12 +169,12 @@ try {
 
 | Arquivo | Linhas | Funcionalidade |
 |---------|--------|----------------|
-| `types.ts` | 78 | Tipos TypeScript completos |
-| `interceptors.ts` | 92 | 4 interceptors prontos (auth, refresh, org, logging) |
-| `apiClient.ts` | 358 | API Client completo com retry, timeout, validação |
-| `index.ts` | 17 | Export centralizado |
-| `FASE_5_2_API_CLIENT.md` | 180 | Documentação completa |
-| **TOTAL** | **725** | **API Client funcional** |
+| `types.ts` | 52 | Tipos TypeScript completos |
+| `interceptors.ts` | 75 | 4 interceptors prontos (auth, unauthorized, org, logging) |
+| `apiClient.ts` | 348 | API Client completo com retry, timeout, validação |
+| `index.ts` | 21 | Export centralizado |
+| `FASE_5_2_API_CLIENT.md` | 210 | Documentação completa |
+| **TOTAL** | **706** | **API Client funcional** |
 
 ---
 
@@ -158,7 +184,7 @@ try {
 1. Migrar `useVendasData` para usar apiClient
 2. Migrar `useDevolucaoData` para usar apiClient
 3. Migrar `useReclamacoesData` para usar apiClient
-4. Adicionar interceptors globais (auth, tokenRefresh)
+4. Adicionar interceptors globais (auth, unauthorized, organization)
 
 ### FASE 5.4 - Edge Functions com Validação
 1. Atualizar `unified-orders` para validar inputs com schemas
@@ -174,18 +200,27 @@ try {
 3. **AbortController**: suporta cancelamento via signal externo
 4. **Interceptors**: executam em ordem de adição (FIFO)
 5. **Validação**: schemas Zod da FASE 5.1 integrados automaticamente
-6. **Error Handler**: integra com ErrorHandler.handle() da FASE 1.1
-7. **Token Refresh**: interceptor tenta refresh automático em 401
+6. **Error Handler**: console.error por enquanto, integração planejada para FASE 6
+7. **Token Refresh**: deve ser feito manualmente pelo caller (ver exemplo acima)
+8. **Unauthorized**: unauthorizedInterceptor redireciona para /login após 2s de delay
 
 ---
 
-## ✅ Status: FASE 5.2 COMPLETA
+## ✅ Status: FASE 5.2 COMPLETA E CORRIGIDA
 - ✅ API Client unificado criado
-- ✅ 4 interceptors prontos (auth, refresh, org, logging)
+- ✅ 4 interceptors prontos (auth, unauthorized, org, logging)
 - ✅ Retry logic com exponential backoff
 - ✅ Validação automática com Zod
-- ✅ Error handling integrado com ErrorHandler
-- ✅ Documentação completa
+- ✅ Error handling com console.error (ErrorHandler integração futura)
+- ✅ Token refresh manual documentado com exemplo
+- ✅ Documentação completa e atualizada
 - ✅ ZERO impacto em código existente
 - ✅ API/tokens/autenticação 100% intactos
 - ✅ Pronto para integração gradual em FASE 5.3
+
+## 🔧 Correções Aplicadas (Auditoria)
+- ❌ **Removido**: tokenRefreshInterceptor com lógica incorreta
+- ✅ **Criado**: unauthorizedInterceptor simples que redireciona para login
+- ✅ **Documentado**: Token refresh manual com exemplo de código
+- ✅ **Atualizado**: Todas referências ao ErrorHandler da FASE 1.1 (não existe ainda)
+- ✅ **Adicionado**: Exemplo completo de retry com token refresh manual

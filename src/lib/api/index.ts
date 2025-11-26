@@ -6,7 +6,7 @@
 export { apiClient, ApiClient } from './apiClient';
 export { 
   authInterceptor,
-  tokenRefreshInterceptor,
+  unauthorizedInterceptor,
   organizationInterceptor,
   loggingInterceptor,
 } from './interceptors';
