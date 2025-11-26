@@ -140,10 +140,14 @@ export const Devolucao2025Page = () => {
 
   // 🚀 BUSCA AGREGADA NO BACKEND (arquitetura como /pedidos - SEM bloqueio manual)
   const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025-completas', backendDateRange, accounts.map(a => a.id)],
+    queryKey: ['devolucoes-2025-completas', backendDateRange, selectedAccounts],
     queryFn: async () => {
-      const accountIds = accounts.map(a => a.id).filter(Boolean);
-      console.log(`🔍 Buscando ${accountIds.length} contas em PARALELO no backend...`);
+      // ✅ Usar selectedAccounts se houver seleção, senão todas as contas
+      const accountIds = selectedAccounts.length > 0 
+        ? selectedAccounts 
+        : accounts.map(a => a.id).filter(Boolean);
+      
+      console.log(`🔍 Buscando ${accountIds.length} contas selecionadas no backend...`, accountIds);
       
       const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
         body: {
@@ -179,16 +183,11 @@ export const Devolucao2025Page = () => {
       });
     }
     
-    // Filtro de contas (local)
-    if (selectedAccounts.length > 0) {
-      filtered = filtered.filter(dev => 
-        selectedAccounts.includes(dev.integration_account_id)
-      );
-    }
+    // ✅ Filtro de contas removido - já filtrado no backend via selectedAccounts
     
     console.log(`🎯 Filtros locais aplicados: ${filtered.length}/${devolucoesCompletas.length} devoluções exibidas`);
     return filtered;
-  }, [devolucoesCompletas, dateRange, selectedAccounts]);
+  }, [devolucoesCompletas, dateRange]);
 
   // Enriquecer devoluções com status de análise local
   const devolucoesEnriquecidas = useMemo(() => {
