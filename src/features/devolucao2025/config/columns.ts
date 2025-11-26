@@ -33,11 +33,11 @@ export const COLUMNS_CONFIG: ColumnConfig[] = [
   // GRUPO 4: DATAS
   { id: 'data_criacao', label: 'Data Criação', group: 'Datas' },
   { id: 'data_venda', label: 'Data Venda', group: 'Datas' },
-  { id: 'data_fechamento', label: 'Data Fechamento', group: 'Datas' },
+  { id: 'data_fechamento', label: 'Devolução Cancelada', group: 'Datas' },
   { id: 'data_inicio_return', label: 'Início Return', group: 'Datas' },
   { id: 'data_atualizacao_return', label: 'Última Atualização Return', group: 'Datas' },
   { id: 'prazo_analise', label: 'Prazo Análise', group: 'Datas' },
-  { id: 'data_chegada', label: 'Data Chegada', group: 'Datas' },
+  { id: 'data_chegada', label: 'Devolução Recebida', group: 'Datas' },
   { id: 'ultima_msg', label: 'Última Msg', group: 'Datas' },
 
   // GRUPO 5: RASTREAMENTO & LOGÍSTICA
