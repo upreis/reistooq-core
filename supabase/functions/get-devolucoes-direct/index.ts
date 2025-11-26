@@ -18,6 +18,7 @@ import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.t
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
 import { fetchShippingCosts, fetchMultipleShippingCosts, fetchReturnCost } from './services/ShippingCostsService.ts';
 import { fetchReturnArrivalDate } from './services/ReturnArrivalDateService.ts';
+import { enrichShipmentData } from './services/ShipmentEnrichmentService.ts';
 
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
@@ -222,6 +223,12 @@ serve(async (req) => {
                 if (orderRes?.ok) {
                   orderData = await orderRes.json();
                   console.log(`  ✅ [${i + index}] Order encontrado`);
+                  
+                  // 🚚 Enriquecer shipment com dados completos (logistic.type, tracking_number)
+                  if (orderData?.shipping?.id) {
+                    console.log(`  🚚 [${i + index}] Enriquecendo shipment ${orderData.shipping.id}`);
+                    orderData = await enrichShipmentData(orderData, accessToken, claim.id);
+                  }
                 } else {
                   console.log(`  ❌ [${i + index}] Order falhou: ${orderRes?.status}`);
                 }
