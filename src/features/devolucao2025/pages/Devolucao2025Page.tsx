@@ -82,7 +82,15 @@ export const Devolucao2025Page = () => {
   const [shouldFetch, setShouldFetch] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
-  // Sincronizar dateRange com periodo quando periodo mudar
+  // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
+  const backendDateRange = useMemo(() => {
+    const hoje = new Date();
+    const inicio = new Date();
+    inicio.setDate(hoje.getDate() - 60); // Sempre buscar 60 dias
+    return { from: inicio, to: hoje };
+  }, []);
+  
+  // DateRange visual para filtro local (baseado em periodo do usuário)
   useEffect(() => {
     const hoje = new Date();
     const inicio = new Date();
@@ -127,40 +135,28 @@ export const Devolucao2025Page = () => {
     }
   });
 
-  // ✅ CORREÇÃO: Buscar automaticamente APENAS se não houver cache válido
+  // ✅ ESTRATÉGIA HÍBRIDA: Buscar automático SEMPRE (60 dias + todas contas)
   useEffect(() => {
     if (organizationId && accounts.length > 0 && !shouldFetch) {
-      const hasCache = persistentCache.hasValidPersistedState();
-      
-      if (!hasCache) {
-        console.log('🚀 Primeira visita (sem cache): ativando busca automática de 60 dias');
-        setShouldFetch(true);
-      } else {
-        console.log('📦 Cache válido encontrado: usando dados salvos da última busca do usuário');
-        // Não faz busca automática - usa initialData do cache
-      }
+      console.log('🚀 Busca híbrida: carregando 60 dias completos (filtros aplicados localmente)');
+      setShouldFetch(true);
     }
-  }, [organizationId, accounts.length, persistentCache]);
+  }, [organizationId, accounts.length]);
 
-  // Buscar devoluções via Edge Function
-  const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025', selectedAccounts, dateRange],
+  // Buscar devoluções via Edge Function (SEMPRE 60 dias + todas contas)
+  const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['devolucoes-2025-completas', backendDateRange],
     queryFn: async () => {
-      console.log('🔍 Buscando devoluções...', { selectedAccounts, dateRange });
-      let result: any[] = [];
+      console.log('🔍 Buscando devoluções completas (60 dias)...', { dateRange: backendDateRange });
       
-      // Se nenhuma conta selecionada ou todas selecionadas
-      const accountsToFetch = selectedAccounts.length === 0 || selectedAccounts.length === accounts.length
-        ? accounts.map(acc => acc.id)
-        : selectedAccounts;
-      
+      // Buscar de TODAS as contas (dados completos)
       const allDevolucoes = await Promise.all(
-        accountsToFetch.map(async (accountId) => {
+        accounts.map(async (account) => {
           const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
             body: {
-              integration_account_id: accountId,
-              date_from: dateRange.from.toISOString(),
-              date_to: dateRange.to.toISOString()
+              integration_account_id: account.id,
+              date_from: backendDateRange.from.toISOString(),
+              date_to: backendDateRange.to.toISOString()
             }
           });
 
@@ -168,37 +164,41 @@ export const Devolucao2025Page = () => {
           return data?.data || [];
         })
       );
-      result = allDevolucoes.flat();
-
-      // Salvar dados no cache após busca bem-sucedida
-      persistentCache.saveDataCache(
-        result,
-        selectedAccounts,
-        dateRange,
-        currentPage,
-        itemsPerPage,
-        Array.from(columnManager.state.visibleColumns),
-        periodo
-      );
-
+      
+      const result = allDevolucoes.flat();
+      console.log(`✅ ${result.length} devoluções carregadas (60 dias completos)`);
+      
       return result;
     },
-    enabled: organizationId !== null && shouldFetch, // ✅ Busca ativa quando shouldFetch=true (agora automático)
+    enabled: organizationId !== null && shouldFetch && accounts.length > 0,
     refetchOnWindowFocus: false,
-    staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
-    gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
-    // Inicializar com dados do localStorage se disponíveis
-    initialData: () => {
-      if (persistentCache.hasValidPersistedState()) {
-        console.log('📦 Iniciando com dados do cache:', persistentCache.persistedState?.devolucoes.length);
-        return persistentCache.persistedState?.devolucoes;
-      }
-      return undefined;
-    },
-    initialDataUpdatedAt: () => {
-      return persistentCache.persistedState?.cachedAt || 0;
-    }
+    staleTime: 2 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
+
+  // Filtrar localmente baseado nas preferências do usuário
+  const devolucoes = useMemo(() => {
+    let filtered = devolucoesCompletas;
+    
+    // Filtro de período (local)
+    if (dateRange.from && dateRange.to) {
+      filtered = filtered.filter(dev => {
+        if (!dev.data_criacao) return false;
+        const dataCriacao = parseISO(dev.data_criacao);
+        return dataCriacao >= dateRange.from && dataCriacao <= dateRange.to;
+      });
+    }
+    
+    // Filtro de contas (local)
+    if (selectedAccounts.length > 0) {
+      filtered = filtered.filter(dev => 
+        selectedAccounts.includes(dev.integration_account_id)
+      );
+    }
+    
+    console.log(`🎯 Filtros locais aplicados: ${filtered.length}/${devolucoesCompletas.length} devoluções exibidas`);
+    return filtered;
+  }, [devolucoesCompletas, dateRange, selectedAccounts]);
 
   // Enriquecer devoluções com status de análise local
   const devolucoesEnriquecidas = useMemo(() => {
@@ -283,13 +283,13 @@ export const Devolucao2025Page = () => {
   // - Apenas restaura filtros do cache (linhas 64-74)
   // - Busca só ocorre quando usuário clica em "Aplicar Filtros"
 
-  // ✅ CORREÇÃO MÉDIA 5: Otimizar dependencies para evitar saves excessivos
+  // ✅ CORREÇÃO MÉDIA 5: Otimizar dependencies - salvar apenas filtros visuais
   useEffect(() => {
-    if (devolucoes.length > 0 && persistentCache.isStateLoaded) {
+    if (devolucoesCompletas.length > 0 && persistentCache.isStateLoaded) {
       const timer = setTimeout(() => {
         persistentCache.saveDataCache(
-          devolucoes,
-          selectedAccounts,
+          devolucoesCompletas, // Salvar dados completos (60 dias)
+          selectedAccounts, // Filtros visuais do usuário
           dateRange,
           currentPage,
           itemsPerPage,
@@ -300,15 +300,14 @@ export const Devolucao2025Page = () => {
       
       return () => clearTimeout(timer);
     }
-    // Apenas triggerar quando valores realmente mudam (não incluir objetos/arrays diretamente)
-  }, [currentPage, itemsPerPage, periodo, devolucoes.length, persistentCache.isStateLoaded]);
+  }, [currentPage, itemsPerPage, periodo, devolucoesCompletas.length, persistentCache.isStateLoaded]);
 
-  // Handler para aplicar filtros (apenas ativa flag)
+  // Handler para aplicar filtros (força refetch dos 60 dias completos)
   const handleApplyFilters = useCallback(() => {
-    console.log('🔄 Aplicando filtros, limpando cache...');
-    persistentCache.clearPersistedState();
-    setShouldFetch(true); // Ativa flag - useEffect vai disparar refetch
-  }, [persistentCache]);
+    console.log('🔄 Forçando atualização dos dados completos (60 dias)...');
+    setShouldFetch(true);
+    refetch(); // Refetch dos dados completos
+  }, [refetch]);
 
   // ✅ CORREÇÃO 2: Cancelar busca sem reload
   const handleCancelSearch = useCallback(() => {
@@ -344,13 +343,13 @@ export const Devolucao2025Page = () => {
     }
   }, [isLoading, shouldFetch]);
 
-  // Sistema de Alertas
-  const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
+  // Sistema de Alertas (sobre dados completos)
+  const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoesCompletas);
 
-  // FASE 4: Polling automático
+  // FASE 4: Polling automático (sobre dados completos)
   // ✅ CORREÇÃO CRÍTICA 4: Simplificar lógica - polling ativo se há dados e não está em loading
   const { forceRefresh, isPolling } = useDevolucoesPolling({
-    enabled: devolucoes.length > 0 && !isLoading && !error, // Polling ativo se já tem dados carregados
+    enabled: devolucoesCompletas.length > 0 && !isLoading && !error,
     interval: 60000, // 1 minuto
     onNewData: (newCount) => {
       toast.success(`${newCount} nova(s) devolução(ões) detectada(s)`, {
@@ -361,7 +360,7 @@ export const Devolucao2025Page = () => {
     pauseOnInteraction: true,
   });
 
-  // FASE 4: Agregação de métricas
+  // FASE 4: Agregação de métricas (sobre dados filtrados)
   const metrics = useDevolucoesAggregator(devolucoes, analiseStatus);
 
   // Contadores para as abas (usando metrics agregadas)
