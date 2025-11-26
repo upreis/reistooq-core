@@ -44,45 +44,44 @@ export const mapTrackingData = (item: any) => {
     shipping_mode: claim.shipping?.mode || claim.shipping?.shipping_mode || returnData?.shipping_mode || null,
     
     // ===== RASTREAMENTO BÁSICO =====
-    // 🎯 Buscar tracking do PEDIDO ORIGINAL - Testar TODOS os caminhos possíveis
+    // 🎯 CORREÇÃO: Buscar do shipping enriquecido (logistic.type é estrutura aninhada!)
     tracking_number: (() => {
-      const tracking = orderData?.shipping?.tracking_number 
-        || orderData?.shipping?.tracking_code
+      const shipping = orderData?.shipping;
+      const tracking = shipping?.tracking_number 
+        || shipping?.tracking_code
         || orderData?.tracking_number
-        || orderData?.shipments?.[0]?.tracking_number
-        || orderData?.shipments?.[0]?.tracking_code
         || returnData?.shipping?.tracking_number 
-        || claim.tracking_number
         || null;
-      console.log(`📦 [Claim ${claim.id}] tracking_number FINAL extraído: ${tracking}`);
+      console.log(`📦 [Claim ${claim.id}] tracking_number FINAL: ${tracking} | shipping_enriched: ${shipping?.shipping_enriched}`);
       return tracking;
     })(),
     tracking_status: returnData?.status || claim.status || null,
     codigo_rastreamento: (() => {
-      const codigo = orderData?.shipping?.tracking_number 
-        || orderData?.shipping?.tracking_code
+      const shipping = orderData?.shipping;
+      const codigo = shipping?.tracking_number 
+        || shipping?.tracking_code
         || orderData?.tracking_number
-        || orderData?.shipments?.[0]?.tracking_number
-        || orderData?.shipments?.[0]?.tracking_code
         || returnData?.shipping?.tracking_number
-        || claim.tracking_number
         || null;
-      console.log(`📦 [Claim ${claim.id}] codigo_rastreamento FINAL extraído: ${codigo}`);
+      console.log(`📦 [Claim ${claim.id}] codigo_rastreamento FINAL: ${codigo}`);
       return codigo;
     })(),
     tracking_method: orderData?.shipping?.tracking_method || returnData?.tracking_method || null,
     
-    // 🚚 TIPO LOGÍSTICA: Buscar do pedido original - Testar TODOS os caminhos possíveis
+    // 🚚 TIPO LOGÍSTICA: Buscar de logistic.type (estrutura aninhada!)
+    // Padrão /vendas-online: shipping.logistic.type
     tipo_logistica: (() => {
-      const tipo = orderData?.shipping?.logistic?.type 
-        || orderData?.shipping?.logistic_type
+      const shipping = orderData?.shipping;
+      const tipo = shipping?.logistic?.type  // ← PRIORITÁRIO: estrutura aninhada!
+        || shipping?.logistic_type           // ← Fallback: flat
         || orderData?.logistic_type 
-        || orderData?.shipping?.shipment_type
-        || orderData?.shipments?.[0]?.logistic_type
-        || orderData?.shipments?.[0]?.shipping_option?.logistic_type
-        || claim.shipping?.logistic_type
         || null;
-      console.log(`📦 [Claim ${claim.id}] tipo_logistica FINAL extraído: ${tipo}`);
+      console.log(`📦 [Claim ${claim.id}] tipo_logistica:`, {
+        'shipping.logistic.type': shipping?.logistic?.type,
+        'shipping.logistic_type': shipping?.logistic_type,
+        final: tipo,
+        shipping_enriched: shipping?.shipping_enriched
+      });
       return tipo;
     })(),
     
