@@ -41,6 +41,9 @@ serve(async (req) => {
       date_to
     } = await req.json();
 
+    // 🚨🚨🚨 DEBUG DEPLOYMENT - SE ESTE LOG APARECE = DEPLOYMENT OK 🚨🚨🚨
+    console.log('🚨🚨🚨 [DEPLOYMENT TEST] get-devolucoes-direct VERSION 2025-11-26-17:45 - CÓDIGO NOVO RODANDO! 🚨🚨🚨');
+    
     // 🔄 Normalizar para array sempre (simplifica lógica)
     const accountIds = integration_account_ids 
       ? (Array.isArray(integration_account_ids) ? integration_account_ids : [integration_account_ids])
@@ -51,6 +54,8 @@ serve(async (req) => {
       throw new Error('Nenhuma conta válida fornecida. Envie integration_account_id ou integration_account_ids.');
     }
 
+    console.log('🚨 [DEPLOYMENT TEST] accountIds recebidos:', JSON.stringify(accountIds));
+    
     logger.progress(`[get-devolucoes-direct] Iniciando busca para ${accountIds.length} conta(s)`);
     logger.debug('Parâmetros:', { accountIds, date_from, date_to });
 
