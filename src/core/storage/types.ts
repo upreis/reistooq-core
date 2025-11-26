@@ -10,7 +10,7 @@ export enum StorageType {
 
 export interface StorageOptions {
   type?: StorageType;
-  ttl?: number; // Time to live em milissegundos
+  ttl?: number; // Time to live em milissegundos (apenas no set, ignorado no get)
   version?: number; // Versão do schema dos dados
   compress?: boolean; // Comprimir dados (para grandes objetos)
   namespace?: string; // Namespace para evitar colisões
