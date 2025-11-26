@@ -371,25 +371,8 @@ export const Devolucao2025Table = ({
                   </Badge>
                 </TableCell>
               )}
-              {isVisible('moderacao') && <TableCell>{dev.status_moderacao || '-'}</TableCell>}
-              {isVisible('anexos_comprador') && <TableCell>{dev.total_anexos_comprador || '0'}</TableCell>}
-              {isVisible('anexos_vendedor') && <TableCell>{dev.total_anexos_vendedor || '0'}</TableCell>}
-              {isVisible('anexos_ml') && <TableCell>{dev.total_anexos_ml || '0'}</TableCell>}
 
-              {/* GRUPO 9: REVIEW & AÇÕES */}
-              {isVisible('review_resource_id') && (
-                <TableCell>{translateColumnValue('review_resource_id', dev.dados_reviews?.resource_id)}</TableCell>
-              )}
-              {isVisible('reason_id') && (
-                <TableCell>{translateColumnValue('reason_id', dev.dados_reviews?.reason_id)}</TableCell>
-              )}
-
-              {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-              {isVisible('custo_total_log') && (
-                <TableCell>
-                  {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
-                </TableCell>
-              )}
+              {/* GRUPO 9: CUSTOS OPERACIONAIS */}
               {isVisible('custo_envio_orig') && (
                 <TableCell>
                   {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
