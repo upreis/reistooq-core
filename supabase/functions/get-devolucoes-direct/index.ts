@@ -187,8 +187,11 @@ serve(async (req) => {
         const enrichedBatch = await Promise.all(
           batch.map(async (claim: any) => {
             let orderData = null;
+            let returnDetailsV2 = null;
+            let claimMessages = null;
+            let productInfo = null;
             
-            // Buscar APENAS order data básico (sem shipment, messages, return details)
+            // 1️⃣ Buscar order data
             if (claim.resource_id) {
               try {
                 const { response: orderRes } = await validateAndFetch(
@@ -202,19 +205,74 @@ serve(async (req) => {
                   orderData = await orderRes.json();
                 }
               } catch (err) {
-                // Silencioso - continua sem order data
+                // Silencioso
+              }
+            }
+            
+            // 2️⃣ Buscar return_details_v2 (CRÍTICO para status, datas, tracking)
+            if (claim.id) {
+              try {
+                const { response: returnRes } = await validateAndFetch(
+                  'claim_returns',
+                  accessToken,
+                  { claim_id: claim.id },
+                  { retryOnFail: false, logResults: false }
+                );
+                
+                if (returnRes?.ok) {
+                  returnDetailsV2 = await returnRes.json();
+                }
+              } catch (err) {
+                // Silencioso
+              }
+            }
+            
+            // 3️⃣ Buscar messages (CRÍTICO para última msg, evidências)
+            if (claim.id) {
+              try {
+                const { response: messagesRes } = await validateAndFetch(
+                  'claim_messages',
+                  accessToken,
+                  { claim_id: claim.id },
+                  { retryOnFail: false, logResults: false }
+                );
+                
+                if (messagesRes?.ok) {
+                  claimMessages = await messagesRes.json();
+                }
+              } catch (err) {
+                // Silencioso
+              }
+            }
+            
+            // 4️⃣ Buscar product_info (CRÍTICO para imagem/detalhes produto)
+            const itemId = orderData?.order_items?.[0]?.item?.id;
+            if (itemId) {
+              try {
+                const { response: productRes } = await validateAndFetch(
+                  'items',
+                  accessToken,
+                  { id: itemId },
+                  { retryOnFail: false, logResults: false }
+                );
+                
+                if (productRes?.ok) {
+                  productInfo = await productRes.json();
+                }
+              } catch (err) {
+                // Silencioso
               }
             }
             
             return {
               ...claim,
               order_data: orderData,
-              // Pular enriquecimento pesado - dados virão do Realtime depois
+              return_details_v2: returnDetailsV2,
+              claim_messages: claimMessages,
+              product_info: productInfo,
+              // Campos opcionais (não essenciais)
               shipment_data: null,
-              claim_messages: null,
-              return_details_v2: null,
               review_details: null,
-              product_info: null,
               billing_info: null,
               seller_reputation_data: null,
               shipment_history_enriched: null,
