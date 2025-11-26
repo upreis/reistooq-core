@@ -143,32 +143,47 @@ export const Devolucao2025Page = () => {
     }
   }, [organizationId, accounts.length]);
 
+  // Estado para progresso de busca
+  const [fetchProgress, setFetchProgress] = useState({ current: 0, total: 0 });
+
   // Buscar devoluções via Edge Function (SEMPRE 60 dias + todas contas)
   const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025-completas', backendDateRange],
     queryFn: async () => {
       console.log('🔍 Buscando devoluções completas (60 dias)...', { dateRange: backendDateRange });
       
-      // Buscar de TODAS as contas (dados completos)
-      const allDevolucoes = await Promise.all(
-        accounts.map(async (account) => {
-          const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-            body: {
-              integration_account_id: account.id,
-              date_from: backendDateRange.from.toISOString(),
-              date_to: backendDateRange.to.toISOString()
-            }
-          });
+      const allDevolucoes = [];
+      const totalContas = accounts.length;
+      setFetchProgress({ current: 0, total: totalContas });
+      
+      // Buscar sequencialmente para evitar sobrecarga
+      for (let i = 0; i < accounts.length; i++) {
+        const account = accounts[i];
+        setFetchProgress({ current: i + 1, total: totalContas });
+        console.log(`📥 Buscando conta ${i + 1}/${totalContas}: ${account.name}`);
+        
+        const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+          body: {
+            integration_account_id: account.id,
+            date_from: backendDateRange.from.toISOString(),
+            date_to: backendDateRange.to.toISOString()
+          }
+        });
 
-          if (error) throw error;
-          return data?.data || [];
-        })
-      );
+        if (error) {
+          console.error(`❌ Erro ao buscar conta ${account.name}:`, error);
+          continue; // Continua com as próximas contas mesmo se uma falhar
+        }
+        
+        const accountData = data?.data || [];
+        console.log(`✅ Conta ${account.name}: ${accountData.length} devoluções`);
+        allDevolucoes.push(...accountData);
+      }
       
-      const result = allDevolucoes.flat();
-      console.log(`✅ ${result.length} devoluções carregadas (60 dias completos)`);
+      setFetchProgress({ current: 0, total: 0 });
+      console.log(`✅ Total: ${allDevolucoes.length} devoluções carregadas (60 dias completos)`);
       
-      return result;
+      return allDevolucoes;
     },
     enabled: organizationId !== null && shouldFetch && accounts.length > 0,
     refetchOnWindowFocus: false,
@@ -446,7 +461,25 @@ export const Devolucao2025Page = () => {
                 {/* 🔄 LOADER APENAS NA ÁREA DA TABELA */}
                 {(isLoading || isManualSearching) && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
-                    <LoadingIndicator />
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="relative w-[65px] h-[65px]">
+                        <span className="absolute rounded-[50px] shadow-[inset_0_0_0_3px] shadow-gray-800 dark:shadow-gray-100 animate-loaderAnim" />
+                        <span className="absolute rounded-[50px] shadow-[inset_0_0_0_3px] shadow-gray-800 dark:shadow-gray-100 animate-loaderAnim [animation-delay:-1.25s]" />
+                      </div>
+                      {fetchProgress.total > 0 && (
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-foreground">
+                            Buscando devoluções...
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Conta {fetchProgress.current} de {fetchProgress.total}
+                          </p>
+                        </div>
+                      )}
+                      {fetchProgress.total === 0 && (
+                        <p className="text-sm font-medium text-foreground">Buscando devoluções...</p>
+                      )}
+                    </div>
                   </div>
                 )}
                 
