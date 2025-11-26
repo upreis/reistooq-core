@@ -16,7 +16,6 @@ import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import { LogisticTypeCell } from '@/features/devolucao2025/components/cells/LogisticTypeCell';
 import { RecentBadge } from '@/features/devolucao2025/components/cells/RecentBadge';
 import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/DeliveryStatusCell';
-import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
 import { StatusAnaliseSelect } from './StatusAnaliseSelect';
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
@@ -199,8 +198,6 @@ export const Devolucao2025Table = ({
             // Debug: Log valores para verificar traduções (apenas primeira linha)
             if (index === 0) {
               console.log('🔍 Valores para tradução:', {
-                metodo_pagamento: dev.metodo_pagamento,
-                tipo_pagamento: dev.tipo_pagamento,
                 status_devolucao: dev.status_devolucao,
                 status_return: dev.status_return,
                 destino: dev.destino_devolucao,
@@ -260,17 +257,6 @@ export const Devolucao2025Table = ({
                   {dev.valor_reembolso_produto ? `R$ ${dev.valor_reembolso_produto.toFixed(2)}` : '-'}
                 </TableCell>
               )}
-              {isVisible('percentual_reemb') && (
-                <TableCell>
-                  {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
-                </TableCell>
-              )}
-              {isVisible('metodo_pagamento') && (
-                <TableCell>{translateColumnValue('metodo_pagamento', dev.metodo_pagamento)}</TableCell>
-              )}
-              {isVisible('tipo_pagamento') && (
-                <TableCell>{translateColumnValue('tipo_pagamento', dev.tipo_pagamento)}</TableCell>
-              )}
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
               {isVisible('status_dev') && (
@@ -301,14 +287,6 @@ export const Devolucao2025Table = ({
               )}
               {isVisible('destino') && (
                 <TableCell>{translateColumnValue('destino', dev.destino_devolucao)}</TableCell>
-              )}
-              {isVisible('evidencias') && (
-                <TableCell>
-                  <EvidencesCell 
-                    attachments={dev.anexos_ml}
-                    totalEvidencias={dev.total_evidencias}
-                  />
-                </TableCell>
               )}
               {isVisible('resolucao') && (
                 <TableCell>

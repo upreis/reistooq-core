@@ -145,36 +145,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'percentual_reemb',
-    label: '% Reemb.',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Percentual de reembolso',
-    width: 100
-  },
-  {
-    key: 'metodo_pagamento',
-    label: 'Método Pagto',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Método de pagamento',
-    width: 150
-  },
-  {
-    key: 'tipo_pagamento',
-    label: 'Tipo Pagto',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tipo de pagamento',
-    width: 120
-  },
-  {
     key: 'status_entrega',
     label: 'Status Entrega',
     category: 'shipping',
@@ -193,16 +163,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Destino da devolução',
     width: 150
-  },
-  {
-    key: 'evidencias',
-    label: 'Evidências',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Evidências anexadas',
-    width: 120
   },
   {
     key: 'resolucao',
@@ -335,56 +295,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'moderacao',
-    label: 'Moderação',
-    category: 'communication',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status de moderação',
-    width: 120
-  },
-  {
-    key: 'anexos_comprador',
-    label: 'Anexos Comprador',
-    category: 'communication',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Anexos do comprador',
-    width: 150
-  },
-  {
-    key: 'anexos_vendedor',
-    label: 'Anexos Vendedor',
-    category: 'communication',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Anexos do vendedor',
-    width: 150
-  },
-  {
-    key: 'anexos_ml',
-    label: 'Anexos ML',
-    category: 'communication',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Anexos do Mercado Livre',
-    width: 150
-  },
-  {
-    key: 'custo_total_log',
-    label: 'Custo Total Log',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Custo total logístico',
-    width: 130
-  },
-  {
     key: 'custo_envio_orig',
     label: 'Custo Envio Orig',
     category: 'financial',
@@ -431,10 +341,6 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
       'produto',
       'valor_total',
       'valor_produto',
-      'percentual_reemb',
-      'metodo_pagamento',
-      'tipo_pagamento',
-      'custo_total_log',
       'custo_envio_orig',
       'status_dev',
       'analise'

@@ -32,11 +32,6 @@ const formatValue = (value: any, columnId: string): any => {
     }
   }
   
-  // Formatar percentuais
-  if (columnId === 'percentual_reemb') {
-    return `${value}%`;
-  }
-  
   // Formatar booleanos
   if (typeof value === 'boolean') {
     return value ? 'Sim' : 'Não';
@@ -87,8 +82,6 @@ const exportToExcel = async ({ data, visibleColumns, filename = 'devolucoes' }: 
         value = row.product_info.title || row.produto_titulo;
       } else if (colId === 'comprador') {
         value = row.comprador_nome_completo;
-      } else if (colId === 'evidencias') {
-        value = row.total_evidencias || 0;
       } else if (colId === 'resolucao') {
         value = row.resolution;
       }
@@ -149,8 +142,6 @@ const exportToCSV = ({ data, visibleColumns, filename = 'devolucoes' }: Omit<Exp
         value = row.product_info.title || row.produto_titulo;
       } else if (colId === 'comprador') {
         value = row.comprador_nome_completo;
-      } else if (colId === 'evidencias') {
-        value = row.total_evidencias || 0;
       } else if (colId === 'resolucao') {
         value = row.resolution;
       }
