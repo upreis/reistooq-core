@@ -277,12 +277,11 @@ export const Devolucao2025Page = () => {
   // - Apenas restaura filtros do cache (linhas 64-74)
   // - Busca só ocorre quando usuário clica em "Aplicar Filtros"
 
-  // ✅ CORREÇÃO MÉDIA 5: Otimizar dependencies - salvar apenas filtros visuais
+  // ✅ SALVAR METADADOS (SEM devoluções - evita QuotaExceededError)
   useEffect(() => {
     if (devolucoesCompletas.length > 0 && persistentCache.isStateLoaded) {
       const timer = setTimeout(() => {
         persistentCache.saveDataCache(
-          devolucoesCompletas, // Salvar dados completos (60 dias)
           selectedAccounts, // Filtros visuais do usuário
           dateRange,
           currentPage,
