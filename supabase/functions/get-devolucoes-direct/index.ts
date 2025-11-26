@@ -3,6 +3,8 @@
  * Copia EXATA do padrão de ml-claims-fetch que FUNCIONA
  * NÃO usa cache do banco - SEMPRE busca fresco da API
  * ✅ APLICA MAPEAMENTO COMPLETO usando mappers consolidados
+ * 
+ * 🔄 FORCE REDEPLOY 2025-11-26 18:03 - Trigger automatic delete+redeploy workflow
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
