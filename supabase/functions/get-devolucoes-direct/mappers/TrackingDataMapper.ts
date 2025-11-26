@@ -7,21 +7,21 @@
 export const mapTrackingData = (item: any) => {
   const claim = item;
   const returnData = claim.return_details_v2 || claim.return_details;
+  const orderData = claim.order_data; // 🎯 Dados do pedido original
   
   // 🐛 DEBUG: Log dados de tracking recebidos
   console.log('📦 TrackingDataMapper - Dados recebidos:', JSON.stringify({
     claim_id: claim.id,
     has_return_details_v2: !!claim.return_details_v2,
+    has_order_data: !!orderData,
+    // ✅ Tracking do PEDIDO ORIGINAL (não da devolução)
+    order_tracking_number: orderData?.shipping?.tracking_number,
+    order_logistic_type: orderData?.shipping?.logistic?.type,
+    order_shipping_id: orderData?.shipping?.id,
+    // Dados da devolução
     return_status: returnData?.status,
     return_date_created: returnData?.date_created,
-    return_last_updated: returnData?.last_updated,
-    return_date_closed: returnData?.date_closed,
-    return_refund_at: returnData?.refund_at,
-    // ✅ CORREÇÃO CRÍTICA: API retorna "shipping" (singular), não "shipments" (array)
-    has_shipping: !!returnData?.shipping,
-    shipping_status: returnData?.shipping?.status,
-    shipping_type: returnData?.shipping?.type,
-    shipping_tracking: returnData?.shipping?.tracking_number
+    return_shipping_tracking: returnData?.shipping?.tracking_number
   }));
   
   return {
@@ -32,11 +32,14 @@ export const mapTrackingData = (item: any) => {
     shipping_mode: claim.shipping?.mode || claim.shipping?.shipping_mode || returnData?.shipping_mode || null,
     
     // ===== RASTREAMENTO BÁSICO =====
-    // ✅ CORREÇÃO: shipping.tracking_number (singular)
-    tracking_number: returnData?.shipping?.tracking_number || returnData?.tracking_number || claim.tracking_number || null,
+    // 🎯 CORREÇÃO: Buscar tracking do PEDIDO ORIGINAL (não da devolução)
+    tracking_number: orderData?.shipping?.tracking_number || returnData?.shipping?.tracking_number || null,
     tracking_status: returnData?.status || claim.status || null,
-    codigo_rastreamento: returnData?.shipping?.tracking_number || returnData?.tracking_number || claim.tracking_number || null,
-    tracking_method: returnData?.tracking_method || claim.tracking_method || null,
+    codigo_rastreamento: orderData?.shipping?.tracking_number || returnData?.shipping?.tracking_number || null,
+    tracking_method: orderData?.shipping?.tracking_method || returnData?.tracking_method || null,
+    
+    // 🚚 TIPO LOGÍSTICA: Buscar do pedido original
+    tipo_logistica: orderData?.shipping?.logistic?.type || orderData?.logistic_type || null,
     
     // ===== DADOS DE ENVIO DA DEVOLUÇÃO (doc ML) =====
     // ✅ CORREÇÃO: shipping é objeto, não array
