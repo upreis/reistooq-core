@@ -171,9 +171,9 @@ export function Devolucao2025FilterBar({
         {/* Botão Buscar com FlipButton */}
         <div className="min-w-[220px] flex-shrink-0">
           <FlipButton
-            text1="Cancelar a Busca"
-            text2="Aplicar Filtros"
-            onClick={isLoading ? onCancel : onBuscar}
+            text1="Aplicar Filtros"
+            text2="Cancelar a Busca"
+            onClick={isLoading && onCancel ? onCancel : onBuscar}
             isFlipped={isLoading}
           />
         </div>
