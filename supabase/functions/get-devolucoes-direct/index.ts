@@ -44,7 +44,12 @@ serve(async (req) => {
     // 🔄 Normalizar para array sempre (simplifica lógica)
     const accountIds = integration_account_ids 
       ? (Array.isArray(integration_account_ids) ? integration_account_ids : [integration_account_ids])
-      : [integration_account_id];
+      : (integration_account_id ? [integration_account_id] : []);
+
+    // ✅ Validar se temos ao menos uma conta
+    if (accountIds.length === 0 || accountIds.some(id => !id)) {
+      throw new Error('Nenhuma conta válida fornecida. Envie integration_account_id ou integration_account_ids.');
+    }
 
     logger.progress(`[get-devolucoes-direct] Iniciando busca para ${accountIds.length} conta(s)`);
     logger.debug('Parâmetros:', { accountIds, date_from, date_to });
