@@ -26,25 +26,28 @@ export const mapTrackingData = (item: any) => {
   return {
     // ===== STATUS =====
     status_return: returnData?.status || null,
-    status_envio: returnData?.shipments?.[0]?.status || claim.shipment_data?.status || null,
+    // ✅ CORREÇÃO CRÍTICA: API retorna "shipping" (singular), não "shipments" (array)
+    status_envio: returnData?.shipping?.status || claim.shipment_data?.status || null,
     shipping_mode: claim.shipping?.mode || claim.shipping?.shipping_mode || returnData?.shipping_mode || null,
     
     // ===== RASTREAMENTO BÁSICO =====
-    tracking_number: returnData?.tracking_number || returnData?.shipments?.[0]?.tracking_number || claim.tracking_number || null,
+    // ✅ CORREÇÃO: shipping.tracking_number (singular)
+    tracking_number: returnData?.shipping?.tracking_number || returnData?.tracking_number || claim.tracking_number || null,
     tracking_status: returnData?.status || claim.status || null,
-    codigo_rastreamento: returnData?.shipments?.[0]?.tracking_number || returnData?.tracking_number || claim.tracking_number || null,
+    codigo_rastreamento: returnData?.shipping?.tracking_number || returnData?.tracking_number || claim.tracking_number || null,
     tracking_method: returnData?.tracking_method || claim.tracking_method || null,
     
     // ===== DADOS DE ENVIO DA DEVOLUÇÃO (doc ML) =====
-    tipo_envio_devolucao: returnData?.shipments?.[0]?.type || null,
-    destino_devolucao: returnData?.shipments?.[0]?.destination?.name || null,
-    endereco_destino_devolucao: returnData?.shipments?.[0]?.destination?.shipping_address?.address_line || null,
-    rua_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.street_name || null,
-    numero_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.street_number || null,
-    cidade_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.city?.name || null,
-    estado_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.state?.name || null,
-    cep_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.zip_code || null,
-    bairro_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.neighborhood?.name || null,
+    // ✅ CORREÇÃO: shipping é objeto, não array
+    tipo_envio_devolucao: returnData?.shipping?.type || null,
+    destino_devolucao: returnData?.shipping?.destination?.name || null,
+    endereco_destino_devolucao: returnData?.shipping?.destination?.shipping_address?.address_line || null,
+    rua_destino: returnData?.shipping?.destination?.shipping_address?.street_name || null,
+    numero_destino: returnData?.shipping?.destination?.shipping_address?.street_number || null,
+    cidade_destino: returnData?.shipping?.destination?.shipping_address?.city?.name || null,
+    estado_destino: returnData?.shipping?.destination?.shipping_address?.state?.name || null,
+    cep_destino: returnData?.shipping?.destination?.shipping_address?.zip_code || null,
+    bairro_destino: returnData?.shipping?.destination?.shipping_address?.neighborhood?.name || null,
     
     // ===== REVIEW =====
     review_id: claim.review_details?.id || claim.review?.id || null,
@@ -192,7 +195,8 @@ export const mapTrackingData = (item: any) => {
     // ===== CAMPOS DETALHADOS (TrackingDetailedCells) =====
     estimated_delivery_limit: returnData?.estimated_delivery_limit?.date || null,
     
-    shipment_status: returnData?.shipments?.[0]?.status || null,
+    // ✅ CORREÇÃO: shipping.status (singular)
+    shipment_status: returnData?.shipping?.status || null,
     refund_at: returnData?.refund_at || null,
     review_method: claim.review_details?.method || claim.review?.method || null,
     review_stage: claim.review_details?.stage || claim.review?.stage || null,
