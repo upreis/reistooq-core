@@ -48,27 +48,31 @@ export class UnifiedStorage {
         throw new Error('Dados não serializáveis');
       }
 
-      // Criar metadata
+
+      // Comprimir se necessário (ANTES de criar item)
+      let dataToStore = data;
+      const willCompress = opts.compress && this.config.enableCompression;
+
+      // Criar metadata com flag de compressão correto
       const metadata: StorageMetadata = {
         version: opts.version || this.config.defaultVersion,
         createdAt: Date.now(),
         expiresAt: opts.ttl ? Date.now() + opts.ttl : undefined,
-        compressed: opts.compress
+        compressed: willCompress
       };
 
       // Criar item
       const item: StorageItem<T> = {
-        data,
+        data: dataToStore,
         metadata
       };
 
       // Serializar
       let serialized = JSON.stringify(item);
 
-      // Comprimir se necessário
-      if (opts.compress && this.config.enableCompression) {
+      // Comprimir serializado se necessário
+      if (willCompress) {
         serialized = this.compress(serialized);
-        item.metadata.compressed = true;
       }
 
       // Validar tamanho
@@ -76,9 +80,16 @@ export class UnifiedStorage {
         throw new Error(`Item excede tamanho máximo de ${this.config.maxSize} bytes`);
       }
 
-      // Salvar
+      // Salvar com tratamento de QuotaExceededError
       const storage = this.getStorage(opts.type);
-      storage.setItem(fullKey, serialized);
+      try {
+        storage.setItem(fullKey, serialized);
+      } catch (storageError: any) {
+        if (storageError.name === 'QuotaExceededError') {
+          throw new Error('Storage cheio. Tente limpar dados antigos ou reduza o tamanho.');
+        }
+        throw storageError;
+      }
 
       return { success: true };
     } catch (error) {
@@ -194,16 +205,16 @@ export class UnifiedStorage {
 
       let clearedCount = 0;
 
-      // Coletar keys para limpar
+      // Remover keys diretamente durante iteração (mais eficiente)
       const keysToRemove: string[] = [];
-      for (let i = 0; i < storage.length; i++) {
+      for (let i = storage.length - 1; i >= 0; i--) {
         const key = storage.key(i);
         if (key && key.startsWith(prefix)) {
           keysToRemove.push(key);
         }
       }
 
-      // Remover keys
+      // Remover todas de uma vez
       keysToRemove.forEach(key => {
         storage.removeItem(key);
         clearedCount++;
@@ -351,7 +362,19 @@ export class UnifiedStorage {
    */
   private getStorage(type?: StorageType): Storage {
     const storageType = type || StorageType.LOCAL;
-    return storageType === StorageType.LOCAL ? localStorage : sessionStorage;
+    const storage = storageType === StorageType.LOCAL ? localStorage : sessionStorage;
+    
+    // Verificar disponibilidade do storage
+    try {
+      const testKey = '__storage_test__';
+      storage.setItem(testKey, 'test');
+      storage.removeItem(testKey);
+      return storage;
+    } catch (error) {
+      throw new Error(
+        `${storageType} não disponível. Verifique modo privado/incognito ou permissões do navegador.`
+      );
+    }
   }
 
   private getFullKey(key: StorageKey, namespace?: string): string {
@@ -371,15 +394,21 @@ export class UnifiedStorage {
   }
 
   private compress(data: string): string {
-    // Implementação simples - pode ser melhorada com LZ-string
-    return btoa(data);
+    // ⚠️ NOTA: btoa() aumenta tamanho em ~33%, não reduz
+    // Para compressão real, use biblioteca como lz-string
+    // Esta implementação serve apenas como encoding Base64
+    try {
+      return btoa(encodeURIComponent(data));
+    } catch (error) {
+      return data; // Fallback se conversão falhar
+    }
   }
 
   private decompress(data: string): string {
     try {
-      return atob(data);
+      return decodeURIComponent(atob(data));
     } catch {
-      return data; // Não estava comprimido
+      return data; // Não estava comprimido ou formato inválido
     }
   }
 }
