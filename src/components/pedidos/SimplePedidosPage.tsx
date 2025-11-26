@@ -86,6 +86,12 @@ import { LoadingIndicator } from './LoadingIndicator';
 
 import { FEATURES } from '@/config/features';
 
+// 🔧 FASE 4.1.2: Hooks Refatorados
+import { getReceitaPorEnvio, getValorLiquidoVendedor, getAccountsStats } from './hooks/usePedidosHelpers';
+import { usePedidosHandlers } from './hooks/usePedidosHandlers';
+import { usePedidosAccountsManager } from './hooks/usePedidosAccountsManager';
+import { usePedidosValidation } from './hooks/usePedidosValidation';
+
 type Order = {
   id: string;
   numero: string;
@@ -183,6 +189,11 @@ function SimplePedidosPage({ className }: Props) {
     returnStatus: []
   });
 
+  // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
+  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao' | 'insumo_pronto' | 'insumo_sem_mapeamento' | 'insumo_sem_cadastro' | 'insumo_pendente'>(() => {
+    return persistentState.persistedState?.quickFilter as any || 'all';
+  });
+
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   // ✅ ETAPA 3: 100% baseado em URL params para filtros persistentes
   const filtersManager = usePedidosFiltersUnified({
@@ -263,7 +274,6 @@ function SimplePedidosPage({ className }: Props) {
   
   
   // Estados locais para funcionalidades específicas
-  const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
   
@@ -299,22 +309,24 @@ function SimplePedidosPage({ className }: Props) {
   // 📍 Hook para enriquecer pedidos com local de estoque
   const { rowsEnriquecidos, loading: loadingLocais } = useLocalEstoqueEnriquecimento(state.orders);
 
-  // ✅ Função para calcular estatísticas das contas ML baseado nos erros do console
-  const getAccountsStats = useCallback(() => {
-    if (!accounts || accounts.length === 0) {
-      return { total: 0, successful: 0, failed: 0, successfulAccounts: [], failedAccounts: [] };
-    }
+  // 🔧 FASE 4.1.2: Hooks de gerenciamento de contas
+  const { accounts, testAccount, loadAccounts } = usePedidosAccountsManager({
+    actions,
+    integrationAccountId: state.integrationAccountId
+  });
 
-    const total = accounts.length;
-    // Por agora assumir que todas falharam baseado nos logs de erro
-    const failed = total;
-    const successful = 0;
-    
-    const successfulAccounts: string[] = [];
-    const failedAccounts = accounts.map(acc => acc.id);
+  // 🔧 FASE 4.1.2: Hooks de handlers de UI
+  const handlers = usePedidosHandlers({
+    actions,
+    persistentState,
+    setQuickFilter,
+    setAdvancedStatusFilters
+  });
 
-    return { total, successful, failed, successfulAccounts, failedAccounts };
-  }, [accounts]);
+  // 🔧 FASE 4.1.2: Hook de validação
+  const { validateSystem } = usePedidosValidation({ orders: rowsEnriquecidos });
+
+  // 🔧 FASE 4.1.2: Função movida para usePedidosHelpers (linha removida)
   
   // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
   const orders = rowsEnriquecidos;
@@ -335,10 +347,6 @@ function SimplePedidosPage({ className }: Props) {
     aggregatorParams.filters
   );
   
-  // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
-  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao' | 'insumo_pronto' | 'insumo_sem_mapeamento' | 'insumo_sem_cadastro' | 'insumo_pendente'>(() => {
-    return persistentState.persistedState?.quickFilter as any || 'all';
-  });
   
   // 🔄 ETAPA 1: Polling automático a cada 60s (PDF recomendado) - CORRIGIDO
   const polling = usePedidosPolling({
@@ -459,16 +467,7 @@ function SimplePedidosPage({ className }: Props) {
     }
   }, [orders, total, currentPage, loading, debouncedSaveData]);
   
-  // 🔄 SALVAR FILTRO RÁPIDO quando mudar
-  const handleQuickFilterChange = useCallback((newFilter: typeof quickFilter) => {
-    setQuickFilter(newFilter);
-    persistentState.saveQuickFilter(newFilter);
-    
-    // Forçar refresh dos dados para recalcular totais
-    setTimeout(() => {
-      actions.refetch();
-    }, 100);
-  }, [actions]);
+  // 🔧 FASE 4.1.2: Handler movido para usePedidosHandlers (linha removida)
   
   useEffect(() => {
     if (quickFilter !== 'all') {
@@ -501,175 +500,11 @@ function SimplePedidosPage({ className }: Props) {
     };
   }, []);
   
-  // Helpers financeiros: receita_por_envio (Flex) - REGRA SIMPLES
-  const getReceitaPorEnvio = (order: any): number => {
-    // 🔧 HELPER: Processar flex_order_cost - TEMPORARIAMENTE DESABILITADO
-    const getFlexOrderCostProcessed = (order: any): number => {
-      const flexCostOriginal = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
-      // ⚠️ CÁLCULO DESABILITADO: Retornando valor bruto da API
-      return flexCostOriginal;
-      
-      /* CÁLCULO ORIGINAL (DESABILITADO):
-      let flexCost = flexCostOriginal;
-      if (flexCost <= 0) return 0;
-      
-      // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
-      // Caso contrário → divide por 2
-      const valoresFixos = [8.90, 13.90, 15.90, 15.99];
-      const foiDividido = !valoresFixos.includes(flexCost);
-      
-      if (foiDividido) {
-        flexCost = flexCost / 2;
-      }
-      
-      return flexCost;
-      */
-    };
-    
-    // Detectar o tipo logístico
-    const rawType =
-      order?.shipping?.logistic?.type ??
-      order?.raw?.shipping?.logistic?.type ??
-      order?.logistic_type ??
-      order?.shipping_details?.logistic_type ??
-      order?.unified?.logistic?.type ??
-      order?.flex_logistic_type ??
-      order?.logistic?.type;
-
-    const logisticType = String(rawType || '').toLowerCase();
-    
-    // Se não for 'self_service' (Envios Flex), retornar 0
-    if (logisticType !== 'self_service') {
-      return 0;
-    }
-    
-    // ✅ NOVA REGRA: Usar Flex: Desconto Especial + condições
-    const flexSpecialDiscount = order.flex_special_discount || order.unified?.flex_special_discount || 0;
-    const flexNetCost = order.flex_net_cost || order.unified?.flex_net_cost || 0;
-    
-    // Valores específicos que devem ser usados diretamente
-    const valoresEspecificos = [8.90, 8.99, 13.90, 13.99, 15.90, 15.99];
-    
-    // Determinar a base do cálculo
-    const flexOrderCostBase = valoresEspecificos.includes(flexSpecialDiscount) 
-      ? flexSpecialDiscount 
-      : flexSpecialDiscount + flexNetCost;
-    
-    // Se não houver valor, retornar 0
-    if (flexOrderCostBase <= 0) {
-      return 0;
-    }
-    
-    // ✅ NOVA LÓGICA: Verificar Valor Médio por Item PRIMEIRO
-    const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
-    const quantidadeTotal = order.quantidade_total || 1;
-    const valorMedioPorItem = valorTotal / quantidadeTotal;
-    
-    // Se Valor Médio por Item < 79.00 → usar cálculo normal (100%)
-    if (valorMedioPorItem < 79.00) {
-      return flexOrderCostBase;
-    }
-    
-    // Se Valor Médio por Item >= 79.00 → verificar todas as outras condições
-    const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
-    const condition = String(conditionRaw).toLowerCase();
-    
-    // ✅ CORRIGIDO: Buscar reputation em TODOS os lugares possíveis
-    const reputationRaw = order.level_id || 
-                         order.seller_reputation?.level_id || 
-                         order.unified?.seller_reputation?.level_id ||
-                         order.sellerReputation?.level_id ||
-                         order.raw?.seller_reputation?.level_id ||
-                         order.raw?.sellerReputation?.level_id ||
-                         '';
-    const reputation = String(reputationRaw).toLowerCase();
-    
-    const medalha = order.power_seller_status || 
-                   order.unified?.power_seller_status || 
-                   order.raw?.power_seller_status ||
-                   order.raw?.seller_reputation?.power_seller_status ||
-                   order.raw?.sellerReputation?.power_seller_status ||
-                   order.seller_reputation?.power_seller_status ||
-                   order.unified?.seller_reputation?.power_seller_status ||
-                   null;
-    
-    // ✅ REGRA OFICIAL ML: Acima R$ 79 SÓ recebe bônus se tiver qualificações
-    // Se TODAS as condições forem atendidas → aplicar 10%
-    // Se NÃO tiver qualificações → R$ 0,00 (sem bônus)
-    const cumpreCondicoes = condition === 'new' && reputation.includes('green'); // ✅ Removida verificação de medalha
-    const percentualAplicado = cumpreCondicoes ? 0.1 : 0; // ✅ CORRIGIDO: 0% sem qualificações
-    const valorFinal = flexOrderCostBase * percentualAplicado;
-    
-    // ✅ Retornar valor calculado (0% ou 10% conforme qualificações)
-    return valorFinal;
-  };
+  // 🔧 FASE 4.1.2: Função movida para usePedidosHelpers (importada no topo)
   
-  const getValorLiquidoVendedor = (order: any): number => {
-    if (typeof order?.valor_liquido_vendedor === 'number') return order.valor_liquido_vendedor;
-
-    // ✅ NOVA REGRA: Baseado no Tipo Logístico
-    const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
-    
-    // Calcular Receita Flex usando a função getReceitaPorEnvio
-    const receitaFlex = getReceitaPorEnvio(order);
-    
-    const taxaMarketplace = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
-    const custoEnvioSeller = order.custo_envio_seller || order.unified?.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || order.raw?.shipping?.costs?.senders?.[0]?.cost || 0;
-    
-    // Determinar tipo logístico
-    const rawType = order?.tipo_logistico || 
-                   order?.unified?.tipo_logistico || 
-                   order?.shipping?.logistic_type || 
-                   order?.raw?.shipping?.logistic_type ||
-                   order?.shipping?.logistic?.type ||
-                   order?.unified?.shipping?.logistic?.type ||
-                   order?.logistic_type ||
-                   order?.flex_logistic_type ||
-                   '';
-    const tipoLogistico = String(rawType).toLowerCase();
-    
-    // Se for "self_service" (Envios Flex): Valor Total + Receita Flex - Taxa Marketplace
-    // Se não for Flex: Valor Total + Receita Flex - Taxa Marketplace - Custo Envio Seller
-    const isFlex = tipoLogistico === 'self_service' || tipoLogistico.includes('flex');
-    const valorLiquido = isFlex 
-      ? valorTotal + receitaFlex - taxaMarketplace
-      : valorTotal + receitaFlex - taxaMarketplace - custoEnvioSeller;
-
-    return valorLiquido;
-  };
+  // 🔧 FASE 4.1.2: Função movida para usePedidosHelpers (importada no topo)
   
-  const getValorLiquidoVendedor_OLD_BACKUP = (order: any): number => {
-    if (typeof order?.valor_liquido_vendedor === 'number') return order.valor_liquido_vendedor;
-
-    // ✅ USANDO CAMPOS DIRETOS DA API DO ML
-    // 1. Verificar se há campo direto de compensação do vendedor nos shipping costs
-    const sellerCompensation = order?.shipping?.costs?.senders?.[0]?.compensation ||
-                               order?.raw?.shipping?.costs?.senders?.[0]?.compensation || 0;
-    
-    if (sellerCompensation > 0) {
-      return sellerCompensation;
-    }
-    
-    // 2. Verificar se há valor líquido nos payments (transaction_amount - marketplace_fee)
-    const payments = order?.payments || order?.raw?.payments || [];
-    if (Array.isArray(payments) && payments.length > 0) {
-      const payment = payments[0];
-      const transactionAmount = Number(payment?.transaction_amount || 0);
-      const marketplaceFee = Number(payment?.marketplace_fee || 0);
-      
-      if (transactionAmount > 0) {
-        return Math.max(0, transactionAmount - marketplaceFee);
-      }
-    }
-    
-    // 3. Fallback para cálculo manual usando API fields
-    const valorTotal = Number(order?.total_amount ?? order?.valor_total ?? 0);
-    const taxaMarketplace = Number(order?.order_items?.[0]?.sale_fee ?? 
-                                  order?.raw?.order_items?.[0]?.sale_fee ?? 
-                                  order?.marketplace_fee ?? 0);
-    
-    return Math.max(0, valorTotal - taxaMarketplace);
-  };
+  // 🔧 FASE 4.1.2: Função OLD_BACKUP removida (não utilizada)
 
   // Configuração de colunas (reposta após ajuste)
   type ColumnDef = { key: string; label: string; default: boolean; category?: string; width?: number };
@@ -845,195 +680,21 @@ function SimplePedidosPage({ className }: Props) {
 
   // ✅ REMOVIDO: Usar formatSubstatus do orderFormatters
 
-  // Helper para testar contas - COM DEBUG DETALHADO
-  const testAccount = async (accId: string) => {
-    console.log(`🔍 DEBUG: Testando conta ${accId}...`);
-    try {
-      const { data, error } = await supabase.functions.invoke('unified-orders', {
-        body: { integration_account_id: accId, limit: 1 }
-      });
-      
-      console.log(`🔍 DEBUG: unified-orders response para ${accId}:`, {
-        hasData: !!data,
-        hasError: !!error,
-        dataOk: data?.ok,
-        errorMsg: error?.message,
-        dataError: data?.error,
-        status: data?.status
-      });
-      
-      if (error) {
-        console.error(`🔍 DEBUG: Erro na conta ${accId}:`, error);
-        return false;
-      }
-      
-      if (!data?.ok) {
-        console.warn(`🔍 DEBUG: Resposta não-ok para ${accId}:`, data);
-        return false;
-      }
-      
-      console.log(`✅ DEBUG: Conta ${accId} funcionando!`);
-      return true;
-    } catch (e) {
-      console.error(`🔍 DEBUG: Exceção na conta ${accId}:`, e);
-      return false;
-    }
-  };
+  // 🔧 FASE 4.1.2: Função movida para usePedidosAccountsManager (linha removida)
 
-  // ✅ FASE 3: Carregamento de contas unificado (ML + Shopee) - SEM QUEBRAR SISTEMA EXISTENTE
-  const loadAccounts = async () => {
-    try {
-      // 🛡️ SEGURANÇA: Garantir que ML sempre seja incluído
-      const providers = ['mercadolivre'];
-      
-      // ✅ EXPANSÃO SEGURA: Adicionar Shopee apenas se feature estiver ativa
-      if (FEATURES.SHOPEE) {
-        providers.push('shopee');
-      }
+  // 🔧 FASE 4.1.2: Função movida para usePedidosAccountsManager (linha removida)
 
-      const { data, error } = await supabase
-        .from('integration_accounts')
-        .select('*')
-        .in('provider', providers as ('mercadolivre' | 'shopee')[])
-        .eq('is_active', true)
-        .order('updated_at', { ascending: false });
+  // 🔧 FASE 4.1.2: Handlers movidos para usePedidosHandlers (linha removida)
 
-      if (error) throw error;
-
-      const list = data || [];
-      setAccounts(list);
-      console.log('📊 Contas carregadas (ML + Shopee):', {
-        total: list.length,
-        mercadolivre: list.filter(a => a.provider === 'mercadolivre').length,
-        shopee: list.filter(a => a.provider === 'shopee').length,
-        accounts: list
-      });
-    } catch (err: any) {
-      console.error('Erro ao carregar contas:', err.message);
-    }
-  };
-
-  // Handlers memoizados para performance
-  const handleFilterChange = useCallback((newFilters: any) => {
-    actions.setFilters(newFilters);
-  }, [actions.setFilters]);
-
-  const handleBaixaEstoque = async (pedidos: string[]) => {
-    console.log('Iniciando baixa de estoque para:', pedidos);
-    setShowBaixaModal(false);
-    // Lógica de baixa de estoque aqui
-  };
-
-  // Definir conta via URL (?acc= ou ?integration_account_id=) — somente após carregar contas e validando
-  useEffect(() => {
-    try {
-      const sp = new URLSearchParams(window.location.search);
-      const acc = sp.get('acc') || sp.get('integration_account_id');
-      if (!acc) return;
-      if (!Array.isArray(accounts) || accounts.length === 0) return; // aguarda contas
-
-      const exists = accounts.some((a) => (a.id || a.account_id) === acc);
-      const target = exists ? acc : (accounts[0]?.id as string) || (accounts[0]?.account_id as string);
-      if (!target) return;
-
-      console.log('[account/url] selecionando conta via URL (validada):', target);
-      actions.setIntegrationAccountId(target);
-      // Atualiza persistência para evitar reuso de ID inválido
-      try {
-        const saved = localStorage.getItem('pedidos:lastSearch');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          parsed.integrationAccountId = target;
-          localStorage.setItem('pedidos:lastSearch', JSON.stringify(parsed));
-        }
-      } catch {}
-    } catch {}
-  }, [actions, accounts]);
+  // 🔧 FASE 4.1.2: useEffect movido para usePedidosAccountsManager (linha removida)
 
 
-  // Carregar contas na inicialização (sem qualquer desativação automática)
-  useEffect(() => {
-    loadAccounts();
-  }, []);
+  // 🔧 FASE 4.1.2: useEffect movido para usePedidosAccountsManager (linha removida)
 
-// Selecionar conta somente se existir exatamente 1 conta ativa
-useEffect(() => {
-  if (!state.integrationAccountId && Array.isArray(accounts) && accounts.length === 1) {
-    const onlyAcc = (accounts[0]?.id as string) || (accounts[0]?.account_id as string);
-    if (onlyAcc) {
-      console.log('[account/default] selecionando única conta ativa:', onlyAcc);
-      actions.setIntegrationAccountId(onlyAcc);
-    }
-  }
-}, [accounts, state.integrationAccountId, actions]);
+  // 🔧 FASE 4.1.2: useEffect movido para usePedidosAccountsManager (linha removida)
 
-// Se a conta selecionada não estiver mais ativa, substituir por uma válida (ou limpar)
-useEffect(() => {
-  if (
-    state.integrationAccountId &&
-    Array.isArray(accounts)
-  ) {
-    const isValid = accounts.some((a) => (a.id || a.account_id) === state.integrationAccountId);
-    if (!isValid) {
-      const fallback = (accounts[0]?.id as string) || (accounts[0]?.account_id as string) || '';
-      if (fallback) {
-        console.log('[account/reset] conta inválida, substituindo por primeira ativa:', fallback);
-        actions.setIntegrationAccountId(fallback);
-        try {
-          const saved = localStorage.getItem('pedidos:lastSearch');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            parsed.integrationAccountId = fallback;
-            localStorage.setItem('pedidos:lastSearch', JSON.stringify(parsed));
-          }
-        } catch {}
-      } else {
-        console.log('[account/reset] nenhuma conta ativa encontrada, limpando seleção');
-        actions.setIntegrationAccountId('');
-        try { localStorage.removeItem('pedidos:lastSearch'); } catch {}
-      }
-    }
-  }
-}, [accounts, state.integrationAccountId, actions]);
-  const validateSystem = () => {
-    try {
-      // Validações básicas do sistema (removido hardcoded IDs)
-      const hasOrders = orders && orders.length > 0;
-      
-      if (!hasOrders) {
-        console.log('ℹ️ Sistema: Nenhum pedido carregado ainda');
-        return true; // Não é erro se não há pedidos
-      }
-
-      // ✅ CORREÇÃO: Verificação mais robusta de IDs
-      const ordersWithoutId = orders.filter((o: any) => !o.id && !o.numero && !o.id_unico);
-      const totalOrders = orders.length;
-      const validOrders = totalOrders - ordersWithoutId.length;
-      
-      if (ordersWithoutId.length > 0) {
-        console.warn(`⚠️ Sistema: ${ordersWithoutId.length}/${totalOrders} pedidos sem ID válido`, {
-          exemplos: ordersWithoutId.slice(0, 3).map((o: any) => ({
-            keys: Object.keys(o),
-            hasRaw: !!o.raw,
-            hasUnified: !!o.unified
-          }))
-        });
-        
-        // Se mais da metade tem ID válido, consideramos OK
-        if (validOrders / totalOrders >= 0.5) {
-          console.log(`✅ Sistema: ${validOrders}/${totalOrders} pedidos válidos (${Math.round(validOrders/totalOrders*100)}%)`);
-          return true;
-        }
-        return false;
-      }
-
-      console.log(`✅ Sistema validado: ${totalOrders} pedidos válidos`);
-      return true;
-    } catch (error) {
-      console.error('💥 Erro na validação do sistema:', error);
-      return false;
-    }
-  };
+  // 🔧 FASE 4.1.2: useEffect movido para usePedidosAccountsManager (linha removida)
+  // 🔧 FASE 4.1.2: Função movida para usePedidosValidation (linha removida)
 
   // 🔄 ETAPA 1: REMOVIDO setInterval de validação (5s)
   // Substituído por polling automático de 60s mais eficiente
@@ -1121,7 +782,7 @@ useEffect(() => {
           <div className="mt-12 px-4 md:px-6">
             <PedidosResumo
               pedidos={displayedOrders || orders}
-              onFiltroClick={(filtro) => setQuickFilter(filtro)}
+              onFiltroClick={(filtro) => handlers.handleQuickFilterChange(filtro)}
               filtroAtivo={quickFilter}
               mappingData={mappingData}
               isPedidoProcessado={isPedidoProcessado}
