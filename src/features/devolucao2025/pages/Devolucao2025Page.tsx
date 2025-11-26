@@ -85,6 +85,9 @@ export const Devolucao2025Page = () => {
   // ✅ Filtros aplicados (só atualizam ao clicar em "Aplicar Filtros")
   const [appliedAccounts, setAppliedAccounts] = useState<string[]>([]);
   
+  // ✅ Estado local para armazenar resultados da busca manual (enabled=false não popula data automaticamente)
+  const [devolucoesFromAPI, setDevolucoesFromAPI] = useState<any[]>([]);
+  
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
     const hoje = new Date();
@@ -148,7 +151,7 @@ export const Devolucao2025Page = () => {
 
 
   // 🚀 BUSCA AGREGADA NO BACKEND (arquitetura como /pedidos - SEM bloqueio manual)
-  const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
+  const devolucoesQuery = useQuery({
     queryKey: ['devolucoes-2025-completas', backendDateRange, appliedAccounts],
     queryFn: async () => {
       // ✅ Usar appliedAccounts (filtros confirmados pelo usuário)
@@ -183,6 +186,13 @@ export const Devolucao2025Page = () => {
     staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
+  
+  // ✅ CORREÇÃO CRÍTICA: Como enabled=false, query.data não é populado automaticamente
+  // Usar estado local ao invés de query.data
+  const devolucoesCompletas = devolucoesFromAPI;
+  const isLoading = devolucoesQuery.isLoading;
+  const error = devolucoesQuery.error;
+  const refetch = devolucoesQuery.refetch;
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
@@ -312,7 +322,22 @@ export const Devolucao2025Page = () => {
     setAppliedAccounts(selectedAccounts);
     
     try {
-      await refetch();
+      const result = await refetch();
+      
+      // ✅ CORREÇÃO CRÍTICA: Armazenar resultados no estado local
+      if (result.data) {
+        setDevolucoesFromAPI(result.data);
+        console.log(`✅ [BUSCA MANUAL] ${result.data.length} devoluções armazenadas no estado local`);
+        toast.success(`${result.data.length} devoluções carregadas!`);
+      } else {
+        setDevolucoesFromAPI([]);
+        console.log('⚠️ [BUSCA MANUAL] Nenhuma devolução encontrada');
+        toast.info('Nenhuma devolução encontrada');
+      }
+    } catch (error) {
+      console.error('❌ [BUSCA MANUAL] Erro ao buscar devoluções:', error);
+      setDevolucoesFromAPI([]);
+      toast.error('Erro ao buscar devoluções');
     } finally {
       setIsManualSearching(false);
     }
