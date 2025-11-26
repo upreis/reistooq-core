@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import { X, Plus } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
-import { useSidebarUI } from '@/context/SidebarUIContext';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
@@ -215,42 +215,18 @@ function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) 
 }
 
 export const QuickActionsWidget = () => {
-  const [shortcuts, setShortcuts] = useState<Service[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('[QuickActionsWidget] Restored shortcuts:', parsed.length);
-        return Array.isArray(parsed) ? parsed : DEFAULT_SHORTCUTS;
-      }
-    } catch (error) {
-      console.error('[QuickActionsWidget] Error loading shortcuts:', error);
-    }
-    console.log('[QuickActionsWidget] Using default shortcuts');
-    return DEFAULT_SHORTCUTS;
+  // Hook de sincronização automática com Supabase
+  const { value: shortcuts, setValue: setShortcuts, isLoading } = useUserPreferences<Service[]>({
+    preferenceKey: 'quick-shortcuts',
+    defaultValue: DEFAULT_SHORTCUTS,
+    localStorageKey: STORAGE_KEY // Compatibilidade com localStorage anterior
   });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const mouseX = useMotionValue(Infinity);
   const navigate = useNavigate();
-  const isFirstRenderRef = useRef(true);
 
-  // Salva apenas quando shortcuts mudar (não na montagem inicial)
-  useEffect(() => {
-    if (isFirstRenderRef.current) {
-      isFirstRenderRef.current = false;
-      return;
-    }
-    
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(shortcuts));
-      console.log('[QuickActionsWidget] ✅ Shortcuts salvos:', shortcuts.length, shortcuts.map(s => s.name));
-    } catch (error) {
-      console.error('[QuickActionsWidget] ❌ Error saving shortcuts:', error);
-    }
-  }, [shortcuts]);
-
-  const handleAddShortcut = (page: any) => {
+  const handleAddShortcut = async (page: any) => {
     const newShortcut: Service = {
       name: page.label,
       imageUrl: page.icon?.props?.src || 'https://img.icons8.com/fluency/96/documents.png',
@@ -258,20 +234,31 @@ export const QuickActionsWidget = () => {
       gradient: page.gradient,
       badge: page.badge
     };
-    setShortcuts([...shortcuts, newShortcut]);
+    await setShortcuts([...shortcuts, newShortcut]);
+    console.log('[QuickActionsWidget] ✅ Atalho adicionado:', newShortcut.name);
   };
 
-  const handleRemoveShortcut = (index: number) => {
+  const handleRemoveShortcut = async (index: number) => {
     console.log('[QuickActionsWidget] 🗑️ Removendo atalho:', shortcuts[index]?.name);
     const newShortcuts = shortcuts.filter((_, i) => i !== index);
-    setShortcuts(newShortcuts);
-    // O useEffect cuidará do salvamento
+    await setShortcuts(newShortcuts);
   };
 
   const existingIds = shortcuts.map((s) => {
     const route = s.href;
     return route.replace(/\//g, '-').substring(1);
   });
+
+  // Exibir loading enquanto carrega preferências
+  if (isLoading) {
+    return (
+      <section className="w-full overflow-visible">
+        <div className="flex items-center justify-center h-24">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>
