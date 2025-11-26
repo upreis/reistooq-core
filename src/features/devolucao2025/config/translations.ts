@@ -3,31 +3,6 @@
  * Mapeamento de valores das colunas para português
  */
 
-// Método de Pagamento
-export const METODO_PAGAMENTO_TRANSLATIONS: Record<string, string> = {
-  'credit_card': 'Cartão de Crédito',
-  'debit_card': 'Cartão de Débito',
-  'account_money': 'Saldo Mercado Pago',
-  'ticket': 'Boleto',
-  'bank_transfer': 'Transferência Bancária',
-  'pix': 'PIX',
-  'digital_currency': 'Moeda Digital',
-  'prepaid_card': 'Cartão Pré-pago',
-  'consumer_credits': 'Créditos do Consumidor',
-  'atm': 'Caixa Eletrônico',
-};
-
-// Tipo de Pagamento
-export const TIPO_PAGAMENTO_TRANSLATIONS: Record<string, string> = {
-  'credit_card': 'Crédito',
-  'debit_card': 'Débito',
-  'cash': 'Dinheiro',
-  'installments': 'Parcelado',
-  'full_payment': 'À Vista',
-  'account_money': 'Saldo Mercado Pago',
-  'bank_transfer': 'Transferência Bancária',
-};
-
 // Status Devolução
 export const STATUS_DEVOLUCAO_TRANSLATIONS: Record<string, string> = {
   'pending': 'Pendente',
@@ -132,18 +107,6 @@ export const PRODUCT_DESTINATION_TRANSLATIONS: Record<string, string> = {
   'none': 'Nenhum',
 };
 
-// Evidências
-export const EVIDENCIAS_TRANSLATIONS: Record<string, string> = {
-  'with_evidence': 'Com Evidências',
-  'without_evidence': 'Sem Evidências',
-  'partial': 'Parcial',
-  'images': 'Imagens',
-  'videos': 'Vídeos',
-  'documents': 'Documentos',
-  'sem_mensagens': 'Sem Mensagens',
-  'none': 'Nenhum',
-};
-
 /**
  * Função helper para traduzir valores
  */
@@ -175,12 +138,9 @@ export function translateColumnValue(
   if (!value) return '-';
 
   const translationMaps: Record<string, Record<string, string>> = {
-    'metodo_pagamento': METODO_PAGAMENTO_TRANSLATIONS,
-    'tipo_pagamento': TIPO_PAGAMENTO_TRANSLATIONS,
     'status_dev': STATUS_DEVOLUCAO_TRANSLATIONS,
     'status_return': STATUS_RETURN_TRANSLATIONS,
     'destino': DESTINO_TRANSLATIONS,
-    'evidencias': EVIDENCIAS_TRANSLATIONS,
     'review_stage': REVIEW_STAGE_TRANSLATIONS,
     'review_status': REVIEW_STATUS_TRANSLATIONS,
     'product_condition': PRODUCT_CONDITION_TRANSLATIONS,
