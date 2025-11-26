@@ -311,9 +311,34 @@ serve(async (req) => {
       
       logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims processados`);
 
+      // 📅 ENRIQUECER COM DATAS DE CHEGADA
+      logger.progress('📅 Buscando datas de chegada das devoluções...');
+      
+      const claimsWithArrivalDates = await Promise.all(
+        allEnrichedClaims.map(async (claim: any) => {
+          try {
+            const claimId = claim.claim_details?.id || claim.id;
+            if (!claimId) return claim;
+            
+            const arrivalDate = await fetchReturnArrivalDate(String(claimId), accessToken);
+            
+            return {
+              ...claim,
+              data_chegada_produto: arrivalDate
+            };
+          } catch (err) {
+            logger.error(`Erro ao buscar data de chegada para claim ${claim.id}:`, err);
+            return claim;
+          }
+        })
+      );
+
+      const withDate = claimsWithArrivalDates.filter(c => c.data_chegada_produto).length;
+      logger.progress(`📊 Claims com data_chegada_produto: ${withDate}/${claimsWithArrivalDates.length}`);
+
       // Mapear dados
       let isFirstClaim = true; // Flag para debug apenas primeira claim
-      const mappedClaims = allEnrichedClaims.map((claim: any) => {
+      const mappedClaims = claimsWithArrivalDates.map((claim: any) => {
         const item = {
           id: claim.id,
           order_id: claim.resource_id,
@@ -331,7 +356,9 @@ serve(async (req) => {
           },
           product_info: claim.product_info,
           shipment_data: claim.shipment_data,
-          resolution: claim.resolution
+          resolution: claim.resolution,
+          // ✅ CRÍTICO: Passar data_chegada_produto enriquecida
+          data_chegada_produto: claim.data_chegada_produto || null
         };
 
         // 🔍 DEBUG CRÍTICO: Log primeira devolução
@@ -352,6 +379,7 @@ serve(async (req) => {
           console.log('🔍 [MAPPED] codigo_rastreamento:', devCompleta.codigo_rastreamento);
           console.log('🔍 [MAPPED] tipo_logistica:', devCompleta.tipo_logistica);
           console.log('🔍 [MAPPED] ultima_mensagem_data:', devCompleta.ultima_mensagem_data);
+          console.log('🔍 [MAPPED] data_chegada_produto:', devCompleta.data_chegada_produto);
           isFirstClaim = false; // Marca que já logou primeira
         }
         
