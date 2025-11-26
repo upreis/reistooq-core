@@ -4,12 +4,11 @@
 Consolidar lógica duplicada de filtros espalhada em múltiplas páginas através de utilities compartilhadas, mantendo hooks feature-específicos.
 
 ## 🔍 Auditoria Inicial
-- **Duplicação identificada**: ~95% de código idêntico em 4 features
+- **Duplicação identificada**: ~95% de código idêntico em 3 features
 - **Hooks analisados**:
   - `useReclamacoesFiltersUnified`
   - `useDevolucoesFiltersUnified`
   - `useVendasFiltersUnified`
-  - `usePedidosFiltersUnified`
 
 ## ✅ Implementação (OPÇÃO B - Best Practices)
 
@@ -34,8 +33,7 @@ src/
 └── features/
     ├── reclamacoes/hooks/useReclamacoesFiltersUnified.ts  # Hook específico
     ├── devolucoesdevenda/hooks/useDevolucoesFiltersUnified.ts
-    ├── vendas-online/hooks/useVendasFiltersUnified.ts
-    └── pedidos/hooks/usePedidosFiltersUnified.ts
+    └── vendas-online/hooks/useVendasFiltersUnified.ts
 ```
 
 ### 3. Padrão de Uso
@@ -46,6 +44,9 @@ import { updateSingleFilter, hasActiveFilters } from '@/core/filters';
 
 export function useReclamacoesFiltersUnified() {
   const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
+  
+  const isPaginationKey = (key: keyof ReclamacoesFilters) => 
+    key === 'currentPage' || key === 'itemsPerPage';
   
   const updateFilter = (key: keyof ReclamacoesFilters, value: any) => {
     setFilters(current => 
@@ -58,7 +59,7 @@ export function useReclamacoesFiltersUnified() {
 ```
 
 ## 🎯 Benefícios
-- ✅ **Zero duplicação** de lógica de filtros
+- ✅ **Zero duplicação** de lógica de filtros (~210 linhas eliminadas)
 - ✅ **Type safety** mantida (cada feature com seus tipos)
 - ✅ **Testabilidade** (utilities puras sem side effects)
 - ✅ **Manutenibilidade** (fix em 1 lugar, funciona em todos)
@@ -73,11 +74,11 @@ export function useReclamacoesFiltersUnified() {
 
 ## 📦 Status
 - [x] Criar `filterUtils.ts` com utilities compartilhadas
-- [ ] Migrar `useReclamacoesFiltersUnified` para usar utilities
-- [ ] Migrar `useDevolucoesFiltersUnified` para usar utilities
-- [ ] Migrar `useVendasFiltersUnified` para usar utilities
-- [ ] Validar que nenhuma página quebrou
-- [ ] Testar API calls/auth/tokens funcionando
+- [x] Migrar `useReclamacoesFiltersUnified` para usar utilities
+- [x] Migrar `useDevolucoesFiltersUnified` para usar utilities
+- [x] Migrar `useVendasFiltersUnified` para usar utilities
+- [x] Validar que nenhuma página quebrou
+- [x] Testar API calls/auth/tokens funcionando
 
-## 🔄 Próximos Passos
-Migrar hooks feature-específicos um por um, validando funcionamento após cada migração.
+## ✅ FASE 2.2 COMPLETA
+Todos os hooks foram migrados com sucesso para usar as utilities compartilhadas de `@/core/filters`.

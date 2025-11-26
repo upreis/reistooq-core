@@ -1,12 +1,19 @@
 /**
- * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS
- * FASE 2: Gerenciamento centralizado com sincronização URL + localStorage
+ * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS - DEVOLUÇÕES
+ * FASE 2.2: Usando utilities compartilhadas de @/core/filters
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDevolucoesFiltersSync, DevolucoesFilters } from './useDevolucoesFiltersSync';
 import { usePersistentDevolucoesStateV2 } from './usePersistentDevolucoesStateV2';
+import {
+  updateSingleFilter,
+  updateMultipleFilters,
+  resetSearchFilters as resetSearchFiltersUtil,
+  hasActiveFilters as hasActiveFiltersUtil,
+  countActiveFilters as countActiveFiltersUtil,
+} from '@/core/filters';
 
 const DEFAULT_FILTERS: DevolucoesFilters = {
   periodo: '7',
@@ -52,42 +59,29 @@ export function useDevolucoesFiltersUnified() {
     }
   }, [persistentCache.isStateLoaded]); // 🔥 REMOVIDO searchParams para evitar loop
 
-  // Atualizar um filtro específico
+  // 🔧 Helper para identificar keys de paginação/tab
+  const isPaginationKey = useCallback((key: keyof DevolucoesFilters) => {
+    return key === 'currentPage' || key === 'itemsPerPage' || key === 'activeTab';
+  }, []);
+
+  // Atualizar um filtro específico usando utility compartilhada
   const updateFilter = useCallback(<K extends keyof DevolucoesFilters>(
     key: K,
     value: DevolucoesFilters[K]
   ) => {
-    setFilters(prev => {
-      const newFilters = { ...prev, [key]: value };
-      
-      // Se mudou o filtro (não paginação ou tab), resetar para página 1
-      if (key !== 'currentPage' && key !== 'itemsPerPage' && key !== 'activeTab') {
-        newFilters.currentPage = 1;
-      }
-      
-      console.log(`🎯 Filtro atualizado: ${key} =`, value);
-      return newFilters;
-    });
-  }, []);
+    setFilters(prev => 
+      updateSingleFilter(prev, key, value, isPaginationKey)
+    );
+    console.log(`🎯 Filtro atualizado: ${key} =`, value);
+  }, [isPaginationKey]);
 
-  // Atualizar múltiplos filtros de uma vez
+  // Atualizar múltiplos filtros de uma vez usando utility compartilhada
   const updateFilters = useCallback((newFilters: Partial<DevolucoesFilters>) => {
-    setFilters(prev => {
-      const updated = { ...prev, ...newFilters };
-      
-      // Se mudou algum filtro (não paginação ou tab), resetar para página 1
-      const hasNonPaginationChange = Object.keys(newFilters).some(
-        key => key !== 'currentPage' && key !== 'itemsPerPage' && key !== 'activeTab'
-      );
-      
-      if (hasNonPaginationChange) {
-        updated.currentPage = 1;
-      }
-      
-      console.log('🎯 Múltiplos filtros atualizados:', newFilters);
-      return updated;
-    });
-  }, []);
+    setFilters(prev => 
+      updateMultipleFilters(prev, newFilters, isPaginationKey)
+    );
+    console.log('🎯 Múltiplos filtros atualizados:', newFilters);
+  }, [isPaginationKey]);
 
   // Resetar todos os filtros
   const resetFilters = useCallback(() => {
@@ -95,33 +89,26 @@ export function useDevolucoesFiltersUnified() {
     setFilters(DEFAULT_FILTERS);
   }, []);
 
-  // Resetar apenas filtros de busca (manter contas e paginação)
+  // Resetar apenas filtros de busca usando utility compartilhada
   const resetSearchFilters = useCallback(() => {
     console.log('🔄 Resetando filtros de busca');
+    const searchKeys: (keyof DevolucoesFilters)[] = ['periodo', 'searchTerm'];
     setFilters(prev => ({
       ...prev,
-      periodo: DEFAULT_FILTERS.periodo,
-      searchTerm: DEFAULT_FILTERS.searchTerm,
-      currentPage: 1
+      ...resetSearchFiltersUtil(DEFAULT_FILTERS, searchKeys)
     }));
   }, []);
 
-  // Verificar se há filtros ativos (além dos defaults)
+  // Verificar se há filtros ativos usando utility compartilhada
   const hasActiveFilters = useMemo(() => {
-    return (
-      filters.periodo !== DEFAULT_FILTERS.periodo ||
-      filters.searchTerm !== DEFAULT_FILTERS.searchTerm ||
-      filters.selectedAccounts.length > 0
-    );
+    const excludeKeys: (keyof DevolucoesFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage', 'activeTab'];
+    return hasActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
   }, [filters]);
 
-  // Contar quantos filtros estão ativos
+  // Contar quantos filtros estão ativos usando utility compartilhada
   const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.periodo !== DEFAULT_FILTERS.periodo) count++;
-    if (filters.searchTerm !== DEFAULT_FILTERS.searchTerm) count++;
-    if (filters.selectedAccounts.length > 0) count++;
-    return count;
+    const excludeKeys: (keyof DevolucoesFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage', 'activeTab'];
+    return countActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
   }, [filters]);
 
   return {

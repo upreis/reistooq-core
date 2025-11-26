@@ -1,12 +1,19 @@
 /**
  * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS - VENDAS ONLINE
- * 🎯 FASE 2: Gerenciamento centralizado com sincronização URL + localStorage
+ * FASE 2.2: Usando utilities compartilhadas de @/core/filters
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom'; // 🎯 CRÍTICO 2
+import { useSearchParams } from 'react-router-dom';
 import { useVendasFiltersSync, VendasFilters } from './useVendasFiltersSync';
 import { usePersistentVendasState } from './usePersistentVendasState';
+import {
+  updateSingleFilter,
+  updateMultipleFilters,
+  resetSearchFilters as resetSearchFiltersUtil,
+  hasActiveFilters as hasActiveFiltersUtil,
+  countActiveFilters as countActiveFiltersUtil,
+} from '@/core/filters';
 
 const DEFAULT_FILTERS: VendasFilters = {
   periodo: '7', // 🔥 CORREÇÃO: Alterado de '60' para '7' (padrão: Últimos 7 dias)
@@ -51,42 +58,29 @@ export function useVendasFiltersUnified() {
     }
   );
 
-  // Atualizar um filtro específico
+  // 🔧 Helper para identificar keys de paginação
+  const isPaginationKey = useCallback((key: keyof VendasFilters) => {
+    return key === 'currentPage' || key === 'itemsPerPage';
+  }, []);
+
+  // Atualizar um filtro específico usando utility compartilhada
   const updateFilter = useCallback(<K extends keyof VendasFilters>(
     key: K,
     value: VendasFilters[K]
   ) => {
-    setFilters(prev => {
-      const newFilters = { ...prev, [key]: value };
-      
-      // Se mudou o filtro (não paginação), resetar para página 1
-      if (key !== 'currentPage' && key !== 'itemsPerPage') {
-        newFilters.currentPage = 1;
-      }
-      
-      console.log(`🎯 [VENDAS FILTERS] Filtro atualizado: ${key} =`, value);
-      return newFilters;
-    });
-  }, []);
+    setFilters(prev => 
+      updateSingleFilter(prev, key, value, isPaginationKey)
+    );
+    console.log(`🎯 [VENDAS FILTERS] Filtro atualizado: ${key} =`, value);
+  }, [isPaginationKey]);
 
-  // Atualizar múltiplos filtros de uma vez
+  // Atualizar múltiplos filtros de uma vez usando utility compartilhada
   const updateFilters = useCallback((newFilters: Partial<VendasFilters>) => {
-    setFilters(prev => {
-      const updated = { ...prev, ...newFilters };
-      
-      // Se mudou algum filtro (não paginação), resetar para página 1
-      const hasNonPaginationChange = Object.keys(newFilters).some(
-        key => key !== 'currentPage' && key !== 'itemsPerPage'
-      );
-      
-      if (hasNonPaginationChange) {
-        updated.currentPage = 1;
-      }
-      
-      console.log('🎯 [VENDAS FILTERS] Múltiplos filtros atualizados:', newFilters);
-      return updated;
-    });
-  }, []);
+    setFilters(prev => 
+      updateMultipleFilters(prev, newFilters, isPaginationKey)
+    );
+    console.log('🎯 [VENDAS FILTERS] Múltiplos filtros atualizados:', newFilters);
+  }, [isPaginationKey]);
 
   // Resetar todos os filtros
   const resetFilters = useCallback(() => {
@@ -94,33 +88,26 @@ export function useVendasFiltersUnified() {
     setFilters(DEFAULT_FILTERS);
   }, []);
 
-  // Resetar apenas filtros de busca (manter contas e paginação)
+  // Resetar apenas filtros de busca usando utility compartilhada
   const resetSearchFilters = useCallback(() => {
     console.log('🔄 [VENDAS FILTERS] Resetando filtros de busca');
+    const searchKeys: (keyof VendasFilters)[] = ['periodo', 'searchTerm'];
     setFilters(prev => ({
       ...prev,
-      periodo: DEFAULT_FILTERS.periodo,
-      searchTerm: DEFAULT_FILTERS.searchTerm,
-      currentPage: 1
+      ...resetSearchFiltersUtil(DEFAULT_FILTERS, searchKeys)
     }));
   }, []);
 
-  // Verificar se há filtros ativos (além dos defaults)
+  // Verificar se há filtros ativos usando utility compartilhada
   const hasActiveFilters = useMemo(() => {
-    return (
-      filters.periodo !== DEFAULT_FILTERS.periodo ||
-      filters.searchTerm !== DEFAULT_FILTERS.searchTerm ||
-      filters.selectedAccounts.length > 0
-    );
+    const excludeKeys: (keyof VendasFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage'];
+    return hasActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
   }, [filters]);
 
-  // Contar quantos filtros estão ativos
+  // Contar quantos filtros estão ativos usando utility compartilhada
   const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.periodo !== DEFAULT_FILTERS.periodo) count++;
-    if (filters.searchTerm !== DEFAULT_FILTERS.searchTerm) count++;
-    if (filters.selectedAccounts.length > 0) count++;
-    return count;
+    const excludeKeys: (keyof VendasFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage'];
+    return countActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
   }, [filters]);
 
   return {
