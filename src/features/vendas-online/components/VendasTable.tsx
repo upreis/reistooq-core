@@ -54,6 +54,42 @@ export const VendasTable = ({
 }: VendasTableProps) => {
   const totalPages = Math.ceil(total / itemsPerPage);
 
+  // 🗺️ MAPEAMENTO: keys do ColumnManager → IDs reais das colunas
+  const KEY_TO_COLUMN_ID_MAP: Record<string, string> = {
+    // Básico
+    'order_id': 'order_id',
+    'empresa': 'account_name',
+    'marketplace': 'marketplace',
+    'data_compra': 'date_created',
+    'status': 'status',
+    'analise': 'status_analise',
+    
+    // Comprador
+    'comprador': 'buyer_name',
+    'cpf_cnpj': 'buyer_id',
+    
+    // Produtos
+    'produto': 'item_title',
+    'quantidade': 'quantity',
+    
+    // Financeiro
+    'valor_total': 'total_amount',
+    'valor_produto': 'paid_amount',
+    'frete': 'shipping_cost',
+    'taxas_ml': 'sale_fee',
+    'lucro': 'profit',
+    
+    // Envio
+    'tipo_logistico': 'logistic_type',
+    'status_envio': 'shipping_status',
+    'prazo_envio': 'estimated_delivery',
+    'transportadora': 'tracking_method',
+    
+    // Mapeamento
+    'sku_mapeado': 'seller_sku',
+    'status_mapeamento': 'mapping_status',
+  };
+
   // Criar TODAS as colunas com contexto
   const allColumns = useMemo(() => {
     return createVendasColumns({
@@ -70,12 +106,18 @@ export const VendasTable = ({
       return allColumns;
     }
     
+    // Converter keys para column IDs reais usando mapeamento
+    const mappedIds = visibleColumnKeys
+      .map(key => KEY_TO_COLUMN_ID_MAP[key] || key)
+      .filter(Boolean);
+    
     // Filtrar apenas colunas visíveis
-    const filtered = allColumns.filter(col => visibleColumnKeys.includes(col.id as string));
+    const filtered = allColumns.filter(col => mappedIds.includes(col.id as string));
     
     console.log('🔍 [VendasTable] Filtrando colunas:', {
       total: allColumns.length,
       visibleKeys: visibleColumnKeys.length,
+      mappedIds: mappedIds.length,
       filtered: filtered.length,
       ids: filtered.map(c => c.id)
     });
