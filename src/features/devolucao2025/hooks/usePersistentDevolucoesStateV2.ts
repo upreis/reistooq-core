@@ -1,16 +1,12 @@
 /**
- * 💾 HOOK DE CACHE DE METADADOS V2 - PÁGINA DEVOLUÇÕES DE VENDA
+ * 💾 HOOK DE CACHE DE DADOS V2 - PÁGINA DEVOLUÇÕES DE VENDA
  * FASE 1: Cache Validation e Versionamento baseado em /pedidos reference
- * 
- * ⚠️ IMPORTANTE: NÃO salvamos array de devoluções (QuotaExceededError)
- * Salvamos apenas metadados leves (filtros, paginação, colunas visíveis)
  * 
  * MELHORIAS:
  * - ✅ LocalStorageValidator com validação robusta
  * - ✅ Versionamento com limpeza automática
  * - ✅ Health checks de storage
  * - ✅ Debounce para persistência (500ms)
- * - ✅ Metadata-only storage (sem dados pesados)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -21,7 +17,8 @@ const STORAGE_KEY = 'devolucoes_venda_persistent_state';
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos
 
 interface PersistentDevolucoesState {
-  // METADADOS APENAS (sem array de devoluções)
+  // DADOS DE CACHE
+  devolucoes: any[];
   selectedAccounts: string[];
   dateRange: {
     from: Date;
@@ -48,11 +45,12 @@ export function usePersistentDevolucoesStateV2() {
   const [isStateLoaded, setIsStateLoaded] = useState(false);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // VALIDAÇÃO CUSTOMIZADA PARA METADADOS
+  // VALIDAÇÃO CUSTOMIZADA PARA DEVOLUÇÕES
   const validateDevolucoesState = useCallback((state: any): boolean => {
     if (!state || typeof state !== 'object') return false;
     
-    // Validar estrutura básica (SEM devolucoes array)
+    // Validar estrutura básica
+    if (!Array.isArray(state.devolucoes)) return false;
     if (!Array.isArray(state.selectedAccounts)) return false;
     if (!state.dateRange || !state.dateRange.from || !state.dateRange.to) return false;
     if (typeof state.currentPage !== 'number' || state.currentPage < 1) return false;
@@ -91,9 +89,9 @@ export function usePersistentDevolucoesStateV2() {
             parsed.dateRange.to = new Date(parsed.dateRange.to);
           }
           
-          // VALIDAR INTEGRIDADE DOS METADADOS
+          // VALIDAR INTEGRIDADE DOS DADOS
           if (!validateDevolucoesState(parsed)) {
-            console.log('🗑️ Metadados com integridade comprometida, removendo');
+            console.log('🗑️ Estado com integridade comprometida, removendo');
             localStorage.removeItem(STORAGE_KEY);
             setIsStateLoaded(true);
             return;
@@ -105,12 +103,11 @@ export function usePersistentDevolucoesStateV2() {
           const isExpired = cacheAge > CACHE_DURATION;
           
           if (!isExpired) {
-            console.log('🔄 Cache de metadados carregado (v' + parsed.version + '):', {
+            console.log('🔄 Cache de devoluções carregado (v' + parsed.version + '):', {
+              devolucoesCount: parsed.devolucoes.length,
               cacheAge: Math.round(cacheAge / 1000) + 's',
               accounts: parsed.selectedAccounts.join(', '),
-              dateRange: `${parsed.dateRange.from.toLocaleDateString()} - ${parsed.dateRange.to.toLocaleDateString()}`,
-              page: parsed.currentPage,
-              size: new Blob([JSON.stringify(parsed)]).size + ' bytes'
+              dateRange: `${parsed.dateRange.from.toLocaleDateString()} - ${parsed.dateRange.to.toLocaleDateString()}`
             });
             setPersistedState(parsed);
           } else {
@@ -140,6 +137,7 @@ export function usePersistentDevolucoesStateV2() {
     saveTimerRef.current = setTimeout(() => {
       try {
         const currentState = persistedState || {
+          devolucoes: [],
           selectedAccounts: [],
           dateRange: {
             from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -166,23 +164,13 @@ export function usePersistentDevolucoesStateV2() {
           return;
         }
 
-        const serialized = JSON.stringify(newState);
-        const size = new Blob([serialized]).size;
-        
-        // Verificar tamanho antes de salvar (limite ~5MB localStorage)
-        if (size > 5 * 1024 * 1024) {
-          console.warn('⚠️ Estado muito grande, não será persistido:', size + ' bytes');
-          return;
-        }
-
-        localStorage.setItem(STORAGE_KEY, serialized);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
         setPersistedState(newState);
         
-        console.log('💾 Metadados salvos (v' + STORAGE_VERSION + '):', {
+        console.log('💾 Estado de devoluções salvo (v' + STORAGE_VERSION + '):', {
+          devolucoesCount: newState.devolucoes.length,
           accounts: newState.selectedAccounts.join(', '),
-          page: newState.currentPage,
-          periodo: newState.periodo,
-          size: size + ' bytes'
+          page: newState.currentPage
         });
       } catch (error) {
         console.warn('❌ Erro ao salvar estado:', error);
@@ -194,16 +182,18 @@ export function usePersistentDevolucoesStateV2() {
   const clearPersistedState = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setPersistedState(null);
-    console.log('🗑️ Metadados de devoluções removidos');
+    console.log('🗑️ Estado de devoluções removido');
   }, []);
 
   // VERIFICAR SE EXISTE ESTADO VÁLIDO
   const hasValidPersistedState = useCallback((): boolean => {
-    return Boolean(isStateLoaded && persistedState);
+    if (!isStateLoaded || !persistedState) return false;
+    return persistedState.devolucoes.length > 0;
   }, [isStateLoaded, persistedState]);
 
-  // SALVAR METADADOS APÓS INTERAÇÕES (SEM DEVOLUÇÕES)
+  // SALVAR DADOS APÓS BUSCA BEM-SUCEDIDA
   const saveDataCache = useCallback((
+    devolucoes: any[],
     selectedAccounts: string[],
     dateRange: { from: Date; to: Date },
     currentPage: number,
@@ -212,6 +202,7 @@ export function usePersistentDevolucoesStateV2() {
     periodo: string
   ) => {
     saveState({
+      devolucoes,
       selectedAccounts,
       dateRange,
       currentPage,

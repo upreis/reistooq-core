@@ -79,17 +79,10 @@ export const Devolucao2025Page = () => {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [filtroResumo, setFiltroResumo] = useState<FiltroResumo | null>(null);
   const [isManualSearching, setIsManualSearching] = useState(false);
+  const [shouldFetch, setShouldFetch] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
-  // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
-  const backendDateRange = useMemo(() => {
-    const hoje = new Date();
-    const inicio = new Date();
-    inicio.setDate(hoje.getDate() - 60); // Sempre buscar 60 dias
-    return { from: inicio, to: hoje };
-  }, []);
-  
-  // DateRange visual para filtro local (baseado em periodo do usuário)
+  // Sincronizar dateRange com periodo quando periodo mudar
   useEffect(() => {
     const hoje = new Date();
     const inicio = new Date();
@@ -134,60 +127,63 @@ export const Devolucao2025Page = () => {
     }
   });
 
-  // ✅ REMOVIDO: shouldFetch causava bloqueio de buscas
-  // React Query gerencia automaticamente baseado em enabled + queryKey changes
-
-
-  // 🚀 BUSCA AGREGADA NO BACKEND (arquitetura como /pedidos - SEM bloqueio manual)
-  const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025-completas', backendDateRange, selectedAccounts],
+  // Buscar devoluções via Edge Function
+  const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['devolucoes-2025', selectedAccounts, dateRange],
     queryFn: async () => {
-      // ✅ Usar selectedAccounts se houver seleção, senão todas as contas
-      const accountIds = selectedAccounts.length > 0 
-        ? selectedAccounts 
-        : accounts.map(a => a.id).filter(Boolean);
+      console.log('🔍 Buscando devoluções...', { selectedAccounts, dateRange });
+      let result: any[] = [];
       
-      console.log(`🔍 Buscando ${accountIds.length} contas selecionadas no backend...`, accountIds);
+      // Se nenhuma conta selecionada ou todas selecionadas
+      const accountsToFetch = selectedAccounts.length === 0 || selectedAccounts.length === accounts.length
+        ? accounts.map(acc => acc.id)
+        : selectedAccounts;
       
-      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-        body: {
-          integration_account_ids: accountIds,
-          date_from: backendDateRange.from.toISOString(),
-          date_to: backendDateRange.to.toISOString()
-        }
-      });
+      const allDevolucoes = await Promise.all(
+        accountsToFetch.map(async (accountId) => {
+          const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+            body: {
+              integration_account_id: accountId,
+              date_from: dateRange.from.toISOString(),
+              date_to: dateRange.to.toISOString()
+            }
+          });
 
-      if (error) throw error;
-      
-      const results = data?.data || [];
-      console.log(`✅ ${results.length} devoluções agregadas`);
-      return results;
+          if (error) throw error;
+          return data?.data || [];
+        })
+      );
+      result = allDevolucoes.flat();
+
+      // Salvar dados no cache após busca bem-sucedida
+      persistentCache.saveDataCache(
+        result,
+        selectedAccounts,
+        dateRange,
+        currentPage,
+        itemsPerPage,
+        Array.from(columnManager.state.visibleColumns),
+        periodo
+      );
+
+      return result;
     },
-    enabled: !!organizationId && accounts.length > 0,
-    retry: 1,
+    enabled: organizationId !== null && shouldFetch,
     refetchOnWindowFocus: false,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-
-  // Filtrar localmente baseado nas preferências do usuário
-  const devolucoes = useMemo(() => {
-    let filtered = devolucoesCompletas;
-    
-    // Filtro de período (local)
-    if (dateRange.from && dateRange.to) {
-      filtered = filtered.filter(dev => {
-        if (!dev.data_criacao) return false;
-        const dataCriacao = parseISO(dev.data_criacao);
-        return dataCriacao >= dateRange.from && dataCriacao <= dateRange.to;
-      });
+    staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
+    gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
+    // Inicializar com dados do localStorage se disponíveis
+    initialData: () => {
+      if (persistentCache.hasValidPersistedState()) {
+        console.log('📦 Iniciando com dados do cache:', persistentCache.persistedState?.devolucoes.length);
+        return persistentCache.persistedState?.devolucoes;
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => {
+      return persistentCache.persistedState?.cachedAt || 0;
     }
-    
-    // ✅ Filtro de contas removido - já filtrado no backend via selectedAccounts
-    
-    console.log(`🎯 Filtros locais aplicados: ${filtered.length}/${devolucoesCompletas.length} devoluções exibidas`);
-    return filtered;
-  }, [devolucoesCompletas, dateRange]);
+  });
 
   // Enriquecer devoluções com status de análise local
   const devolucoesEnriquecidas = useMemo(() => {
@@ -272,12 +268,13 @@ export const Devolucao2025Page = () => {
   // - Apenas restaura filtros do cache (linhas 64-74)
   // - Busca só ocorre quando usuário clica em "Aplicar Filtros"
 
-  // ✅ SALVAR METADADOS (SEM devoluções - evita QuotaExceededError)
+  // ✅ CORREÇÃO MÉDIA 5: Otimizar dependencies para evitar saves excessivos
   useEffect(() => {
-    if (devolucoesCompletas.length > 0 && persistentCache.isStateLoaded) {
+    if (devolucoes.length > 0 && persistentCache.isStateLoaded) {
       const timer = setTimeout(() => {
         persistentCache.saveDataCache(
-          selectedAccounts, // Filtros visuais do usuário
+          devolucoes,
+          selectedAccounts,
           dateRange,
           currentPage,
           itemsPerPage,
@@ -288,24 +285,20 @@ export const Devolucao2025Page = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [currentPage, itemsPerPage, periodo, devolucoesCompletas.length, persistentCache.isStateLoaded]);
+    // Apenas triggerar quando valores realmente mudam (não incluir objetos/arrays diretamente)
+  }, [currentPage, itemsPerPage, periodo, devolucoes.length, persistentCache.isStateLoaded]);
 
-  // Handler para aplicar filtros (força refetch dos 60 dias completos)
-  const handleApplyFilters = useCallback(async () => {
-    console.log('🔄 Aplicando filtros e buscando dados...');
-    setIsManualSearching(true);
-    
-    try {
-      await refetch();
-    } finally {
-      setIsManualSearching(false);
-    }
-  }, [refetch]);
+  // Handler para aplicar filtros (apenas ativa flag)
+  const handleApplyFilters = useCallback(() => {
+    console.log('🔄 Aplicando filtros, limpando cache...');
+    persistentCache.clearPersistedState();
+    setShouldFetch(true); // Ativa flag - useEffect vai disparar refetch
+  }, [persistentCache]);
 
+  // ✅ CORREÇÃO 2: Cancelar busca sem reload
   const handleCancelSearch = useCallback(() => {
-    console.log('🛑 Cancelando busca...');
     setIsManualSearching(false);
-    toast.info('Busca cancelada');
+    setShouldFetch(false); // Desabilitar busca
   }, []);
 
   // Handler para mudança de status de análise
@@ -319,15 +312,30 @@ export const Devolucao2025Page = () => {
     setSelectedOrderForAnotacoes(orderId);
   }, []);
 
-  // ✅ REMOVIDO: useEffect que resetava isManualSearching (agora é feito no finally do handleApplyFilters)
+  // ✅ Dispara refetch quando shouldFetch é ativado
+  useEffect(() => {
+    if (shouldFetch && organizationId) {
+      console.log('🚀 Disparando busca via shouldFetch=true');
+      refetch();
+    }
+  }, [shouldFetch, organizationId, refetch]);
 
-  // Sistema de Alertas (sobre dados completos)
-  const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoesCompletas);
+  // Resetar shouldFetch após busca completar
+  useEffect(() => {
+    if (!isLoading && shouldFetch) {
+      setShouldFetch(false);
+      setIsManualSearching(false);
+      console.log('✅ Busca concluída, resetando shouldFetch');
+    }
+  }, [isLoading, shouldFetch]);
 
-  // FASE 4: Polling automático (sobre dados completos)
+  // Sistema de Alertas
+  const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
+
+  // FASE 4: Polling automático
   // ✅ CORREÇÃO CRÍTICA 4: Simplificar lógica - polling ativo se há dados e não está em loading
   const { forceRefresh, isPolling } = useDevolucoesPolling({
-    enabled: devolucoesCompletas.length > 0 && !isLoading && !error,
+    enabled: devolucoes.length > 0 && !isLoading && !error, // Polling ativo se já tem dados carregados
     interval: 60000, // 1 minuto
     onNewData: (newCount) => {
       toast.success(`${newCount} nova(s) devolução(ões) detectada(s)`, {
@@ -338,7 +346,7 @@ export const Devolucao2025Page = () => {
     pauseOnInteraction: true,
   });
 
-  // FASE 4: Agregação de métricas (sobre dados filtrados)
+  // FASE 4: Agregação de métricas
   const metrics = useDevolucoesAggregator(devolucoes, analiseStatus);
 
   // Contadores para as abas (usando metrics agregadas)
@@ -390,9 +398,15 @@ export const Devolucao2025Page = () => {
                     onPeriodoChange={(p) => updateFilter('periodo', p)}
                     searchTerm={searchTerm}
                     onSearchChange={(term) => updateFilter('searchTerm', term)}
-                    onBuscar={handleApplyFilters}
+                    onBuscar={() => {
+                      setIsManualSearching(true);
+                      handleApplyFilters();
+                    }}
                     isLoading={isManualSearching}
-                    onCancel={handleCancelSearch}
+                    onCancel={() => {
+                      setIsManualSearching(false);
+                      handleCancelSearch();
+                    }}
                     allColumns={COLUMNS_CONFIG}
                     visibleColumns={Array.from(columnManager.state.visibleColumns)}
                     onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
@@ -418,13 +432,7 @@ export const Devolucao2025Page = () => {
                 {/* 🔄 LOADER APENAS NA ÁREA DA TABELA */}
                 {(isLoading || isManualSearching) && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="relative w-[65px] h-[65px]">
-                        <span className="absolute rounded-[50px] shadow-[inset_0_0_0_3px] shadow-gray-800 dark:shadow-gray-100 animate-loaderAnim" />
-                        <span className="absolute rounded-[50px] shadow-[inset_0_0_0_3px] shadow-gray-800 dark:shadow-gray-100 animate-loaderAnim [animation-delay:-1.25s]" />
-                      </div>
-                      <p className="text-sm font-medium text-foreground">Buscando devoluções...</p>
-                    </div>
+                    <LoadingIndicator />
                   </div>
                 )}
                 
