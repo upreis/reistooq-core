@@ -1,0 +1,51 @@
+name: Force Redeploy get-devolucoes-direct
+
+on:
+  workflow_dispatch:
+
+jobs:
+  force-redeploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Delete and Redeploy Function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_ID: tdjyfqnxvjgossuncpwm
+        run: |
+          echo "🔗 Linking to project..."
+          supabase link --project-ref $PROJECT_ID
+          
+          echo "🗑️ Deleting old function..."
+          supabase functions delete get-devolucoes-direct --project-ref $PROJECT_ID || echo "Function doesn't exist or already deleted"
+          
+          echo "⏳ Waiting 10 seconds for cleanup..."
+          sleep 10
+          
+          echo "🚀 Deploying fresh function..."
+          supabase functions deploy get-devolucoes-direct --project-ref $PROJECT_ID --no-verify-jwt
+          
+          echo "✅ Force redeploy completed!"
+          echo "🔗 Verify at: https://supabase.com/dashboard/project/$PROJECT_ID/functions/get-devolucoes-direct"
+
+      - name: Deployment Summary
+        run: |
+          echo "================================================"
+          echo "✅ get-devolucoes-direct FORCE REDEPLOYED"
+          echo "================================================"
+          echo ""
+          echo "Next steps:"
+          echo "1. Wait 2-3 minutes for deployment to propagate"
+          echo "2. Test the function by triggering a search"
+          echo "3. Check logs for 🔥🔥🔥🔥🔥 VERSION 17:52 message"
+          echo ""
+          echo "If still not working, manually delete in Supabase Dashboard:"
+          echo "https://supabase.com/dashboard/project/tdjyfqnxvjgossuncpwm/functions/get-devolucoes-direct"
