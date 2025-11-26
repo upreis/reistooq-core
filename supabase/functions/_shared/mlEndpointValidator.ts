@@ -92,6 +92,27 @@ export const ML_ENDPOINTS = {
     fallbacks: [],
     method: 'GET' as const,
     requiresAuth: true
+  },
+  items: {
+    name: 'Items',
+    primary: '/items/{id}',
+    fallbacks: [],
+    method: 'GET' as const,
+    requiresAuth: true
+  },
+  claim_returns: {
+    name: 'Claim Returns',
+    primary: '/post-purchase/v2/claims/{claim_id}/returns',
+    fallbacks: [],
+    method: 'GET' as const,
+    requiresAuth: true
+  },
+  claim_messages: {
+    name: 'Claim Messages',
+    primary: '/post-purchase/v1/claims/{claim_id}/messages',
+    fallbacks: [],
+    method: 'GET' as const,
+    requiresAuth: true
   }
 } as const;
 
