@@ -169,43 +169,6 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
         // ✅ FASE 3.1: Enriquecimento com product details (extraído)
         enrichedOrder = await enrichOrderWithProductDetails(enrichedOrder, accessToken, cid);
 
-        // 9. (continuação existe após essa linha) Buscar detalhes do item/listing
-        // A lógica de product enrichment foi movida para enrichment-products.ts
-        // Se houver código adicional aqui, ele será preservado
-                      const itemData = await itemResp.json();
-                      enhancedItem.item_details = itemData;
-                    }
-                  } catch (error) {
-                    console.warn(`[unified-orders:${cid}] Erro ao buscar item ${item.item.id}:`, error);
-                  }
-                }
-
-                // Buscar informações do produto através do product_id
-                if (item.item?.product_id) {
-                  try {
-                    const productResp = await fetch(
-                      `https://api.mercadolibre.com/products/${item.item.product_id}`,
-                      { headers: { Authorization: `Bearer ${accessToken}` } }
-                    );
-
-                    if (productResp.ok) {
-                      const productData = await productResp.json();
-                      enhancedItem.product_details = productData;
-                    }
-                  } catch (error) {
-                    console.warn(`[unified-orders:${cid}] Erro ao buscar product ${item.item.product_id}:`, error);
-                  }
-                }
-
-                return enhancedItem;
-              })
-            );
-            enrichedOrder.order_items = itemsWithDetails;
-          } catch (error) {
-            console.warn(`[unified-orders:${cid}] Erro ao enriquecer items:`, error);
-          }
-        }
-
         return enrichedOrder;
       } catch (error) {
         console.warn(`[unified-orders:${cid}] Erro geral no enriquecimento da order ${order.id}:`, error);
@@ -216,59 +179,6 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
   console.log(`[unified-orders:${cid}] Enriquecimento completo concluído`);
   return enrichedOrders;
-}
-
-// NOVAS FUNÇÕES PARA IMPLEMENTAÇÃO CORRETA DE DEVOLUÇÕES
-
-// Função para enriquecer com detalhes de devolução via Claims API
-async function enrichWithReturnDetails(order: any, claimId: string, accessToken: string, cid: string) {
-  try {
-    // Buscar detalhes da devolução via Claims
-    const returnResp = await fetch(
-      `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/returns`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'x-format-new': 'true'
-        }
-      }
-    );
-
-    if (returnResp.ok) {
-      const returnData = await returnResp.json();
-      if (!order.detailed_returns) order.detailed_returns = [];
-      order.detailed_returns.push(returnData);
-      
-      console.log(`[unified-orders:${cid}] ✅ Devoluções detalhadas obtidas para claim ${claimId}`);
-
-      // Se tem reviews, buscar também
-      if (returnData.results?.length) {
-        for (const returnItem of returnData.results) {
-          if (returnItem.related_entities && returnItem.related_entities.includes('reviews')) {
-            await enrichWithReturnReviews(order, returnItem.id, accessToken, cid);
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn(`[unified-orders:${cid}] Erro ao buscar detalhes da devolução ${claimId}:`, err);
-  }
-}
-
-// Função para enriquecer com reviews de devolução - ATUALIZADA conforme análise do usuário
-async function enrichWithReturnReviews(order: any, returnData: any, accessToken: string, cid: string) {
-  try {
-    // Reviews estão incluídos nos dados de return (conforme análise do usuário)
-    // Não fazemos chamada separada, apenas extraímos do objeto
-    if (returnData.reviews || returnData.result?.reviews) {
-      if (!order.return_reviews) order.return_reviews = [];
-      order.return_reviews.push(returnData.reviews || returnData.result.reviews);
-      
-      console.log(`[unified-orders:${cid}] ✅ Reviews extraídas dos dados de return`);
-    }
-  } catch (err) {
-    console.warn(`[unified-orders:${cid}] Erro ao extrair reviews da devolução:`, err);
-  }
 }
 
 function transformMLOrders(orders: any[], integration_account_id: string, accountName?: string, cid?: string) {
