@@ -95,11 +95,16 @@ export const Devolucao2025Page = () => {
   
   // DateRange visual para filtro local (baseado em periodo do usuário)
   useEffect(() => {
-    const hoje = new Date();
-    const inicio = new Date();
-    inicio.setDate(hoje.getDate() - parseInt(periodo));
-    setDateRange({ from: inicio, to: hoje });
-  }, [periodo]);
+    // ✅ Se periodo for 60, usar exatamente o mesmo range do backend
+    if (periodo === '60') {
+      setDateRange(backendDateRange);
+    } else {
+      const hoje = new Date();
+      const inicio = new Date();
+      inicio.setDate(hoje.getDate() - parseInt(periodo));
+      setDateRange({ from: inicio, to: hoje });
+    }
+  }, [periodo, backendDateRange]);
   
   // ✅ REMOVIDO: useColumnPreferences (substituído por columnManager FASE 3)
 
