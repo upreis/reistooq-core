@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
 import { calculateAnalysisDeadline } from '@/features/devolucao2025/utils/businessDays';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface ReclamacaoCalendarDay {
   date: string;
@@ -21,16 +22,20 @@ export const useReclamacoesCalendarData = () => {
   const [data, setData] = useState<ReclamacaoCalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Buscar dados do Supabase
+      // Buscar últimos 60 dias
+      const sixtyDaysAgo = subDays(new Date(), 60).toISOString();
+      
       const { data: reclamacoes, error: fetchError } = await supabase
         .from('reclamacoes')
         .select('*')
+        .gte('date_created', sixtyDaysAgo)
         .order('date_created', { ascending: false });
 
       if (fetchError) {
@@ -38,14 +43,15 @@ export const useReclamacoesCalendarData = () => {
       }
 
       if (!reclamacoes || reclamacoes.length === 0) {
-        console.log('📊 Sem reclamações encontradas');
+        console.log('📊 Sem reclamações encontradas (últimos 60 dias)');
         setData([]);
         setLoading(false);
         return;
       }
 
-      console.log('📊 Carregando dados de reclamações para calendário:', {
-        totalReclamacoes: reclamacoes.length
+      console.log('📊 🔄 Carregando dados de reclamações para calendário (REALTIME):', {
+        totalReclamacoes: reclamacoes.length,
+        periodo: '60 dias'
       });
 
       // Agrupar reclamações por data (criação e prazo de análise)
@@ -104,11 +110,10 @@ export const useReclamacoesCalendarData = () => {
       }, {});
 
       const finalData = Object.values(groupedByDate) as ReclamacaoCalendarDay[];
-      console.log('📊 Dados do calendário de reclamações processados:', {
+      console.log('✅ Dados do calendário de reclamações processados:', {
         total: finalData.length,
         criadas: finalData.filter((d: ReclamacaoCalendarDay) => d.claims?.some(r => r.dateType === 'created')).length,
-        prazos: finalData.filter((d: ReclamacaoCalendarDay) => d.claims?.some(r => r.dateType === 'deadline')).length,
-        sample: finalData.slice(0, 3)
+        prazos: finalData.filter((d: ReclamacaoCalendarDay) => d.claims?.some(r => r.dateType === 'deadline')).length
       });
       setData(finalData);
     } catch (err: any) {
@@ -118,15 +123,49 @@ export const useReclamacoesCalendarData = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  const refresh = () => {
+  useEffect(() => {
+    // Buscar dados iniciais
     fetchData();
-  };
+
+    // Configurar Supabase Realtime para atualizações automáticas
+    console.log('🔄 Ativando Realtime para calendário de reclamações...');
+    
+    const channel = supabase
+      .channel('reclamacoes-calendar-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'reclamacoes'
+        },
+        (payload) => {
+          console.log('🔄 Mudança detectada em reclamações:', payload.eventType);
+          fetchData(); // Recarregar dados automaticamente
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime conectado para calendário de reclamações');
+        }
+      });
+
+    channelRef.current = channel;
+
+    // Cleanup
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        console.log('🔴 Realtime desconectado para calendário de reclamações');
+      }
+    };
+  }, [fetchData]);
+
+  const refresh = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
 
   return { data, loading, error, refresh };
 };
