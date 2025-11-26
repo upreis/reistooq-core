@@ -184,16 +184,21 @@ serve(async (req) => {
       for (let i = 0; i < claims.length; i += BATCH_SIZE) {
         const batch = claims.slice(i, i + BATCH_SIZE);
         
+        console.log(`🔥 [ENRIQUECIMENTO] Iniciando batch ${i / BATCH_SIZE + 1} com ${batch.length} claims`);
+        
         const enrichedBatch = await Promise.all(
-          batch.map(async (claim: any) => {
+          batch.map(async (claim: any, index: number) => {
             let orderData = null;
             let returnDetailsV2 = null;
             let claimMessages = null;
             let productInfo = null;
             
+            console.log(`🔥 [${i + index}] Enriquecendo claim ${claim.id}`);
+            
             // 1️⃣ Buscar order data
             if (claim.resource_id) {
               try {
+                console.log(`  📦 [${i + index}] Buscando order ${claim.resource_id}`);
                 const { response: orderRes } = await validateAndFetch(
                   'orders',
                   accessToken,
@@ -203,15 +208,19 @@ serve(async (req) => {
                 
                 if (orderRes?.ok) {
                   orderData = await orderRes.json();
+                  console.log(`  ✅ [${i + index}] Order encontrado`);
+                } else {
+                  console.log(`  ❌ [${i + index}] Order falhou: ${orderRes?.status}`);
                 }
               } catch (err) {
-                // Silencioso
+                console.error(`  ❌ [${i + index}] Order erro:`, err instanceof Error ? err.message : err);
               }
             }
             
             // 2️⃣ Buscar return_details_v2 (CRÍTICO para status, datas, tracking)
             if (claim.id) {
               try {
+                console.log(`  🔄 [${i + index}] Buscando return_details_v2 para claim ${claim.id}`);
                 const { response: returnRes } = await validateAndFetch(
                   'claim_returns',
                   accessToken,
@@ -221,15 +230,19 @@ serve(async (req) => {
                 
                 if (returnRes?.ok) {
                   returnDetailsV2 = await returnRes.json();
+                  console.log(`  ✅ [${i + index}] Return_details_v2 encontrado`);
+                } else {
+                  console.log(`  ❌ [${i + index}] Return_details_v2 falhou: ${returnRes?.status}`);
                 }
               } catch (err) {
-                // Silencioso
+                console.error(`  ❌ [${i + index}] Return_details_v2 erro:`, err instanceof Error ? err.message : err);
               }
             }
             
             // 3️⃣ Buscar messages (CRÍTICO para última msg, evidências)
             if (claim.id) {
               try {
+                console.log(`  💬 [${i + index}] Buscando messages para claim ${claim.id}`);
                 const { response: messagesRes } = await validateAndFetch(
                   'claim_messages',
                   accessToken,
@@ -239,9 +252,12 @@ serve(async (req) => {
                 
                 if (messagesRes?.ok) {
                   claimMessages = await messagesRes.json();
+                  console.log(`  ✅ [${i + index}] Messages encontradas: ${Array.isArray(claimMessages) ? claimMessages.length : 'não é array'}`);
+                } else {
+                  console.log(`  ❌ [${i + index}] Messages falhou: ${messagesRes?.status}`);
                 }
               } catch (err) {
-                // Silencioso
+                console.error(`  ❌ [${i + index}] Messages erro:`, err instanceof Error ? err.message : err);
               }
             }
             
@@ -249,6 +265,7 @@ serve(async (req) => {
             const itemId = orderData?.order_items?.[0]?.item?.id;
             if (itemId) {
               try {
+                console.log(`  🏷️ [${i + index}] Buscando product_info para item ${itemId}`);
                 const { response: productRes } = await validateAndFetch(
                   'items',
                   accessToken,
@@ -258,10 +275,15 @@ serve(async (req) => {
                 
                 if (productRes?.ok) {
                   productInfo = await productRes.json();
+                  console.log(`  ✅ [${i + index}] Product_info encontrado`);
+                } else {
+                  console.log(`  ❌ [${i + index}] Product_info falhou: ${productRes?.status}`);
                 }
               } catch (err) {
-                // Silencioso
+                console.error(`  ❌ [${i + index}] Product_info erro:`, err instanceof Error ? err.message : err);
               }
+            } else {
+              console.log(`  ⚠️ [${i + index}] Sem itemId para buscar product_info`);
             }
             
             return {
