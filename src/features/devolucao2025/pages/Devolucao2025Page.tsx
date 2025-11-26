@@ -162,10 +162,6 @@ export const Devolucao2025Page = () => {
       
       const results = data?.data || [];
       console.log(`✅ ${results.length} devoluções agregadas`);
-      
-      // Reset shouldFetch após busca completa
-      setShouldFetch(false);
-      
       return results;
     },
     enabled: organizationId !== null && shouldFetch && accounts.length > 0,
@@ -308,8 +304,9 @@ export const Devolucao2025Page = () => {
     try {
       await refetch();
     } finally {
-      // Garantir reset IMEDIATO após refetch
+      // Reset estados após busca completa
       setIsManualSearching(false);
+      setShouldFetch(false);
     }
   }, [refetch]);
 
