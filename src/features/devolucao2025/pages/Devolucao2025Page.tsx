@@ -79,7 +79,6 @@ export const Devolucao2025Page = () => {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [filtroResumo, setFiltroResumo] = useState<FiltroResumo | null>(null);
   const [isManualSearching, setIsManualSearching] = useState(false);
-  const [shouldFetch, setShouldFetch] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
@@ -135,18 +134,13 @@ export const Devolucao2025Page = () => {
     }
   });
 
-  // ✅ BUSCA INICIAL AUTOMÁTICA (apenas uma vez no mount)
-  useEffect(() => {
-    if (organizationId && accounts.length > 0 && !shouldFetch) {
-      console.log('🚀 Busca híbrida inicial: carregando 60 dias completos');
-      setShouldFetch(true);
-    }
-  }, [organizationId, accounts.length]);
+  // ✅ REMOVIDO: shouldFetch causava bloqueio de buscas
+  // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
 
-  // 🚀 BUSCA AGREGADA NO BACKEND (como /pedidos)
+  // 🚀 BUSCA AGREGADA NO BACKEND (arquitetura como /pedidos - SEM bloqueio manual)
   const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025-completas', backendDateRange],
+    queryKey: ['devolucoes-2025-completas', backendDateRange, accounts.map(a => a.id)],
     queryFn: async () => {
       console.log(`🔍 Buscando ${accounts.length} contas em PARALELO no backend...`);
       
@@ -164,7 +158,7 @@ export const Devolucao2025Page = () => {
       console.log(`✅ ${results.length} devoluções agregadas`);
       return results;
     },
-    enabled: organizationId !== null && shouldFetch && accounts.length > 0,
+    enabled: organizationId !== null && accounts.length > 0,
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
@@ -299,20 +293,16 @@ export const Devolucao2025Page = () => {
   const handleApplyFilters = useCallback(async () => {
     console.log('🔄 Aplicando filtros e buscando dados...');
     setIsManualSearching(true);
-    setShouldFetch(true);
     
     try {
       await refetch();
     } finally {
-      // Reset estados após busca completa
       setIsManualSearching(false);
-      setShouldFetch(false);
     }
   }, [refetch]);
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
-    setShouldFetch(false);
     setIsManualSearching(false);
     toast.info('Busca cancelada');
   }, []);
