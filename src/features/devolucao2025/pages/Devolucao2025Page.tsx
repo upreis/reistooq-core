@@ -81,7 +81,6 @@ export const Devolucao2025Page = () => {
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
   
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
@@ -144,65 +143,26 @@ export const Devolucao2025Page = () => {
     }
   }, [organizationId, accounts.length]);
 
-  // Estado para progresso de busca
-  const [fetchProgress, setFetchProgress] = useState({ current: 0, total: 0 });
 
-  // Buscar devoluções via Edge Function (SEMPRE 60 dias + todas contas)
+  // 🚀 BUSCA AGREGADA NO BACKEND (como /pedidos)
   const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025-completas', backendDateRange],
     queryFn: async () => {
-      // Criar novo AbortController para esta busca
-      const controller = new AbortController();
-      setAbortController(controller);
+      console.log(`🔍 Buscando ${accounts.length} contas em PARALELO no backend...`);
       
-      console.log('🔍 Buscando devoluções completas (60 dias)...', { dateRange: backendDateRange });
-      
-      try {
-        const allDevolucoes = [];
-        const totalContas = accounts.length;
-        setFetchProgress({ current: 0, total: totalContas });
-        
-        // Buscar sequencialmente para evitar sobrecarga
-        for (let i = 0; i < accounts.length; i++) {
-          // Verificar se foi cancelado
-          if (controller.signal.aborted) {
-            console.log('⚠️ Busca cancelada pelo usuário');
-            setFetchProgress({ current: 0, total: 0 });
-            throw new Error('Busca cancelada');
-          }
-          
-          const account = accounts[i];
-          setFetchProgress({ current: i + 1, total: totalContas });
-          console.log(`📥 Buscando conta ${i + 1}/${totalContas}: ${account.name}`);
-          
-          const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-            body: {
-              integration_account_id: account.id,
-              date_from: backendDateRange.from.toISOString(),
-              date_to: backendDateRange.to.toISOString()
-            }
-          });
-
-          if (error) {
-            console.error(`❌ Erro ao buscar conta ${account.name}:`, error);
-            continue; // Continua com as próximas contas mesmo se uma falhar
-          }
-          
-          const accountData = data?.data || [];
-          console.log(`✅ Conta ${account.name}: ${accountData.length} devoluções`);
-          allDevolucoes.push(...accountData);
+      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+        body: {
+          integration_account_ids: accounts.map(a => a.id), // 🆕 Array de contas
+          date_from: backendDateRange.from.toISOString(),
+          date_to: backendDateRange.to.toISOString()
         }
-        
-        setFetchProgress({ current: 0, total: 0 });
-        setAbortController(null);
-        console.log(`✅ Total: ${allDevolucoes.length} devoluções carregadas (60 dias completos)`);
-        
-        return allDevolucoes;
-      } catch (error) {
-        setFetchProgress({ current: 0, total: 0 });
-        setAbortController(null);
-        throw error;
-      }
+      });
+
+      if (error) throw error;
+      
+      const results = data?.data || [];
+      console.log(`✅ ${results.length} devoluções agregadas`);
+      return results;
     },
     enabled: organizationId !== null && shouldFetch && accounts.length > 0,
     refetchOnWindowFocus: false,
@@ -344,17 +304,12 @@ export const Devolucao2025Page = () => {
     refetch();
   }, [refetch]);
 
-  // ✅ CORREÇÃO 2: Cancelar busca com AbortController
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
-    if (abortController) {
-      abortController.abort();
-      setAbortController(null);
-    }
+    setShouldFetch(false);
     setIsManualSearching(false);
-    setFetchProgress({ current: 0, total: 0 });
     toast.info('Busca cancelada');
-  }, [abortController]);
+  }, []);
 
   // Handler para mudança de status de análise
   const handleStatusChange = useCallback((orderId: string, newStatus: StatusAnalise) => {
@@ -483,19 +438,7 @@ export const Devolucao2025Page = () => {
                         <span className="absolute rounded-[50px] shadow-[inset_0_0_0_3px] shadow-gray-800 dark:shadow-gray-100 animate-loaderAnim" />
                         <span className="absolute rounded-[50px] shadow-[inset_0_0_0_3px] shadow-gray-800 dark:shadow-gray-100 animate-loaderAnim [animation-delay:-1.25s]" />
                       </div>
-                      {fetchProgress.total > 0 && (
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-foreground">
-                            Buscando devoluções...
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Conta {fetchProgress.current} de {fetchProgress.total}
-                          </p>
-                        </div>
-                      )}
-                      {fetchProgress.total === 0 && (
-                        <p className="text-sm font-medium text-foreground">Buscando devoluções...</p>
-                      )}
+                      <p className="text-sm font-medium text-foreground">Buscando devoluções...</p>
                     </div>
                   </div>
                 )}
