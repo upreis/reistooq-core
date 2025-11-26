@@ -290,6 +290,7 @@ serve(async (req) => {
       logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims processados`);
 
       // Mapear dados
+      let isFirstClaim = true; // Flag para debug apenas primeira claim
       const mappedClaims = allEnrichedClaims.map((claim: any) => {
         const item = {
           id: claim.id,
@@ -312,7 +313,7 @@ serve(async (req) => {
         };
 
         // 🔍 DEBUG CRÍTICO: Log primeira devolução
-        if (mappedClaims.length === 0) {
+        if (isFirstClaim) {
           console.log('🔍 [DEBUG INÍCIO] Primeira devolução - Claim ID:', claim.id);
           console.log('🔍 [RAW] return_details_v2 existe?', !!claim.return_details_v2);
           console.log('🔍 [RAW] claim_messages existe?', !!claim.claim_messages);
@@ -323,12 +324,13 @@ serve(async (req) => {
         const devCompleta = mapDevolucaoCompleta(item, accountId, accountName, null);
         
         // 🔍 DEBUG: Campos mapeados da primeira devolução
-        if (mappedClaims.length === 0) {
+        if (isFirstClaim) {
           console.log('🔍 [MAPPED] produto_titulo:', devCompleta.produto_titulo);
           console.log('🔍 [MAPPED] status_return:', devCompleta.status_return);
           console.log('🔍 [MAPPED] codigo_rastreamento:', devCompleta.codigo_rastreamento);
           console.log('🔍 [MAPPED] tipo_logistica:', devCompleta.tipo_logistica);
           console.log('🔍 [MAPPED] ultima_mensagem_data:', devCompleta.ultima_mensagem_data);
+          isFirstClaim = false; // Marca que já logou primeira
         }
         
         return devCompleta;
