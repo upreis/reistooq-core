@@ -142,11 +142,23 @@ export const Devolucao2025Page = () => {
   const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025-completas', backendDateRange, accounts.map(a => a.id)],
     queryFn: async () => {
-      console.log(`🔍 Buscando ${accounts.length} contas em PARALELO no backend...`);
+      // ✅ VALIDAÇÃO CRÍTICA: Garantir que accounts está populado antes de chamar API
+      if (!accounts || accounts.length === 0) {
+        console.warn('⚠️ Accounts ainda não carregado, abortando busca...');
+        return [];
+      }
+      
+      const accountIds = accounts.map(a => a.id).filter(Boolean);
+      if (accountIds.length === 0) {
+        console.warn('⚠️ Nenhum account ID válido encontrado');
+        return [];
+      }
+      
+      console.log(`🔍 Buscando ${accountIds.length} contas em PARALELO no backend...`);
       
       const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
         body: {
-          integration_account_ids: accounts.map(a => a.id),
+          integration_account_ids: accountIds,
           date_from: backendDateRange.from.toISOString(),
           date_to: backendDateRange.to.toISOString()
         }
