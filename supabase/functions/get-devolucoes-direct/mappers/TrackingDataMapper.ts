@@ -17,10 +17,11 @@ export const mapTrackingData = (item: any) => {
     return_last_updated: returnData?.last_updated,
     return_date_closed: returnData?.date_closed,
     return_refund_at: returnData?.refund_at,
-    shipments_count: returnData?.shipments?.length || 0,
-    first_shipment_status: returnData?.shipments?.[0]?.status,
-    first_shipment_type: returnData?.shipments?.[0]?.type,
-    first_shipment_tracking: returnData?.shipments?.[0]?.tracking_number
+    // ✅ CORREÇÃO CRÍTICA: API retorna "shipping" (singular), não "shipments" (array)
+    has_shipping: !!returnData?.shipping,
+    shipping_status: returnData?.shipping?.status,
+    shipping_type: returnData?.shipping?.type,
+    shipping_tracking: returnData?.shipping?.tracking_number
   }));
   
   return {
