@@ -16,7 +16,7 @@ import {
 } from '@/core/filters';
 
 const DEFAULT_FILTERS: DevolucoesFilters = {
-  periodo: '7',
+  periodo: '60', // ✅ Período padrão: 60 dias
   selectedAccounts: [],
   searchTerm: '',
   currentPage: 1,

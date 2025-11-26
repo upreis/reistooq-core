@@ -127,6 +127,14 @@ export const Devolucao2025Page = () => {
     }
   });
 
+  // ✅ Buscar automaticamente ao carregar página (quando organizationId carregado e accounts disponíveis)
+  useEffect(() => {
+    if (organizationId && accounts.length > 0 && !shouldFetch) {
+      console.log('🚀 Primeira carga: ativando busca automática de 60 dias');
+      setShouldFetch(true);
+    }
+  }, [organizationId, accounts.length]);
+
   // Buscar devoluções via Edge Function
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025', selectedAccounts, dateRange],
@@ -168,7 +176,7 @@ export const Devolucao2025Page = () => {
 
       return result;
     },
-    enabled: organizationId !== null && shouldFetch,
+    enabled: organizationId !== null && shouldFetch, // ✅ Busca ativa quando shouldFetch=true (agora automático)
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
