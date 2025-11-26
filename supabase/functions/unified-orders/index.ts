@@ -3,41 +3,13 @@ import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
-// ============= INLINE: mapShipmentCostsData =============
-// (não pode importar de outro folder em edge functions)
-function mapShipmentCostsData(costsData: any) {
-  if (!costsData) return null;
-
-  const receiverDiscounts = costsData.receiver?.discounts || [];
-  const senderCharges = costsData.senders?.[0]?.charges || {};
-  
-  const totalReceiverDiscounts = Array.isArray(receiverDiscounts)
-    ? receiverDiscounts.reduce(
-        (sum: number, d: any) => sum + (Number(d.promoted_amount) || 0),
-        0
-      )
-    : 0;
-
-  return {
-    gross_amount: costsData.gross_amount || 0,
-    receiver: {
-      cost: costsData.receiver?.cost || 0,
-      discounts: receiverDiscounts,
-      total_discount_amount: totalReceiverDiscounts,
-      loyal_discount_amount: receiverDiscounts.find((d: any) => d.type === 'loyal')?.promoted_amount || 0,
-      loyal_discount_rate: receiverDiscounts.find((d: any) => d.type === 'loyal')?.rate || 0
-    },
-    sender: {
-      cost: costsData.senders?.[0]?.cost || 0,
-      charge_flex: senderCharges.charge_flex || 0,
-      charges: senderCharges
-    },
-    order_cost: costsData.gross_amount || 0,
-    special_discount: totalReceiverDiscounts,
-    net_cost: (costsData.gross_amount || 0) - totalReceiverDiscounts,
-    raw_data: costsData
-  };
-}
+// ============= FASE 3.1: Imports de funções de enriquecimento =============
+import { mapShipmentCostsData } from "./mapper-shipment-costs.ts";
+import { enrichOrderWithSellerReputation } from "./enrichment-reputation.ts";
+import { enrichOrderWithBillingInfo } from "./enrichment-billing.ts";
+import { enrichOrderWithShipping } from "./enrichment-shipment.ts";
+import { enrichOrderWithClaims } from "./enrichment-claims.ts";
+import { enrichOrderWithProductDetails } from "./enrichment-products.ts";
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
@@ -119,170 +91,14 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           console.warn(`[unified-orders:${cid}] Erro ao buscar order ${order.id}:`, error);
         }
         
-        // 1.5 Buscar reputação do seller (com cache)
-        const sellerId = enrichedOrder.seller?.id || order.seller?.id;
-        console.log(`[unified-orders:${cid}] 🏅 Seller ID encontrado:`, sellerId);
-        
-        if (sellerId && !sellerReputationCache.has(sellerId.toString())) {
-          try {
-            console.log(`[unified-orders:${cid}] 🔍 Buscando reputação para seller ${sellerId}...`);
-            // ✅ FIX: Usar endpoint /users/{id} ao invés de /users/{id}/seller_reputation
-            const reputationResp = await fetch(
-              `https://api.mercadolibre.com/users/${sellerId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`
-                }
-              }
-            );
-            
-            console.log(`[unified-orders:${cid}] 🏅 API User status:`, reputationResp.status);
-            
-            if (reputationResp.ok) {
-              const userData = await reputationResp.json();
-              // Extrair seller_reputation do objeto user
-              const sellerReputation = userData.seller_reputation || null;
-              sellerReputationCache.set(sellerId.toString(), sellerReputation);
-              console.log(`[unified-orders:${cid}] ✅ Reputação obtida para seller ${sellerId}:`, {
-                power_seller_status: sellerReputation?.power_seller_status,
-                level_id: sellerReputation?.level_id
-              });
-            } else {
-              const errorText = await reputationResp.text();
-              console.warn(`[unified-orders:${cid}] ⚠️ Erro na API de usuário:`, reputationResp.status, errorText);
-              sellerReputationCache.set(sellerId.toString(), null);
-            }
-          } catch (repError) {
-            console.warn(`[unified-orders:${cid}] ⚠️ Exceção ao buscar dados do seller ${sellerId}:`, repError);
-            sellerReputationCache.set(sellerId.toString(), null);
-          }
-        }
-        
-        // Adicionar reputação ao enrichedOrder
-        if (sellerId) {
-          const reputation = sellerReputationCache.get(sellerId.toString());
-          console.log(`[unified-orders:${cid}] 🏅 Aplicando reputação para seller ${sellerId}:`, reputation);
-          if (reputation) {
-            enrichedOrder.seller_reputation = reputation;
-          }
-        }
+        // ✅ FASE 3.1: Enriquecimento com seller reputation (extraído)
+        enrichedOrder = await enrichOrderWithSellerReputation(enrichedOrder, accessToken, cid, sellerReputationCache);
 
-        // 1.6 🆕 Buscar CPF/CNPJ do comprador via billing_info
-        if (order.id) {
-          try {
-            console.log(`[unified-orders:${cid}] 📋 Buscando billing_info para pedido ${order.id}...`);
-            const billingResp = await fetch(
-              `https://api.mercadolibre.com/orders/${order.id}/billing_info`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-version': '2'  // ⚠️ CRÍTICO: Header obrigatório para billing_info
-                }
-              }
-            );
+        // ✅ FASE 3.1: Enriquecimento com billing info/CPF/CNPJ (extraído)
+        enrichedOrder = await enrichOrderWithBillingInfo(enrichedOrder, accessToken, cid);
 
-            if (billingResp.ok) {
-              const billingData = await billingResp.json();
-              const documentType = billingData?.buyer?.billing_info?.identification?.type || null;
-              const documentNumber = billingData?.buyer?.billing_info?.identification?.number || null;
-              
-              enrichedOrder.buyer_document_type = documentType;  // "CPF" ou "CNPJ"
-              enrichedOrder.buyer_document_number = documentNumber;  // Número sem formatação
-              enrichedOrder.billing_info = billingData;  // Dados completos do billing
-              
-              console.log(`[unified-orders:${cid}] ✅ CPF/CNPJ obtido para pedido ${order.id}:`, {
-                type: documentType,
-                number: documentNumber ? `${documentNumber.substring(0, 3)}***` : null
-              });
-            } else {
-              console.warn(`[unified-orders:${cid}] ⚠️ Billing info não disponível para pedido ${order.id}: ${billingResp.status}`);
-            }
-          } catch (billingError) {
-            console.warn(`[unified-orders:${cid}] ⚠️ Erro ao buscar billing_info do pedido ${order.id}:`, billingError);
-          }
-        }
-
-        // 2. Enriquecer com dados de shipment
-        if (order.shipping?.id) {
-          try {
-            const shippingResp = await fetch(
-              `https://api.mercadolibre.com/shipments/${order.shipping.id}`,
-              { 
-                headers: { 
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-format-new': 'true'  // Header obrigatório para shipments
-                } 
-              }
-            );
-
-            if (shippingResp.ok) {
-              const shippingData = await shippingResp.json();
-
-              // 2.a Buscar status_history do shipment
-              let statusHistory = null;
-              try {
-                const historyResp = await fetch(
-                  `https://api.mercadolibre.com/shipments/${order.shipping.id}/history`,
-                  {
-                    headers: {
-                      Authorization: `Bearer ${accessToken}`,
-                      'x-format-new': 'true'
-                    }
-                  }
-                );
-
-                if (historyResp.ok) {
-                  statusHistory = await historyResp.json();
-                  console.log(`[unified-orders:${cid}] ✅ status_history obtido para shipment ${order.shipping.id}`);
-                }
-              } catch (histErr) {
-                console.warn(`[unified-orders:${cid}] Aviso ao buscar status_history do shipment ${order.shipping.id}:`, histErr);
-              }
-
-              // 2.b Endpoints adicionais: custos e SLA (executar em paralelo)
-              // IMPORTANTE: /costs PRECISA do header x-format-new para retornar cost_components.special_discount
-              try {
-                const [costsResp, slaResp] = await Promise.all([
-                  fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/costs`, {
-                    headers: {
-                      Authorization: `Bearer ${accessToken}`,
-                      'x-format-new': 'true'  // ⚠️ CRÍTICO para special_discount
-                    }
-                  }),
-                  fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/sla`, {
-                    headers: {
-                      Authorization: `Bearer ${accessToken}`,
-                      'x-format-new': 'true'
-                    }
-                  })
-                ]);
-
-                if (costsResp?.ok) {
-                  const costsData = await costsResp.json();
-                  (shippingData as any).costs = costsData;
-                  console.log(`[unified-orders:${cid}] ➕ costs anexado ao shipment ${order.shipping.id}`);
-                }
-                if (slaResp?.ok) {
-                  const slaData = await slaResp.json();
-                  (shippingData as any).sla = slaData;
-                  console.log(`[unified-orders:${cid}] ➕ sla anexado ao shipment ${order.shipping.id}`);
-                }
-              } catch (extraErr) {
-                console.warn(`[unified-orders:${cid}] Aviso ao buscar costs/sla do shipment ${order.shipping.id}:`, extraErr);
-              }
-
-              enrichedOrder.shipping = {
-                ...enrichedOrder.shipping,
-                ...shippingData,
-                status_history: statusHistory,
-                detailed_shipping: shippingData,
-                shipping_enriched: true
-              };
-            }
-          } catch (error) {
-            console.warn(`[unified-orders:${cid}] Erro ao enriquecer shipping ${order.shipping?.id}:`, error);
-          }
-        }
+        // ✅ FASE 3.1: Enriquecimento com shipping data (extraído)
+        enrichedOrder = await enrichOrderWithShipping(enrichedOrder, accessToken, cid);
 
         // 3. Enriquecer dados de pack (status)
         if (order.pack_id) {
@@ -347,63 +163,15 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
         // 7. Returns são acessados via claim_id (conforme análise do usuário)
         // Implementado na seção de claims abaixo
 
-        // 8. Buscar Claims relacionadas ao pedido (IMPLEMENTAÇÃO CORRIGIDA)
-        if (order.id) {
-          try {
-            console.log(`[unified-orders:${cid}] 🔍 Buscando claims para pedido ${order.id}`);
-            const claimsResp = await fetch(
-              `https://api.mercadolibre.com/post-purchase/v1/claims/search?resource_id=${order.id}&resource=order`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-format-new': 'true'
-                }
-              }
-            );
-            
-            console.log(`[unified-orders:${cid}] 🔍 Claims search executado para pedido ${order.id} - Status: ${claimsResp.status}`);
-            
-            if (claimsResp.ok) {
-              const claimsData = await claimsResp.json();
-              (enrichedOrder as any).claims = claimsData;
-              
-              if (claimsData.results?.length > 0) {
-                console.log(`[unified-orders:${cid}] ✅ Encontrados ${claimsData.results.length} claims para pedido ${order.id}`);
-                
-                // Para cada claim, verificar se tem devoluções
-                for (const claim of claimsData.results) {
-                  if (claim.related_entities && claim.related_entities.includes('return')) {
-                    console.log(`[unified-orders:${cid}] 🔄 Claim ${claim.id} tem devoluções associadas`);
-                    await enrichWithReturnDetails(enrichedOrder, claim.id, accessToken, cid);
-                  }
-                }
-              } else {
-                console.log(`[unified-orders:${cid}] ℹ️ Nenhum claim encontrado para pedido ${order.id}`);
-              }
-            } else {
-              console.warn(`[unified-orders:${cid}] ⚠️ Claims API retornou status ${claimsResp.status} para pedido ${order.id}`);
-            }
-          } catch (err) {
-            console.warn(`[unified-orders:${cid}] ❌ Erro ao buscar claims ${order.id}:`, err);
-          }
-        }
+        // ✅ FASE 3.1: Enriquecimento com claims e returns (extraído)
+        enrichedOrder = await enrichOrderWithClaims(enrichedOrder, accessToken, cid);
 
-        // 9. Enriquecer com dados dos produtos detalhados (order_items + product info)
-        if (order.order_items?.length) {
-          try {
-            const itemsWithDetails = await Promise.all(
-              order.order_items.map(async (item: any) => {
-                let enhancedItem = { ...item };
-                
-                // Buscar detalhes do item/listing
-                if (item.item?.id) {
-                  try {
-                    const itemResp = await fetch(
-                      `https://api.mercadolibre.com/items/${item.item.id}`,
-                      { headers: { Authorization: `Bearer ${accessToken}` } }
-                    );
+        // ✅ FASE 3.1: Enriquecimento com product details (extraído)
+        enrichedOrder = await enrichOrderWithProductDetails(enrichedOrder, accessToken, cid);
 
-                    if (itemResp.ok) {
+        // 9. (continuação existe após essa linha) Buscar detalhes do item/listing
+        // A lógica de product enrichment foi movida para enrichment-products.ts
+        // Se houver código adicional aqui, ele será preservado
                       const itemData = await itemResp.json();
                       enhancedItem.item_details = itemData;
                     }
