@@ -251,22 +251,14 @@ export const Devolucao2025Page = () => {
     });
   }, [devolucoesFiltradasPorAba, filtroResumo]);
 
-  // Paginação dos dados (com filtro para remover linhas sem comprador ou produto)
+  // Paginação dos dados
   const paginatedDevolucoes = useMemo(() => {
-    // Filtrar devoluções sem comprador ou produto
-    const filteredDevolucoes = devolucoesComFiltroResumo.filter(dev => 
-      dev.comprador_nome_completo && dev.produto_titulo
-    );
-    
-    if (itemsPerPage === -1) return filteredDevolucoes; // "Todas"
+    if (itemsPerPage === -1) return devolucoesComFiltroResumo; // "Todas"
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredDevolucoes.slice(startIndex, startIndex + itemsPerPage);
+    return devolucoesComFiltroResumo.slice(startIndex, startIndex + itemsPerPage);
   }, [devolucoesComFiltroResumo, currentPage, itemsPerPage]);
 
-  const filteredCount = useMemo(() => 
-    devolucoesComFiltroResumo.filter(dev => dev.comprador_nome_completo && dev.produto_titulo).length, 
-    [devolucoesComFiltroResumo]
-  );
+  const filteredCount = devolucoesComFiltroResumo.length;
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredCount / itemsPerPage);
 
   // ✅ CORREÇÃO 1: Não faz busca automática ao acessar a página
