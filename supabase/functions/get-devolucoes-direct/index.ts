@@ -311,7 +311,27 @@ serve(async (req) => {
           resolution: claim.resolution
         };
 
-        return mapDevolucaoCompleta(item, accountId, accountName, null);
+        const devCompleta = mapDevolucaoCompleta(item, accountId, accountName, null);
+        
+        // 🐛 DEBUG: Log dos 11 campos problemáticos para PRIMEIRA devolução de cada conta
+        if (mappedClaims.length === 0) {
+          console.log(`🔍 [DIAGNÓSTICO] Claim ${devCompleta.claim_id}:`, JSON.stringify({
+            produto_titulo: devCompleta.produto_titulo,
+            product_info_exists: !!devCompleta.product_info,
+            status_return: devCompleta.status_return,
+            status_envio: devCompleta.status_envio,
+            destino_devolucao: devCompleta.destino_devolucao,
+            total_evidencias: devCompleta.total_evidencias,
+            data_fechamento_devolucao: devCompleta.data_fechamento_devolucao,
+            data_inicio_return: devCompleta.data_inicio_return,
+            data_chegada_produto: devCompleta.data_chegada_produto,
+            ultima_mensagem_data: devCompleta.ultima_mensagem_data,
+            codigo_rastreamento: devCompleta.codigo_rastreamento,
+            tipo_logistica: devCompleta.tipo_logistica
+          }));
+        }
+        
+        return devCompleta;
       }).filter(Boolean);
 
       logger.progress(`✅ [${accountId.slice(0, 8)}] ${mappedClaims.length} claims mapeados`);
