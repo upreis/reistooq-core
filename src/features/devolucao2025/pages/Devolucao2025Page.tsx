@@ -81,6 +81,7 @@ export const Devolucao2025Page = () => {
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
@@ -150,40 +151,58 @@ export const Devolucao2025Page = () => {
   const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025-completas', backendDateRange],
     queryFn: async () => {
+      // Criar novo AbortController para esta busca
+      const controller = new AbortController();
+      setAbortController(controller);
+      
       console.log('🔍 Buscando devoluções completas (60 dias)...', { dateRange: backendDateRange });
       
-      const allDevolucoes = [];
-      const totalContas = accounts.length;
-      setFetchProgress({ current: 0, total: totalContas });
-      
-      // Buscar sequencialmente para evitar sobrecarga
-      for (let i = 0; i < accounts.length; i++) {
-        const account = accounts[i];
-        setFetchProgress({ current: i + 1, total: totalContas });
-        console.log(`📥 Buscando conta ${i + 1}/${totalContas}: ${account.name}`);
+      try {
+        const allDevolucoes = [];
+        const totalContas = accounts.length;
+        setFetchProgress({ current: 0, total: totalContas });
         
-        const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-          body: {
-            integration_account_id: account.id,
-            date_from: backendDateRange.from.toISOString(),
-            date_to: backendDateRange.to.toISOString()
+        // Buscar sequencialmente para evitar sobrecarga
+        for (let i = 0; i < accounts.length; i++) {
+          // Verificar se foi cancelado
+          if (controller.signal.aborted) {
+            console.log('⚠️ Busca cancelada pelo usuário');
+            setFetchProgress({ current: 0, total: 0 });
+            throw new Error('Busca cancelada');
           }
-        });
+          
+          const account = accounts[i];
+          setFetchProgress({ current: i + 1, total: totalContas });
+          console.log(`📥 Buscando conta ${i + 1}/${totalContas}: ${account.name}`);
+          
+          const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+            body: {
+              integration_account_id: account.id,
+              date_from: backendDateRange.from.toISOString(),
+              date_to: backendDateRange.to.toISOString()
+            }
+          });
 
-        if (error) {
-          console.error(`❌ Erro ao buscar conta ${account.name}:`, error);
-          continue; // Continua com as próximas contas mesmo se uma falhar
+          if (error) {
+            console.error(`❌ Erro ao buscar conta ${account.name}:`, error);
+            continue; // Continua com as próximas contas mesmo se uma falhar
+          }
+          
+          const accountData = data?.data || [];
+          console.log(`✅ Conta ${account.name}: ${accountData.length} devoluções`);
+          allDevolucoes.push(...accountData);
         }
         
-        const accountData = data?.data || [];
-        console.log(`✅ Conta ${account.name}: ${accountData.length} devoluções`);
-        allDevolucoes.push(...accountData);
+        setFetchProgress({ current: 0, total: 0 });
+        setAbortController(null);
+        console.log(`✅ Total: ${allDevolucoes.length} devoluções carregadas (60 dias completos)`);
+        
+        return allDevolucoes;
+      } catch (error) {
+        setFetchProgress({ current: 0, total: 0 });
+        setAbortController(null);
+        throw error;
       }
-      
-      setFetchProgress({ current: 0, total: 0 });
-      console.log(`✅ Total: ${allDevolucoes.length} devoluções carregadas (60 dias completos)`);
-      
-      return allDevolucoes;
     },
     enabled: organizationId !== null && shouldFetch && accounts.length > 0,
     refetchOnWindowFocus: false,
@@ -319,16 +338,23 @@ export const Devolucao2025Page = () => {
 
   // Handler para aplicar filtros (força refetch dos 60 dias completos)
   const handleApplyFilters = useCallback(() => {
-    console.log('🔄 Forçando atualização dos dados completos (60 dias)...');
+    console.log('🔄 Aplicando filtros e buscando dados...');
+    setIsManualSearching(true);
     setShouldFetch(true);
-    refetch(); // Refetch dos dados completos
+    refetch();
   }, [refetch]);
 
-  // ✅ CORREÇÃO 2: Cancelar busca sem reload
+  // ✅ CORREÇÃO 2: Cancelar busca com AbortController
   const handleCancelSearch = useCallback(() => {
+    console.log('🛑 Cancelando busca...');
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
     setIsManualSearching(false);
-    setShouldFetch(false); // Desabilitar busca
-  }, []);
+    setFetchProgress({ current: 0, total: 0 });
+    toast.info('Busca cancelada');
+  }, [abortController]);
 
   // Handler para mudança de status de análise
   const handleStatusChange = useCallback((orderId: string, newStatus: StatusAnalise) => {
@@ -341,22 +367,13 @@ export const Devolucao2025Page = () => {
     setSelectedOrderForAnotacoes(orderId);
   }, []);
 
-  // ✅ Dispara refetch quando shouldFetch é ativado
+  // Resetar estado de busca manual após completar
   useEffect(() => {
-    if (shouldFetch && organizationId) {
-      console.log('🚀 Disparando busca via shouldFetch=true');
-      refetch();
-    }
-  }, [shouldFetch, organizationId, refetch]);
-
-  // Resetar shouldFetch após busca completar
-  useEffect(() => {
-    if (!isLoading && shouldFetch) {
-      setShouldFetch(false);
+    if (!isLoading && isManualSearching) {
       setIsManualSearching(false);
-      console.log('✅ Busca concluída, resetando shouldFetch');
+      console.log('✅ Busca concluída');
     }
-  }, [isLoading, shouldFetch]);
+  }, [isLoading, isManualSearching]);
 
   // Sistema de Alertas (sobre dados completos)
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoesCompletas);
