@@ -16,88 +16,24 @@ import {
   RECLAMACOES_COLUMN_STORAGE_KEY,
   RECLAMACOES_COLUMN_STORAGE_VERSION,
 } from '../types/column-definitions';
+import { loadColumnPreferences, createDebouncedSave } from '@/core/columns';
 
-// 🛡️ VALIDAÇÃO DE STORAGE
-interface StorageData {
-  version: number;
-  visibleColumns: string[];
-  columnOrder: string[];
-  activeProfile: string | null;
-  customProfiles: ReclamacoesColumnProfile[];
-  timestamp: number;
-}
-
-const validateStorageData = (data: any): data is StorageData => {
-  if (!data || typeof data !== 'object') return false;
-  if (data.version !== RECLAMACOES_COLUMN_STORAGE_VERSION) return false;
-  if (!Array.isArray(data.visibleColumns)) return false;
-  if (!Array.isArray(data.columnOrder)) return false;
-  if (!Array.isArray(data.customProfiles)) return false;
-  if (typeof data.timestamp !== 'number') return false;
-  
-  // Validar idade do cache (30 dias)
-  const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-  if (Date.now() - data.timestamp > thirtyDaysInMs) return false;
-  
-  return true;
-};
-
-const loadFromStorage = (): Partial<ReclamacoesColumnState> | null => {
-  try {
-    const stored = localStorage.getItem(RECLAMACOES_COLUMN_STORAGE_KEY);
-    if (!stored) return null;
-
-    const parsed = JSON.parse(stored);
-    if (!validateStorageData(parsed)) {
-      console.warn('🗑️ [ColumnManager] Cache inválido ou expirado, limpando...');
-      localStorage.removeItem(RECLAMACOES_COLUMN_STORAGE_KEY);
-      return null;
-    }
-
-    return {
-      visibleColumns: new Set(parsed.visibleColumns),
-      columnOrder: parsed.columnOrder,
-      activeProfile: parsed.activeProfile,
-      customProfiles: parsed.customProfiles,
-    };
-  } catch (error) {
-    console.error('❌ [ColumnManager] Erro ao carregar preferências:', error);
-    localStorage.removeItem(RECLAMACOES_COLUMN_STORAGE_KEY);
-    return null;
-  }
-};
-
-// 💾 DEBOUNCED SAVE
-let saveTimeout: NodeJS.Timeout | null = null;
-
-const saveToStorage = (state: ReclamacoesColumnState) => {
-  if (saveTimeout) clearTimeout(saveTimeout);
-  
-  saveTimeout = setTimeout(() => {
-    try {
-      const data: StorageData = {
-        version: RECLAMACOES_COLUMN_STORAGE_VERSION,
-        visibleColumns: Array.from(state.visibleColumns),
-        columnOrder: state.columnOrder,
-        activeProfile: state.activeProfile,
-        customProfiles: state.customProfiles,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(RECLAMACOES_COLUMN_STORAGE_KEY, JSON.stringify(data));
-      console.log('💾 [ColumnManager] Preferências salvas com sucesso');
-    } catch (error) {
-      console.error('❌ [ColumnManager] Erro ao salvar preferências:', error);
-    }
-  }, 500); // 500ms debounce
-};
+// 💾 DEBOUNCED SAVE usando utility compartilhada
+const saveToStorage = createDebouncedSave({
+  storageKey: RECLAMACOES_COLUMN_STORAGE_KEY,
+  version: RECLAMACOES_COLUMN_STORAGE_VERSION,
+}, 500);
 
 // 🎯 HOOK PRINCIPAL
 export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn => {
   const { toast } = useToast();
 
-  // 📦 ESTADO INICIAL
+  // 📦 ESTADO INICIAL usando utility compartilhada
   const getInitialState = (): ReclamacoesColumnState => {
-    const stored = loadFromStorage();
+    const stored = loadColumnPreferences({
+      storageKey: RECLAMACOES_COLUMN_STORAGE_KEY,
+      version: RECLAMACOES_COLUMN_STORAGE_VERSION,
+    });
     
     if (stored?.visibleColumns && stored.columnOrder) {
       console.log('🔄 [ColumnManager] Restaurando do cache:', {
