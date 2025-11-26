@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { GlobalErrorBoundary } from '@/core/errors'
 
 import { setupGlobalToast } from "@/utils/toast-bridge";
 import { toast } from "sonner";
@@ -29,9 +29,9 @@ const root = createRoot(container);
 
 root.render(
   <StrictMode>
-    <ErrorBoundary>
+    <GlobalErrorBoundary>
       <App />
-    </ErrorBoundary>
+    </GlobalErrorBoundary>
   </StrictMode>
 );
 
