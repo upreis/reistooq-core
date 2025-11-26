@@ -18,16 +18,12 @@ export const COLUMNS_CONFIG: ColumnConfig[] = [
   // GRUPO 2: FINANCEIRO
   { id: 'valor_total', label: 'Valor Total', group: 'Financeiro' },
   { id: 'valor_produto', label: 'Valor Produto', group: 'Financeiro' },
-  { id: 'percentual_reemb', label: '% Reemb.', group: 'Financeiro' },
-  { id: 'metodo_pagamento', label: 'Método Pagto', group: 'Financeiro' },
-  { id: 'tipo_pagamento', label: 'Tipo Pagto', group: 'Financeiro' },
 
   // GRUPO 3: STATUS & CLASSIFICAÇÃO
   { id: 'status_dev', label: 'Status Dev', group: 'Status' },
   { id: 'status_return', label: 'Status Return', group: 'Status' },
   { id: 'status_entrega', label: 'Status Entrega', group: 'Status' },
   { id: 'destino', label: 'Destino', group: 'Status' },
-  { id: 'evidencias', label: 'Evidências', group: 'Status' },
   { id: 'resolucao', label: 'Resolução', group: 'Status' },
 
   // GRUPO 4: DATAS
@@ -50,16 +46,9 @@ export const COLUMNS_CONFIG: ColumnConfig[] = [
   // GRUPO 7: COMUNICAÇÃO
   { id: 'num_interacoes', label: 'Nº Interações', group: 'Comunicação' },
   { id: 'qualidade_com', label: 'Qualidade Com', group: 'Comunicação' },
-  { id: 'moderacao', label: 'Moderação', group: 'Comunicação' },
-  { id: 'anexos_comprador', label: 'Anexos Comprador', group: 'Comunicação' },
-  { id: 'anexos_vendedor', label: 'Anexos Vendedor', group: 'Comunicação' },
-  { id: 'anexos_ml', label: 'Anexos ML', group: 'Comunicação' },
 
-  // GRUPO 8: REVIEW & AÇÕES
-  { id: 'review_resource_id', label: 'Review Resource ID', group: 'Review' },
-  { id: 'reason_id', label: 'Reason ID', group: 'Review' },
+  // GRUPO 8: REVIEW & AÇÕES (removido)
 
   // GRUPO 9: CUSTOS OPERACIONAIS
-  { id: 'custo_total_log', label: 'Custo Total Log', group: 'Custos' },
   { id: 'custo_envio_orig', label: 'Custo Envio Orig', group: 'Custos' },
 ];
