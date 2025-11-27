@@ -6,7 +6,7 @@
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
@@ -40,6 +40,7 @@ import { Devolucao2025AnotacoesModal } from '../components/modals/Devolucao2025A
 
 export const Devolucao2025Page = () => {
   const { isSidebarCollapsed } = useSidebarUI();
+  const queryClient = useQueryClient();
   
   // FASE 1: Estado de persistência com validação robusta
   // FASE 2: Gerenciamento unificado de filtros com URL sync
