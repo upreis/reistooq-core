@@ -17,7 +17,7 @@ import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.t
 // ✅ Importar serviços de enriquecimento FASE 2
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
 import { fetchShippingCosts, fetchMultipleShippingCosts, fetchReturnCost } from './services/ShippingCostsService.ts';
-import { fetchReturnArrivalDate } from './services/ReturnArrivalDateService.ts';
+import { fetchReturnArrivalDate, fetchMultipleReturnArrivalDates } from './services/ReturnArrivalDateService.ts';
 import { enrichMultipleShipments } from './services/ShipmentEnrichmentService.ts';
 
 // ✅ Importar função de mapeamento completo
@@ -338,14 +338,24 @@ serve(async (req) => {
             }
           }
         }
+
+        // 📅 Enriquecer datas de chegada do batch em paralelo com rate limiting
+        console.log(`📅 [BATCH ${i / BATCH_SIZE + 1}] Enriquecendo datas de chegada para ${enrichedBatch.length} claims...`);
+        const arrivalDatesMap = await fetchMultipleReturnArrivalDates(enrichedBatch, accessToken, 10);
+        
+        // Adicionar data_chegada_produto aos claims
+        for (const claim of enrichedBatch) {
+          const claimId = claim.id || claim.claim_details?.id;
+          if (claimId) {
+            claim.data_chegada_produto = arrivalDatesMap.get(claimId) || null;
+          }
+        }
         
         allEnrichedClaims.push(...enrichedBatch);
       }
       
-      logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims processados`);
-
-      // ⚡ OTIMIZAÇÃO: Removido enriquecimento de data_chegada_produto 
-      // (causava rate limit 429 com múltiplas requisições simultâneas)
+      logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims processados com enriquecimento completo`);
+      
       const claimsWithArrivalDates = allEnrichedClaims;
 
       // Mapear dados
