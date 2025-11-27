@@ -148,20 +148,21 @@ export const Devolucao2025Page = () => {
 
 
   // 🚀 BUSCA AGREGADA NO BACKEND - Cache em memória React Query
-  // ✅ CRÍTICO: queryKey DEVE ser array de STRINGS primitivas (não objetos/arrays)
-  // Objetos/arrays mudam referência → React Query considera query diferente → não usa cache
+  // ✅ CRÍTICO: queryKey 100% ESTÁVEL - Igual pattern /pedidos
+  // Pattern: serializar tudo FORA do useMemo, dependency só de strings primitivas
   
-  // 🔑 QUERY KEY ESTÁVEL - Serialização direta na dependency array
-  const dateFromISO = useMemo(() => backendDateRange.from.toISOString(), [backendDateRange.from]);
-  const dateToISO = useMemo(() => backendDateRange.to.toISOString(), [backendDateRange.to]);
+  // Datas: converter para ISO fora do useMemo
+  const dateFromISO = backendDateRange.from.toISOString();
+  const dateToISO = backendDateRange.to.toISOString();
   
-  // ✅ CRÍTICO: Serializar appliedAccounts DIRETAMENTE na dependency
-  // Assim o useMemo só recalcula quando STRING muda, não quando array muda referência
-  const accountsSerializado = appliedAccounts.length > 0 
-    ? appliedAccounts.slice().sort().join('|')
-    : 'NO_ACCOUNTS';
+  // Accounts: serializar ANTES do useMemo (não na dependency)
+  const accountsSerializado = useMemo(() => {
+    return appliedAccounts.length > 0 
+      ? appliedAccounts.slice().sort().join('|')
+      : 'NO_ACCOUNTS';
+  }, [appliedAccounts.length, ...appliedAccounts]); // Dependency correta: length + spread
   
-  // Query key FINAL: apenas strings primitivas + serialização direta
+  // Query key FINAL: useMemo apenas de strings primitivas
   const stableQueryKey: [string, string, string, string] = useMemo(() => {
     const key: [string, string, string, string] = [
       'devolucoes-2025-completas',
@@ -170,10 +171,11 @@ export const Devolucao2025Page = () => {
       accountsSerializado
     ];
     
-    console.log('🔑 [QUERY KEY]', {
+    console.log('🔑 [QUERY KEY ESTÁVEL]', {
       key,
       dateRange: `${dateFromISO} → ${dateToISO}`,
-      accounts: accountsSerializado
+      accounts: accountsSerializado,
+      appliedAccountsLength: appliedAccounts.length
     });
     
     return key;
