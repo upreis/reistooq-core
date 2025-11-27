@@ -575,6 +575,15 @@ serve(async (req) => {
     
     logger.progress(`🎉 TOTAL AGREGADO: ${allMappedClaims.length} devoluções de ${accountIds.length} conta(s)`);
 
+    // 💾 FASE 3: Exibir estatísticas do cache
+    const cacheStats = globalCache.getStats();
+    const hitRate = globalCache.getHitRate();
+    
+    logger.info(`\n💾 ========== ESTATÍSTICAS DO CACHE ==========`);
+    logger.info(`💾 Hits: ${cacheStats.hits} | Misses: ${cacheStats.misses} | Total: ${cacheStats.hits + cacheStats.misses}`);
+    logger.info(`💾 Hit Rate: ${hitRate.toFixed(1)}% | Entradas em cache: ${cacheStats.size}`);
+    logger.info(`💾 ============================================\n`);
+
     // ✅ RETORNAR DADOS AGREGADOS
     return new Response(
       JSON.stringify({
