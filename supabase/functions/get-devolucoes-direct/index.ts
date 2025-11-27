@@ -195,19 +195,39 @@ serve(async (req) => {
       
       const stage1Start = Date.now();
       const BATCH_SIZE = 10;
+      const TIMEOUT_MS = 5000; // ⏱️ Timeout de 5s por enriquecimento
+      
+      // 🔧 Helper: Adicionar timeout a qualquer Promise
+      const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
+        return Promise.race([
+          promise,
+          new Promise<T>((resolve) => setTimeout(() => resolve(fallback), timeoutMs))
+        ]);
+      };
       
       // STAGE 1: Buscar apenas return_details_v2 para todos os claims em batches
+      const totalBatches = Math.ceil(claims.length / BATCH_SIZE);
+      
       for (let i = 0; i < claims.length; i += BATCH_SIZE) {
         const batch = claims.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        
+        logger.progress(`📦 [STAGE 1] Processando batch ${batchNum}/${totalBatches} (${batch.length} claims)...`);
         
         const enrichedBatch = await Promise.all(
           batch.map(async (claim: any) => {
             try {
-              const { response: returnRes } = await validateAndFetch(
+              const fetchPromise = validateAndFetch(
                 'claim_returns',
                 accessToken,
                 { claim_id: claim.id },
                 { retryOnFail: false, logResults: false }
+              );
+              
+              const { response: returnRes } = await withTimeout(
+                fetchPromise,
+                TIMEOUT_MS,
+                { response: null }
               );
               
               if (returnRes?.ok) {
@@ -260,97 +280,97 @@ serve(async (req) => {
       
       const stage2Start = Date.now();
       const allEnrichedClaims: any[] = [];
+      const totalBatches2 = Math.ceil(claimsWithReturn.length / BATCH_SIZE);
       
       for (let i = 0; i < claimsWithReturn.length; i += BATCH_SIZE) {
         const batch = claimsWithReturn.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
         
-        console.log(`🔥 [STAGE 2] Batch ${i / BATCH_SIZE + 1} com ${batch.length} claims`);
+        logger.progress(`⚡ [STAGE 2] Processando batch ${batchNum}/${totalBatches2} (${batch.length} claims)...`);
         
         const enrichedBatch = await Promise.all(
           batch.map(async (claim: any, index: number) => {
-            console.log(`🔥 [${i + index}] Enriquecendo claim ${claim.id} (STAGE 2)`);
+            const claimIndex = i + index + 1;
             
-            // ⚡ EXECUTAR 3 BUSCAS EM PARALELO (return_details_v2 já foi buscado no Stage 1)
+            // ⚡ EXECUTAR 3 BUSCAS EM PARALELO COM TIMEOUT (return_details_v2 já foi buscado no Stage 1)
             const [orderResult, messagesResult] = await Promise.all([
-              // 1️⃣ Buscar order data
-              (async () => {
-                if (!claim.resource_id) return null;
-                try {
-                  const { response: orderRes } = await validateAndFetch(
-                    'orders',
-                    accessToken,
-                    { id: claim.resource_id },
-                    { retryOnFail: false, logResults: false }
-                  );
-                  
-                  if (orderRes?.ok) {
-                    const data = await orderRes.json();
-                    console.log(`  ✅ [${i + index}] Order encontrado`);
-                    return data;
-                  } else if (orderRes?.status === 404) {
-                    console.log(`  ℹ️ [${i + index}] Order não encontrado (404)`);
-                  } else if (orderRes?.status === 429) {
-                    console.warn(`  ⚠️ [${i + index}] Order rate limited (429)`);
+              // 1️⃣ Buscar order data com timeout
+              withTimeout(
+                (async () => {
+                  if (!claim.resource_id) return null;
+                  try {
+                    const { response: orderRes } = await validateAndFetch(
+                      'orders',
+                      accessToken,
+                      { id: claim.resource_id },
+                      { retryOnFail: false, logResults: false }
+                    );
+                    
+                    if (orderRes?.ok) {
+                      return await orderRes.json();
+                    }
+                  } catch (err) {
+                    logger.warn(`[${claimIndex}/${claimsWithReturn.length}] Order error:`, err);
                   }
-                } catch (err) {
-                  console.log(`  ⚠️ [${i + index}] Order exception:`, err instanceof Error ? err.message : err);
-                }
-                return null;
-              })(),
+                  return null;
+                })(),
+                TIMEOUT_MS,
+                null
+              ),
               
-              // 2️⃣ Buscar messages
-              (async () => {
-                if (!claim.id) return null;
-                try {
-                  const { response: messagesRes } = await validateAndFetch(
-                    'claim_messages',
-                    accessToken,
-                    { claim_id: claim.id },
-                    { retryOnFail: false, logResults: false }
-                  );
-                  
-                  if (messagesRes?.ok) {
-                    const data = await messagesRes.json();
-                    console.log(`  ✅ [${i + index}] Messages encontradas`);
-                    return data;
-                  } else if (messagesRes?.status === 404) {
-                    console.log(`  ℹ️ [${i + index}] Messages não disponíveis (404)`);
-                  } else if (messagesRes?.status === 429) {
-                    console.warn(`  ⚠️ [${i + index}] Messages rate limited (429)`);
+              // 2️⃣ Buscar messages com timeout
+              withTimeout(
+                (async () => {
+                  if (!claim.id) return null;
+                  try {
+                    const { response: messagesRes } = await validateAndFetch(
+                      'claim_messages',
+                      accessToken,
+                      { claim_id: claim.id },
+                      { retryOnFail: false, logResults: false }
+                    );
+                    
+                    if (messagesRes?.ok) {
+                      return await messagesRes.json();
+                    }
+                  } catch (err) {
+                    logger.warn(`[${claimIndex}/${claimsWithReturn.length}] Messages error:`, err);
                   }
-                } catch (err) {
-                  console.log(`  ⚠️ [${i + index}] Messages exception:`, err instanceof Error ? err.message : err);
-                }
-                return null;
-              })()
+                  return null;
+                })(),
+                TIMEOUT_MS,
+                null
+              )
             ]);
             
             const orderData = orderResult;
             const claimMessages = messagesResult;
             
-            // 3️⃣ Buscar product_info (depende de orderData)
+            // 3️⃣ Buscar product_info com timeout (depende de orderData)
             let productInfo = null;
             const itemId = orderData?.order_items?.[0]?.item?.id;
             if (itemId) {
-              try {
-                const { response: productRes } = await validateAndFetch(
-                  'items',
-                  accessToken,
-                  { id: itemId },
-                  { retryOnFail: false, logResults: false }
-                );
-                
-                if (productRes?.ok) {
-                  productInfo = await productRes.json();
-                  console.log(`  ✅ [${i + index}] Product_info encontrado`);
-                } else if (productRes?.status === 404) {
-                  console.log(`  ℹ️ [${i + index}] Product_info não encontrado (404)`);
-                } else if (productRes?.status === 429) {
-                  console.warn(`  ⚠️ [${i + index}] Product_info rate limited (429)`);
-                }
-              } catch (err) {
-                console.log(`  ⚠️ [${i + index}] Product_info exception:`, err instanceof Error ? err.message : err);
-              }
+              productInfo = await withTimeout(
+                (async () => {
+                  try {
+                    const { response: productRes } = await validateAndFetch(
+                      'items',
+                      accessToken,
+                      { id: itemId },
+                      { retryOnFail: false, logResults: false }
+                    );
+                    
+                    if (productRes?.ok) {
+                      return await productRes.json();
+                    }
+                  } catch (err) {
+                    logger.warn(`[${claimIndex}/${claimsWithReturn.length}] Product error:`, err);
+                  }
+                  return null;
+                })(),
+                TIMEOUT_MS,
+                null
+              );
             }
             
             return {
