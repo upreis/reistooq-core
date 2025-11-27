@@ -147,32 +147,43 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
 
-  // 🚀 BUSCA AGREGADA NO BACKEND - Cache em memória React Query (sem localStorage)
-  // ✅ CRÍTICO: Converter queryKey para valores PRIMITIVOS estáveis (não objetos/arrays)
-  // Arrays/objetos mudam referência → React Query considera query diferente → não usa cache
-  const stableQueryKey = useMemo(() => {
-    const dateKey = `${backendDateRange.from.toISOString()}_${backendDateRange.to.toISOString()}`;
-    const accountsKey = appliedAccounts.length > 0 
-      ? appliedAccounts.slice().sort().join(',')
-      : 'all-accounts';
+  // 🚀 BUSCA AGREGADA NO BACKEND - Cache em memória React Query
+  // ✅ CRÍTICO: queryKey DEVE ser array de STRINGS primitivas (não objetos/arrays)
+  // Objetos/arrays mudam referência → React Query considera query diferente → não usa cache
+  
+  // Converter datas para ISO strings estáveis
+  const dateFromISO = useMemo(() => backendDateRange.from.toISOString(), [backendDateRange.from]);
+  const dateToISO = useMemo(() => backendDateRange.to.toISOString(), [backendDateRange.to]);
+  
+  // Converter array de contas para string ordenada estável
+  const accountsKeyStable = useMemo(() => {
+    if (appliedAccounts.length === 0) return 'NO_ACCOUNTS';
+    return appliedAccounts.slice().sort().join('|');
+  }, [appliedAccounts]);
+  
+  // Query key FINAL: apenas strings primitivas
+  const stableQueryKey: [string, string, string, string] = useMemo(() => {
+    const key: [string, string, string, string] = [
+      'devolucoes-2025-completas',
+      dateFromISO,
+      dateToISO,
+      accountsKeyStable
+    ];
     
-    const key = ['devolucoes-2025-completas', dateKey, accountsKey];
-    
-    console.log('🔑 [QUERY KEY DEBUG]', {
-      queryKey: key,
-      dateFrom: backendDateRange.from.toISOString(),
-      dateTo: backendDateRange.to.toISOString(),
-      accounts: accountsKey,
-      appliedAccountsRaw: appliedAccounts
+    console.log('🔑 [QUERY KEY]', {
+      key,
+      dateRange: `${dateFromISO} → ${dateToISO}`,
+      accounts: accountsKeyStable,
+      accountsArray: appliedAccounts
     });
     
     return key;
-  }, [backendDateRange, appliedAccounts]);
+  }, [dateFromISO, dateToISO, accountsKeyStable, appliedAccounts]);
   
-  const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt, isStale } = useQuery({
+  const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: stableQueryKey,
     queryFn: async () => {
-      console.log('🔥 [QUERY FN EXECUTING] React Query está executando queryFn - CACHE MISS!', {
+      console.log('🔥🔥🔥 [QUERY FN EXECUTING] React Query executou queryFn - CACHE MISS!', {
         queryKey: stableQueryKey,
         timestamp: new Date().toISOString()
       });
@@ -206,23 +217,20 @@ export const Devolucao2025Page = () => {
     enabled: appliedAccounts.length > 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    staleTime: 30 * 60 * 1000, // 30 minutos - dados permanecem "frescos" por 30min
-    gcTime: 60 * 60 * 1000, // 60 minutos - dados ficam em memória por 1h
+    staleTime: 30 * 60 * 1000, // 30 minutos
+    gcTime: 60 * 60 * 1000,    // 60 minutos
   });
   
-  // 🐛 DEBUG CRÍTICO: Status do cache React Query
+  // 🐛 DEBUG: Status do cache
   useEffect(() => {
-    console.log('📊 [REACT QUERY STATUS]', {
-      isLoading,
-      isFetching,
-      isStale,
+    console.log('📊 [CACHE STATUS]', {
+      isFetching: isFetching ? 'BUSCANDO API' : 'IDLE',
       hasData: devolucoesCompletas.length > 0,
-      dataCount: devolucoesCompletas.length,
-      lastUpdated: dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : 'never',
-      queryKey: stableQueryKey,
-      cacheStatus: isFetching ? 'FETCHING' : (isStale ? 'STALE' : 'FRESH')
+      count: devolucoesCompletas.length,
+      lastUpdate: dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString('pt-BR') : 'never',
+      queryKey: stableQueryKey
     });
-  }, [isFetching, isLoading, isStale, devolucoesCompletas.length, dataUpdatedAt, stableQueryKey]);
+  }, [isFetching, devolucoesCompletas.length, dataUpdatedAt, stableQueryKey]);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
