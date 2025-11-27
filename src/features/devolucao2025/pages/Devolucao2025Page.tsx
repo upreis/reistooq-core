@@ -184,22 +184,8 @@ export const Devolucao2025Page = () => {
     queryFn: async () => {
       // 🔹 DECLARAR CACHE KEY UMA ÚNICA VEZ
       const cacheKey = stableQueryKey.join('::');
-      const persistKey = 'lastSearch';
       
-      // 🔹 FASE 2.1: Primeiro tentar restaurar do localStorage (sobrevive navegações)
-      const persistedData = devolucoesCache.restoreFromLocalStorage<any[]>(persistKey);
-      
-      if (persistedData) {
-        console.log('💾 [LOCALSTORAGE HIT] Dados restaurados entre navegações', {
-          count: persistedData.length,
-          key: persistKey
-        });
-        // Também salvar no cache in-memory para buscas subsequentes nesta sessão
-        devolucoesCache.set(cacheKey, persistedData);
-        return persistedData;
-      }
-      
-      // 🔹 FASE 2.2: Verificar cache in-memory ANTES da API
+      // 🔹 FASE 2: Verificar cache in-memory ANTES da API
       const cached = devolucoesCache.get<any[]>(cacheKey);
       if (cached) {
         console.log('💾 [CACHE HIT] Dados do cache in-memory', {
@@ -237,11 +223,17 @@ export const Devolucao2025Page = () => {
       const results = Array.isArray(data) ? data : (data?.data || []);
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       
-      // 💾 FASE 2.3: Salvar no cache in-memory E localStorage
+      // 💾 FASE 2: Salvar no cache in-memory E localStorage (comprimido)
       devolucoesCache.set(cacheKey, results, 5 * 60 * 1000); // 5 minutos TTL
-      devolucoesCache.persistToLocalStorage('lastSearch', results); // Persistir para próxima navegação
       
-      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (salvo no cache + localStorage)`);
+      // Salvar apenas se não for volume grande (< 100 registros para evitar QuotaExceededError)
+      if (results.length < 100) {
+        devolucoesCache.persistToLocalStorage('lastSearch', results);
+      } else {
+        console.log(`⚠️ [PERSIST] Volume grande (${results.length}), não salvando no localStorage`);
+      }
+      
+      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (salvo no cache)`);
       
       // 💾 Mostrar stats do cache
       const stats = devolucoesCache.getStats();
@@ -252,8 +244,8 @@ export const Devolucao2025Page = () => {
     enabled: appliedAccounts.length > 0,
     retry: 2,
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000,  // 5 minutos
-    gcTime: 10 * 60 * 1000,    // 10 minutos
+    staleTime: 5 * 60 * 1000,  // 5 minutos - dados permanecem "frescos"
+    gcTime: 15 * 60 * 1000,    // 15 minutos - React Query mantém em cache mesmo após unmount
   });
   
   // 🐛 DEBUG: Status do cache
