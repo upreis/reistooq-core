@@ -84,14 +84,26 @@ export const Devolucao2025Page = () => {
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
   // ✅ Filtros aplicados (só atualizam ao clicar em "Aplicar Filtros")
-  // CORREÇÃO CRÍTICA: Inicializar com selectedAccounts para permitir busca ao carregar página
-  const [appliedAccounts, setAppliedAccounts] = useState<string[]>(selectedAccounts);
+  const [appliedAccounts, setAppliedAccounts] = useState<string[]>([]);
+  
+  // 💾 RESTAURAR DADOS DO LOCALSTORAGE ANTES DO REACT QUERY (Pattern /pedidos)
+  // Isso torna a restauração INSTANTÂNEA ao voltar na página
+  const [cachedData, setCachedData] = useState<any[]>(() => {
+    const cached = devolucoesCache.restoreFromLocalStorage<any[]>('lastSearch');
+    if (cached && cached.length > 0) {
+      console.log('⚡ [INSTANT RESTORE] Dados restaurados do localStorage ANTES da query:', {
+        count: cached.length,
+        age: 'válido'
+      });
+      return cached;
+    }
+    return [];
+  });
 
-  // 🔄 SINCRONIZAR appliedAccounts com selectedAccounts ao montar
-  // Garante que dados apareçam instantaneamente ao voltar na página
+  // 🔄 Sincronizar appliedAccounts com selectedAccounts APENAS na primeira montagem
   useEffect(() => {
     if (selectedAccounts.length > 0 && appliedAccounts.length === 0) {
-      console.log('🔄 [SYNC] Sincronizando appliedAccounts com selectedAccounts na montagem:', selectedAccounts);
+      console.log('🔄 [INIT] Inicializando appliedAccounts com selectedAccounts:', selectedAccounts);
       setAppliedAccounts(selectedAccounts);
     }
   }, [selectedAccounts, appliedAccounts.length]);
@@ -158,74 +170,43 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
 
-  // 🚀 BUSCA AGREGADA NO BACKEND - Cache em memória React Query
-  // ✅ CRÍTICO: queryKey 100% ESTÁVEL - Pattern /pedidos
-  // Serializar TUDO fora do useMemo, só strings primitivas na dependency
+  // 🚀 BUSCA AGREGADA NO BACKEND - React Query com cache automático
+  // ✅ CRÍTICO: queryKey ESTÁVEL baseado em selectedAccounts (não appliedAccounts)
+  // Pattern correto: /pedidos reference architecture
   
   // Datas: ISO strings
   const dateFromISO = backendDateRange.from.toISOString();
   const dateToISO = backendDateRange.to.toISOString();
   
-  // Accounts: serializar diretamente (SEM useMemo - isso causava erro)
-  const accountsSerializado = appliedAccounts.length > 0 
-    ? appliedAccounts.slice().sort().join('|')
-    : 'NO_ACCOUNTS';
+  // Accounts: usar selectedAccounts direto (mais estável que appliedAccounts)
+  const accountsForKey = selectedAccounts.length > 0 
+    ? selectedAccounts.slice().sort().join('|')
+    : accounts.map(a => a.id).filter(Boolean).sort().join('|');
   
-  // Query key: useMemo só das strings primitivas já serializadas
-  const stableQueryKey: [string, string, string, string] = useMemo(() => {
-    const key: [string, string, string, string] = [
+  // Query key: useMemo com dependências estáveis
+  const stableQueryKey = useMemo(() => {
+    return [
       'devolucoes-2025-completas',
       dateFromISO,
       dateToISO,
-      accountsSerializado
-    ];
-    
-    console.log('🔑 [QUERY KEY ESTÁVEL]', {
-      key,
-      dateRange: `${dateFromISO} → ${dateToISO}`,
-      accounts: accountsSerializado
-    });
-    
-    return key;
-  }, [dateFromISO, dateToISO, accountsSerializado]);
+      accountsForKey
+    ] as const;
+  }, [dateFromISO, dateToISO, accountsForKey]);
   
   const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: stableQueryKey,
     queryFn: async () => {
-      // 🔹 DECLARAR CACHE KEY UMA ÚNICA VEZ
-      const cacheKey = stableQueryKey.join('::');
-      
-      // 🔹 FASE 2: Verificar cache in-memory ANTES da API
-      const cached = devolucoesCache.get<any[]>(cacheKey);
-      if (cached) {
-        console.log('💾 [CACHE HIT IN-MEMORY] Dados do cache in-memory', {
-          count: cached.length,
-          key: cacheKey.substring(0, 80) + '...'
-        });
-        return cached;
-      }
-      
-      // 🔹 FASE 2.5: Verificar localStorage ANTES da API (restauração instantânea ao voltar na página)
-      const persistedData = devolucoesCache.restoreFromLocalStorage<any[]>('lastSearch');
-      if (persistedData && persistedData.length > 0) {
-        console.log('💾 [CACHE HIT LOCALSTORAGE] Dados restaurados do localStorage (INSTANTÂNEO)', {
-          count: persistedData.length,
-          age: 'válido'
-        });
-        // Restaurar também no cache in-memory para próximas consultas
-        devolucoesCache.set(cacheKey, persistedData, 5 * 60 * 1000);
-        return persistedData;
-      }
-      
-      console.log('❌ [CACHE MISS] Nenhum cache disponível, buscando da API ML...', {
-        cacheKey: cacheKey.substring(0, 80) + '...',
-        timestamp: new Date().toISOString()
-      });
+      console.log('🔍 [API] Iniciando busca na API ML...');
       
       const startTime = Date.now();
       const accountIds = appliedAccounts.length > 0 
         ? appliedAccounts 
         : accounts.map(a => a.id).filter(Boolean);
+      
+      if (accountIds.length === 0) {
+        console.warn('⚠️ [API] Nenhuma conta selecionada');
+        return [];
+      }
       
       console.log(`🔍 [API] 🚀 INICIANDO BUSCA - ${accountIds.length} contas...`);
       
@@ -245,23 +226,20 @@ export const Devolucao2025Page = () => {
       const results = Array.isArray(data) ? data : (data?.data || []);
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       
-      // 💾 FASE 2: Salvar no cache in-memory E localStorage
-      devolucoesCache.set(cacheKey, results, 5 * 60 * 1000); // 5 minutos TTL
+      // 💾 Salvar no localStorage (React Query já gerencia cache em memória)
       devolucoesCache.persistToLocalStorage('lastSearch', results);
+      setCachedData(results); // Atualizar estado local para próxima restauração
       
-      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (salvo no cache + localStorage)`);
-      
-      // 💾 Mostrar stats do cache
-      const stats = devolucoesCache.getStats();
-      console.log(`📊 [CACHE STATS] Hits: ${stats.hits} | Misses: ${stats.misses} | Taxa: ${stats.hitRate}% | Tamanho: ${stats.size}`);
+      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções`);
       
       return results;
     },
     enabled: appliedAccounts.length > 0,
+    placeholderData: cachedData.length > 0 ? cachedData : undefined, // ⚡ RESTAURAÇÃO INSTANTÂNEA
     retry: 2,
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000,  // 5 minutos - dados permanecem "frescos"
-    gcTime: 15 * 60 * 1000,    // 15 minutos - React Query mantém em cache mesmo após unmount
+    staleTime: 5 * 60 * 1000,  // 5 minutos
+    gcTime: 15 * 60 * 1000,     // 15 minutos - mantém cache após unmount
   });
   
   // 🐛 DEBUG: Status do cache
