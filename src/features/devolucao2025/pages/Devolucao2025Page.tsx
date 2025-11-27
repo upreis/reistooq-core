@@ -223,17 +223,11 @@ export const Devolucao2025Page = () => {
       const results = Array.isArray(data) ? data : (data?.data || []);
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       
-      // 💾 FASE 2: Salvar no cache in-memory E localStorage (comprimido)
+      // 💾 FASE 2: Salvar no cache in-memory E localStorage
       devolucoesCache.set(cacheKey, results, 5 * 60 * 1000); // 5 minutos TTL
+      devolucoesCache.persistToLocalStorage('lastSearch', results);
       
-      // Salvar apenas se não for volume grande (< 100 registros para evitar QuotaExceededError)
-      if (results.length < 100) {
-        devolucoesCache.persistToLocalStorage('lastSearch', results);
-      } else {
-        console.log(`⚠️ [PERSIST] Volume grande (${results.length}), não salvando no localStorage`);
-      }
-      
-      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (salvo no cache)`);
+      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (salvo no cache + localStorage)`);
       
       // 💾 Mostrar stats do cache
       const stats = devolucoesCache.getStats();
