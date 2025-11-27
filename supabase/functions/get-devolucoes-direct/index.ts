@@ -18,6 +18,7 @@ import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.t
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
 import { fetchShippingCosts, fetchMultipleShippingCosts, fetchReturnCost } from './services/ShippingCostsService.ts';
 import { fetchReturnArrivalDate } from './services/ReturnArrivalDateService.ts';
+import { enrichMultipleShipments } from './services/ShipmentEnrichmentService.ts';
 
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
@@ -222,9 +223,6 @@ serve(async (req) => {
                 if (orderRes?.ok) {
                   orderData = await orderRes.json();
                   console.log(`  ✅ [${i + index}] Order encontrado`);
-                  
-                  // ✅ Dados de shipping já vêm completos em orderData.shipping
-                  // (tracking_number, logistic.type, status, etc.)
                 } else {
                   console.log(`  ❌ [${i + index}] Order falhou: ${orderRes?.status}`);
                 }
@@ -326,6 +324,32 @@ serve(async (req) => {
       }
       
       logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims processados`);
+
+      // 🚚 ENRIQUECIMENTO PARALELO DE SHIPMENTS
+      logger.progress('🚚 Enriquecendo shipments em paralelo...');
+      const ordersWithShipments = allEnrichedClaims
+        .map(claim => claim.order_data)
+        .filter(orderData => orderData?.shipping?.id);
+      
+      if (ordersWithShipments.length > 0) {
+        logger.info(`🚚 Enriquecendo ${ordersWithShipments.length} shipments...`);
+        const enrichedOrders = await enrichMultipleShipments(ordersWithShipments, accessToken);
+        
+        // Criar map de order_id -> orderData enriquecido
+        const enrichedOrdersMap = new Map();
+        enrichedOrders.forEach((order: any) => {
+          if (order?.id) enrichedOrdersMap.set(order.id, order);
+        });
+        
+        // Atualizar claims com orders enriquecidos
+        allEnrichedClaims.forEach((claim: any) => {
+          if (claim.order_data?.id && enrichedOrdersMap.has(claim.order_data.id)) {
+            claim.order_data = enrichedOrdersMap.get(claim.order_data.id);
+          }
+        });
+        
+        logger.success(`✅ ${enrichedOrders.length} shipments enriquecidos`);
+      }
 
       // 📅 ENRIQUECER COM DATAS DE CHEGADA
       logger.progress('📅 Buscando datas de chegada das devoluções...');
