@@ -4,6 +4,7 @@
  */
 
 import { logger } from '../../_shared/logger.ts';
+import pLimit from 'https://esm.sh/p-limit@6.1.0';
 
 interface ShipmentData {
   status_history?: {
@@ -115,4 +116,44 @@ export async function fetchReturnArrivalDate(
     logger.error(`[ReturnArrival] 💥 ERRO: ${error.message}`);
     return null;
   }
+}
+
+/**
+ * 🚀 BATCH: Busca datas de chegada para múltiplos claims com rate limiting
+ * Usa p-limit para controlar concorrência e respeitar rate limits da API ML
+ */
+export async function fetchMultipleReturnArrivalDates(
+  claims: any[],
+  accessToken: string,
+  concurrencyLimit: number = 10
+): Promise<Map<string, string | null>> {
+  const limit = pLimit(concurrencyLimit);
+  const results = new Map<string, string | null>();
+
+  logger.progress(`📅 [ReturnArrival] Buscando datas de chegada para ${claims.length} claims (concorrência: ${concurrencyLimit})...`);
+
+  const promises = claims.map((claim) =>
+    limit(async () => {
+      const claimId = claim.id || claim.claim_details?.id;
+      if (!claimId) {
+        results.set(claim.id || 'unknown', null);
+        return;
+      }
+
+      try {
+        const arrivalDate = await fetchReturnArrivalDate(String(claimId), accessToken);
+        results.set(claimId, arrivalDate);
+      } catch (error) {
+        logger.error(`[ReturnArrival] Erro no claim ${claimId}:`, error);
+        results.set(claimId, null);
+      }
+    })
+  );
+
+  await Promise.all(promises);
+
+  const withDate = Array.from(results.values()).filter(d => d !== null).length;
+  logger.progress(`📊 [ReturnArrival] Concluído: ${withDate}/${claims.length} com data_chegada_produto`);
+
+  return results;
 }
