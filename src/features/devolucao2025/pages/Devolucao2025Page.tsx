@@ -84,7 +84,17 @@ export const Devolucao2025Page = () => {
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
   // ✅ Filtros aplicados (só atualizam ao clicar em "Aplicar Filtros")
-  const [appliedAccounts, setAppliedAccounts] = useState<string[]>([]);
+  // CORREÇÃO CRÍTICA: Inicializar com selectedAccounts para permitir busca ao carregar página
+  const [appliedAccounts, setAppliedAccounts] = useState<string[]>(selectedAccounts);
+
+  // 🔄 SINCRONIZAR appliedAccounts com selectedAccounts ao montar
+  // Garante que dados apareçam instantaneamente ao voltar na página
+  useEffect(() => {
+    if (selectedAccounts.length > 0 && appliedAccounts.length === 0) {
+      console.log('🔄 [SYNC] Sincronizando appliedAccounts com selectedAccounts na montagem:', selectedAccounts);
+      setAppliedAccounts(selectedAccounts);
+    }
+  }, [selectedAccounts, appliedAccounts.length]);
 
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
