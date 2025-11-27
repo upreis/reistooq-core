@@ -36,8 +36,6 @@ interface Devolucao2025FilterBarProps {
   allColumns?: ColumnConfig[];
   visibleColumns?: string[];
   onVisibleColumnsChange?: (columns: string[]) => void;
-  apenasComRastreio: boolean;
-  onApenasComRastreioChange: (value: boolean) => void;
 }
 
 export function Devolucao2025FilterBar({
@@ -54,9 +52,7 @@ export function Devolucao2025FilterBar({
   table,
   allColumns,
   visibleColumns,
-  onVisibleColumnsChange,
-  apenasComRastreio,
-  onApenasComRastreioChange
+  onVisibleColumnsChange
 }: Devolucao2025FilterBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
@@ -170,21 +166,6 @@ export function Devolucao2025FilterBar({
               <SelectItem value="60">Últimos 60 dias</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
-        {/* Filtro Apenas com Rastreio */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Checkbox
-            id="apenas-rastreio"
-            checked={apenasComRastreio}
-            onCheckedChange={onApenasComRastreioChange}
-          />
-          <label
-            htmlFor="apenas-rastreio"
-            className="text-sm font-medium cursor-pointer whitespace-nowrap"
-          >
-            Apenas com rastreio
-          </label>
         </div>
 
         {/* Botão Buscar com FlipButton */}
