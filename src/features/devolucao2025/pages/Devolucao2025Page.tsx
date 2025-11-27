@@ -162,8 +162,7 @@ export const Devolucao2025Page = () => {
         body: {
           integration_account_ids: accountIds,
           date_from: backendDateRange.from.toISOString(),
-          date_to: backendDateRange.to.toISOString(),
-          only_with_returns: filters.onlyWithReturns // 🆕 Filtrar apenas devoluções iniciadas
+          date_to: backendDateRange.to.toISOString()
         }
       });
 
@@ -296,8 +295,7 @@ export const Devolucao2025Page = () => {
           currentPage,
           itemsPerPage,
           Array.from(columnManager.state.visibleColumns),
-          periodo,
-          filters.onlyWithReturns
+          periodo
         );
       }, 500);
       
@@ -421,8 +419,6 @@ export const Devolucao2025Page = () => {
                     allColumns={COLUMNS_CONFIG}
                     visibleColumns={Array.from(columnManager.state.visibleColumns)}
                     onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
-                    onlyWithReturns={filters.onlyWithReturns}
-                    onOnlyWithReturnsChange={(value) => updateFilter('onlyWithReturns', value)}
                   />
                 </div>
               </div>
