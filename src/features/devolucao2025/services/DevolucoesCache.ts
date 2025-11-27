@@ -167,62 +167,15 @@ class DevolucoesCache {
   }
 
   /**
-   * 💾 PERSISTÊNCIA EM LOCALSTORAGE (COMPRIMIDA)
-   * Salva apenas campos essenciais para economizar espaço
+   * 💾 PERSISTÊNCIA EM LOCALSTORAGE
+   * Salva dados completos (28 colunas) - não precisa comprimir pois são poucas colunas
    */
   persistToLocalStorage<T>(key: string, data: T): void {
     try {
-      // Se for array de devoluções, comprimir removendo campos redundantes/grandes
-      let compressedData = data;
-      
-      if (Array.isArray(data) && data.length > 0 && data[0].order_id) {
-        // Salvar apenas campos essenciais (20-30 campos principais vs 65 totais)
-        compressedData = data.map((d: any) => ({
-          // IDs e identificadores
-          order_id: d.order_id,
-          claim_id: d.claim_id,
-          return_id: d.return_id,
-          integration_account_id: d.integration_account_id,
-          
-          // Datas principais
-          data_criacao: d.data_criacao,
-          data_venda_original: d.data_venda_original,
-          ultima_sincronizacao: d.ultima_sincronizacao,
-          
-          // Produto
-          produto_titulo: d.produto_titulo,
-          sku: d.sku,
-          quantidade: d.quantidade,
-          valor_original_produto: d.valor_original_produto,
-          
-          // Status essenciais
-          status_devolucao: d.status_devolucao,
-          tipo_logistica: d.tipo_logistica,
-          marketplace_origem: d.marketplace_origem,
-          account_name: d.account_name,
-          
-          // Financeiro básico
-          valor_retido: d.valor_retido,
-          valor_reembolso_total: d.valor_reembolso_total,
-          
-          // Rastreamento
-          codigo_rastreamento: d.codigo_rastreamento,
-          
-          // Comprador
-          comprador_nome_completo: d.comprador_nome_completo,
-          comprador_nickname: d.comprador_nickname,
-          
-          // Análise local (se existir)
-          analise_status: d.analise_status,
-          analise_anotacoes: d.analise_anotacoes
-        })) as any;
-      }
-      
       const toSave = {
-        data: compressedData,
+        data,
         timestamp: Date.now(),
-        ttl: this.defaultTTL,
-        compressed: Array.isArray(data) && data.length > 0
+        ttl: this.defaultTTL
       };
       
       const jsonStr = JSON.stringify(toSave);
@@ -230,11 +183,10 @@ class DevolucoesCache {
       
       localStorage.setItem(`devolucoes:${key}`, jsonStr);
       
-      console.log('💾 [PERSIST] Dados salvos no localStorage:', {
+      console.log('💾 [PERSIST] Dados completos salvos no localStorage:', {
         key: `devolucoes:${key}`,
         size: `${sizeKB}KB`,
-        recordCount: Array.isArray(data) ? data.length : 'N/A',
-        compressed: Array.isArray(data) && data.length > 0
+        recordCount: Array.isArray(data) ? data.length : 'N/A'
       });
     } catch (error: any) {
       console.warn('❌ [PERSIST] Falha ao salvar no localStorage:', error);
