@@ -83,8 +83,8 @@ export const Devolucao2025Page = () => {
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
-  // ✅ Filtros aplicados (só atualizam ao clicar em "Aplicar Filtros")
-  const [appliedAccounts, setAppliedAccounts] = useState<string[]>([]);
+  // ✅ Filtros aplicados (inicializa com selectedAccounts para evitar race condition)
+  const [appliedAccounts, setAppliedAccounts] = useState<string[]>(selectedAccounts);
   
   // 💾 RESTAURAR DADOS DO LOCALSTORAGE ANTES DO REACT QUERY (Pattern /pedidos)
   // Isso torna a restauração INSTANTÂNEA ao voltar na página
@@ -100,13 +100,13 @@ export const Devolucao2025Page = () => {
     return [];
   });
 
-  // 🔄 Sincronizar appliedAccounts com selectedAccounts APENAS na primeira montagem
+  // 🔄 Sincronizar appliedAccounts quando selectedAccounts mudar (ex: usuário adiciona/remove contas)
   useEffect(() => {
-    if (selectedAccounts.length > 0 && appliedAccounts.length === 0) {
-      console.log('🔄 [INIT] Inicializando appliedAccounts com selectedAccounts:', selectedAccounts);
+    if (selectedAccounts.length > 0 && JSON.stringify(selectedAccounts) !== JSON.stringify(appliedAccounts)) {
+      console.log('🔄 [SYNC] Sincronizando appliedAccounts com selectedAccounts:', selectedAccounts);
       setAppliedAccounts(selectedAccounts);
     }
-  }, [selectedAccounts, appliedAccounts.length]);
+  }, [selectedAccounts]);
 
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
@@ -234,7 +234,7 @@ export const Devolucao2025Page = () => {
       
       return results;
     },
-    enabled: appliedAccounts.length > 0,
+    enabled: selectedAccounts.length > 0, // ✅ FASE 1: Usar selectedAccounts evita race condition
     placeholderData: cachedData.length > 0 ? cachedData : undefined, // ⚡ RESTAURAÇÃO INSTANTÂNEA
     retry: 2,
     refetchOnWindowFocus: false,
