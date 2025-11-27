@@ -155,12 +155,28 @@ export const Devolucao2025Page = () => {
     const accountsKey = appliedAccounts.length > 0 
       ? appliedAccounts.slice().sort().join(',')
       : 'all-accounts';
-    return ['devolucoes-2025-completas', dateKey, accountsKey];
+    
+    const key = ['devolucoes-2025-completas', dateKey, accountsKey];
+    
+    console.log('🔑 [QUERY KEY DEBUG]', {
+      queryKey: key,
+      dateFrom: backendDateRange.from.toISOString(),
+      dateTo: backendDateRange.to.toISOString(),
+      accounts: accountsKey,
+      appliedAccountsRaw: appliedAccounts
+    });
+    
+    return key;
   }, [backendDateRange, appliedAccounts]);
   
-  const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching } = useQuery({
+  const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt, isStale } = useQuery({
     queryKey: stableQueryKey,
     queryFn: async () => {
+      console.log('🔥 [QUERY FN EXECUTING] React Query está executando queryFn - CACHE MISS!', {
+        queryKey: stableQueryKey,
+        timestamp: new Date().toISOString()
+      });
+      
       const startTime = Date.now();
       const accountIds = appliedAccounts.length > 0 
         ? appliedAccounts 
@@ -194,14 +210,19 @@ export const Devolucao2025Page = () => {
     gcTime: 60 * 60 * 1000, // 60 minutos - dados ficam em memória por 1h
   });
   
-  // Debug de estado do cache React Query
+  // 🐛 DEBUG CRÍTICO: Status do cache React Query
   useEffect(() => {
-    if (isFetching) {
-      console.log('⏳ [REACT QUERY] Fetching em progresso (buscando na API)...');
-    } else if (!isLoading && devolucoesCompletas.length > 0) {
-      console.log(`✅ [REACT QUERY CACHE] ${devolucoesCompletas.length} registros em cache (válido por 30min)`);
-    }
-  }, [isFetching, isLoading, devolucoesCompletas.length]);
+    console.log('📊 [REACT QUERY STATUS]', {
+      isLoading,
+      isFetching,
+      isStale,
+      hasData: devolucoesCompletas.length > 0,
+      dataCount: devolucoesCompletas.length,
+      lastUpdated: dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : 'never',
+      queryKey: stableQueryKey,
+      cacheStatus: isFetching ? 'FETCHING' : (isStale ? 'STALE' : 'FRESH')
+    });
+  }, [isFetching, isLoading, isStale, devolucoesCompletas.length, dataUpdatedAt, stableQueryKey]);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
