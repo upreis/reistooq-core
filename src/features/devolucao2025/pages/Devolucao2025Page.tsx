@@ -147,8 +147,8 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
 
-  // 🚀 BUSCA AGREGADA NO BACKEND com cache frontend inteligente
-  const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, isPlaceholderData } = useQuery({
+  // 🚀 BUSCA AGREGADA NO BACKEND - Cache em memória React Query (sem localStorage)
+  const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['devolucoes-2025-completas', backendDateRange, appliedAccounts],
     queryFn: async () => {
       const startTime = Date.now();
@@ -174,74 +174,24 @@ export const Devolucao2025Page = () => {
       const results = Array.isArray(data) ? data : (data?.data || []);
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       
-      // 💾 Salvar última busca bem-sucedida no localStorage
-      try {
-        const cacheKey = 'devolucoes:lastSearch';
-        const cacheData = {
-          data: results,
-          timestamp: Date.now(),
-          accounts: accountIds,
-          dateRange: backendDateRange
-        };
-        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-        console.log(`💾 [CACHE WRITE] Salvos ${results.length} registros em localStorage (${cacheKey})`);
-      } catch (err) {
-        console.warn('⚠️ [CACHE WRITE] Erro ao salvar:', err);
-      }
-      
-      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções retornadas`);
+      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (cache React Query atualizado)`);
       return results;
     },
     enabled: appliedAccounts.length > 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
-    placeholderData: (previousData) => {
-      console.log('🔍 [CACHE] placeholderData executado');
-      
-      // Tentar restaurar do localStorage
-      try {
-        const cached = localStorage.getItem('devolucoes:lastSearch');
-        console.log(`💾 [CACHE READ] localStorage contem dados? ${!!cached}`);
-        
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          const age = Date.now() - parsed.timestamp;
-          const ageMinutes = Math.round(age / 60000);
-          
-          console.log(`💾 [CACHE READ] Cache encontrado: ${parsed.data?.length || 0} registros, idade: ${ageMinutes}min`);
-          
-          if (age < 30 * 60 * 1000) { // 30 minutos
-            console.log(`✅ [CACHE HIT] Usando cache (${ageMinutes}min atrás) - ${parsed.data?.length || 0} registros`);
-            return parsed.data;
-          } else {
-            console.log(`⏰ [CACHE EXPIRED] Cache muito antigo (${ageMinutes}min), ignorando`);
-          }
-        } else {
-          console.log(`❌ [CACHE MISS] Nenhum cache encontrado no localStorage`);
-        }
-      } catch (err) {
-        console.error('❌ [CACHE ERROR] Erro ao restaurar:', err);
-      }
-      
-      console.log('🔄 [CACHE] Retornando previousData ou undefined');
-      return previousData || undefined;
-    }
+    staleTime: 30 * 60 * 1000, // 30 minutos - dados permanecem "frescos" por 30min
+    gcTime: 60 * 60 * 1000, // 60 minutos - dados ficam em memória por 1h
   });
   
-  // Debug de estado do cache
+  // Debug de estado do cache React Query
   useEffect(() => {
-    if (isPlaceholderData) {
-      console.log('📊 [CACHE STATUS] Usando dados do placeholder (cache)');
-    }
     if (isFetching) {
-      console.log('⏳ [CACHE STATUS] Fetching em progresso...');
+      console.log('⏳ [REACT QUERY] Fetching em progresso (buscando na API)...');
+    } else if (!isLoading && devolucoesCompletas.length > 0) {
+      console.log(`✅ [REACT QUERY CACHE] ${devolucoesCompletas.length} registros em cache (válido por 30min)`);
     }
-    if (!isFetching && !isLoading) {
-      console.log(`✅ [CACHE STATUS] Dados finalizados: ${devolucoesCompletas.length} registros`);
-    }
-  }, [isPlaceholderData, isFetching, isLoading, devolucoesCompletas.length]);
+  }, [isFetching, isLoading, devolucoesCompletas.length]);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
