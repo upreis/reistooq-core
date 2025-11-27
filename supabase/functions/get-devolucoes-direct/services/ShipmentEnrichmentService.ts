@@ -6,6 +6,30 @@
 
 import { logger } from '../../_shared/logger.ts';
 
+/**
+ * Enriquecer múltiplos orders com dados de shipment em paralelo
+ */
+export async function enrichMultipleShipments(
+  orders: any[],
+  accessToken: string
+): Promise<any[]> {
+  if (!orders || orders.length === 0) {
+    return orders;
+  }
+
+  logger.progress(`[ShipmentEnrichment] Enriquecendo ${orders.length} shipments...`);
+
+  const enrichedOrders = await Promise.all(
+    orders.map(order => 
+      enrichShipmentData(order, accessToken, order.id || 'unknown')
+    )
+  );
+
+  logger.success(`[ShipmentEnrichment] ✅ ${orders.length} shipments enriquecidos`);
+
+  return enrichedOrders;
+}
+
 export async function enrichShipmentData(
   orderData: any,
   accessToken: string,

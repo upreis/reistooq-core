@@ -18,7 +18,7 @@ import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.t
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
 import { fetchShippingCosts, fetchMultipleShippingCosts, fetchReturnCost } from './services/ShippingCostsService.ts';
 import { fetchReturnArrivalDate } from './services/ReturnArrivalDateService.ts';
-import { enrichShipmentData } from './services/ShipmentEnrichmentService.ts';
+import { enrichMultipleShipments } from './services/ShipmentEnrichmentService.ts';
 
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
@@ -223,12 +223,6 @@ serve(async (req) => {
                 if (orderRes?.ok) {
                   orderData = await orderRes.json();
                   console.log(`  ✅ [${i + index}] Order encontrado`);
-                  
-                  // 🚚 Enriquecer shipment com dados completos (logistic.type, tracking_number)
-                  if (orderData?.shipping?.id) {
-                    console.log(`  🚚 [${i + index}] Enriquecendo shipment ${orderData.shipping.id}`);
-                    orderData = await enrichShipmentData(orderData, accessToken, claim.id);
-                  }
                 } else {
                   console.log(`  ❌ [${i + index}] Order falhou: ${orderRes?.status}`);
                 }
@@ -325,6 +319,25 @@ serve(async (req) => {
             };
           })
         );
+        
+        // 🚚 Enriquecer TODOS os shipments do batch em paralelo
+        const ordersToEnrich = enrichedBatch
+          .filter(claim => claim.order_data?.shipping?.id)
+          .map(claim => claim.order_data);
+        
+        if (ordersToEnrich.length > 0) {
+          console.log(`🚚 [BATCH ${i / BATCH_SIZE + 1}] Enriquecendo ${ordersToEnrich.length} shipments em paralelo...`);
+          const enrichedOrders = await enrichMultipleShipments(ordersToEnrich, accessToken);
+          
+          // Mapear orders enriquecidos de volta para os claims
+          let enrichedIndex = 0;
+          for (const claim of enrichedBatch) {
+            if (claim.order_data?.shipping?.id) {
+              claim.order_data = enrichedOrders[enrichedIndex];
+              enrichedIndex++;
+            }
+          }
+        }
         
         allEnrichedClaims.push(...enrichedBatch);
       }
