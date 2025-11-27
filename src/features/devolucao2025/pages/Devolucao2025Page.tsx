@@ -148,21 +148,19 @@ export const Devolucao2025Page = () => {
 
 
   // 🚀 BUSCA AGREGADA NO BACKEND - Cache em memória React Query
-  // ✅ CRÍTICO: queryKey 100% ESTÁVEL - Igual pattern /pedidos
-  // Pattern: serializar tudo FORA do useMemo, dependency só de strings primitivas
+  // ✅ CRÍTICO: queryKey 100% ESTÁVEL - Pattern /pedidos
+  // Serializar TUDO fora do useMemo, só strings primitivas na dependency
   
-  // Datas: converter para ISO fora do useMemo
+  // Datas: ISO strings
   const dateFromISO = backendDateRange.from.toISOString();
   const dateToISO = backendDateRange.to.toISOString();
   
-  // Accounts: serializar ANTES do useMemo (não na dependency)
-  const accountsSerializado = useMemo(() => {
-    return appliedAccounts.length > 0 
-      ? appliedAccounts.slice().sort().join('|')
-      : 'NO_ACCOUNTS';
-  }, [appliedAccounts.length, ...appliedAccounts]); // Dependency correta: length + spread
+  // Accounts: serializar diretamente (SEM useMemo - isso causava erro)
+  const accountsSerializado = appliedAccounts.length > 0 
+    ? appliedAccounts.slice().sort().join('|')
+    : 'NO_ACCOUNTS';
   
-  // Query key FINAL: useMemo apenas de strings primitivas
+  // Query key: useMemo só das strings primitivas já serializadas
   const stableQueryKey: [string, string, string, string] = useMemo(() => {
     const key: [string, string, string, string] = [
       'devolucoes-2025-completas',
@@ -174,8 +172,7 @@ export const Devolucao2025Page = () => {
     console.log('🔑 [QUERY KEY ESTÁVEL]', {
       key,
       dateRange: `${dateFromISO} → ${dateToISO}`,
-      accounts: accountsSerializado,
-      appliedAccountsLength: appliedAccounts.length
+      accounts: accountsSerializado
     });
     
     return key;
