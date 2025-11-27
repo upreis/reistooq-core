@@ -171,19 +171,23 @@ export const Devolucao2025Page = () => {
 
 
   // 🚀 BUSCA AGREGADA NO BACKEND - React Query com cache automático
-  // ✅ CRÍTICO: queryKey ESTÁVEL baseado em selectedAccounts (não appliedAccounts)
-  // Pattern correto: /pedidos reference architecture
+  // ✅ FASE 1 OPÇÃO A: queryKey e queryFn SEMPRE usam appliedAccounts (sincronizado)
   
-  // Datas: ISO strings
+  // Datas: ISO strings (constantes para este render)
   const dateFromISO = backendDateRange.from.toISOString();
   const dateToISO = backendDateRange.to.toISOString();
   
-  // Accounts: usar selectedAccounts direto (mais estável que appliedAccounts)
-  const accountsForKey = selectedAccounts.length > 0 
-    ? selectedAccounts.slice().sort().join('|')
-    : accounts.map(a => a.id).filter(Boolean).sort().join('|');
+  // ✅ CRÍTICO: Memoizar accountsForKey baseado em appliedAccounts
+  // Evita invalidação de queryKey em todo render
+  const accountsForKey = useMemo(() => {
+    if (appliedAccounts.length === 0) {
+      // Fallback: usar todas as contas disponíveis
+      return accounts.map(a => a.id).filter(Boolean).sort().join('|');
+    }
+    return appliedAccounts.slice().sort().join('|');
+  }, [appliedAccounts, accounts]);
   
-  // Query key: useMemo com dependências estáveis
+  // Query key: useMemo com TODAS as dependências explícitas
   const stableQueryKey = useMemo(() => {
     return [
       'devolucoes-2025-completas',
@@ -234,7 +238,7 @@ export const Devolucao2025Page = () => {
       
       return results;
     },
-    enabled: selectedAccounts.length > 0, // ✅ FASE 1: Usar selectedAccounts evita race condition
+    enabled: appliedAccounts.length > 0, // ✅ FASE 1 OPÇÃO A: appliedAccounts sincronizado com queryKey e queryFn
     placeholderData: cachedData.length > 0 ? cachedData : undefined, // ⚡ RESTAURAÇÃO INSTANTÂNEA
     retry: 2,
     refetchOnWindowFocus: false,
