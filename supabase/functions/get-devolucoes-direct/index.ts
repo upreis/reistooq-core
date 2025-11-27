@@ -171,10 +171,18 @@ serve(async (req) => {
       }
 
       logger.progress(`✅ [${accountId.slice(0, 8)}] Total: ${allClaims.length} claims`);
-      let claims = allClaims;
+      
+      // 🔍 FILTRAR PRIMEIRO: apenas claims com return_id válido (devoluções REAIS)
+      // Isso evita enriquecer claims que ainda não viraram returns, economizando chamadas à API
+      let claims = allClaims.filter((claim: any) => {
+        return claim.return_id && claim.return_id !== null;
+      });
+      
+      logger.progress(`🔍 [${accountId.slice(0, 8)}] Após filtro return_id: ${claims.length}/${allClaims.length} devoluções reais (economizou ${allClaims.length - claims.length} enriquecimentos desnecessários)`);
 
-      // Filtrar por data
+      // Filtrar por data (apenas nas devoluções reais já filtradas)
       if (date_from || date_to) {
+        const beforeDateFilter = claims.length;
         const dateFromObj = date_from ? new Date(date_from) : null;
         const dateToObj = date_to ? new Date(date_to) : null;
 
@@ -185,11 +193,11 @@ serve(async (req) => {
           return true;
         });
 
-        logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro: ${claims.length} claims`);
+        logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro de data: ${claims.length}/${beforeDateFilter} claims`);
       }
 
-      // ⚡ ENRIQUECIMENTO MÍNIMO E RÁPIDO (sem delays pesados)
-      logger.progress(`⚡ [${accountId.slice(0, 8)}] Processando ${claims.length} claims rapidamente...`);
+      // ⚡ ENRIQUECIMENTO OTIMIZADO (apenas claims com return_id válido - devoluções REAIS)
+      logger.progress(`⚡ [${accountId.slice(0, 8)}] Enriquecendo ${claims.length} devoluções reais (filtrado ${allClaims.length - claims.length} claims sem return)...`);
       
       // Buscar apenas order_data básico em paralelo controlado (batch de 10)
       const BATCH_SIZE = 10; // Aumentado para 10 (mais rápido)
