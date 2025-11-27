@@ -188,14 +188,26 @@ export const Devolucao2025Page = () => {
       // 🔹 FASE 2: Verificar cache in-memory ANTES da API
       const cached = devolucoesCache.get<any[]>(cacheKey);
       if (cached) {
-        console.log('💾 [CACHE HIT] Dados do cache in-memory', {
+        console.log('💾 [CACHE HIT IN-MEMORY] Dados do cache in-memory', {
           count: cached.length,
           key: cacheKey.substring(0, 80) + '...'
         });
         return cached;
       }
       
-      console.log('❌ [CACHE MISS] Buscando da API ML...', {
+      // 🔹 FASE 2.5: Verificar localStorage ANTES da API (restauração instantânea ao voltar na página)
+      const persistedData = devolucoesCache.restoreFromLocalStorage<any[]>('lastSearch');
+      if (persistedData && persistedData.length > 0) {
+        console.log('💾 [CACHE HIT LOCALSTORAGE] Dados restaurados do localStorage (INSTANTÂNEO)', {
+          count: persistedData.length,
+          age: 'válido'
+        });
+        // Restaurar também no cache in-memory para próximas consultas
+        devolucoesCache.set(cacheKey, persistedData, 5 * 60 * 1000);
+        return persistedData;
+      }
+      
+      console.log('❌ [CACHE MISS] Nenhum cache disponível, buscando da API ML...', {
         cacheKey: cacheKey.substring(0, 80) + '...',
         timestamp: new Date().toISOString()
       });
