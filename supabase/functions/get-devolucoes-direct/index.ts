@@ -339,15 +339,21 @@ serve(async (req) => {
           }
         }
 
-        // 📅 Enriquecer datas de chegada do batch em paralelo com rate limiting
-        console.log(`📅 [BATCH ${i / BATCH_SIZE + 1}] Enriquecendo datas de chegada para ${enrichedBatch.length} claims...`);
+        // 📅 Enriquecer datas de chegada e destino do batch em paralelo com rate limiting
+        console.log(`📅 [BATCH ${i / BATCH_SIZE + 1}] Enriquecendo datas de chegada e destino para ${enrichedBatch.length} claims...`);
         const arrivalDatesMap = await fetchMultipleReturnArrivalDates(enrichedBatch, accessToken, 10);
         
-        // Adicionar data_chegada_produto aos claims
+        // Adicionar data_chegada_produto e destino_devolucao aos claims
         for (const claim of enrichedBatch) {
           const claimId = claim.id || claim.claim_details?.id;
           if (claimId) {
-            claim.data_chegada_produto = arrivalDatesMap.get(claimId) || null;
+            const result = arrivalDatesMap.get(claimId);
+            claim.data_chegada_produto = result?.arrivalDate || null;
+            // Adicionar destino para o return_details_v2 onde o mapper busca
+            if (!claim.return_details_v2) claim.return_details_v2 = {};
+            if (!claim.return_details_v2.shipping) claim.return_details_v2.shipping = {};
+            if (!claim.return_details_v2.shipping.destination) claim.return_details_v2.shipping.destination = {};
+            claim.return_details_v2.shipping.destination.name = result?.destination || null;
           }
         }
         
