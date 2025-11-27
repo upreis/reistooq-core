@@ -223,11 +223,15 @@ serve(async (req) => {
                 if (orderRes?.ok) {
                   orderData = await orderRes.json();
                   console.log(`  ✅ [${i + index}] Order encontrado`);
+                } else if (orderRes?.status === 404) {
+                  console.log(`  ℹ️ [${i + index}] Order não encontrado (404)`);
+                } else if (orderRes?.status === 429) {
+                  console.warn(`  ⚠️ [${i + index}] Order rate limited (429)`);
                 } else {
-                  console.log(`  ❌ [${i + index}] Order falhou: ${orderRes?.status}`);
+                  console.log(`  ⚠️ [${i + index}] Order falhou: ${orderRes?.status}`);
                 }
               } catch (err) {
-                console.error(`  ❌ [${i + index}] Order erro:`, err instanceof Error ? err.message : err);
+                console.log(`  ⚠️ [${i + index}] Order exception:`, err instanceof Error ? err.message : err);
               }
             }
             
@@ -245,11 +249,18 @@ serve(async (req) => {
                 if (returnRes?.ok) {
                   returnDetailsV2 = await returnRes.json();
                   console.log(`  ✅ [${i + index}] Return_details_v2 encontrado`);
+                } else if (returnRes?.status === 404) {
+                  // 404 é esperado para claims sem return iniciada ainda
+                  console.log(`  ℹ️ [${i + index}] Return_details_v2 não disponível (404 - claim sem return)`);
+                } else if (returnRes?.status === 429) {
+                  // Rate limiting - continuar sem bloquear
+                  console.warn(`  ⚠️ [${i + index}] Return_details_v2 rate limited (429)`);
                 } else {
-                  console.log(`  ❌ [${i + index}] Return_details_v2 falhou: ${returnRes?.status}`);
+                  console.log(`  ⚠️ [${i + index}] Return_details_v2 falhou: ${returnRes?.status}`);
                 }
               } catch (err) {
-                console.error(`  ❌ [${i + index}] Return_details_v2 erro:`, err instanceof Error ? err.message : err);
+                // Não logar como erro crítico
+                console.log(`  ⚠️ [${i + index}] Return_details_v2 exception:`, err instanceof Error ? err.message : err);
               }
             }
             
@@ -267,11 +278,15 @@ serve(async (req) => {
                 if (messagesRes?.ok) {
                   claimMessages = await messagesRes.json();
                   console.log(`  ✅ [${i + index}] Messages encontradas: ${Array.isArray(claimMessages) ? claimMessages.length : 'não é array'}`);
+                } else if (messagesRes?.status === 404) {
+                  console.log(`  ℹ️ [${i + index}] Messages não disponíveis (404)`);
+                } else if (messagesRes?.status === 429) {
+                  console.warn(`  ⚠️ [${i + index}] Messages rate limited (429)`);
                 } else {
-                  console.log(`  ❌ [${i + index}] Messages falhou: ${messagesRes?.status}`);
+                  console.log(`  ⚠️ [${i + index}] Messages falhou: ${messagesRes?.status}`);
                 }
               } catch (err) {
-                console.error(`  ❌ [${i + index}] Messages erro:`, err instanceof Error ? err.message : err);
+                console.log(`  ⚠️ [${i + index}] Messages exception:`, err instanceof Error ? err.message : err);
               }
             }
             
@@ -290,11 +305,15 @@ serve(async (req) => {
                 if (productRes?.ok) {
                   productInfo = await productRes.json();
                   console.log(`  ✅ [${i + index}] Product_info encontrado`);
+                } else if (productRes?.status === 404) {
+                  console.log(`  ℹ️ [${i + index}] Product_info não encontrado (404)`);
+                } else if (productRes?.status === 429) {
+                  console.warn(`  ⚠️ [${i + index}] Product_info rate limited (429)`);
                 } else {
-                  console.log(`  ❌ [${i + index}] Product_info falhou: ${productRes?.status}`);
+                  console.log(`  ⚠️ [${i + index}] Product_info falhou: ${productRes?.status}`);
                 }
               } catch (err) {
-                console.error(`  ❌ [${i + index}] Product_info erro:`, err instanceof Error ? err.message : err);
+                console.log(`  ⚠️ [${i + index}] Product_info exception:`, err instanceof Error ? err.message : err);
               }
             } else {
               console.log(`  ⚠️ [${i + index}] Sem itemId para buscar product_info`);
