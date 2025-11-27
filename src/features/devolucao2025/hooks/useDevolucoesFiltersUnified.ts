@@ -21,7 +21,8 @@ const DEFAULT_FILTERS: DevolucoesFilters = {
   searchTerm: '',
   currentPage: 1,
   itemsPerPage: 50,
-  activeTab: 'ativas'
+  activeTab: 'ativas',
+  onlyWithReturns: true // 🆕 Default: apenas devoluções iniciadas
 };
 
 /**
@@ -55,6 +56,9 @@ export function useDevolucoesFiltersUnified() {
         selectedAccounts: persistentCache.persistedState!.selectedAccounts || DEFAULT_FILTERS.selectedAccounts,
         currentPage: persistentCache.persistedState!.currentPage || DEFAULT_FILTERS.currentPage,
         itemsPerPage: persistentCache.persistedState!.itemsPerPage || DEFAULT_FILTERS.itemsPerPage,
+        onlyWithReturns: persistentCache.persistedState!.onlyWithReturns !== undefined 
+          ? persistentCache.persistedState!.onlyWithReturns 
+          : DEFAULT_FILTERS.onlyWithReturns,
       }));
     }
   }, [persistentCache.isStateLoaded]); // 🔥 REMOVIDO searchParams para evitar loop

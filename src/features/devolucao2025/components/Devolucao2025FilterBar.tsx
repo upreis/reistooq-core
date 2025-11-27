@@ -36,6 +36,8 @@ interface Devolucao2025FilterBarProps {
   allColumns?: ColumnConfig[];
   visibleColumns?: string[];
   onVisibleColumnsChange?: (columns: string[]) => void;
+  onlyWithReturns?: boolean; // 🆕 Filtrar apenas devoluções iniciadas
+  onOnlyWithReturnsChange?: (value: boolean) => void; // 🆕
 }
 
 export function Devolucao2025FilterBar({
@@ -52,7 +54,9 @@ export function Devolucao2025FilterBar({
   table,
   allColumns,
   visibleColumns,
-  onVisibleColumnsChange
+  onVisibleColumnsChange,
+  onlyWithReturns = true,
+  onOnlyWithReturnsChange
 }: Devolucao2025FilterBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
@@ -167,6 +171,24 @@ export function Devolucao2025FilterBar({
             </SelectContent>
           </Select>
         </div>
+
+        {/* 🆕 Checkbox: Apenas devoluções iniciadas */}
+        {onOnlyWithReturnsChange && (
+          <div className="flex items-center gap-2 min-w-[200px] flex-shrink-0">
+            <Checkbox
+              id="only-with-returns"
+              checked={onlyWithReturns}
+              onCheckedChange={onOnlyWithReturnsChange}
+              className="h-5 w-5"
+            />
+            <label
+              htmlFor="only-with-returns"
+              className="text-sm font-medium leading-none cursor-pointer select-none"
+            >
+              Apenas devoluções iniciadas
+            </label>
+          </div>
+        )}
 
         {/* Botão Buscar com FlipButton */}
         <div className="min-w-[220px] flex-shrink-0">

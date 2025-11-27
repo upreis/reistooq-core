@@ -13,6 +13,7 @@ export interface DevolucoesFilters {
   currentPage: number;
   itemsPerPage: number;
   activeTab: 'ativas' | 'historico';
+  onlyWithReturns: boolean; // 🆕 Filtrar apenas devoluções iniciadas
 }
 
 /**
@@ -39,6 +40,11 @@ function parseFiltersFromUrl(searchParams: URLSearchParams): Partial<DevolucoesF
   const tab = searchParams.get('tab');
   if (tab && (tab === 'ativas' || tab === 'historico')) {
     filters.activeTab = tab;
+  }
+
+  const onlyReturns = searchParams.get('onlyReturns');
+  if (onlyReturns !== null) {
+    filters.onlyWithReturns = onlyReturns === 'true';
   }
 
   return filters;
@@ -72,6 +78,10 @@ function encodeFiltersToUrl(filters: DevolucoesFilters): URLSearchParams {
 
   if (filters.activeTab && filters.activeTab !== 'ativas') {
     params.set('tab', filters.activeTab);
+  }
+
+  if (filters.onlyWithReturns !== undefined && filters.onlyWithReturns !== true) {
+    params.set('onlyReturns', filters.onlyWithReturns.toString());
   }
 
   return params;
