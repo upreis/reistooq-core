@@ -151,33 +151,33 @@ export const Devolucao2025Page = () => {
   // ✅ CRÍTICO: queryKey DEVE ser array de STRINGS primitivas (não objetos/arrays)
   // Objetos/arrays mudam referência → React Query considera query diferente → não usa cache
   
-  // Converter datas para ISO strings estáveis
+  // 🔑 QUERY KEY ESTÁVEL - Serialização direta na dependency array
   const dateFromISO = useMemo(() => backendDateRange.from.toISOString(), [backendDateRange.from]);
   const dateToISO = useMemo(() => backendDateRange.to.toISOString(), [backendDateRange.to]);
   
-  // Converter array de contas para string ordenada estável
-  const accountsKeyStable = useMemo(() => {
-    if (appliedAccounts.length === 0) return 'NO_ACCOUNTS';
-    return appliedAccounts.slice().sort().join('|');
-  }, [appliedAccounts]);
+  // ✅ CRÍTICO: Serializar appliedAccounts DIRETAMENTE na dependency
+  // Assim o useMemo só recalcula quando STRING muda, não quando array muda referência
+  const accountsSerializado = appliedAccounts.length > 0 
+    ? appliedAccounts.slice().sort().join('|')
+    : 'NO_ACCOUNTS';
   
-  // Query key FINAL: apenas strings primitivas
+  // Query key FINAL: apenas strings primitivas + serialização direta
   const stableQueryKey: [string, string, string, string] = useMemo(() => {
     const key: [string, string, string, string] = [
       'devolucoes-2025-completas',
       dateFromISO,
       dateToISO,
-      accountsKeyStable
+      accountsSerializado
     ];
     
     console.log('🔑 [QUERY KEY]', {
       key,
       dateRange: `${dateFromISO} → ${dateToISO}`,
-      accounts: accountsKeyStable
+      accounts: accountsSerializado
     });
     
     return key;
-  }, [dateFromISO, dateToISO, accountsKeyStable]);
+  }, [dateFromISO, dateToISO, accountsSerializado]);
   
   const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: stableQueryKey,
