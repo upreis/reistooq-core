@@ -165,6 +165,66 @@ class DevolucoesCache {
   resetStats(): void {
     this.stats = { hits: 0, misses: 0 };
   }
+
+  /**
+   * 💾 PERSISTÊNCIA EM LOCALSTORAGE
+   * Salva dados no localStorage para sobreviver navegações
+   */
+  persistToLocalStorage<T>(key: string, data: T): void {
+    try {
+      const toSave = {
+        data,
+        timestamp: Date.now(),
+        ttl: this.defaultTTL
+      };
+      localStorage.setItem(`devolucoes:${key}`, JSON.stringify(toSave));
+      console.log('💾 [PERSIST] Dados salvos no localStorage:', {
+        key: `devolucoes:${key}`,
+        dataSize: JSON.stringify(toSave).length,
+        recordCount: Array.isArray(data) ? data.length : 'N/A'
+      });
+    } catch (error) {
+      console.warn('❌ [PERSIST] Falha ao salvar no localStorage:', error);
+    }
+  }
+
+  /**
+   * Restaura dados do localStorage
+   */
+  restoreFromLocalStorage<T>(key: string): T | null {
+    try {
+      const stored = localStorage.getItem(`devolucoes:${key}`);
+      if (!stored) return null;
+
+      const parsed = JSON.parse(stored);
+      
+      // Verificar se expirou
+      const isExpired = Date.now() - parsed.timestamp > parsed.ttl;
+      if (isExpired) {
+        localStorage.removeItem(`devolucoes:${key}`);
+        console.log('⏰ [PERSIST] Dados expirados no localStorage:', key);
+        return null;
+      }
+
+      console.log('✅ [PERSIST] Dados restaurados do localStorage:', {
+        key: `devolucoes:${key}`,
+        age: Math.round((Date.now() - parsed.timestamp) / 1000) + 's',
+        recordCount: Array.isArray(parsed.data) ? parsed.data.length : 'N/A'
+      });
+
+      return parsed.data as T;
+    } catch (error) {
+      console.warn('❌ [PERSIST] Falha ao restaurar do localStorage:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Remove dados do localStorage
+   */
+  removeFromLocalStorage(key: string): void {
+    localStorage.removeItem(`devolucoes:${key}`);
+  }
 }
 
 // Singleton instance
@@ -264,3 +324,15 @@ export const invalidateOnEvents = {
   
   all: () => devolucoesCache.invalidate()
 } as const;
+
+/**
+ * 🌐 HELPER PÚBLICO PARA OUTRAS PÁGINAS
+ * Permite que páginas como /dashboardinicial leiam os dados persistidos
+ */
+export function getPersistedDevolucoes(): any[] | null {
+  return devolucoesCache.restoreFromLocalStorage('lastSearch');
+}
+
+export function clearPersistedDevolucoes(): void {
+  devolucoesCache.removeFromLocalStorage('lastSearch');
+}
