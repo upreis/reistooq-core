@@ -45,7 +45,8 @@ serve(async (req) => {
       integration_account_id,      // ✅ Single account (retrocompatibilidade)
       integration_account_ids,      // 🆕 Multiple accounts (nova feature)
       date_from, 
-      date_to
+      date_to,
+      only_with_returns = true      // 🆕 Filtrar apenas devoluções iniciadas (default: true)
     } = await req.json();
 
     console.log('🔥 REQUEST PARSED - PARAMS:', { integration_account_id, integration_account_ids, date_from, date_to });
@@ -432,7 +433,16 @@ serve(async (req) => {
     );
 
     // Agregar todos os resultados
-    const allMappedClaims = accountResults.flat();
+    let allMappedClaims = accountResults.flat();
+    
+    // 🆕 FILTRO: Apenas devoluções com return iniciado (se solicitado)
+    if (only_with_returns) {
+      const beforeFilter = allMappedClaims.length;
+      allMappedClaims = allMappedClaims.filter((dev: any) => {
+        return dev.return_id && dev.return_details_v2;
+      });
+      logger.progress(`🔍 FILTRO: ${beforeFilter} → ${allMappedClaims.length} (apenas com returns iniciados)`);
+    }
     
     logger.progress(`🎉 TOTAL AGREGADO: ${allMappedClaims.length} devoluções de ${accountIds.length} conta(s)`);
 
@@ -443,7 +453,8 @@ serve(async (req) => {
         data: allMappedClaims,
         total: allMappedClaims.length,
         accounts_processed: accountIds.length,
-        date_range: { from: date_from, to: date_to }
+        date_range: { from: date_from, to: date_to },
+        only_with_returns
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

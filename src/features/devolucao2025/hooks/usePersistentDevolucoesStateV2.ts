@@ -37,6 +37,7 @@ interface PersistentDevolucoesState {
   
   // FILTROS
   periodo: string;
+  onlyWithReturns: boolean; // 🆕 Filtrar apenas devoluções iniciadas
   
   // VERSIONAMENTO E TIMESTAMPS
   version: number;
@@ -59,6 +60,7 @@ export function usePersistentDevolucoesStateV2() {
     if (typeof state.itemsPerPage !== 'number') return false;
     if (!Array.isArray(state.visibleColumns)) return false;
     if (typeof state.periodo !== 'string') return false;
+    if (typeof state.onlyWithReturns !== 'boolean') return false;
     if (typeof state.cachedAt !== 'number') return false;
     
     // Validar versão
@@ -149,6 +151,7 @@ export function usePersistentDevolucoesStateV2() {
           itemsPerPage: 50,
           visibleColumns: [],
           periodo: '7',
+          onlyWithReturns: true,
           version: STORAGE_VERSION,
           cachedAt: 0
         };
@@ -209,7 +212,8 @@ export function usePersistentDevolucoesStateV2() {
     currentPage: number,
     itemsPerPage: number,
     visibleColumns: string[],
-    periodo: string
+    periodo: string,
+    onlyWithReturns: boolean = true
   ) => {
     saveState({
       selectedAccounts,
@@ -217,7 +221,8 @@ export function usePersistentDevolucoesStateV2() {
       currentPage,
       itemsPerPage,
       visibleColumns,
-      periodo
+      periodo,
+      onlyWithReturns
     });
   }, [saveState]);
 
