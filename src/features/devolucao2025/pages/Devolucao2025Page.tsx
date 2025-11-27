@@ -182,10 +182,24 @@ export const Devolucao2025Page = () => {
   const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: stableQueryKey,
     queryFn: async () => {
-      // 💾 FASE 2: Verificar cache in-memory ANTES da API
-      // Usar queryKey diretamente como cacheKey (já é estável e serializado)
+      // 🔹 DECLARAR CACHE KEY UMA ÚNICA VEZ
       const cacheKey = stableQueryKey.join('::');
+      const persistKey = 'lastSearch';
       
+      // 🔹 FASE 2.1: Primeiro tentar restaurar do localStorage (sobrevive navegações)
+      const persistedData = devolucoesCache.restoreFromLocalStorage<any[]>(persistKey);
+      
+      if (persistedData) {
+        console.log('💾 [LOCALSTORAGE HIT] Dados restaurados entre navegações', {
+          count: persistedData.length,
+          key: persistKey
+        });
+        // Também salvar no cache in-memory para buscas subsequentes nesta sessão
+        devolucoesCache.set(cacheKey, persistedData);
+        return persistedData;
+      }
+      
+      // 🔹 FASE 2.2: Verificar cache in-memory ANTES da API
       const cached = devolucoesCache.get<any[]>(cacheKey);
       if (cached) {
         console.log('💾 [CACHE HIT] Dados do cache in-memory', {
@@ -223,10 +237,11 @@ export const Devolucao2025Page = () => {
       const results = Array.isArray(data) ? data : (data?.data || []);
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       
-      // 💾 FASE 2: Salvar no cache in-memory
+      // 💾 FASE 2.3: Salvar no cache in-memory E localStorage
       devolucoesCache.set(cacheKey, results, 5 * 60 * 1000); // 5 minutos TTL
+      devolucoesCache.persistToLocalStorage('lastSearch', results); // Persistir para próxima navegação
       
-      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (salvo no cache)`);
+      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (salvo no cache + localStorage)`);
       
       // 💾 Mostrar stats do cache
       const stats = devolucoesCache.getStats();
