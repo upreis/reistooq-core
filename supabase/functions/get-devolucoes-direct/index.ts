@@ -288,7 +288,8 @@ serve(async (req) => {
         const hasReturnStatus = returnDetails?.status && returnDetails.status !== 'pending';
         const hasShipments = returnDetails?.shipments && Array.isArray(returnDetails.shipments) && returnDetails.shipments.length > 0;
         
-        return hasReturnId || hasReturnStatus || hasShipments;
+        // 🔒 Lógica mais restritiva: return_id OU (status + shipments juntos)
+        return hasReturnId || (hasReturnStatus && hasShipments);
       });
       
       const eliminated = beforeFilter - claimsWithReturn.length;
@@ -392,7 +393,10 @@ serve(async (req) => {
             // 3️⃣ Buscar product_info com timeout (depende de orderData)
             let productInfo = null;
             const itemId = orderData?.order_items?.[0]?.item?.id;
-            if (itemId) {
+            
+            // 🔒 CORREÇÃO CRÍTICA: Validar itemId antes de buscar
+            // Evita chamadas à API com itemId undefined/null/vazio
+            if (itemId && typeof itemId === 'string' && itemId.trim() !== '') {
               productInfo = await withTimeout(
                 (async () => {
                   // 💾 Verificar cache primeiro
