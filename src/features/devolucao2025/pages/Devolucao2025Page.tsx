@@ -173,12 +173,11 @@ export const Devolucao2025Page = () => {
     console.log('🔑 [QUERY KEY]', {
       key,
       dateRange: `${dateFromISO} → ${dateToISO}`,
-      accounts: accountsKeyStable,
-      accountsArray: appliedAccounts
+      accounts: accountsKeyStable
     });
     
     return key;
-  }, [dateFromISO, dateToISO, accountsKeyStable, appliedAccounts]);
+  }, [dateFromISO, dateToISO, accountsKeyStable]);
   
   const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: stableQueryKey,
