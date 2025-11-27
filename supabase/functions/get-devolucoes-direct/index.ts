@@ -171,18 +171,10 @@ serve(async (req) => {
       }
 
       logger.progress(`✅ [${accountId.slice(0, 8)}] Total: ${allClaims.length} claims`);
-      
-      // 🔍 FILTRAR PRIMEIRO: apenas claims com return_id válido (devoluções REAIS)
-      // Isso evita enriquecer claims que ainda não viraram returns, economizando chamadas à API
-      let claims = allClaims.filter((claim: any) => {
-        return claim.return_id && claim.return_id !== null;
-      });
-      
-      logger.progress(`🔍 [${accountId.slice(0, 8)}] Após filtro return_id: ${claims.length}/${allClaims.length} devoluções reais (economizou ${allClaims.length - claims.length} enriquecimentos desnecessários)`);
+      let claims = allClaims;
 
-      // Filtrar por data (apenas nas devoluções reais já filtradas)
+      // Filtrar por data
       if (date_from || date_to) {
-        const beforeDateFilter = claims.length;
         const dateFromObj = date_from ? new Date(date_from) : null;
         const dateToObj = date_to ? new Date(date_to) : null;
 
@@ -193,8 +185,19 @@ serve(async (req) => {
           return true;
         });
 
-        logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro de data: ${claims.length}/${beforeDateFilter} claims`);
+        logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro: ${claims.length} claims`);
       }
+      
+      // 🔍 FILTRO OTIMIZADO: apenas claims com return_id válido (devoluções REAIS)
+      // Filtra ANTES do enriquecimento para economizar chamadas à API
+      const claimsComReturn = claims.filter((claim: any) => claim.return_id);
+      
+      if (claimsComReturn.length < claims.length) {
+        logger.info(`🔍 [${accountId.slice(0, 8)}] Filtrado: ${claimsComReturn.length}/${claims.length} claims com return_id (economiza ${claims.length - claimsComReturn.length} enriquecimentos)`);
+      }
+      
+      // Usar claims filtrados para enriquecimento
+      claims = claimsComReturn.length > 0 ? claimsComReturn : claims;
 
       // ⚡ ENRIQUECIMENTO OTIMIZADO (apenas claims com return_id válido - devoluções REAIS)
       logger.progress(`⚡ [${accountId.slice(0, 8)}] Enriquecendo ${claims.length} devoluções reais (filtrado ${allClaims.length - claims.length} claims sem return)...`);
