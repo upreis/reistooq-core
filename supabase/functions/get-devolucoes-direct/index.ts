@@ -185,8 +185,31 @@ serve(async (req) => {
           return true;
         });
 
-        logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro: ${claims.length} claims`);
+        logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro de data: ${claims.length} claims`);
       }
+
+      // 🔍 FASE 1: FILTRO EARLY-STAGE - Apenas claims com devolução iniciada
+      // ✅ SEGURO: Frontend já faz este filtro localmente (Devolucao2025Page.tsx linhas 195-201)
+      // ✅ ECONOMIA: Evita enriquecer claims que serão descartados (economiza ~40% de chamadas API)
+      const beforeEarlyFilter = claims.length;
+      claims = claims.filter((claim: any) => {
+        // Um claim só deve ser enriquecido se realmente virou return
+        // Verificar múltiplas fontes para garantir que claim tem return iniciado
+        const hasReturnId = claim.return_id && String(claim.return_id).trim() !== '';
+        const hasReturnInResolution = claim.resolution?.type === 'return';
+        const hasReturnStage = claim.stage === 'return' || claim.stage === 'returned';
+        const hasReturnType = claim.type === 'return';
+        
+        // Aceitar claim se qualquer indicador de return existir
+        return hasReturnId || hasReturnInResolution || hasReturnStage || hasReturnType;
+      });
+      
+      const eliminados = beforeEarlyFilter - claims.length;
+      const percentEliminado = beforeEarlyFilter > 0 ? ((eliminados / beforeEarlyFilter) * 100).toFixed(1) : '0';
+      
+      logger.info(`🔍 [FILTRO EARLY-STAGE] ${beforeEarlyFilter} → ${claims.length} claims`);
+      logger.info(`   ✂️ Eliminados: ${eliminados} claims sem devolução iniciada (${percentEliminado}%)`);
+      logger.info(`   💰 Economia: ~${eliminados * 4} chamadas à API ML evitadas`);
 
       // ⚡ ENRIQUECIMENTO MÍNIMO E RÁPIDO (sem delays pesados)
       logger.progress(`⚡ [${accountId.slice(0, 8)}] Processando ${claims.length} claims rapidamente...`);
