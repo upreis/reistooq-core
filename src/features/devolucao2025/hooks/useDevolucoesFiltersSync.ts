@@ -13,6 +13,7 @@ export interface DevolucoesFilters {
   currentPage: number;
   itemsPerPage: number;
   activeTab: 'ativas' | 'historico';
+  apenasComRastreio: boolean;
 }
 
 /**
