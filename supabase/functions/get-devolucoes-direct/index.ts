@@ -20,9 +20,6 @@ import { fetchShippingCosts, fetchMultipleShippingCosts, fetchReturnCost } from 
 import { fetchReturnArrivalDate, fetchMultipleReturnArrivalDates } from './services/ReturnArrivalDateService.ts';
 import { enrichMultipleShipments } from './services/ShipmentEnrichmentService.ts';
 
-// 💾 Importar cache inteligente FASE 3
-import { globalCache, CacheKeys } from './cache/EnrichmentCache.ts';
-
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
 
@@ -52,10 +49,6 @@ serve(async (req) => {
     } = await req.json();
 
     console.log('🔥 REQUEST PARSED - PARAMS:', { integration_account_id, integration_account_ids, date_from, date_to });
-    
-    // 💾 FASE 3: Limpar cache expirado no início de cada request
-    globalCache.cleanExpired();
-    logger.info(`💾 [CACHE] Limpeza periódica - Entradas: ${globalCache.getStats().size}`);
     
     // 🔄 Normalizar para array sempre (simplifica lógica)
     const accountIds = integration_account_ids 
@@ -224,18 +217,7 @@ serve(async (req) => {
         const enrichedBatch = await Promise.all(
           batch.map(async (claim: any) => {
             try {
-              // 💾 Verificar cache primeiro
-              const cacheKey = CacheKeys.returnDetails(claim.id);
-              const cached = globalCache.get(cacheKey);
-              
-              if (cached) {
-                return {
-                  ...claim,
-                  return_details_v2: cached
-                };
-              }
-              
-              // Cache miss - buscar da API
+              // Buscar return_details_v2 da API
               const fetchPromise = validateAndFetch(
                 'claim_returns',
                 accessToken,
@@ -251,9 +233,6 @@ serve(async (req) => {
               
               if (returnRes?.ok) {
                 const returnDetailsV2 = await returnRes.json();
-                
-                // 💾 Salvar no cache
-                globalCache.set(cacheKey, returnDetailsV2);
                 
                 return {
                   ...claim,
@@ -323,12 +302,6 @@ serve(async (req) => {
                 (async () => {
                   if (!claim.resource_id) return null;
                   
-                  // 💾 Verificar cache primeiro
-                  const cacheKey = CacheKeys.orderData(claim.resource_id);
-                  const cached = globalCache.get(cacheKey);
-                  if (cached) return cached;
-                  
-                  // Cache miss - buscar da API
                   try {
                     const { response: orderRes } = await validateAndFetch(
                       'orders',
@@ -339,8 +312,6 @@ serve(async (req) => {
                     
                     if (orderRes?.ok) {
                       const data = await orderRes.json();
-                      // 💾 Salvar no cache
-                      globalCache.set(cacheKey, data);
                       return data;
                     }
                   } catch (err) {
@@ -357,12 +328,6 @@ serve(async (req) => {
                 (async () => {
                   if (!claim.id) return null;
                   
-                  // 💾 Verificar cache primeiro
-                  const cacheKey = CacheKeys.claimMessages(claim.id);
-                  const cached = globalCache.get(cacheKey);
-                  if (cached) return cached;
-                  
-                  // Cache miss - buscar da API
                   try {
                     const { response: messagesRes } = await validateAndFetch(
                       'claim_messages',
@@ -373,8 +338,6 @@ serve(async (req) => {
                     
                     if (messagesRes?.ok) {
                       const data = await messagesRes.json();
-                      // 💾 Salvar no cache
-                      globalCache.set(cacheKey, data);
                       return data;
                     }
                   } catch (err) {
@@ -399,12 +362,6 @@ serve(async (req) => {
             if (itemId && typeof itemId === 'string' && itemId.trim() !== '') {
               productInfo = await withTimeout(
                 (async () => {
-                  // 💾 Verificar cache primeiro
-                  const cacheKey = CacheKeys.productInfo(itemId);
-                  const cached = globalCache.get(cacheKey);
-                  if (cached) return cached;
-                  
-                  // Cache miss - buscar da API
                   try {
                     const { response: productRes } = await validateAndFetch(
                       'items',
@@ -415,8 +372,6 @@ serve(async (req) => {
                     
                     if (productRes?.ok) {
                       const data = await productRes.json();
-                      // 💾 Salvar no cache
-                      globalCache.set(cacheKey, data);
                       return data;
                     }
                   } catch (err) {
@@ -491,15 +446,6 @@ serve(async (req) => {
       logger.info(`✅ [STAGE 2] Completado em ${(stage2Duration / 1000).toFixed(1)}s`);
       logger.info(`⏱️ [FASE 1+2] Tempo total: ${(totalDuration / 1000).toFixed(1)}s`);
       logger.info(`   📊 Eficiência: ${eliminated} claims eliminados economizaram ~${(eliminated * 2).toFixed(0)}s`);
-      
-      // 💾 FASE 3: Logs de cache stats
-      const cacheStats = globalCache.getStats();
-      const cacheHitRate = globalCache.getHitRate();
-      logger.info(`💾 [CACHE] Hits: ${cacheStats.hits} | Misses: ${cacheStats.misses} | Taxa: ${cacheHitRate.toFixed(1)}%`);
-      logger.info(`   📦 Entradas em cache: ${cacheStats.size}/${1000}`);
-      
-      // 🧹 Limpar cache expirado
-      globalCache.cleanExpired();
       
       const claimsWithArrivalDates = allEnrichedClaims;
 
