@@ -8,6 +8,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { devolucoesCache, cacheKeys } from '../services/DevolucoesCache';
 import { Card } from '@/components/ui/card';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Devolucao2025Table } from '../components/Devolucao2025Table';
@@ -181,7 +182,23 @@ export const Devolucao2025Page = () => {
   const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: stableQueryKey,
     queryFn: async () => {
-      console.log('🔥🔥🔥 [QUERY FN EXECUTING] React Query executou queryFn - CACHE MISS!', {
+      // 💾 FASE 2: Verificar cache in-memory ANTES da API
+      const cacheKey = cacheKeys.devolucoes({
+        dateFrom: dateFromISO,
+        dateTo: dateToISO,
+        accounts: accountsSerializado
+      });
+      
+      const cached = devolucoesCache.get<any[]>(cacheKey);
+      if (cached) {
+        console.log('💾 [CACHE HIT] Dados do cache in-memory', {
+          count: cached.length,
+          key: cacheKey
+        });
+        return cached;
+      }
+      
+      console.log('❌ [CACHE MISS] Buscando da API ML...', {
         queryKey: stableQueryKey,
         timestamp: new Date().toISOString()
       });
@@ -209,14 +226,22 @@ export const Devolucao2025Page = () => {
       const results = Array.isArray(data) ? data : (data?.data || []);
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       
-      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (cache React Query atualizado)`);
+      // 💾 FASE 2: Salvar no cache in-memory
+      devolucoesCache.set(cacheKey, results, 5 * 60 * 1000); // 5 minutos TTL
+      
+      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (salvo no cache)`);
+      
+      // 💾 Mostrar stats do cache
+      const stats = devolucoesCache.getStats();
+      console.log(`📊 [CACHE STATS] Hits: ${stats.hits} | Misses: ${stats.misses} | Taxa: ${stats.hitRate}% | Tamanho: ${stats.size}`);
+      
       return results;
     },
     enabled: appliedAccounts.length > 0,
-    retry: 1,
+    retry: 2,
     refetchOnWindowFocus: false,
-    staleTime: 30 * 60 * 1000, // 30 minutos
-    gcTime: 60 * 60 * 1000,    // 60 minutos
+    staleTime: 5 * 60 * 1000,  // 5 minutos
+    gcTime: 10 * 60 * 1000,    // 10 minutos
   });
   
   // 🐛 DEBUG: Status do cache
