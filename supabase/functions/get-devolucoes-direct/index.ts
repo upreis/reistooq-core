@@ -344,30 +344,9 @@ serve(async (req) => {
       
       logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims processados`);
 
-      // 📅 ENRIQUECER COM DATAS DE CHEGADA
-      logger.progress('📅 Buscando datas de chegada das devoluções...');
-      
-      const claimsWithArrivalDates = await Promise.all(
-        allEnrichedClaims.map(async (claim: any) => {
-          try {
-            const claimId = claim.claim_details?.id || claim.id;
-            if (!claimId) return claim;
-            
-            const arrivalDate = await fetchReturnArrivalDate(String(claimId), accessToken);
-            
-            return {
-              ...claim,
-              data_chegada_produto: arrivalDate
-            };
-          } catch (err) {
-            logger.error(`Erro ao buscar data de chegada para claim ${claim.id}:`, err);
-            return claim;
-          }
-        })
-      );
-
-      const withDate = claimsWithArrivalDates.filter(c => c.data_chegada_produto).length;
-      logger.progress(`📊 Claims com data_chegada_produto: ${withDate}/${claimsWithArrivalDates.length}`);
+      // ⚡ OTIMIZAÇÃO: Removido enriquecimento de data_chegada_produto 
+      // (causava rate limit 429 com múltiplas requisições simultâneas)
+      const claimsWithArrivalDates = allEnrichedClaims;
 
       // Mapear dados
       let isFirstClaim = true; // Flag para debug apenas primeira claim
