@@ -188,24 +188,90 @@ serve(async (req) => {
         logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro: ${claims.length} claims`);
       }
 
-      // ⚡ ENRIQUECIMENTO MÍNIMO E RÁPIDO (sem delays pesados)
-      logger.progress(`⚡ [${accountId.slice(0, 8)}] Processando ${claims.length} claims rapidamente...`);
+      // 🔍 FASE 1 CORRIGIDA: ENRIQUECIMENTO EM 2 ESTÁGIOS
+      // STAGE 1: Lightweight - apenas return_details_v2 para filtrar
+      // STAGE 2: Full enrichment - apenas para claims com return real
+      logger.progress(`⚡ [${accountId.slice(0, 8)}] STAGE 1: Buscando return_details_v2 para ${claims.length} claims...`);
       
-      // Buscar apenas order_data básico em paralelo controlado (batch de 10)
-      const BATCH_SIZE = 10; // Aumentado para 10 (mais rápido)
-      const allEnrichedClaims: any[] = [];
+      const stage1Start = Date.now();
+      const BATCH_SIZE = 10;
       
+      // STAGE 1: Buscar apenas return_details_v2 para todos os claims em batches
       for (let i = 0; i < claims.length; i += BATCH_SIZE) {
         const batch = claims.slice(i, i + BATCH_SIZE);
         
-        console.log(`🔥 [ENRIQUECIMENTO] Iniciando batch ${i / BATCH_SIZE + 1} com ${batch.length} claims`);
+        const enrichedBatch = await Promise.all(
+          batch.map(async (claim: any) => {
+            try {
+              const { response: returnRes } = await validateAndFetch(
+                'claim_returns',
+                accessToken,
+                { claim_id: claim.id },
+                { retryOnFail: false, logResults: false }
+              );
+              
+              if (returnRes?.ok) {
+                const returnDetailsV2 = await returnRes.json();
+                return {
+                  ...claim,
+                  return_details_v2: returnDetailsV2
+                };
+              }
+            } catch (err) {
+              logger.warn(`⚠️ [STAGE 1] Erro ao buscar return details para claim ${claim.id}:`, err);
+            }
+            
+            return {
+              ...claim,
+              return_details_v2: null
+            };
+          })
+        );
+        
+        // Substituir claims originais pelos enriquecidos com return_details_v2
+        claims.splice(i, batch.length, ...enrichedBatch);
+      }
+      
+      const stage1Duration = Date.now() - stage1Start;
+      logger.info(`✅ [STAGE 1] Completado em ${(stage1Duration / 1000).toFixed(1)}s`);
+      
+      // 🔍 FILTRO INTELIGENTE: Apenas claims com return iniciado
+      const beforeFilter = claims.length;
+      const claimsWithReturn = claims.filter((claim: any) => {
+        const returnDetails = claim.return_details_v2;
+        
+        // Verificar se return foi realmente iniciado
+        const hasReturnId = returnDetails?.id && String(returnDetails.id).trim() !== '';
+        const hasReturnStatus = returnDetails?.status && returnDetails.status !== 'pending';
+        const hasShipments = returnDetails?.shipments && Array.isArray(returnDetails.shipments) && returnDetails.shipments.length > 0;
+        
+        return hasReturnId || hasReturnStatus || hasShipments;
+      });
+      
+      const eliminated = beforeFilter - claimsWithReturn.length;
+      const percentEliminated = beforeFilter > 0 ? ((eliminated / beforeFilter) * 100).toFixed(1) : '0';
+      
+      logger.info(`🔍 [FILTRO] ${beforeFilter} → ${claimsWithReturn.length} claims com return iniciado`);
+      logger.info(`   ✂️ Eliminados: ${eliminated} claims sem return real (${percentEliminated}%)`);
+      logger.info(`   💰 Economia: ~${eliminated * 3} chamadas à API ML evitadas (orderData + messages + productInfo)`);
+      
+      // STAGE 2: Full enrichment apenas para claims com return
+      logger.progress(`⚡ [${accountId.slice(0, 8)}] STAGE 2: Enriquecimento completo de ${claimsWithReturn.length} claims...`);
+      
+      const stage2Start = Date.now();
+      const allEnrichedClaims: any[] = [];
+      
+      for (let i = 0; i < claimsWithReturn.length; i += BATCH_SIZE) {
+        const batch = claimsWithReturn.slice(i, i + BATCH_SIZE);
+        
+        console.log(`🔥 [STAGE 2] Batch ${i / BATCH_SIZE + 1} com ${batch.length} claims`);
         
         const enrichedBatch = await Promise.all(
           batch.map(async (claim: any, index: number) => {
-            console.log(`🔥 [${i + index}] Enriquecendo claim ${claim.id} EM PARALELO`);
+            console.log(`🔥 [${i + index}] Enriquecendo claim ${claim.id} (STAGE 2)`);
             
-            // ⚡ EXECUTAR TODAS AS 4 BUSCAS EM PARALELO
-            const [orderResult, returnResult, messagesResult] = await Promise.all([
+            // ⚡ EXECUTAR 3 BUSCAS EM PARALELO (return_details_v2 já foi buscado no Stage 1)
+            const [orderResult, messagesResult] = await Promise.all([
               // 1️⃣ Buscar order data
               (async () => {
                 if (!claim.resource_id) return null;
@@ -225,8 +291,6 @@ serve(async (req) => {
                     console.log(`  ℹ️ [${i + index}] Order não encontrado (404)`);
                   } else if (orderRes?.status === 429) {
                     console.warn(`  ⚠️ [${i + index}] Order rate limited (429)`);
-                  } else {
-                    console.log(`  ⚠️ [${i + index}] Order falhou: ${orderRes?.status}`);
                   }
                 } catch (err) {
                   console.log(`  ⚠️ [${i + index}] Order exception:`, err instanceof Error ? err.message : err);
@@ -234,35 +298,7 @@ serve(async (req) => {
                 return null;
               })(),
               
-              // 2️⃣ Buscar return_details_v2 (CRÍTICO para status, datas, tracking)
-              (async () => {
-                if (!claim.id) return null;
-                try {
-                  const { response: returnRes } = await validateAndFetch(
-                    'claim_returns',
-                    accessToken,
-                    { claim_id: claim.id },
-                    { retryOnFail: false, logResults: false }
-                  );
-                  
-                  if (returnRes?.ok) {
-                    const data = await returnRes.json();
-                    console.log(`  ✅ [${i + index}] Return_details_v2 encontrado`);
-                    return data;
-                  } else if (returnRes?.status === 404) {
-                    console.log(`  ℹ️ [${i + index}] Return_details_v2 não disponível (404 - claim sem return)`);
-                  } else if (returnRes?.status === 429) {
-                    console.warn(`  ⚠️ [${i + index}] Return_details_v2 rate limited (429)`);
-                  } else {
-                    console.log(`  ⚠️ [${i + index}] Return_details_v2 falhou: ${returnRes?.status}`);
-                  }
-                } catch (err) {
-                  console.log(`  ⚠️ [${i + index}] Return_details_v2 exception:`, err instanceof Error ? err.message : err);
-                }
-                return null;
-              })(),
-              
-              // 3️⃣ Buscar messages (CRÍTICO para última msg, evidências)
+              // 2️⃣ Buscar messages
               (async () => {
                 if (!claim.id) return null;
                 try {
@@ -275,14 +311,12 @@ serve(async (req) => {
                   
                   if (messagesRes?.ok) {
                     const data = await messagesRes.json();
-                    console.log(`  ✅ [${i + index}] Messages encontradas: ${Array.isArray(data) ? data.length : 'não é array'}`);
+                    console.log(`  ✅ [${i + index}] Messages encontradas`);
                     return data;
                   } else if (messagesRes?.status === 404) {
                     console.log(`  ℹ️ [${i + index}] Messages não disponíveis (404)`);
                   } else if (messagesRes?.status === 429) {
                     console.warn(`  ⚠️ [${i + index}] Messages rate limited (429)`);
-                  } else {
-                    console.log(`  ⚠️ [${i + index}] Messages falhou: ${messagesRes?.status}`);
                   }
                 } catch (err) {
                   console.log(`  ⚠️ [${i + index}] Messages exception:`, err instanceof Error ? err.message : err);
@@ -292,10 +326,9 @@ serve(async (req) => {
             ]);
             
             const orderData = orderResult;
-            const returnDetailsV2 = returnResult;
             const claimMessages = messagesResult;
             
-            // 4️⃣ Buscar product_info (depende de orderData, então não pode ser totalmente paralelo)
+            // 3️⃣ Buscar product_info (depende de orderData)
             let productInfo = null;
             const itemId = orderData?.order_items?.[0]?.item?.id;
             if (itemId) {
@@ -314,8 +347,6 @@ serve(async (req) => {
                   console.log(`  ℹ️ [${i + index}] Product_info não encontrado (404)`);
                 } else if (productRes?.status === 429) {
                   console.warn(`  ⚠️ [${i + index}] Product_info rate limited (429)`);
-                } else {
-                  console.log(`  ⚠️ [${i + index}] Product_info falhou: ${productRes?.status}`);
                 }
               } catch (err) {
                 console.log(`  ⚠️ [${i + index}] Product_info exception:`, err instanceof Error ? err.message : err);
@@ -325,10 +356,9 @@ serve(async (req) => {
             return {
               ...claim,
               order_data: orderData,
-              return_details_v2: returnDetailsV2,
               claim_messages: claimMessages,
               product_info: productInfo,
-              // Campos opcionais (não essenciais)
+              // Campos opcionais
               shipment_data: null,
               review_details: null,
               billing_info: null,
@@ -348,10 +378,9 @@ serve(async (req) => {
           .map(claim => claim.order_data);
         
         if (ordersToEnrich.length > 0) {
-          console.log(`🚚 [BATCH ${i / BATCH_SIZE + 1}] Enriquecendo ${ordersToEnrich.length} shipments em paralelo...`);
+          console.log(`🚚 [BATCH ${i / BATCH_SIZE + 1}] Enriquecendo ${ordersToEnrich.length} shipments...`);
           const enrichedOrders = await enrichMultipleShipments(ordersToEnrich, accessToken);
           
-          // Mapear orders enriquecidos de volta para os claims
           let enrichedIndex = 0;
           for (const claim of enrichedBatch) {
             if (claim.order_data?.shipping?.id) {
@@ -361,17 +390,15 @@ serve(async (req) => {
           }
         }
 
-        // 📅 Enriquecer datas de chegada e destino do batch em paralelo com rate limiting
-        console.log(`📅 [BATCH ${i / BATCH_SIZE + 1}] Enriquecendo datas de chegada e destino para ${enrichedBatch.length} claims...`);
+        // 📅 Enriquecer datas de chegada e destino do batch
+        console.log(`📅 [BATCH ${i / BATCH_SIZE + 1}] Enriquecendo datas de chegada...`);
         const arrivalDatesMap = await fetchMultipleReturnArrivalDates(enrichedBatch, accessToken, 10);
         
-        // Adicionar data_chegada_produto e destino_devolucao aos claims
         for (const claim of enrichedBatch) {
           const claimId = claim.id || claim.claim_details?.id;
           if (claimId) {
             const result = arrivalDatesMap.get(claimId);
             claim.data_chegada_produto = result?.arrivalDate || null;
-            // Adicionar destino para o return_details_v2 onde o mapper busca
             if (!claim.return_details_v2) claim.return_details_v2 = {};
             if (!claim.return_details_v2.shipping) claim.return_details_v2.shipping = {};
             if (!claim.return_details_v2.shipping.destination) claim.return_details_v2.shipping.destination = {};
@@ -382,7 +409,12 @@ serve(async (req) => {
         allEnrichedClaims.push(...enrichedBatch);
       }
       
-      logger.progress(`✅ [${accountId.slice(0, 8)}] ${allEnrichedClaims.length} claims processados com enriquecimento completo`);
+      const stage2Duration = Date.now() - stage2Start;
+      const totalDuration = stage1Duration + stage2Duration;
+      
+      logger.info(`✅ [STAGE 2] Completado em ${(stage2Duration / 1000).toFixed(1)}s`);
+      logger.info(`⏱️ [FASE 1] Tempo total: ${(totalDuration / 1000).toFixed(1)}s`);
+      logger.info(`   📊 Eficiência: ${eliminated} claims eliminados economizaram ~${(eliminated * 2).toFixed(0)}s`);
       
       const claimsWithArrivalDates = allEnrichedClaims;
 
