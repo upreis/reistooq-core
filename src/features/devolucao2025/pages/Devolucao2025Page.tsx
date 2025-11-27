@@ -189,6 +189,17 @@ export const Devolucao2025Page = () => {
     console.log(`🔍 [FILTRO LOCAL] Iniciando com ${devolucoesCompletas.length} devoluções completas`);
     let filtered = devolucoesCompletas;
     
+    // 🔍 FILTRO CRÍTICO: Apenas devoluções que REALMENTE entraram no processo de devolução
+    // Elimina claims que ainda não viraram returns (sem dados de produto, rastreamento, etc.)
+    const beforeReturnFilter = filtered.length;
+    filtered = filtered.filter(dev => {
+      // Deve ter return_id válido OU status_return válido (indica que tem return_details_v2)
+      const hasReturnId = dev.return_id && dev.return_id.trim() !== '';
+      const hasReturnStatus = dev.status_return && dev.status_return !== '-' && dev.status_return.trim() !== '';
+      return hasReturnId || hasReturnStatus;
+    });
+    console.log(`🔍 [FILTRO DEVOLUÇÕES REAIS] ${beforeReturnFilter} → ${filtered.length} (eliminados ${beforeReturnFilter - filtered.length} claims sem devolução)`);
+    
     // Filtro de período (local)
     if (dateRange.from && dateRange.to) {
       const beforeFilter = filtered.length;
