@@ -202,99 +202,104 @@ serve(async (req) => {
         
         const enrichedBatch = await Promise.all(
           batch.map(async (claim: any, index: number) => {
-            let orderData = null;
-            let returnDetailsV2 = null;
-            let claimMessages = null;
+            console.log(`🔥 [${i + index}] Enriquecendo claim ${claim.id} EM PARALELO`);
+            
+            // ⚡ EXECUTAR TODAS AS 4 BUSCAS EM PARALELO
+            const [orderResult, returnResult, messagesResult] = await Promise.all([
+              // 1️⃣ Buscar order data
+              (async () => {
+                if (!claim.resource_id) return null;
+                try {
+                  const { response: orderRes } = await validateAndFetch(
+                    'orders',
+                    accessToken,
+                    { id: claim.resource_id },
+                    { retryOnFail: false, logResults: false }
+                  );
+                  
+                  if (orderRes?.ok) {
+                    const data = await orderRes.json();
+                    console.log(`  ✅ [${i + index}] Order encontrado`);
+                    return data;
+                  } else if (orderRes?.status === 404) {
+                    console.log(`  ℹ️ [${i + index}] Order não encontrado (404)`);
+                  } else if (orderRes?.status === 429) {
+                    console.warn(`  ⚠️ [${i + index}] Order rate limited (429)`);
+                  } else {
+                    console.log(`  ⚠️ [${i + index}] Order falhou: ${orderRes?.status}`);
+                  }
+                } catch (err) {
+                  console.log(`  ⚠️ [${i + index}] Order exception:`, err instanceof Error ? err.message : err);
+                }
+                return null;
+              })(),
+              
+              // 2️⃣ Buscar return_details_v2 (CRÍTICO para status, datas, tracking)
+              (async () => {
+                if (!claim.id) return null;
+                try {
+                  const { response: returnRes } = await validateAndFetch(
+                    'claim_returns',
+                    accessToken,
+                    { claim_id: claim.id },
+                    { retryOnFail: false, logResults: false }
+                  );
+                  
+                  if (returnRes?.ok) {
+                    const data = await returnRes.json();
+                    console.log(`  ✅ [${i + index}] Return_details_v2 encontrado`);
+                    return data;
+                  } else if (returnRes?.status === 404) {
+                    console.log(`  ℹ️ [${i + index}] Return_details_v2 não disponível (404 - claim sem return)`);
+                  } else if (returnRes?.status === 429) {
+                    console.warn(`  ⚠️ [${i + index}] Return_details_v2 rate limited (429)`);
+                  } else {
+                    console.log(`  ⚠️ [${i + index}] Return_details_v2 falhou: ${returnRes?.status}`);
+                  }
+                } catch (err) {
+                  console.log(`  ⚠️ [${i + index}] Return_details_v2 exception:`, err instanceof Error ? err.message : err);
+                }
+                return null;
+              })(),
+              
+              // 3️⃣ Buscar messages (CRÍTICO para última msg, evidências)
+              (async () => {
+                if (!claim.id) return null;
+                try {
+                  const { response: messagesRes } = await validateAndFetch(
+                    'claim_messages',
+                    accessToken,
+                    { claim_id: claim.id },
+                    { retryOnFail: false, logResults: false }
+                  );
+                  
+                  if (messagesRes?.ok) {
+                    const data = await messagesRes.json();
+                    console.log(`  ✅ [${i + index}] Messages encontradas: ${Array.isArray(data) ? data.length : 'não é array'}`);
+                    return data;
+                  } else if (messagesRes?.status === 404) {
+                    console.log(`  ℹ️ [${i + index}] Messages não disponíveis (404)`);
+                  } else if (messagesRes?.status === 429) {
+                    console.warn(`  ⚠️ [${i + index}] Messages rate limited (429)`);
+                  } else {
+                    console.log(`  ⚠️ [${i + index}] Messages falhou: ${messagesRes?.status}`);
+                  }
+                } catch (err) {
+                  console.log(`  ⚠️ [${i + index}] Messages exception:`, err instanceof Error ? err.message : err);
+                }
+                return null;
+              })()
+            ]);
+            
+            const orderData = orderResult;
+            const returnDetailsV2 = returnResult;
+            const claimMessages = messagesResult;
+            
+            // 4️⃣ Buscar product_info (depende de orderData, então não pode ser totalmente paralelo)
             let productInfo = null;
-            
-            console.log(`🔥 [${i + index}] Enriquecendo claim ${claim.id}`);
-            
-            // 1️⃣ Buscar order data
-            if (claim.resource_id) {
-              try {
-                console.log(`  📦 [${i + index}] Buscando order ${claim.resource_id}`);
-                const { response: orderRes } = await validateAndFetch(
-                  'orders',
-                  accessToken,
-                  { id: claim.resource_id },
-                  { retryOnFail: false, logResults: false }
-                );
-                
-                if (orderRes?.ok) {
-                  orderData = await orderRes.json();
-                  console.log(`  ✅ [${i + index}] Order encontrado`);
-                } else if (orderRes?.status === 404) {
-                  console.log(`  ℹ️ [${i + index}] Order não encontrado (404)`);
-                } else if (orderRes?.status === 429) {
-                  console.warn(`  ⚠️ [${i + index}] Order rate limited (429)`);
-                } else {
-                  console.log(`  ⚠️ [${i + index}] Order falhou: ${orderRes?.status}`);
-                }
-              } catch (err) {
-                console.log(`  ⚠️ [${i + index}] Order exception:`, err instanceof Error ? err.message : err);
-              }
-            }
-            
-            // 2️⃣ Buscar return_details_v2 (CRÍTICO para status, datas, tracking)
-            if (claim.id) {
-              try {
-                console.log(`  🔄 [${i + index}] Buscando return_details_v2 para claim ${claim.id}`);
-                const { response: returnRes } = await validateAndFetch(
-                  'claim_returns',
-                  accessToken,
-                  { claim_id: claim.id },
-                  { retryOnFail: false, logResults: false }
-                );
-                
-                if (returnRes?.ok) {
-                  returnDetailsV2 = await returnRes.json();
-                  console.log(`  ✅ [${i + index}] Return_details_v2 encontrado`);
-                } else if (returnRes?.status === 404) {
-                  // 404 é esperado para claims sem return iniciada ainda
-                  console.log(`  ℹ️ [${i + index}] Return_details_v2 não disponível (404 - claim sem return)`);
-                } else if (returnRes?.status === 429) {
-                  // Rate limiting - continuar sem bloquear
-                  console.warn(`  ⚠️ [${i + index}] Return_details_v2 rate limited (429)`);
-                } else {
-                  console.log(`  ⚠️ [${i + index}] Return_details_v2 falhou: ${returnRes?.status}`);
-                }
-              } catch (err) {
-                // Não logar como erro crítico
-                console.log(`  ⚠️ [${i + index}] Return_details_v2 exception:`, err instanceof Error ? err.message : err);
-              }
-            }
-            
-            // 3️⃣ Buscar messages (CRÍTICO para última msg, evidências)
-            if (claim.id) {
-              try {
-                console.log(`  💬 [${i + index}] Buscando messages para claim ${claim.id}`);
-                const { response: messagesRes } = await validateAndFetch(
-                  'claim_messages',
-                  accessToken,
-                  { claim_id: claim.id },
-                  { retryOnFail: false, logResults: false }
-                );
-                
-                if (messagesRes?.ok) {
-                  claimMessages = await messagesRes.json();
-                  console.log(`  ✅ [${i + index}] Messages encontradas: ${Array.isArray(claimMessages) ? claimMessages.length : 'não é array'}`);
-                } else if (messagesRes?.status === 404) {
-                  console.log(`  ℹ️ [${i + index}] Messages não disponíveis (404)`);
-                } else if (messagesRes?.status === 429) {
-                  console.warn(`  ⚠️ [${i + index}] Messages rate limited (429)`);
-                } else {
-                  console.log(`  ⚠️ [${i + index}] Messages falhou: ${messagesRes?.status}`);
-                }
-              } catch (err) {
-                console.log(`  ⚠️ [${i + index}] Messages exception:`, err instanceof Error ? err.message : err);
-              }
-            }
-            
-            // 4️⃣ Buscar product_info (CRÍTICO para imagem/detalhes produto)
             const itemId = orderData?.order_items?.[0]?.item?.id;
             if (itemId) {
               try {
-                console.log(`  🏷️ [${i + index}] Buscando product_info para item ${itemId}`);
                 const { response: productRes } = await validateAndFetch(
                   'items',
                   accessToken,
@@ -315,8 +320,6 @@ serve(async (req) => {
               } catch (err) {
                 console.log(`  ⚠️ [${i + index}] Product_info exception:`, err instanceof Error ? err.message : err);
               }
-            } else {
-              console.log(`  ⚠️ [${i + index}] Sem itemId para buscar product_info`);
             }
             
             return {
