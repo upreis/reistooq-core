@@ -25,7 +25,7 @@ export async function enrichMultipleShipments(
     )
   );
 
-  logger.success(`[ShipmentEnrichment] ✅ ${orders.length} shipments enriquecidos`);
+  logger.progress(`[ShipmentEnrichment] ✅ ${orders.length} shipments enriquecidos`);
 
   return enrichedOrders;
 }
