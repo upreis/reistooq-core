@@ -147,16 +147,15 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
 
-  // 🚀 BUSCA AGREGADA NO BACKEND (seguindo padrão /pedidos - sem enabled:false)
+  // 🚀 BUSCA AGREGADA NO BACKEND com cache frontend inteligente
   const { data: devolucoesCompletas = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025-completas', backendDateRange, appliedAccounts],
     queryFn: async () => {
-      // ✅ Usar appliedAccounts (filtros confirmados pelo usuário)
       const accountIds = appliedAccounts.length > 0 
         ? appliedAccounts 
         : accounts.map(a => a.id).filter(Boolean);
       
-      console.log(`🔍 [API] Buscando ${accountIds.length} contas aplicadas no backend...`, accountIds);
+      console.log(`🔍 [API] Buscando ${accountIds.length} contas no backend...`, accountIds);
       
       const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
         body: {
@@ -171,17 +170,45 @@ export const Devolucao2025Page = () => {
         throw error;
       }
       
-      // ✅ CORREÇÃO: Edge Function retorna { success, data, total }
       const results = Array.isArray(data) ? data : (data?.data || []);
-      console.log(`✅ [API] ${results.length} devoluções retornadas da API`);
-      console.log('📦 [API] Primeiras 3 devoluções:', results.slice(0, 3));
+      
+      // 💾 Salvar última busca bem-sucedida no localStorage
+      try {
+        localStorage.setItem('devolucoes:lastSearch', JSON.stringify({
+          data: results,
+          timestamp: Date.now(),
+          accounts: accountIds,
+          dateRange: backendDateRange
+        }));
+      } catch (err) {
+        console.warn('⚠️ Erro ao salvar última busca:', err);
+      }
+      
+      console.log(`✅ [API] ${results.length} devoluções retornadas (cache atualizado)`);
       return results;
     },
-    enabled: appliedAccounts.length > 0, // ✅ Só busca quando há contas aplicadas
+    enabled: appliedAccounts.length > 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    placeholderData: () => {
+      // 💾 Restaurar última busca do localStorage
+      try {
+        const cached = localStorage.getItem('devolucoes:lastSearch');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const age = Date.now() - parsed.timestamp;
+          if (age < 30 * 60 * 1000) { // 30 minutos
+            console.log(`💾 [CACHE] Restaurando última busca (${Math.round(age / 1000)}s atrás)`);
+            return parsed.data;
+          }
+        }
+      } catch (err) {
+        console.warn('⚠️ Erro ao restaurar cache:', err);
+      }
+      return undefined;
+    }
   });
 
   // Filtrar localmente baseado nas preferências do usuário
