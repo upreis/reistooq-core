@@ -21,8 +21,7 @@ const DEFAULT_FILTERS: DevolucoesFilters = {
   searchTerm: '',
   currentPage: 1,
   itemsPerPage: 50,
-  activeTab: 'ativas',
-  apenasComRastreio: false
+  activeTab: 'ativas'
 };
 
 /**

@@ -279,18 +279,11 @@ export const Devolucao2025Page = () => {
       console.log(`📅 [FILTRO PERÍODO] ${beforeFilter} → ${filtered.length} (período: ${dateRange.from.toLocaleDateString()} a ${dateRange.to.toLocaleDateString()})`);
     }
     
-    // Filtro apenas com rastreio
-    if (filters.apenasComRastreio) {
-      const beforeFilter = filtered.length;
-      filtered = filtered.filter(dev => dev.codigo_rastreamento && dev.codigo_rastreamento.trim() !== '');
-      console.log(`📦 [FILTRO RASTREIO] ${beforeFilter} → ${filtered.length} (apenas com código de rastreamento)`);
-    }
-    
     // ✅ Filtro de contas removido - já filtrado no backend via selectedAccounts
     
     console.log(`🎯 [FILTRO LOCAL FINAL] ${filtered.length}/${devolucoesCompletas.length} devoluções após todos os filtros`);
     return filtered;
-  }, [devolucoesCompletas, dateRange, filters.apenasComRastreio]);
+  }, [devolucoesCompletas, dateRange]);
 
   // Enriquecer devoluções com status de análise local
   const devolucoesEnriquecidas = useMemo(() => {
@@ -505,8 +498,6 @@ export const Devolucao2025Page = () => {
                     allColumns={COLUMNS_CONFIG}
                     visibleColumns={Array.from(columnManager.state.visibleColumns)}
                     onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
-                    apenasComRastreio={filters.apenasComRastreio}
-                    onApenasComRastreioChange={(value) => updateFilter('apenasComRastreio', value)}
                   />
                 </div>
               </div>
