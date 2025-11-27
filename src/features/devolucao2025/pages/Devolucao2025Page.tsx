@@ -148,8 +148,18 @@ export const Devolucao2025Page = () => {
 
 
   // 🚀 BUSCA AGREGADA NO BACKEND - Cache em memória React Query (sem localStorage)
+  // ✅ CRÍTICO: Converter queryKey para valores PRIMITIVOS estáveis (não objetos/arrays)
+  // Arrays/objetos mudam referência → React Query considera query diferente → não usa cache
+  const stableQueryKey = useMemo(() => {
+    const dateKey = `${backendDateRange.from.toISOString()}_${backendDateRange.to.toISOString()}`;
+    const accountsKey = appliedAccounts.length > 0 
+      ? appliedAccounts.slice().sort().join(',')
+      : 'all-accounts';
+    return ['devolucoes-2025-completas', dateKey, accountsKey];
+  }, [backendDateRange, appliedAccounts]);
+  
   const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['devolucoes-2025-completas', backendDateRange, appliedAccounts],
+    queryKey: stableQueryKey,
     queryFn: async () => {
       const startTime = Date.now();
       const accountIds = appliedAccounts.length > 0 
