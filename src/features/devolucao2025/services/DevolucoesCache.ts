@@ -1,10 +1,8 @@
 /**
- * 🚀 SISTEMA DE CACHE INTELIGENTE - DEVOLUÇÕES DE VENDA
- * Cache multicamadas frontend com invalidação automática
- * Baseado em /pedidos reference architecture
+ * 🚀 FASE 2: SISTEMA DE CACHE FRONTEND INTELIGENTE
+ * Cache multicamadas para devoluções com invalidação automática
+ * Inspirado no padrão /pedidos que funciona perfeitamente
  */
-
-import { QueryClient } from '@tanstack/react-query';
 
 interface CacheEntry<T> {
   data: T;
@@ -101,7 +99,6 @@ class DevolucoesCache {
   private evictLRU(): void {
     let lruKey: string | null = null;
     let minHits = Infinity;
-    let oldestTime = Infinity;
 
     this.cache.forEach((entry, key) => {
       // Prioriza remover menos usado e mais antigo
@@ -109,7 +106,6 @@ class DevolucoesCache {
       if (score < minHits) {
         minHits = score;
         lruKey = key;
-        oldestTime = entry.timestamp;
       }
     });
 
@@ -126,6 +122,7 @@ class DevolucoesCache {
     const keysToDelete: string[] = [];
 
     this.cache.forEach((entry, key) => {
+      // Só deleta se expirado E não foi acessado recentemente (último 1s)
       const isExpired = now - entry.timestamp > entry.ttl;
       const recentlyAccessed = entry.hits > 0 && (now - entry.timestamp) < 1000;
       
@@ -184,7 +181,7 @@ export function startCacheCleanup() {
   }, 5 * 60 * 1000);
   
   if (process.env.NODE_ENV === 'development') {
-    console.log('🧹 [CACHE DEVOLUÇÕES] Auto cleanup iniciado (5min interval)');
+    console.log('🧹 [DEVOLUCOES CACHE] Auto cleanup iniciado (5min)');
   }
 }
 
@@ -192,14 +189,10 @@ export function stopCacheCleanup() {
   if (cleanupIntervalId) {
     clearInterval(cleanupIntervalId);
     cleanupIntervalId = null;
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🛑 [CACHE DEVOLUÇÕES] Auto cleanup parado');
-    }
   }
 }
 
-// Iniciar cleanup apenas uma vez
+// Iniciar cleanup
 if (typeof window !== 'undefined') {
   startCacheCleanup();
   window.addEventListener('beforeunload', stopCacheCleanup);
@@ -245,34 +238,29 @@ export const cacheKeys = {
       const normalized = normalizeValue(filters);
       return `devolucoes:${JSON.stringify(normalized)}`;
     } catch (error) {
-      console.warn('[CACHE] Falha ao serializar filtros:', error);
+      console.warn('[DEVOLUCOES CACHE] Falha ao serializar:', error);
       return `devolucoes:${Date.now()}`;
     }
   },
   
-  devolucao: (orderId: string) => 
-    `devolucao:${orderId}`,
-  
-  stats: (period?: string) => 
-    `stats:${period || 'today'}`,
+  devolucao: (id: string) => `devolucao:${id}`,
+  stats: (period?: string) => `devolucoes-stats:${period || 'today'}`,
+  filtros: (userId: string) => `devolucoes-filtros:${userId}`,
 } as const;
 
 /**
- * Invalidação inteligente baseada em eventos
+ * Invalidação baseada em eventos
  */
 export const invalidateOnEvents = {
   devolucaoCriada: () => {
     devolucoesCache.invalidate('devolucoes:');
-    devolucoesCache.invalidate('stats:');
+    devolucoesCache.invalidate('devolucoes-stats:');
   },
   
-  devolucaoAtualizada: (orderId: string) => {
-    devolucoesCache.delete(cacheKeys.devolucao(orderId));
+  devolucaoAtualizada: (id: string) => {
+    devolucoesCache.delete(cacheKeys.devolucao(id));
     devolucoesCache.invalidate('devolucoes:');
-    devolucoesCache.invalidate('stats:');
   },
   
-  all: () => {
-    devolucoesCache.invalidate();
-  }
+  all: () => devolucoesCache.invalidate()
 } as const;
