@@ -183,23 +183,20 @@ export const Devolucao2025Page = () => {
     queryKey: stableQueryKey,
     queryFn: async () => {
       // 💾 FASE 2: Verificar cache in-memory ANTES da API
-      const cacheKey = cacheKeys.devolucoes({
-        dateFrom: dateFromISO,
-        dateTo: dateToISO,
-        accounts: accountsSerializado
-      });
+      // Usar queryKey diretamente como cacheKey (já é estável e serializado)
+      const cacheKey = stableQueryKey.join('::');
       
       const cached = devolucoesCache.get<any[]>(cacheKey);
       if (cached) {
         console.log('💾 [CACHE HIT] Dados do cache in-memory', {
           count: cached.length,
-          key: cacheKey
+          key: cacheKey.substring(0, 80) + '...'
         });
         return cached;
       }
       
       console.log('❌ [CACHE MISS] Buscando da API ML...', {
-        queryKey: stableQueryKey,
+        cacheKey: cacheKey.substring(0, 80) + '...',
         timestamp: new Date().toISOString()
       });
       
