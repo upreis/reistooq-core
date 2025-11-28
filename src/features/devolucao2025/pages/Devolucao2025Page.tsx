@@ -238,7 +238,7 @@ export const Devolucao2025Page = () => {
       
       return results;
     },
-    enabled: appliedAccounts.length > 0, // ✅ FASE 1 OPÇÃO A: appliedAccounts sincronizado com queryKey e queryFn
+    enabled: appliedAccounts.length > 0 || accounts.length > 0, // ✅ OPÇÃO A-FIX: fallback para accounts se appliedAccounts vazio (race condition)
     placeholderData: cachedData.length > 0 ? cachedData : undefined, // ⚡ RESTAURAÇÃO INSTANTÂNEA
     retry: 2,
     refetchOnWindowFocus: false,
