@@ -3,7 +3,7 @@ import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDo
 import { useLocation } from "react-router-dom";
 import visaoGeralIcon from "@/assets/dashboard-visao-geral-icon.png";
 import pedidosIcon from "@/assets/icons/pedidos-icon.png";
-import vendasOnlineIcon from "@/assets/vendas-online-icon.png";
+import vendasOnlineIcon from "@/assets/icons/vendas-online-icon.png";
 import reclamacoesIcon from "@/assets/icons/reclamacoes-icon.png";
 import comprasPedidosIcon from "@/assets/compras-pedidos-icon.png";
 import comprasCotacoesIcon from "@/assets/compras-cotacoes-icon.png";
