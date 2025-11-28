@@ -131,3 +131,6 @@ verify_jwt = true
 
 [functions.cleanup-reclamacoes]
 verify_jwt = true
+
+[functions.unified-ml-orders]
+verify_jwt = true
