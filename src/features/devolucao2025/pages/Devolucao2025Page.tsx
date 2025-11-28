@@ -101,12 +101,16 @@ export const Devolucao2025Page = () => {
   });
 
   // 🔄 Sincronizar appliedAccounts quando selectedAccounts mudar (ex: usuário adiciona/remove contas)
+  // ✅ CORREÇÃO CRÍTICA: Sincronizar SEMPRE, incluindo quando fica vazio
   useEffect(() => {
-    if (selectedAccounts.length > 0 && JSON.stringify(selectedAccounts) !== JSON.stringify(appliedAccounts)) {
-      console.log('🔄 [SYNC] Sincronizando appliedAccounts com selectedAccounts:', selectedAccounts);
+    const newSerialized = selectedAccounts.slice().sort().join('|');
+    const currentSerialized = appliedAccounts.slice().sort().join('|');
+    
+    if (newSerialized !== currentSerialized) {
+      console.log('🔄 [SYNC] Sincronizando appliedAccounts:', selectedAccounts);
       setAppliedAccounts(selectedAccounts);
     }
-  }, [selectedAccounts]);
+  }, [selectedAccounts, appliedAccounts]);
 
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
