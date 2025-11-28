@@ -87,7 +87,7 @@ import pedidosOmsIcon from "@/assets/pedidos_oms.png";
 import pedidosOmsNewIcon from "@/assets/oms-pedidos-icon-v2.png";
 import perfilAdminIcon from "@/assets/perfil_admin.png";
 import reclamacoesIcon from "@/assets/icons/reclamacoes-cancelled-icon.png";
-import scannerIcon from "@/assets/scanner.png";
+import scannerIcon from "@/assets/icons/scanner-icon.png";
 import segurancaIcon from "@/assets/seguranca.png";
 import usuariosIcon from "@/assets/usuarios.png";
 import vendedoresIcon from "@/assets/vendedores.png";
