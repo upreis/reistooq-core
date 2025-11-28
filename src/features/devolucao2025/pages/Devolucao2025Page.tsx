@@ -87,16 +87,21 @@ export const Devolucao2025Page = () => {
   const [appliedAccounts, setAppliedAccounts] = useState<string[]>(selectedAccounts);
   
   // 💾 RESTAURAR DADOS DO LOCALSTORAGE ANTES DO REACT QUERY (Pattern /pedidos)
-  // Isso torna a restauração INSTANTÂNEA ao voltar na página
+  // ✅ FASE 3: Com validação de contas para evitar mostrar dados errados
   const [cachedData, setCachedData] = useState<any[]>(() => {
-    const cached = devolucoesCache.restoreFromLocalStorage<any[]>('lastSearch');
+    const cached = devolucoesCache.restoreFromLocalStorage<any[]>(
+      'lastSearch',
+      { accounts: selectedAccounts } // ✅ Valida se cache é das mesmas contas
+    );
     if (cached && cached.length > 0) {
       console.log('⚡ [INSTANT RESTORE] Dados restaurados do localStorage ANTES da query:', {
         count: cached.length,
-        age: 'válido'
+        accounts: selectedAccounts.length,
+        validation: '✅ Contas validadas'
       });
       return cached;
     }
+    console.log('⚠️ [INSTANT RESTORE] Cache não disponível ou contas diferentes');
     return [];
   });
 
@@ -234,11 +239,13 @@ export const Devolucao2025Page = () => {
       const results = Array.isArray(data) ? data : (data?.data || []);
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       
-      // 💾 Salvar no localStorage (React Query já gerencia cache em memória)
-      devolucoesCache.persistToLocalStorage('lastSearch', results);
+      // 💾 FASE 3: Salvar no localStorage com metadados de contas
+      devolucoesCache.persistToLocalStorage('lastSearch', results, {
+        accounts: accountIds // ✅ Salvar quais contas foram usadas
+      });
       setCachedData(results); // Atualizar estado local para próxima restauração
       
-      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções`);
+      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (contas: ${accountIds.length})`);
       
       return results;
     },
