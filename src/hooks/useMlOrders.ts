@@ -6,7 +6,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { mlOrdersCache } from '@/lib/ml-cache/frontend-cache';
-import { useEffect } from 'react';
 
 interface UseMlOrdersParams {
   integration_account_ids: string[];

@@ -123,7 +123,20 @@ Deno.serve(async (req) => {
       
       console.log('❌ Cache MISS - fetching from ML API');
     } else {
-      console.log('🔄 Force refresh - bypassing cache');
+      console.log('🔄 Force refresh - bypassing cache and invalidating old cache');
+      
+      // Invalidar cache antigo das contas especificadas antes de buscar novos dados
+      const { error: deleteError } = await supabase
+        .from('ml_orders_cache')
+        .delete()
+        .eq('organization_id', organization_id)
+        .in('integration_account_id', integration_account_ids);
+      
+      if (deleteError) {
+        console.error('⚠️ Error invalidating old cache:', deleteError);
+      } else {
+        console.log('✅ Old cache invalidated for accounts:', integration_account_ids);
+      }
     }
 
     // ETAPA 2: Buscar da ML API (cache miss ou force refresh)
