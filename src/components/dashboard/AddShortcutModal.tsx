@@ -92,7 +92,7 @@ import segurancaIcon from "@/assets/seguranca.png";
 import usuariosIcon from "@/assets/usuarios.png";
 import vendedoresIcon from "@/assets/vendedores.png";
 import vendedoresNewIcon from "@/assets/oms-vendedores-icon-v2.png";
-import visaoGeralIcon from "@/assets/visao_geral.png";
+import visaoGeralIcon from "@/assets/icons/visao-geral-icon.png";
 
 interface PageOption {
   id: string;
