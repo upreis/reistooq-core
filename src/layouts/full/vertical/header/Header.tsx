@@ -8,7 +8,7 @@ import reclamacoesIcon from "@/assets/icons/reclamacoes-icon.png";
 import comprasPedidosIcon from "@/assets/compras-pedidos-icon.png";
 import comprasCotacoesIcon from "@/assets/compras-cotacoes-icon.png";
 import comprasFornecedoresIcon from "@/assets/compras-fornecedores-icon.png";
-import comprasImportacaoIcon from "@/assets/compras-importacao-icon.png";
+import comprasImportacaoIcon from "@/assets/icons/compras-importacao-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueComposicoesIcon from "@/assets/estoque-composicoes-icon.png";
 import estoqueHistoricoIcon from "@/assets/estoque-historico-icon.png";
