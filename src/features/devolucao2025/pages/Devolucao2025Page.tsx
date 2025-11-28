@@ -110,7 +110,7 @@ export const Devolucao2025Page = () => {
       console.log('🔄 [SYNC] Sincronizando appliedAccounts:', selectedAccounts);
       setAppliedAccounts(selectedAccounts);
     }
-  }, [selectedAccounts, appliedAccounts]);
+  }, [selectedAccounts]); // ✅ Sem appliedAccounts nas deps para evitar infinite loop
 
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
