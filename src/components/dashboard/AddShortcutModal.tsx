@@ -48,7 +48,7 @@ import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
 import vendasOnlineIcon from "@/assets/vendas_online.png";
-import vendasOnlineNewIcon from "@/assets/vendas-online-icon-v2.png";
+import vendasOnlineNewIcon from "@/assets/icons/vendas-online-icon.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
 import adminIcon from "@/assets/admin.png";
 import alertasIcon from "@/assets/alertas.png";
