@@ -3450,6 +3450,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_orders_cache: {
+        Row: {
+          cached_at: string
+          created_at: string
+          id: string
+          integration_account_id: string
+          order_data: Json
+          order_id: string
+          organization_id: string
+          ttl_expires_at: string
+        }
+        Insert: {
+          cached_at?: string
+          created_at?: string
+          id?: string
+          integration_account_id: string
+          order_data: Json
+          order_id: string
+          organization_id: string
+          ttl_expires_at: string
+        }
+        Update: {
+          cached_at?: string
+          created_at?: string
+          id?: string
+          integration_account_id?: string
+          order_data?: Json
+          order_id?: string
+          organization_id?: string
+          ttl_expires_at?: string
+        }
+        Relationships: []
+      }
       ml_orders_completas: {
         Row: {
           buyer_id: string | null

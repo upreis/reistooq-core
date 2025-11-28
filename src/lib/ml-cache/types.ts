@@ -5,6 +5,7 @@
 
 export interface MlOrderCacheEntry {
   id: string;
+  organization_id: string; // ✅ CORREÇÃO PROBLEMA 4
   integration_account_id: string;
   order_id: string;
   order_data: any; // JSON completo do pedido enriquecido

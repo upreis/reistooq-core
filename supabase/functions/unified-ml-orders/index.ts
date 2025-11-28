@@ -36,11 +36,46 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
+    // ✅ CORREÇÃO PROBLEMA 3: Obter organization_id do usuário autenticado
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organizacao_id')
+      .eq('id', user.id)
+      .single();
+
+    const organization_id = profile?.organizacao_id;
+    if (!organization_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Organization not found' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Parse request body
     const params: RequestParams = await req.json();
     const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
 
+    // ✅ CORREÇÃO PROBLEMA 6: Validar array vazio
+    if (!integration_account_ids || integration_account_ids.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'integration_account_ids is required and must not be empty' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('📥 Unified ML Orders - Request:', {
+      organization_id,
       accounts: integration_account_ids.length,
       date_from,
       date_to,
@@ -54,6 +89,7 @@ Deno.serve(async (req) => {
       const { data: cachedOrders, error: cacheError } = await supabase
         .from('ml_orders_cache')
         .select('*')
+        .eq('organization_id', organization_id)
         .in('integration_account_id', integration_account_ids)
         .gt('ttl_expires_at', new Date().toISOString());
 
@@ -120,6 +156,7 @@ Deno.serve(async (req) => {
         console.log(`💾 Saving ${accountOrders.length} orders to cache...`);
         
         const cacheEntries = accountOrders.map((order: any) => ({
+          organization_id, // ✅ CORREÇÃO PROBLEMA 3
           integration_account_id: accountId,
           order_id: order.id?.toString() || order.order_id,
           order_data: order,
@@ -127,19 +164,15 @@ Deno.serve(async (req) => {
           ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
         }));
 
-        // Deletar cache antigo desta conta
-        await supabase
+        // ✅ CORREÇÃO PROBLEMA 7: Usar UPSERT ao invés de DELETE+INSERT
+        const { error: upsertError } = await supabase
           .from('ml_orders_cache')
-          .delete()
-          .eq('integration_account_id', accountId);
+          .upsert(cacheEntries, {
+            onConflict: 'organization_id,integration_account_id,order_id'
+          });
 
-        // Inserir novos dados
-        const { error: insertError } = await supabase
-          .from('ml_orders_cache')
-          .insert(cacheEntries);
-
-        if (insertError) {
-          console.error('❌ Error saving to cache:', insertError);
+        if (upsertError) {
+          console.error('❌ Error saving to cache:', upsertError);
         } else {
           console.log(`✅ Saved ${cacheEntries.length} orders to cache`);
         }
