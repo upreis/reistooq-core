@@ -167,15 +167,16 @@ class DevolucoesCache {
   }
 
   /**
-   * 💾 PERSISTÊNCIA EM LOCALSTORAGE
-   * Salva dados completos (28 colunas) - não precisa comprimir pois são poucas colunas
+   * 💾 PERSISTÊNCIA EM LOCALSTORAGE COM METADADOS
+   * Salva dados completos + metadados de contas para validação
    */
-  persistToLocalStorage<T>(key: string, data: T): void {
+  persistToLocalStorage<T>(key: string, data: T, metadata?: { accounts?: string[] }): void {
     try {
       const toSave = {
         data,
         timestamp: Date.now(),
-        ttl: this.defaultTTL
+        ttl: this.defaultTTL,
+        metadata: metadata || {}
       };
       
       const jsonStr = JSON.stringify(toSave);
@@ -186,7 +187,8 @@ class DevolucoesCache {
       console.log('💾 [PERSIST] Dados completos salvos no localStorage:', {
         key: `devolucoes:${key}`,
         size: `${sizeKB}KB`,
-        recordCount: Array.isArray(data) ? data.length : 'N/A'
+        recordCount: Array.isArray(data) ? data.length : 'N/A',
+        accounts: metadata?.accounts?.length || 0
       });
     } catch (error: any) {
       console.warn('❌ [PERSIST] Falha ao salvar no localStorage:', error);
@@ -244,9 +246,9 @@ class DevolucoesCache {
   }
 
   /**
-   * Restaura dados do localStorage
+   * Restaura dados do localStorage com validação de metadados
    */
-  restoreFromLocalStorage<T>(key: string): T | null {
+  restoreFromLocalStorage<T>(key: string, validateMetadata?: { accounts?: string[] }): T | null {
     try {
       const stored = localStorage.getItem(`devolucoes:${key}`);
       if (!stored) return null;
@@ -261,10 +263,30 @@ class DevolucoesCache {
         return null;
       }
 
+      // ✅ FASE 3: Validar se contas são as mesmas
+      if (validateMetadata?.accounts) {
+        const cachedAccounts = parsed.metadata?.accounts || [];
+        const requestedAccountsSorted = validateMetadata.accounts.slice().sort().join('|');
+        const cachedAccountsSorted = cachedAccounts.slice().sort().join('|');
+        
+        if (requestedAccountsSorted !== cachedAccountsSorted) {
+          console.log('⚠️ [PERSIST] Cache invalidado - contas diferentes:', {
+            cached: cachedAccounts,
+            requested: validateMetadata.accounts
+          });
+          return null;
+        }
+        
+        console.log('✅ [PERSIST] Validação de contas OK:', {
+          accounts: cachedAccounts.length
+        });
+      }
+
       console.log('✅ [PERSIST] Dados restaurados do localStorage:', {
         key: `devolucoes:${key}`,
         age: Math.round((Date.now() - parsed.timestamp) / 1000) + 's',
-        recordCount: Array.isArray(parsed.data) ? parsed.data.length : 'N/A'
+        recordCount: Array.isArray(parsed.data) ? parsed.data.length : 'N/A',
+        accountsValidated: !!validateMetadata?.accounts
       });
 
       return parsed.data as T;
