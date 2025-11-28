@@ -28,7 +28,7 @@ import ecommerceShopIcon from "@/assets/ecommerce-shop-icon.png";
 import ecommerceListIcon from "@/assets/ecommerce-list-icon.png";
 import ecommerceAddProductIcon from "@/assets/ecommerce-addproduct-icon.png";
 import ecommerceImportIcon from "@/assets/ecommerce-import-icon.png";
-import scannerIcon from "@/assets/scanner-icon.png";
+import scannerIcon from "@/assets/icons/scanner-icon.png";
 import deParaIcon from "@/assets/de-para-icon.png";
 import alertasIcon from "@/assets/alertas-icon.png";
 import historicoIcon from "@/assets/historico-icon.png";
