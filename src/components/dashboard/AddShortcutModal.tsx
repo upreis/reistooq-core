@@ -75,7 +75,7 @@ import historicoFerramentasIcon from "@/assets/historico_ferramentas.png";
 import estoqueHistoricoIcon from "@/assets/estoque-historico-icon.png";
 import estoqueHistoricoNewIcon from "@/assets/historico-estoque-icon-v2.png";
 import historicoIcon from "@/assets/historico.png";
-import importacaoIcon from "@/assets/importacao.png";
+import importacaoIcon from "@/assets/icons/importacao-icon.png";
 import importarProdutosIcon from "@/assets/importar_produtos.png";
 import integracoesIcon from "@/assets/integracoes.png";
 import listaProdutosIcon from "@/assets/lista_produtos.png";
