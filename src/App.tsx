@@ -23,6 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import NotFound from "./pages/NotFound";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
+import PedidosV2 from "./pages/PedidosV2";
 import VendasOnline from "./pages/VendasOnline";
 import DevolucoesDeVenda from "./pages/DevolucoesDeVenda";
 // DadosEnriquecidosQualidade removido temporariamente
@@ -140,6 +141,7 @@ function App() {
                     {/* Páginas principais */}
                     <Route path="estoque/*" element={<Estoque />} />
                     <Route path="pedidos" element={<Pedidos />} />
+                    <Route path="pedidos-v2" element={<PedidosV2 />} />
                     <Route path="scanner" element={<Scanner />} />
                     <Route path="historico" element={<Historico />} />
                     
