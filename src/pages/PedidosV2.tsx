@@ -36,21 +36,22 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function PedidosV2() {
-  // Verificar autenticação
-  const { data: session } = useQuery({
-    queryKey: ['session-check'],
+  // ✅ CRITICAL: Verificar autenticação ANTES de tudo
+  const { data: session, isLoading: sessionLoading } = useQuery({
+    queryKey: ['session-check-v2'],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       console.log('🔐 Session check:', { 
         hasSession: !!session, 
         userId: session?.user?.id,
-        expiresAt: session?.expires_at 
+        expiresAt: session?.expires_at,
+        accessToken: session?.access_token ? 'present' : 'missing'
       });
       return session;
     }
   });
   
-  // Buscar contas de integração do Mercado Livre
+  // Buscar contas de integração do Mercado Livre (apenas se autenticado)
   const { data: accounts = [], isLoading: accountsLoading } = useQuery({
     queryKey: ['integration-accounts-ml-v2'],
     queryFn: async () => {
@@ -63,7 +64,8 @@ export default function PedidosV2() {
 
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: !!session // ✅ Só buscar contas se estiver autenticado
   });
   
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -86,12 +88,38 @@ export default function PedidosV2() {
     integration_account_ids: selectedAccounts.length > 0 ? selectedAccounts : accounts.map(a => a.id),
     date_from: dateFrom.toISOString().split('T')[0],
     date_to: dateTo.toISOString().split('T')[0],
-    enabled: accounts.length > 0,
+    enabled: !!session && accounts.length > 0, // ✅ Só buscar se autenticado E tem contas
   });
 
   const handleRefresh = () => {
     invalidateCache();
   };
+
+  // ✅ Mostrar loading enquanto verifica sessão
+  if (sessionLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  // ✅ Redirecionar para login se não estiver autenticado
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Card className="p-6 max-w-md">
+          <h2 className="text-2xl font-bold text-destructive mb-4">🔒 Não autenticado</h2>
+          <p className="text-muted-foreground mb-4">
+            Você precisa estar logado para acessar esta página.
+          </p>
+          <Button onClick={() => window.location.href = '/'}>
+            Ir para Login
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

@@ -44,11 +44,21 @@ export function useMlOrders({
   const query = useQuery({
     queryKey,
     queryFn: async (): Promise<MlOrdersResponse> => {
+      // ✅ CRITICAL: Verificar sessão antes de chamar Edge Function
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('❌ No active session - user must be logged in');
+        throw new Error('User must be logged in to fetch orders');
+      }
+      
       console.log('🔄 useMlOrders - Fetching orders...', {
         accounts: integration_account_ids.length,
         date_from,
         date_to,
-        force_refresh
+        force_refresh,
+        hasSession: !!session,
+        userId: session.user?.id
       });
 
       // Se não for force refresh, tentar cache frontend primeiro
