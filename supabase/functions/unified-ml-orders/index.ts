@@ -29,7 +29,18 @@ Deno.serve(async (req) => {
 
   try {
     // Inicializar Supabase client
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    
+    console.log('🔐 Auth header present:', !!authHeader);
+    
+    if (!authHeader) {
+      console.error('❌ No authorization header provided');
+      return new Response(
+        JSON.stringify({ success: false, error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -38,12 +49,24 @@ Deno.serve(async (req) => {
 
     // ✅ CORREÇÃO PROBLEMA 3: Obter organization_id do usuário autenticado
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    
+    if (userError) {
+      console.error('❌ Auth error:', userError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        JSON.stringify({ success: false, error: `Auth error: ${userError.message}` }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    if (!user) {
+      console.error('❌ No user found from token');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized - invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('✅ User authenticated:', user.id);
 
     const { data: profile } = await supabase
       .from('profiles')
