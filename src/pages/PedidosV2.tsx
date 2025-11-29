@@ -36,6 +36,20 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function PedidosV2() {
+  // Verificar autenticação
+  const { data: session } = useQuery({
+    queryKey: ['session-check'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 Session check:', { 
+        hasSession: !!session, 
+        userId: session?.user?.id,
+        expiresAt: session?.expires_at 
+      });
+      return session;
+    }
+  });
+  
   // Buscar contas de integração do Mercado Livre
   const { data: accounts = [], isLoading: accountsLoading } = useQuery({
     queryKey: ['integration-accounts-ml-v2'],
