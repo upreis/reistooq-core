@@ -8,7 +8,6 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useMlOrders } from '@/hooks/useMlOrders';
 import { Card } from '@/components/ui/card';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Devolucao2025Table } from '../components/Devolucao2025Table';
@@ -159,36 +158,44 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
 
-  // 🚀 ADAPTED COMBO 2: Hook unificado com cache Supabase + React Query + localStorage
+  // ✅ Buscar devoluções via Edge Function get-devolucoes-direct
   const accountIds = appliedAccounts.length > 0 ? appliedAccounts : accounts.map(a => a.id).filter(Boolean);
   
   const {
-    orders: devolucoesCompletas = [],
+    data: devolucoesCompletas = [],
     isLoading,
     error,
-    source,
     refetch,
-    isFetching,
-    invalidateCache,
-    clearCache
-  } = useMlOrders({
-    integration_account_ids: accountIds,
-    date_from: backendDateRange.from.toISOString(),
-    date_to: backendDateRange.to.toISOString(),
+    isFetching
+  } = useQuery({
+    queryKey: ['devolucoes-direct', accountIds.sort().join(','), backendDateRange.from.toISOString(), backendDateRange.to.toISOString()],
+    queryFn: async () => {
+      console.log('📡 Fetching devoluções from get-devolucoes-direct...');
+      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+        body: {
+          integration_account_ids: accountIds,
+          date_from: backendDateRange.from.toISOString(),
+          date_to: backendDateRange.to.toISOString()
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error fetching devoluções:', error);
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to fetch devoluções');
+      }
+
+      console.log(`✅ Fetched ${data.devolucoes?.length || 0} devoluções`);
+      return data.devolucoes || [];
+    },
     enabled: accountIds.length > 0,
-    force_refresh: false
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2
   });
-  
-  // 🐛 DEBUG: Status do cache
-  useEffect(() => {
-    console.log('📊 [ADAPTED COMBO 2 - CACHE STATUS]', {
-      source: source || 'loading',
-      isFetching: isFetching ? 'BUSCANDO API' : 'IDLE',
-      hasData: devolucoesCompletas.length > 0,
-      count: devolucoesCompletas.length,
-      accounts: accountIds.length
-    });
-  }, [isFetching, devolucoesCompletas.length, source, accountIds.length]);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
@@ -329,8 +336,8 @@ export const Devolucao2025Page = () => {
     setAppliedAccounts(selectedAccounts);
     
     try {
-      // Invalidar cache e forçar nova busca
-      invalidateCache();
+      // Invalidar cache React Query e forçar nova busca
+      queryClient.invalidateQueries({ queryKey: ['devolucoes-direct'] });
       await refetch();
       toast.success('Dados atualizados com sucesso!');
     } catch (error) {
@@ -339,7 +346,7 @@ export const Devolucao2025Page = () => {
     } finally {
       setIsManualSearching(false);
     }
-  }, [refetch, selectedAccounts, invalidateCache]);
+  }, [refetch, selectedAccounts, queryClient]);
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
