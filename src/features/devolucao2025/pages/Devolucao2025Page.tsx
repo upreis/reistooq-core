@@ -188,8 +188,8 @@ export const Devolucao2025Page = () => {
         throw new Error(data?.error || 'Failed to fetch devoluções');
       }
 
-      console.log(`✅ Fetched ${data.devolucoes?.length || 0} devoluções`);
-      return data.devolucoes || [];
+      console.log(`✅ Fetched ${data.data?.length || 0} devoluções`);
+      return data.data || [];
     },
     enabled: accountIds.length > 0,
     staleTime: 5 * 60 * 1000,
