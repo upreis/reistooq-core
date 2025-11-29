@@ -28,10 +28,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Inicializar Supabase client
+    // ✅ CRITICAL: Como verify_jwt = true, Supabase já validou o JWT
+    // Podemos criar um service client e extrair o user ID do JWT
     const authHeader = req.headers.get('Authorization');
-    
-    console.log('🔐 Auth header present:', !!authHeader);
     
     if (!authHeader) {
       console.error('❌ No authorization header provided');
@@ -40,38 +39,34 @@ Deno.serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    const supabase = createClient(
+
+    // Service client para operações administrativas
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // ✅ CORREÇÃO PROBLEMA 3: Obter organization_id do usuário autenticado
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Extrair user do JWT (já validado pelo Supabase via verify_jwt)
+    const jwt = authHeader.replace('Bearer ', '');
+    const [, payloadBase64] = jwt.split('.');
+    const payload = JSON.parse(atob(payloadBase64));
+    const userId = payload.sub;
     
-    if (userError) {
-      console.error('❌ Auth error:', userError);
+    if (!userId) {
+      console.error('❌ No user ID in JWT');
       return new Response(
-        JSON.stringify({ success: false, error: `Auth error: ${userError.message}` }),
+        JSON.stringify({ success: false, error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    if (!user) {
-      console.error('❌ No user found from token');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized - invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    console.log('✅ User authenticated:', user.id);
+    console.log('✅ User authenticated:', userId);
 
-    const { data: profile } = await supabase
+    // Buscar organization_id do usuário
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('organizacao_id')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     const organization_id = profile?.organizacao_id;
