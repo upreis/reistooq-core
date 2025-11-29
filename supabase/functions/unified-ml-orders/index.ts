@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
     if (!force_refresh) {
       console.log('🔍 Checking cache...');
       
-      const { data: cachedOrders, error: cacheError } = await supabase
+      const { data: cachedOrders, error: cacheError } = await supabaseAdmin
         .from('ml_orders_cache')
         .select('*')
         .eq('organization_id', organization_id)
@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
       console.log('🔄 Force refresh - bypassing cache and invalidating old cache');
       
       // Invalidar cache antigo das contas especificadas antes de buscar novos dados
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await supabaseAdmin
         .from('ml_orders_cache')
         .delete()
         .eq('organization_id', organization_id)
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       console.log(`📡 Fetching orders for account ${accountId}...`);
       
       // Chamar unified-orders existente para buscar dados
-      const unifiedOrdersResponse = await supabase.functions.invoke('unified-orders', {
+      const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
         body: {
           integration_account_id: accountId,
           date_from,
@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
         }));
 
         // ✅ CORREÇÃO PROBLEMA 7: Usar UPSERT ao invés de DELETE+INSERT
-        const { error: upsertError } = await supabase
+        const { error: upsertError } = await supabaseAdmin
           .from('ml_orders_cache')
           .upsert(cacheEntries, {
             onConflict: 'organization_id,integration_account_id,order_id'
