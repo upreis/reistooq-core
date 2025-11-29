@@ -8,7 +8,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { devolucoesCache, cacheKeys } from '../services/DevolucoesCache';
+import { useMlOrders } from '@/hooks/useMlOrders';
 import { Card } from '@/components/ui/card';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Devolucao2025Table } from '../components/Devolucao2025Table';
@@ -85,28 +85,8 @@ export const Devolucao2025Page = () => {
   
   // ✅ Filtros aplicados (inicializa com selectedAccounts para evitar race condition)
   const [appliedAccounts, setAppliedAccounts] = useState<string[]>(selectedAccounts);
-  
-  // 💾 RESTAURAR DADOS DO LOCALSTORAGE ANTES DO REACT QUERY (Pattern /pedidos)
-  // ✅ FASE 3: Com validação de contas para evitar mostrar dados errados
-  const [cachedData, setCachedData] = useState<any[]>(() => {
-    const cached = devolucoesCache.restoreFromLocalStorage<any[]>(
-      'lastSearch',
-      { accounts: selectedAccounts } // ✅ Valida se cache é das mesmas contas
-    );
-    if (cached && cached.length > 0) {
-      console.log('⚡ [INSTANT RESTORE] Dados restaurados do localStorage ANTES da query:', {
-        count: cached.length,
-        accounts: selectedAccounts.length,
-        validation: '✅ Contas validadas'
-      });
-      return cached;
-    }
-    console.log('⚠️ [INSTANT RESTORE] Cache não disponível ou contas diferentes');
-    return [];
-  });
 
-  // 🔄 Sincronizar appliedAccounts quando selectedAccounts mudar (ex: usuário adiciona/remove contas)
-  // ✅ CORREÇÃO CRÍTICA: Sincronizar SEMPRE, incluindo quando fica vazio
+  // 🔄 Sincronizar appliedAccounts quando selectedAccounts mudar
   useEffect(() => {
     const newSerialized = selectedAccounts.slice().sort().join('|');
     const currentSerialized = appliedAccounts.slice().sort().join('|');
@@ -115,7 +95,7 @@ export const Devolucao2025Page = () => {
       console.log('🔄 [SYNC] Sincronizando appliedAccounts:', selectedAccounts);
       setAppliedAccounts(selectedAccounts);
     }
-  }, [selectedAccounts]); // ✅ Sem appliedAccounts nas deps para evitar infinite loop
+  }, [selectedAccounts]);
 
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
@@ -179,94 +159,36 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
 
-  // 🚀 BUSCA AGREGADA NO BACKEND - React Query com cache automático
-  // ✅ FASE 1 OPÇÃO A: queryKey e queryFn SEMPRE usam appliedAccounts (sincronizado)
+  // 🚀 ADAPTED COMBO 2: Hook unificado com cache Supabase + React Query + localStorage
+  const accountIds = appliedAccounts.length > 0 ? appliedAccounts : accounts.map(a => a.id).filter(Boolean);
   
-  // Datas: ISO strings (constantes para este render)
-  const dateFromISO = backendDateRange.from.toISOString();
-  const dateToISO = backendDateRange.to.toISOString();
-  
-  // ✅ CRÍTICO: Memoizar accountsForKey baseado em appliedAccounts
-  // Evita invalidação de queryKey em todo render
-  const accountsForKey = useMemo(() => {
-    if (appliedAccounts.length === 0) {
-      // Fallback: usar todas as contas disponíveis
-      return accounts.map(a => a.id).filter(Boolean).sort().join('|');
-    }
-    return appliedAccounts.slice().sort().join('|');
-  }, [appliedAccounts, accounts]);
-  
-  // Query key: useMemo com TODAS as dependências explícitas
-  const stableQueryKey = useMemo(() => {
-    return [
-      'devolucoes-2025-completas',
-      dateFromISO,
-      dateToISO,
-      accountsForKey
-    ] as const;
-  }, [dateFromISO, dateToISO, accountsForKey]);
-  
-  const { data: devolucoesCompletas = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
-    queryKey: stableQueryKey,
-    queryFn: async () => {
-      console.log('🔍 [API] Iniciando busca na API ML...');
-      
-      const startTime = Date.now();
-      const accountIds = appliedAccounts.length > 0 
-        ? appliedAccounts 
-        : accounts.map(a => a.id).filter(Boolean);
-      
-      if (accountIds.length === 0) {
-        console.warn('⚠️ [API] Nenhuma conta selecionada');
-        return [];
-      }
-      
-      console.log(`🔍 [API] 🚀 INICIANDO BUSCA - ${accountIds.length} contas...`);
-      
-      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-        body: {
-          integration_account_ids: accountIds,
-          date_from: backendDateRange.from.toISOString(),
-          date_to: backendDateRange.to.toISOString()
-        }
-      });
-
-      if (error) {
-        console.error('❌ [API] Erro ao buscar:', error);
-        throw error;
-      }
-      
-      const results = Array.isArray(data) ? data : (data?.data || []);
-      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-      
-      // 💾 FASE 3: Salvar no localStorage com metadados de contas
-      devolucoesCache.persistToLocalStorage('lastSearch', results, {
-        accounts: accountIds // ✅ Salvar quais contas foram usadas
-      });
-      setCachedData(results); // Atualizar estado local para próxima restauração
-      
-      console.log(`✅ [API] Busca completa em ${duration}s - ${results.length} devoluções (contas: ${accountIds.length})`);
-      
-      return results;
-    },
-    enabled: appliedAccounts.length > 0 || accounts.length > 0, // ✅ OPÇÃO A-FIX: fallback para accounts se appliedAccounts vazio (race condition)
-    placeholderData: cachedData.length > 0 ? cachedData : undefined, // ⚡ RESTAURAÇÃO INSTANTÂNEA
-    retry: 2,
-    refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000,  // 5 minutos
-    gcTime: 15 * 60 * 1000,     // 15 minutos - mantém cache após unmount
+  const {
+    orders: devolucoesCompletas = [],
+    isLoading,
+    error,
+    source,
+    refetch,
+    isFetching,
+    invalidateCache,
+    clearCache
+  } = useMlOrders({
+    integration_account_ids: accountIds,
+    date_from: backendDateRange.from.toISOString(),
+    date_to: backendDateRange.to.toISOString(),
+    enabled: accountIds.length > 0,
+    force_refresh: false
   });
   
   // 🐛 DEBUG: Status do cache
   useEffect(() => {
-    console.log('📊 [CACHE STATUS]', {
+    console.log('📊 [ADAPTED COMBO 2 - CACHE STATUS]', {
+      source: source || 'loading',
       isFetching: isFetching ? 'BUSCANDO API' : 'IDLE',
       hasData: devolucoesCompletas.length > 0,
       count: devolucoesCompletas.length,
-      lastUpdate: dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString('pt-BR') : 'never',
-      queryKey: stableQueryKey
+      accounts: accountIds.length
     });
-  }, [isFetching, devolucoesCompletas.length, dataUpdatedAt, stableQueryKey]);
+  }, [isFetching, devolucoesCompletas.length, source, accountIds.length]);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
@@ -380,12 +302,12 @@ export const Devolucao2025Page = () => {
   // - Apenas restaura filtros do cache (linhas 64-74)
   // - Busca só ocorre quando usuário clica em "Aplicar Filtros"
 
-  // ✅ SALVAR METADADOS (SEM devoluções - evita QuotaExceededError)
+  // ✅ SALVAR METADADOS (não salva devoluções - cache gerenciado pelo Adapted Combo 2)
   useEffect(() => {
     if (devolucoesCompletas.length > 0 && persistentCache.isStateLoaded) {
       const timer = setTimeout(() => {
         persistentCache.saveDataCache(
-          selectedAccounts, // Filtros visuais do usuário
+          selectedAccounts,
           dateRange,
           currentPage,
           itemsPerPage,
@@ -398,16 +320,17 @@ export const Devolucao2025Page = () => {
     }
   }, [currentPage, itemsPerPage, periodo, devolucoesCompletas.length, persistentCache.isStateLoaded]);
 
-  // Handler para aplicar filtros (força refetch dos 60 dias completos)
+  // Handler para aplicar filtros - força refetch com invalidação de cache
   const handleApplyFilters = useCallback(async () => {
-    console.log('🔄 Aplicando filtros e buscando dados...');
+    console.log('🔄 Aplicando filtros e buscando dados (force refresh)...');
     setIsManualSearching(true);
     
-    // ✅ Aplicar os filtros selecionados pelo usuário
+    // Aplicar os filtros selecionados
     setAppliedAccounts(selectedAccounts);
     
     try {
-      // ✅ CORREÇÃO: Como enabled agora é dinâmico, refetch funcionará automaticamente
+      // Invalidar cache e forçar nova busca
+      invalidateCache();
       await refetch();
       toast.success('Dados atualizados com sucesso!');
     } catch (error) {
@@ -416,7 +339,7 @@ export const Devolucao2025Page = () => {
     } finally {
       setIsManualSearching(false);
     }
-  }, [refetch, selectedAccounts]);
+  }, [refetch, selectedAccounts, invalidateCache]);
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
