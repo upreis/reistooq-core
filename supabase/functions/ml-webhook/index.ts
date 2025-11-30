@@ -101,9 +101,9 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Processar claims e returns em background
+    // Processar claims e returns - adicionar na fila para processamento CRON
     if (topic === 'claims' || topic === 'returns') {
-      console.log(`[ML Webhook] Claims/Returns notification received, triggering background sync`);
+      console.log(`[ML Webhook] Claims/Returns notification received - adding to queue`);
       
       // ✅ Buscar integration_account_id baseado no user_id do ML
       const { data: accounts } = await supabase
@@ -120,6 +120,39 @@ Deno.serve(async (req) => {
         const organizationId = matchingAccount.organization_id;
         console.log(`[ML Webhook] Found integration account: ${accountId}`);
         
+        // 📋 ADICIONAR NA FILA DE PROCESSAMENTO (FASE C.1)
+        try {
+          const claimId = resource ? parseInt(resource.split('-')[0]) : null;
+          
+          if (claimId) {
+            await supabase
+              .from('fila_processamento_claims')
+              .upsert({
+                claim_id: claimId,
+                integration_account_id: accountId,
+                organization_id: organizationId,
+                status: 'pending',
+                prioridade: 'alta',
+                origem: 'webhook',
+                dados_webhook: {
+                  resource,
+                  topic,
+                  user_id,
+                  application_id,
+                  received_at: new Date().toISOString()
+                }
+              }, {
+                onConflict: 'claim_id,integration_account_id'
+              });
+            
+            console.log(`[ML Webhook] Claim ${claimId} added to queue for processing`);
+          } else {
+            console.warn(`[ML Webhook] Could not extract claim_id from resource: ${resource}`);
+          }
+        } catch (queueError) {
+          console.error('[ML Webhook] Error adding claim to queue:', queueError);
+        }
+        
         // 🔔 CRIAR NOTIFICAÇÃO EM TEMPO REAL
         try {
           await supabase
@@ -133,7 +166,7 @@ Deno.serve(async (req) => {
               tipo_notificacao: topic === 'claims' ? 'novo_claim' : 'novo_return',
               prioridade: 'alta',
               titulo: topic === 'claims' ? '🚨 Novo Claim Recebido' : '📦 Nova Devolução',
-              mensagem: `Um novo ${topic === 'claims' ? 'claim' : 'return'} foi detectado e está sendo processado.`,
+              mensagem: `Um novo ${topic === 'claims' ? 'claim' : 'return'} foi detectado e adicionado à fila de processamento.`,
               dados_contexto: {
                 resource,
                 topic,
@@ -147,17 +180,7 @@ Deno.serve(async (req) => {
           console.error('[ML Webhook] Error creating notification:', notifError);
         }
         
-        // Chamar sync em background (não aguardar resposta)
-        supabase.functions.invoke('sync-ml-claims', {
-          body: { 
-            integration_account_id: accountId,
-            trigger: 'webhook'
-          }
-        }).catch(err => {
-          console.error('[ML Webhook] Error triggering background sync:', err);
-        });
-        
-        console.log(`[ML Webhook] Background sync triggered for account ${accountId}`);
+        console.log(`[ML Webhook] Claim queued for CRON processing`);
       } else {
         console.warn(`[ML Webhook] No integration account found for ML user_id: ${user_id}`);
       }
