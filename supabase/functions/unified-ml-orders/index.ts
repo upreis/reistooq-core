@@ -21,6 +21,55 @@ interface RequestParams {
 
 const CACHE_TTL_MINUTES = 15;
 
+/**
+ * 🔧 HELPER: Extrai campos estruturados do order_data para ml_orders
+ */
+function extractOrderFields(order: any, accountId: string, organizationId: string) {
+  // Conversão segura de buyer_id para bigint
+  let buyerId: number | null = null;
+  try {
+    if (order.buyer?.id) {
+      buyerId = typeof order.buyer.id === 'number' 
+        ? order.buyer.id 
+        : parseInt(order.buyer.id, 10);
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to parse buyer_id:', order.buyer?.id);
+  }
+
+  // Conversão segura de pack_id
+  let packId: number | null = null;
+  try {
+    if (order.pack_id) {
+      packId = typeof order.pack_id === 'number'
+        ? order.pack_id
+        : parseInt(order.pack_id, 10);
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to parse pack_id:', order.pack_id);
+  }
+
+  return {
+    ml_order_id: order.id?.toString() || order.order_id,
+    organization_id: organizationId,
+    integration_account_id: accountId,
+    status: order.status || null,
+    date_created: order.date_created || null,
+    date_closed: order.date_closed || null,
+    last_updated: order.last_updated || null,
+    total_amount: order.total_amount || 0,
+    paid_amount: order.paid_amount || 0,
+    currency_id: order.currency_id || 'BRL',
+    buyer_id: buyerId,
+    buyer_nickname: order.buyer?.nickname || null,
+    buyer_email: order.buyer?.email || null,
+    fulfilled: order.fulfilled || false,
+    pack_id: packId,
+    order_data: order,
+    last_synced_at: new Date().toISOString()
+  };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -182,12 +231,13 @@ Deno.serve(async (req) => {
       
       allOrders.push(...accountOrders);
 
-      // ETAPA 3: Write-through caching - salvar no cache
+      // ETAPA 3: Write-through caching - salvar no cache E na tabela permanente
       if (accountOrders.length > 0) {
-        console.log(`💾 Saving ${accountOrders.length} orders to cache...`);
+        console.log(`💾 Saving ${accountOrders.length} orders to cache and ml_orders...`);
         
+        // 3.1: Salvar em ml_orders_cache (TTL cache temporário)
         const cacheEntries = accountOrders.map((order: any) => ({
-          organization_id, // ✅ CORREÇÃO PROBLEMA 3
+          organization_id,
           integration_account_id: accountId,
           order_id: order.id?.toString() || order.order_id,
           order_data: order,
@@ -195,17 +245,41 @@ Deno.serve(async (req) => {
           ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
         }));
 
-        // ✅ CORREÇÃO PROBLEMA 7: Usar UPSERT ao invés de DELETE+INSERT
-        const { error: upsertError } = await supabaseAdmin
+        const { error: cacheError } = await supabaseAdmin
           .from('ml_orders_cache')
           .upsert(cacheEntries, {
             onConflict: 'organization_id,integration_account_id,order_id'
           });
 
-        if (upsertError) {
-          console.error('❌ Error saving to cache:', upsertError);
+        if (cacheError) {
+          console.error('❌ Error saving to cache:', cacheError);
         } else {
-          console.log(`✅ Saved ${cacheEntries.length} orders to cache`);
+          console.log(`✅ Cache: Saved ${cacheEntries.length} orders`);
+        }
+
+        // 3.2: Salvar em ml_orders (persistência permanente com campos estruturados)
+        try {
+          const mlOrdersEntries = accountOrders.map((order: any) => 
+            extractOrderFields(order, accountId, organization_id)
+          );
+
+          const { error: mlOrdersError, data: mlOrdersData } = await supabaseAdmin
+            .from('ml_orders')
+            .upsert(mlOrdersEntries, {
+              onConflict: 'organization_id,integration_account_id,ml_order_id',
+              ignoreDuplicates: false // Atualizar se já existir
+            });
+
+          if (mlOrdersError) {
+            // Log mas não falha - cache temporário já foi salvo
+            console.error('⚠️ Error saving to ml_orders:', mlOrdersError);
+            console.error('⚠️ This is non-critical - cache is still functional');
+          } else {
+            console.log(`✅ ml_orders: Saved ${mlOrdersEntries.length} orders permanently`);
+          }
+        } catch (error) {
+          console.error('⚠️ Exception in ml_orders persistence:', error);
+          console.error('⚠️ This is non-critical - cache is still functional');
         }
       }
     }
