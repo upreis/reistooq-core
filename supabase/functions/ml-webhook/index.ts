@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
             .from('devolucoes_notificacoes')
             .insert({
               integration_account_id: accountId,
-              organization_id: organizationId,
+              organization_id: matchingAccount.organization_id,
               order_id: resource || 'unknown',
               claim_id: parseInt(resource?.split('-')[0] || '0'),
               return_id: parseInt(resource?.split('-')[1] || '0'),
