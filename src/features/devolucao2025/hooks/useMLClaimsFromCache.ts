@@ -19,6 +19,7 @@ interface CachedClaimsResponse {
   devolucoes: any[];
   total_count: number;
   cache_expired?: boolean;
+  last_synced_at?: string;
   error?: string;
 }
 
@@ -109,7 +110,8 @@ export function useMLClaimsFromCache({
           source: 'cache',
           devolucoes: filteredDevolucoes,
           total_count: filteredDevolucoes.length,
-          cache_expired: false
+          cache_expired: false,
+          last_synced_at: cachedClaims[0]?.last_synced_at || new Date().toISOString()
         };
       }
 

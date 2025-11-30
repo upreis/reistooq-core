@@ -28,7 +28,7 @@ import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnifie
 import { useDevolucoesColumnManager } from '../hooks/useDevolucoesColumnManager';
 import { useDevolucoesPolling } from '../hooks/useDevolucoesPolling';
 import { useDevolucoesAggregator } from '../hooks/useDevolucoesAggregator';
-import { useMLClaimsFromCache } from '@/features/devolucoes-online/hooks/useMLClaimsFromCache';
+import { useMLClaimsFromCache } from '../hooks/useMLClaimsFromCache';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
@@ -169,9 +169,9 @@ export const Devolucao2025Page = () => {
   const accountIds = appliedAccounts.length > 0 ? appliedAccounts : [];
   
   const cacheQuery = useMLClaimsFromCache({
-    integrationAccountIds: accountIds,
-    dateFrom: backendDateRange.from.toISOString(),
-    dateTo: backendDateRange.to.toISOString(),
+    integration_account_ids: accountIds,
+    date_from: backendDateRange.from.toISOString(),
+    date_to: backendDateRange.to.toISOString(),
     enabled: accountIds.length > 0
   });
 
@@ -179,14 +179,14 @@ export const Devolucao2025Page = () => {
   const useCacheData = !cacheQuery.isLoading && 
     cacheQuery.data && 
     !cacheQuery.data.cache_expired && 
-    cacheQuery.data.claims.length > 0;
+    cacheQuery.data.devolucoes.length > 0;
 
   // ✅ CORREÇÃO 8: FALLBACK considera cache vazio como expirado
   const shouldFetchFromAPI = accountIds.length > 0 && 
     !cacheQuery.isLoading && 
-    (cacheQuery.data?.cache_expired || !cacheQuery.data || cacheQuery.data.claims.length === 0);
+    (cacheQuery.data?.cache_expired || !cacheQuery.data || cacheQuery.data.devolucoes.length === 0);
 
-  // ✅ Buscar devoluções via unified-ml-claims (apenas se cache expirou)
+  // ✅ Buscar devoluções via get-devolucoes-direct (apenas se cache expirou)
   const {
     data: apiData,
     isLoading: isLoadingAPI,
@@ -194,20 +194,19 @@ export const Devolucao2025Page = () => {
     refetch,
     isFetching
   } = useQuery({
-    queryKey: ['devolucoes-unified-ml-claims', accountIds.sort().join(','), backendDateRange.from.toISOString(), backendDateRange.to.toISOString()],
+    queryKey: ['devolucoes-direct', accountIds.sort().join(','), backendDateRange.from.toISOString(), backendDateRange.to.toISOString()],
     queryFn: async () => {
-      console.log('📡 Fetching devoluções from unified-ml-claims...');
-      const { data, error } = await supabase.functions.invoke('unified-ml-claims', {
+      console.log('📡 [API FALLBACK] Fetching from get-devolucoes-direct...');
+      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
         body: {
           integration_account_ids: accountIds,
           date_from: backendDateRange.from.toISOString(),
-          date_to: backendDateRange.to.toISOString(),
-          force_refresh: false
+          date_to: backendDateRange.to.toISOString()
         }
       });
 
       if (error) {
-        console.error('❌ Error fetching devoluções:', error);
+        console.error('❌ [API] Error fetching devoluções:', error);
         throw error;
       }
 
@@ -215,8 +214,8 @@ export const Devolucao2025Page = () => {
         throw new Error(data?.error || 'Failed to fetch devoluções');
       }
 
-      console.log(`✅ Fetched ${data.claims?.length || 0} devoluções from API`);
-      return data.claims || [];
+      console.log(`✅ [API] Fetched ${data.devolucoes?.length || 0} devoluções`);
+      return data.devolucoes || [];
     },
     enabled: shouldFetchFromAPI,
     staleTime: 5 * 60 * 1000,
@@ -226,13 +225,23 @@ export const Devolucao2025Page = () => {
 
   // Consolidar dados: priorizar cache válido, fallback para API
   const devolucoesCompletas = useCacheData && cacheQuery.data 
-    ? cacheQuery.data.claims 
+    ? cacheQuery.data.devolucoes 
     : (apiData || []);
   
   const isLoading = cacheQuery.isLoading || isLoadingAPI;
   const error = cacheQuery.error || errorAPI;
 
-  console.log('📊 [DADOS] Fonte:', useCacheData ? 'CACHE' : 'API', '| Total:', devolucoesCompletas.length);
+  // 📊 Log detalhado da fonte de dados
+  useEffect(() => {
+    if (!isLoading && devolucoesCompletas.length > 0) {
+      console.log('📊 [COMBO 2] Fonte de dados:', {
+        fonte: useCacheData ? '✅ CACHE (ml_claims)' : '📡 API (get-devolucoes-direct)',
+        total: devolucoesCompletas.length,
+        cache_last_synced: cacheQuery.data?.last_synced_at,
+        performance: useCacheData ? 'INSTANTÂNEO' : 'NORMAL'
+      });
+    }
+  }, [isLoading, devolucoesCompletas.length, useCacheData, cacheQuery.data]);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
@@ -499,6 +508,31 @@ export const Devolucao2025Page = () => {
 
           {/* Tabela */}
           <div className="px-4 md:px-6 mt-2 relative">
+            {/* 📊 Indicador de fonte de dados */}
+            {!isLoading && devolucoesCompletas.length > 0 && (
+              <div className="absolute top-2 right-6 z-20">
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                  useCacheData 
+                    ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20' 
+                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                }`}>
+                  {useCacheData ? (
+                    <>
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Cache
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3" />
+                      API
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <Tabs value={activeTab}>
               <TabsContent value={activeTab} className="mt-0">
                 {/* 🔄 LOADER APENAS NA ÁREA DA TABELA */}
