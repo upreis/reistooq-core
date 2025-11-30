@@ -144,3 +144,6 @@ verify_jwt = true
 [functions.ml-claims-auto-sync]
 verify_jwt = false
 
+[functions.process-claims-queue]
+verify_jwt = false
+
