@@ -202,8 +202,16 @@ Deno.serve(async (req) => {
 
     // ETAPA 2: Buscar da ML API (cache miss ou force refresh)
     // ✅ CORREÇÃO 4: Chamar get-devolucoes-direct (mantém enriquecimento específico)
-    // TODO: Migrar para chamada direta ML API quando enriquecimento for centralizado
+    // ⚠️ PROBLEMA CRÍTICO 3 (EDGE FUNCTION CHAINING): 
+    //    Arquitetura atual: ml-claims-auto-sync → unified-ml-claims → get-devolucoes-direct → ML API
+    //    Impacto: 3-4x latência + custos + timeout risk
+    //    TODO URGENTE: Migrar para chamada direta ML API ou implementar background tasks
     const allClaims: any[] = [];
+    
+    // ✅ CORREÇÃO: Declarar results ANTES do loop
+    const results: any = {
+      errors: []
+    };
     
     for (const accountId of integration_account_ids) {
       console.log(`📡 Fetching claims for account ${accountId}...`);
@@ -293,11 +301,6 @@ Deno.serve(async (req) => {
     }
 
     console.log(`✅ Total claims fetched: ${allClaims.length}`);
-
-    // ✅ CORREÇÃO: Adicionar results se houve erros
-    const results: any = {
-      errors: []
-    };
 
     return new Response(
       JSON.stringify({

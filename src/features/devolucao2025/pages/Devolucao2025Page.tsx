@@ -83,19 +83,8 @@ export const Devolucao2025Page = () => {
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
-  // ✅ CORREÇÃO 10: Lazy initializer para evitar race condition
+  // ✅ CORREÇÃO 10+5: Lazy initializer para evitar race condition
   const [appliedAccounts, setAppliedAccounts] = useState<string[]>(() => selectedAccounts);
-
-  // 🔄 Sincronizar appliedAccounts quando selectedAccounts mudar
-  useEffect(() => {
-    const newSerialized = selectedAccounts.slice().sort().join('|');
-    const currentSerialized = appliedAccounts.slice().sort().join('|');
-    
-    if (newSerialized !== currentSerialized) {
-      console.log('🔄 [SYNC] Sincronizando appliedAccounts:', selectedAccounts);
-      setAppliedAccounts(selectedAccounts);
-    }
-  }, [selectedAccounts]);
 
   // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
   const backendDateRange = useMemo(() => {
@@ -154,6 +143,23 @@ export const Devolucao2025Page = () => {
       return data || [];
     }
   });
+
+  // 🔄 CORREÇÃO 4+5: Sincronizar appliedAccounts quando selectedAccounts OU accounts mudarem
+  useEffect(() => {
+    const newSerialized = selectedAccounts.slice().sort().join('|');
+    const currentSerialized = appliedAccounts.slice().sort().join('|');
+    
+    // Se selectedAccounts mudou e não está vazio, aplicar
+    if (selectedAccounts.length > 0 && newSerialized !== currentSerialized) {
+      console.log('🔄 [SYNC] Sincronizando appliedAccounts:', selectedAccounts);
+      setAppliedAccounts(selectedAccounts);
+    }
+    // FALLBACK: Se appliedAccounts está vazio mas accounts carregou, usar todas contas
+    else if (appliedAccounts.length === 0 && accounts.length > 0) {
+      console.log('🔄 [SYNC FALLBACK] Inicializando appliedAccounts com todas contas:', accounts.length);
+      setAppliedAccounts(accounts.map(acc => acc.id));
+    }
+  }, [selectedAccounts, appliedAccounts, accounts]);
 
   // ✅ REMOVIDO: shouldFetch causava bloqueio de buscas
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
