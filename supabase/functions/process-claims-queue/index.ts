@@ -44,8 +44,7 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('status', 'pending')
       .lt('tentativas', 3) // Máximo 3 tentativas
-      .order('prioridade', { ascending: false }) // Alta prioridade primeiro
-      .order('created_at', { ascending: true }) // Mais antigos primeiro
+      .order('criado_em', { ascending: true }) // Mais antigos primeiro
       .limit(50);
 
     if (queueError) {
