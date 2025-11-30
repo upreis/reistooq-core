@@ -227,7 +227,8 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const accountOrders = unifiedOrdersResponse.data?.orders || [];
+      // 🔧 CORREÇÃO CRÍTICA: unified-orders retorna .results, não .orders
+      const accountOrders = unifiedOrdersResponse.data?.results || [];
       console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId}`);
       
       allOrders.push(...accountOrders);
