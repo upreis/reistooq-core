@@ -3588,6 +3588,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_sync_status: {
+        Row: {
+          created_at: string | null
+          id: string
+          integration_account_id: string
+          last_sync_at: string | null
+          last_sync_error: string | null
+          last_sync_status: string | null
+          orders_cached: number | null
+          orders_fetched: number | null
+          organization_id: string
+          sync_duration_ms: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          integration_account_id: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          orders_cached?: number | null
+          orders_fetched?: number | null
+          organization_id: string
+          sync_duration_ms?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          integration_account_id?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          orders_cached?: number | null
+          orders_fetched?: number | null
+          organization_id?: string
+          sync_duration_ms?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       movimentacoes_estoque: {
         Row: {
           created_at: string

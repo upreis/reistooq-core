@@ -134,3 +134,6 @@ verify_jwt = true
 
 [functions.unified-ml-orders]
 verify_jwt = true
+
+[functions.ml-orders-auto-sync]
+verify_jwt = false
