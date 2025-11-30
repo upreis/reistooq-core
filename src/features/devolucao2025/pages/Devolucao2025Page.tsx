@@ -83,8 +83,8 @@ export const Devolucao2025Page = () => {
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
-  // ✅ Filtros aplicados (inicializa com selectedAccounts para evitar race condition)
-  const [appliedAccounts, setAppliedAccounts] = useState<string[]>(selectedAccounts);
+  // ✅ CORREÇÃO 10: Lazy initializer para evitar race condition
+  const [appliedAccounts, setAppliedAccounts] = useState<string[]>(() => selectedAccounts);
 
   // 🔄 Sincronizar appliedAccounts quando selectedAccounts mudar
   useEffect(() => {
@@ -159,7 +159,8 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
   // 🚀 COMBO 2 - ESTRATÉGIA HÍBRIDA: Consultar cache primeiro
-  const accountIds = appliedAccounts.length > 0 ? appliedAccounts : accounts.map(a => a.id).filter(Boolean);
+  // ✅ CORREÇÃO 11: Não fazer fallback para todas contas (performance + dados irrelevantes)
+  const accountIds = appliedAccounts.length > 0 ? appliedAccounts : [];
   
   const cacheQuery = useMLClaimsFromCache({
     integrationAccountIds: accountIds,
@@ -168,13 +169,16 @@ export const Devolucao2025Page = () => {
     enabled: accountIds.length > 0
   });
 
-  // Se cache retornou dados válidos E não está loading, usar cache
-  const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
+  // ✅ CORREÇÃO 9: Cache válido requer dados não vazios
+  const useCacheData = !cacheQuery.isLoading && 
+    cacheQuery.data && 
+    !cacheQuery.data.cache_expired && 
+    cacheQuery.data.claims.length > 0;
 
-  // FALLBACK: Buscar de API ML apenas se cache expirou/vazio E cache terminou loading
+  // ✅ CORREÇÃO 8: FALLBACK considera cache vazio como expirado
   const shouldFetchFromAPI = accountIds.length > 0 && 
     !cacheQuery.isLoading && 
-    (cacheQuery.data?.cache_expired || !cacheQuery.data);
+    (cacheQuery.data?.cache_expired || !cacheQuery.data || cacheQuery.data.claims.length === 0);
 
   // ✅ Buscar devoluções via unified-ml-claims (apenas se cache expirou)
   const {
