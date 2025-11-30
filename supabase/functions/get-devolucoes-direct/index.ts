@@ -45,7 +45,8 @@ serve(async (req) => {
       integration_account_id,      // ✅ Single account (retrocompatibilidade)
       integration_account_ids,      // 🆕 Multiple accounts (nova feature)
       date_from, 
-      date_to
+      date_to,
+      filter_claim_id                // 🆕 FASE C.3: Filtro por claim_id específico
     } = await req.json();
 
     console.log('🔥 REQUEST PARSED - PARAMS:', { integration_account_id, integration_account_ids, date_from, date_to });
@@ -172,6 +173,16 @@ serve(async (req) => {
 
       logger.progress(`✅ [${accountId.slice(0, 8)}] Total: ${allClaims.length} claims`);
       let claims = allClaims;
+
+      // 🆕 FASE C.3: Filtrar por claim_id específico (para CRON)
+      if (filter_claim_id) {
+        logger.info(`🔍 Filtering by claim_id: ${filter_claim_id}`);
+        claims = claims.filter((c: any) => 
+          c.id?.toString() === filter_claim_id?.toString() ||
+          c.claim_id?.toString() === filter_claim_id?.toString()
+        );
+        logger.info(`✅ Found ${claims.length} claims matching filter_claim_id`);
+      }
 
       // Filtrar por data
       if (date_from || date_to) {

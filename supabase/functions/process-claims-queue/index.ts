@@ -13,13 +13,15 @@ const corsHeaders = {
 
 interface QueueItem {
   id: string;
-  claim_id: number;
+  claim_id: string; // ✅ STRING não number
   integration_account_id: string;
-  organization_id: string;
+  claim_data: any; // ✅ JSONB
   status: string;
-  prioridade: string;
   tentativas: number;
-  dados_webhook: any;
+  criado_em: string;
+  atualizado_em: string | null;
+  processado_em: string | null;
+  erro_mensagem: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -74,18 +76,30 @@ Deno.serve(async (req) => {
       console.log(`\n🔍 Processing claim ${item.claim_id} (attempt ${item.tentativas + 1}/3)`);
 
       try {
+        // ✅ Buscar organization_id do integration_account
+        const { data: accountData, error: accountError } = await supabaseAdmin
+          .from('integration_accounts')
+          .select('organization_id')
+          .eq('id', item.integration_account_id)
+          .single();
+
+        if (accountError || !accountData) {
+          throw new Error(`Failed to fetch organization_id: ${accountError?.message}`);
+        }
+
+        const organizationId = accountData.organization_id;
+
         // Marcar como processing
         await supabaseAdmin
           .from('fila_processamento_claims')
           .update({
             status: 'processing',
             tentativas: item.tentativas + 1,
-            updated_at: new Date().toISOString()
+            atualizado_em: new Date().toISOString() // ✅ atualizado_em não updated_at
           })
           .eq('id', item.id);
 
         // 🌐 BUSCAR DADOS DO CLAIM DIRETAMENTE DE get-devolucoes-direct
-        // (elimina chain unified-ml-claims)
         console.log(`📡 Calling get-devolucoes-direct for claim ${item.claim_id}...`);
         
         const { data: claimData, error: claimError } = await supabaseAdmin.functions.invoke(
@@ -93,7 +107,7 @@ Deno.serve(async (req) => {
           {
             body: {
               integration_account_id: item.integration_account_id,
-              claim_id: item.claim_id // Filtrar apenas este claim específico
+              filter_claim_id: item.claim_id // ✅ Novo parâmetro para filtro
             }
           }
         );
@@ -103,7 +117,12 @@ Deno.serve(async (req) => {
         }
 
         const devolucoes = claimData.devolucoes || [];
-        const claimFound = devolucoes.find((d: any) => d.claim_id === item.claim_id || d.claim_id?.toString() === item.claim_id?.toString());
+        
+        // Filtrar manualmente se get-devolucoes-direct retornou múltiplos
+        const claimFound = devolucoes.find((d: any) => 
+          d.claim_id === item.claim_id || 
+          d.claim_id?.toString() === item.claim_id?.toString()
+        );
 
         if (!claimFound) {
           throw new Error(`Claim ${item.claim_id} not found in response (got ${devolucoes.length} items)`);
@@ -111,13 +130,13 @@ Deno.serve(async (req) => {
 
         console.log(`✅ Claim ${item.claim_id} fetched successfully with enriched data`);
 
-        // 💾 SALVAR NO CACHE ml_claims (UPSERT)
+        // 💾 SALVAR NO CACHE ml_claims (UPSERT) com organization_id correto
         const { error: cacheError } = await supabaseAdmin
           .from('ml_claims')
           .upsert({
-            organization_id: item.organization_id,
+            organization_id: organizationId, // ✅ organization_id buscado
             integration_account_id: item.integration_account_id,
-            claim_id: item.claim_id?.toString() || claimFound.claim_id?.toString(),
+            claim_id: item.claim_id,
             order_id: claimFound.order_id || '',
             return_id: claimFound.return_id?.toString() || null,
             status: claimFound.status_devolucao || claimFound.status || null,
@@ -129,7 +148,7 @@ Deno.serve(async (req) => {
             total_amount: parseFloat(claimFound.valor_original_produto || 0),
             refund_amount: parseFloat(claimFound.valor_reembolso || 0),
             currency_id: claimFound.moeda_reembolso || 'BRL',
-            buyer_id: claimFound.comprador_id?.toString() || null,
+            buyer_id: null, // ✅ buyer_id number não string - deixar null por ora
             buyer_nickname: claimFound.comprador_nickname || null,
             claim_data: claimFound, // Dados completos ENRIQUECIDOS
             last_synced_at: new Date().toISOString()
@@ -148,8 +167,8 @@ Deno.serve(async (req) => {
           .from('fila_processamento_claims')
           .update({
             status: 'completed',
-            processed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            processado_em: new Date().toISOString(), // ✅ processado_em não processed_at
+            atualizado_em: new Date().toISOString() // ✅ atualizado_em não updated_at
           })
           .eq('id', item.id);
 
@@ -166,12 +185,8 @@ Deno.serve(async (req) => {
             .from('fila_processamento_claims')
             .update({
               status: 'failed',
-              erro_detalhes: {
-                message: errorMessage,
-                last_attempt: new Date().toISOString(),
-                tentativas: item.tentativas + 1
-              },
-              updated_at: new Date().toISOString()
+              erro_mensagem: errorMessage, // ✅ erro_mensagem não erro_detalhes
+              atualizado_em: new Date().toISOString() // ✅ atualizado_em não updated_at
             })
             .eq('id', item.id);
 
@@ -182,11 +197,8 @@ Deno.serve(async (req) => {
             .from('fila_processamento_claims')
             .update({
               status: 'pending',
-              erro_detalhes: {
-                message: errorMessage,
-                last_attempt: new Date().toISOString()
-              },
-              updated_at: new Date().toISOString()
+              erro_mensagem: errorMessage, // ✅ erro_mensagem não erro_detalhes
+              atualizado_em: new Date().toISOString() // ✅ atualizado_em não updated_at
             })
             .eq('id', item.id);
 
