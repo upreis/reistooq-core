@@ -28,6 +28,7 @@ import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnifie
 import { useDevolucoesColumnManager } from '../hooks/useDevolucoesColumnManager';
 import { useDevolucoesPolling } from '../hooks/useDevolucoesPolling';
 import { useDevolucoesAggregator } from '../hooks/useDevolucoesAggregator';
+import { useMLClaimsFromCache } from '@/features/devolucoes-online/hooks/useMLClaimsFromCache';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
@@ -157,25 +158,41 @@ export const Devolucao2025Page = () => {
   // ✅ REMOVIDO: shouldFetch causava bloqueio de buscas
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
-
-  // ✅ Buscar devoluções via Edge Function get-devolucoes-direct
+  // 🚀 COMBO 2 - ESTRATÉGIA HÍBRIDA: Consultar cache primeiro
   const accountIds = appliedAccounts.length > 0 ? appliedAccounts : accounts.map(a => a.id).filter(Boolean);
   
+  const cacheQuery = useMLClaimsFromCache({
+    integrationAccountIds: accountIds,
+    dateFrom: backendDateRange.from.toISOString(),
+    dateTo: backendDateRange.to.toISOString(),
+    enabled: accountIds.length > 0
+  });
+
+  // Se cache retornou dados válidos E não está loading, usar cache
+  const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
+
+  // FALLBACK: Buscar de API ML apenas se cache expirou/vazio E cache terminou loading
+  const shouldFetchFromAPI = accountIds.length > 0 && 
+    !cacheQuery.isLoading && 
+    (cacheQuery.data?.cache_expired || !cacheQuery.data);
+
+  // ✅ Buscar devoluções via unified-ml-claims (apenas se cache expirou)
   const {
-    data: devolucoesCompletas = [],
-    isLoading,
-    error,
+    data: apiData,
+    isLoading: isLoadingAPI,
+    error: errorAPI,
     refetch,
     isFetching
   } = useQuery({
-    queryKey: ['devolucoes-direct', accountIds.sort().join(','), backendDateRange.from.toISOString(), backendDateRange.to.toISOString()],
+    queryKey: ['devolucoes-unified-ml-claims', accountIds.sort().join(','), backendDateRange.from.toISOString(), backendDateRange.to.toISOString()],
     queryFn: async () => {
-      console.log('📡 Fetching devoluções from get-devolucoes-direct...');
-      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+      console.log('📡 Fetching devoluções from unified-ml-claims...');
+      const { data, error } = await supabase.functions.invoke('unified-ml-claims', {
         body: {
           integration_account_ids: accountIds,
           date_from: backendDateRange.from.toISOString(),
-          date_to: backendDateRange.to.toISOString()
+          date_to: backendDateRange.to.toISOString(),
+          force_refresh: false
         }
       });
 
@@ -188,14 +205,24 @@ export const Devolucao2025Page = () => {
         throw new Error(data?.error || 'Failed to fetch devoluções');
       }
 
-      console.log(`✅ Fetched ${data.data?.length || 0} devoluções`);
-      return data.data || [];
+      console.log(`✅ Fetched ${data.claims?.length || 0} devoluções from API`);
+      return data.claims || [];
     },
-    enabled: accountIds.length > 0,
+    enabled: shouldFetchFromAPI,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 2
   });
+
+  // Consolidar dados: priorizar cache válido, fallback para API
+  const devolucoesCompletas = useCacheData && cacheQuery.data 
+    ? cacheQuery.data.claims 
+    : (apiData || []);
+  
+  const isLoading = cacheQuery.isLoading || isLoadingAPI;
+  const error = cacheQuery.error || errorAPI;
+
+  console.log('📊 [DADOS] Fonte:', useCacheData ? 'CACHE' : 'API', '| Total:', devolucoesCompletas.length);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
@@ -336,8 +363,9 @@ export const Devolucao2025Page = () => {
     setAppliedAccounts(selectedAccounts);
     
     try {
-      // Invalidar cache React Query e forçar nova busca
-      queryClient.invalidateQueries({ queryKey: ['devolucoes-direct'] });
+      // Invalidar AMBOS caches: React Query cache + Supabase cache
+      queryClient.invalidateQueries({ queryKey: ['ml-claims-cache'] });
+      queryClient.invalidateQueries({ queryKey: ['devolucoes-unified-ml-claims'] });
       await refetch();
       toast.success('Dados atualizados com sucesso!');
     } catch (error) {
@@ -351,7 +379,7 @@ export const Devolucao2025Page = () => {
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
     // Cancela a query em andamento
-    queryClient.cancelQueries({ queryKey: ['devolucoes-2025-completas'] });
+    queryClient.cancelQueries({ queryKey: ['devolucoes-unified-ml-claims'] });
     setIsManualSearching(false);
     toast.info('Busca cancelada');
   }, [queryClient]);
