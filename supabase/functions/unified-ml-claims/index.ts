@@ -27,17 +27,8 @@ const CACHE_TTL_MINUTES = 15;
  * 🔧 HELPER: Extrai campos estruturados do claim_data para ml_claims
  */
 function extractClaimFields(claim: any, accountId: string, organizationId: string) {
-  // Conversão segura de buyer_id
-  let buyerId: number | null = null;
-  try {
-    if (claim.comprador_id) {
-      buyerId = typeof claim.comprador_id === 'number' 
-        ? claim.comprador_id 
-        : parseInt(claim.comprador_id, 10);
-    }
-  } catch (error) {
-    console.warn('⚠️ Failed to parse buyer_id:', claim.comprador_id);
-  }
+  // ✅ CORREÇÃO 2: buyer_id como string (ML IDs podem exceder Number.MAX_SAFE_INTEGER)
+  const buyerId = claim.comprador_id?.toString() || null;
 
   return {
     claim_id: claim.claim_id?.toString() || claim.id?.toString(),
@@ -120,12 +111,25 @@ Deno.serve(async (req) => {
     const params: RequestParams = await req.json();
     const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
 
-    // Validar array vazio
+    // ✅ CORREÇÃO 3: Validar array vazio E UUIDs válidos
     if (!integration_account_ids || integration_account_ids.length === 0) {
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'integration_account_ids is required and must not be empty' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validar UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const invalidIds = integration_account_ids.filter(id => !uuidRegex.test(id));
+    if (invalidIds.length > 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Invalid UUIDs detected: ${invalidIds.join(', ')}` 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -197,12 +201,13 @@ Deno.serve(async (req) => {
     }
 
     // ETAPA 2: Buscar da ML API (cache miss ou force refresh)
+    // ✅ CORREÇÃO 4: Chamar get-devolucoes-direct (mantém enriquecimento específico)
+    // TODO: Migrar para chamada direta ML API quando enriquecimento for centralizado
     const allClaims: any[] = [];
     
     for (const accountId of integration_account_ids) {
       console.log(`📡 Fetching claims for account ${accountId}...`);
       
-      // Chamar get-devolucoes-direct existente para buscar dados
       const claimsResponse = await supabaseAdmin.functions.invoke('get-devolucoes-direct', {
         body: {
           integration_account_id: accountId,
@@ -213,6 +218,10 @@ Deno.serve(async (req) => {
 
       if (claimsResponse.error) {
         console.error(`❌ Error fetching account ${accountId}:`, claimsResponse.error);
+        results.errors.push({
+          account_id: accountId,
+          error: claimsResponse.error.message || 'Unknown error'
+        });
         continue;
       }
 
@@ -248,6 +257,7 @@ Deno.serve(async (req) => {
         }
 
         // 3.2: Salvar em ml_claims (persistência permanente com campos estruturados)
+        // ✅ CORREÇÃO 5: Logar detalhes de erro para debug
         try {
           const mlClaimsEntries = accountClaims.map((claim: any) => 
             extractClaimFields(claim, accountId, organization_id)
@@ -261,19 +271,33 @@ Deno.serve(async (req) => {
             });
 
           if (mlClaimsError) {
-            console.error('⚠️ Error saving to ml_claims:', mlClaimsError);
-            console.error('⚠️ This is non-critical - cache is still functional');
+            console.error('❌ Error saving to ml_claims:', mlClaimsError);
+            console.error('📋 Error details:', {
+              code: mlClaimsError.code,
+              message: mlClaimsError.message,
+              details: mlClaimsError.details,
+              hint: mlClaimsError.hint
+            });
           } else {
             console.log(`✅ ml_claims: Saved ${mlClaimsEntries.length} claims permanently`);
           }
         } catch (error) {
-          console.error('⚠️ Exception in ml_claims persistence:', error);
-          console.error('⚠️ This is non-critical - cache is still functional');
+          console.error('❌ Exception in ml_claims persistence:', error);
+          console.error('📋 Exception details:', {
+            name: error instanceof Error ? error.name : 'Unknown',
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+          });
         }
       }
     }
 
     console.log(`✅ Total claims fetched: ${allClaims.length}`);
+
+    // ✅ CORREÇÃO: Adicionar results se houve erros
+    const results: any = {
+      errors: []
+    };
 
     return new Response(
       JSON.stringify({
@@ -282,7 +306,8 @@ Deno.serve(async (req) => {
         total: allClaims.length,
         source: 'ml_api',
         cached_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
+        expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString(),
+        ...(results.errors.length > 0 && { warnings: results.errors })
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
