@@ -3450,6 +3450,75 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_orders: {
+        Row: {
+          buyer_email: string | null
+          buyer_id: number | null
+          buyer_nickname: string | null
+          created_at: string | null
+          currency_id: string | null
+          date_closed: string | null
+          date_created: string | null
+          fulfilled: boolean | null
+          id: string
+          integration_account_id: string
+          last_synced_at: string | null
+          last_updated: string | null
+          ml_order_id: string
+          order_data: Json
+          organization_id: string
+          pack_id: number | null
+          paid_amount: number | null
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_email?: string | null
+          buyer_id?: number | null
+          buyer_nickname?: string | null
+          created_at?: string | null
+          currency_id?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          fulfilled?: boolean | null
+          id?: string
+          integration_account_id: string
+          last_synced_at?: string | null
+          last_updated?: string | null
+          ml_order_id: string
+          order_data: Json
+          organization_id: string
+          pack_id?: number | null
+          paid_amount?: number | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_email?: string | null
+          buyer_id?: number | null
+          buyer_nickname?: string | null
+          created_at?: string | null
+          currency_id?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          fulfilled?: boolean | null
+          id?: string
+          integration_account_id?: string
+          last_synced_at?: string | null
+          last_updated?: string | null
+          ml_order_id?: string
+          order_data?: Json
+          organization_id?: string
+          pack_id?: number | null
+          paid_amount?: number | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ml_orders_cache: {
         Row: {
           cached_at: string
