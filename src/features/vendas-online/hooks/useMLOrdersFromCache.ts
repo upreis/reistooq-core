@@ -46,7 +46,8 @@ export const useMLOrdersFromCache = ({
 
       // STEP 1: Consultar ml_orders table
       const now = new Date();
-      const cacheThresholdMinutes = 10; // Cache válido por 10 minutos
+      // 🔧 CORREÇÃO FASE C.2: Aumentar threshold para 15 minutos (sincronizado com CRON de 10min + margem)
+      const cacheThresholdMinutes = 15; 
       const cacheThreshold = new Date(now.getTime() - cacheThresholdMinutes * 60 * 1000).toISOString();
       
       let query = supabase
@@ -56,12 +57,13 @@ export const useMLOrdersFromCache = ({
         .gt('last_synced_at', cacheThreshold) // Apenas registros sincronizados recentemente
         .order('last_synced_at', { ascending: false });
 
+      // 🔧 CORREÇÃO FASE C.1: Usar order_date ao invés de date_created (que pode ser NULL)
       // Aplicar filtros de data se fornecidos
       if (dateFrom) {
-        query = query.gte('date_created', dateFrom);
+        query = query.gte('order_date', dateFrom);
       }
       if (dateTo) {
-        query = query.lte('date_created', dateTo);
+        query = query.lte('order_date', dateTo);
       }
 
       const { data: cachedOrders, error } = await query;

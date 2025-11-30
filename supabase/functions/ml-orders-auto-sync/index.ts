@@ -33,6 +33,32 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // 🔧 CORREÇÃO FASE B.3: Validar extensões necessárias (pg_cron, pg_net)
+    try {
+      const { data: extensions, error: extError } = await supabaseAdmin
+        .from('pg_extension')
+        .select('extname')
+        .in('extname', ['pg_cron', 'pg_net']);
+
+      if (extError) {
+        console.warn('⚠️ Could not verify extensions:', extError.message);
+      } else if (extensions && extensions.length < 2) {
+        console.error('❌ Required extensions (pg_cron, pg_net) not enabled');
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Required Postgres extensions (pg_cron, pg_net) not enabled' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      } else {
+        console.log('✅ Extensions verified: pg_cron, pg_net');
+      }
+    } catch (extCheckError) {
+      console.warn('⚠️ Extension check failed:', extCheckError);
+      // Continue execution - extension check is optional
+    }
+
     // ETAPA 1: Buscar todas as contas ativas do Mercado Livre
     const { data: accounts, error: accountsError } = await supabaseAdmin
       .from('integration_accounts')
