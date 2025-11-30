@@ -3255,6 +3255,150 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_claims: {
+        Row: {
+          buyer_id: number | null
+          buyer_nickname: string | null
+          claim_data: Json
+          claim_id: string
+          created_at: string | null
+          currency_id: string | null
+          date_closed: string | null
+          date_created: string | null
+          id: string
+          integration_account_id: string
+          last_synced_at: string | null
+          last_updated: string | null
+          order_id: string
+          organization_id: string
+          reason_id: string | null
+          refund_amount: number | null
+          return_id: string | null
+          stage: string | null
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id?: number | null
+          buyer_nickname?: string | null
+          claim_data: Json
+          claim_id: string
+          created_at?: string | null
+          currency_id?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          id?: string
+          integration_account_id: string
+          last_synced_at?: string | null
+          last_updated?: string | null
+          order_id: string
+          organization_id: string
+          reason_id?: string | null
+          refund_amount?: number | null
+          return_id?: string | null
+          stage?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: number | null
+          buyer_nickname?: string | null
+          claim_data?: Json
+          claim_id?: string
+          created_at?: string | null
+          currency_id?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          id?: string
+          integration_account_id?: string
+          last_synced_at?: string | null
+          last_updated?: string | null
+          order_id?: string
+          organization_id?: string
+          reason_id?: string | null
+          refund_amount?: number | null
+          return_id?: string | null
+          stage?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ml_claims_cache: {
+        Row: {
+          cached_at: string | null
+          claim_data: Json
+          claim_id: string
+          id: string
+          integration_account_id: string
+          organization_id: string
+          ttl_expires_at: string
+        }
+        Insert: {
+          cached_at?: string | null
+          claim_data: Json
+          claim_id: string
+          id?: string
+          integration_account_id: string
+          organization_id: string
+          ttl_expires_at: string
+        }
+        Update: {
+          cached_at?: string | null
+          claim_data?: Json
+          claim_id?: string
+          id?: string
+          integration_account_id?: string
+          organization_id?: string
+          ttl_expires_at?: string
+        }
+        Relationships: []
+      }
+      ml_claims_sync_status: {
+        Row: {
+          claims_cached: number | null
+          claims_fetched: number | null
+          created_at: string | null
+          id: string
+          integration_account_id: string
+          last_sync_at: string | null
+          last_sync_error: string | null
+          last_sync_status: string | null
+          organization_id: string
+          sync_duration_ms: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          claims_cached?: number | null
+          claims_fetched?: number | null
+          created_at?: string | null
+          id?: string
+          integration_account_id: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          organization_id: string
+          sync_duration_ms?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          claims_cached?: number | null
+          claims_fetched?: number | null
+          created_at?: string | null
+          id?: string
+          integration_account_id?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          organization_id?: string
+          sync_duration_ms?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ml_devolucoes_historico_acoes: {
         Row: {
           action_data: Json | null
