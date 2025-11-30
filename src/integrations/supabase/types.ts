@@ -3466,6 +3466,7 @@ export type Database = {
           last_updated: string | null
           ml_order_id: string
           order_data: Json
+          order_date: string | null
           organization_id: string
           pack_id: number | null
           paid_amount: number | null
@@ -3488,6 +3489,7 @@ export type Database = {
           last_updated?: string | null
           ml_order_id: string
           order_data: Json
+          order_date?: string | null
           organization_id: string
           pack_id?: number | null
           paid_amount?: number | null
@@ -3510,6 +3512,7 @@ export type Database = {
           last_updated?: string | null
           ml_order_id?: string
           order_data?: Json
+          order_date?: string | null
           organization_id?: string
           pack_id?: number | null
           paid_amount?: number | null

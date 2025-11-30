@@ -57,6 +57,7 @@ function extractOrderFields(order: any, accountId: string, organizationId: strin
     date_created: order.date_created || null,
     date_closed: order.date_closed || null,
     last_updated: order.last_updated || null,
+    order_date: order.date_created || null, // 🔧 Adicionar order_date (igual a date_created)
     total_amount: order.total_amount || 0,
     paid_amount: order.paid_amount || 0,
     currency_id: order.currency_id || 'BRL',
