@@ -117,35 +117,33 @@ Deno.serve(async (req) => {
       
       if (matchingAccount) {
         const accountId = matchingAccount.id;
-        const organizationId = matchingAccount.organization_id;
         console.log(`[ML Webhook] Found integration account: ${accountId}`);
         
-        // 📋 ADICIONAR NA FILA DE PROCESSAMENTO (FASE C.1)
+        // 📋 ADICIONAR NA FILA DE PROCESSAMENTO (FASE C.1 - SCHEMA CORRETO)
         try {
-          const claimId = resource ? parseInt(resource.split('-')[0]) : null;
+          // ✅ claim_id como STRING (não number)
+          const claimIdStr = resource ? resource.split('-')[0] : null;
           
-          if (claimId) {
+          if (claimIdStr) {
             await supabase
               .from('fila_processamento_claims')
               .upsert({
-                claim_id: claimId,
+                claim_id: claimIdStr, // STRING
                 integration_account_id: accountId,
-                organization_id: organizationId,
-                status: 'pending',
-                prioridade: 'alta',
-                origem: 'webhook',
-                dados_webhook: {
+                claim_data: {
                   resource,
                   topic,
                   user_id,
                   application_id,
                   received_at: new Date().toISOString()
-                }
+                }, // JSONB claim_data
+                status: 'pending',
+                tentativas: 0
               }, {
                 onConflict: 'claim_id,integration_account_id'
               });
             
-            console.log(`[ML Webhook] Claim ${claimId} added to queue for processing`);
+            console.log(`[ML Webhook] Claim ${claimIdStr} added to queue for processing`);
           } else {
             console.warn(`[ML Webhook] Could not extract claim_id from resource: ${resource}`);
           }
