@@ -1,6 +1,6 @@
 /**
  * 🔄 USE VENDAS DATA
- * Hook para buscar dados de vendas do Mercado Livre
+ * Hook HÍBRIDO: consulta ml_orders cache primeiro, fallback para API ML
  */
 
 import { useEffect } from 'react';
@@ -8,6 +8,7 @@ import useSWR from 'swr';
 import { useVendasStore } from '../store/vendasStore';
 import { supabase } from '@/integrations/supabase/client';
 import { MLOrder } from '../types/vendas.types';
+import { useMLOrdersFromCache } from './useMLOrdersFromCache';
 
 interface FetchVendasParams {
   integrationAccountId: string;
@@ -91,11 +92,22 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     setError
   } = useVendasStore();
 
-  // ✅ CONTROLE MANUAL: só buscar quando shouldFetch = true E há contas selecionadas
-  const swrKey = shouldFetch && selectedAccountIds.length > 0
+  // 🚀 ESTRATÉGIA HÍBRIDA: Consultar cache primeiro
+  const cacheQuery = useMLOrdersFromCache({
+    integrationAccountIds: selectedAccountIds,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    enabled: shouldFetch && selectedAccountIds.length > 0
+  });
+
+  // Se cache retornou dados, usar eles
+  const useCacheData = cacheQuery.data && !cacheQuery.data.cache_expired;
+
+  // ✅ FALLBACK: Buscar de API ML apenas se cache expirou/vazio
+  const swrKey = shouldFetch && selectedAccountIds.length > 0 && cacheQuery.data?.cache_expired
     ? [
-        'vendas-ml',
-        selectedAccountIds.join(','), // ✅ Múltiplas contas
+        'vendas-ml-api',
+        selectedAccountIds.join(','),
         filters.search,
         filters.status.join(','),
         filters.dateFrom,
@@ -140,19 +152,25 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     }
   );
 
-  // Atualizar store quando dados chegarem
+  // Atualizar store quando dados chegarem (cache OU API)
   useEffect(() => {
-    if (data) {
+    if (useCacheData && cacheQuery.data) {
+      console.log('✅ Usando dados do CACHE ml_orders');
+      setOrders(cacheQuery.data.orders, cacheQuery.data.total);
+      setPacks({});
+      setShippings({});
+    } else if (data) {
+      console.log('✅ Usando dados da API ML (cache expirado)');
       setOrders(data.orders, data.total);
       setPacks(data.packs);
       setShippings(data.shippings);
     }
-  }, [data, setOrders, setPacks, setShippings]);
+  }, [useCacheData, cacheQuery.data, data, setOrders, setPacks, setShippings]);
 
-  // Gerenciar loading state
+  // Gerenciar loading state (considerar cache loading também)
   useEffect(() => {
-    setLoading(isLoading);
-  }, [isLoading, setLoading]);
+    setLoading(cacheQuery.isLoading || isLoading);
+  }, [cacheQuery.isLoading, isLoading, setLoading]);
 
   // Gerenciar error state
   useEffect(() => {
