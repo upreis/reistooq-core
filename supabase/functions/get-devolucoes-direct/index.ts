@@ -129,12 +129,17 @@ serve(async (req) => {
     if (!force_refresh) {
       logger.progress('Checking cache...');
       
+      // ✅ COMBO 2 SIMPLIFICATION - Usando ml_claims (cache permanente)
+      // React Query gerencia staleness, não precisamos TTL no banco
+      const fiveMinutesAgo = new Date();
+      fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+      
       const { data: cachedClaims, error: cacheError } = await supabaseAdmin
-        .from('ml_claims_cache')
+        .from('ml_claims')
         .select('*')
         .eq('organization_id', organization_id)
         .in('integration_account_id', accountIds)
-        .gt('ttl_expires_at', new Date().toISOString());
+        .gte('last_synced_at', fiveMinutesAgo.toISOString());
 
       if (!cacheError && cachedClaims && cachedClaims.length > 0) {
         logger.progress(`Cache HIT - ${cachedClaims.length} claims from cache`);
@@ -166,12 +171,9 @@ serve(async (req) => {
     } else {
       logger.progress('Force refresh - invalidating cache');
       
-      // ✅ FASE 3: Cleanup de cache expirado antes de sync
-      await supabaseAdmin
-        .from('ml_claims_cache')
-        .delete()
-        .eq('organization_id', organization_id)
-        .in('integration_account_id', accountIds);
+      // ✅ COMBO 2 SIMPLIFICATION: Cache permanente em ml_claims
+      // Não precisa cleanup - React Query gerencia staleness
+      // (Force refresh simplesmente ignora cache e busca fresco da API)
     }
 
     // 🔄 FUNÇÃO HELPER: Processar uma conta individual
@@ -600,18 +602,31 @@ serve(async (req) => {
       // 🎯 COMBO 2 - ETAPA 2: Write-through caching
       if (mappedClaims.length > 0) {
         logger.progress(`💾 Salvando ${mappedClaims.length} claims em cache...`);
-        
+        // ✅ COMBO 2 SIMPLIFICATION: Mapear para ml_claims (cache permanente)
         const cacheEntries = mappedClaims.map((claim: any) => ({
           organization_id,
           integration_account_id: accountId,
           claim_id: claim.claim_id?.toString() || claim.id?.toString(),
-          claim_data: claim,
-          cached_at: new Date().toISOString(),
-          ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
+          order_id: claim.order_id?.toString(),
+          return_id: claim.return_id?.toString(),
+          status: claim.status_devolucao || claim.status,
+          stage: claim.claim_stage,
+          reason_id: claim.reason_id,
+          date_created: claim.data_criacao || claim.date_created,
+          date_closed: claim.data_fechamento_devolucao,
+          last_updated: claim.data_ultima_movimentacao || claim.last_updated || new Date().toISOString(),
+          total_amount: claim.valor_original_produto,
+          refund_amount: claim.valor_reembolso,
+          currency_id: claim.moeda_reembolso || 'BRL',
+          buyer_id: claim.comprador_id ? parseInt(claim.comprador_id) : null,
+          buyer_nickname: claim.comprador_nickname,
+          claim_data: claim, // JSONB com todos os dados enriquecidos
+          last_synced_at: new Date().toISOString()
         }));
 
+        // ✅ COMBO 2 SIMPLIFICATION: Salvar em ml_claims (cache permanente)
         const { error: cacheError } = await supabaseAdmin
-          .from('ml_claims_cache')
+          .from('ml_claims')
           .upsert(cacheEntries, {
             onConflict: 'organization_id,integration_account_id,claim_id'
           });
