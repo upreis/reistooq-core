@@ -69,13 +69,22 @@ export function useMLClaimsFromCache({
 
       // ✅ COMBO 2 OPÇÃO B: Buscar SEMPRE do banco (sem filtro de TTL)
       // React Query staleTime (60s) gerencia freshness, não o filtro de cache
-      console.log('📦 [RECLAMACOES CACHE] Buscando de ml_claims...');
+      console.log('📦 [RECLAMACOES CACHE] Buscando de ml_claims...', {
+        accountIds: integration_account_ids,
+        sessionUserId: session.user.id
+      });
       
       const { data: cachedClaims, error: cacheError } = await supabase
         .from('ml_claims')
         .select('*')
         .in('integration_account_id', integration_account_ids)
         .order('date_created', { ascending: false });
+      
+      console.log('📊 [RECLAMACOES CACHE RESULT]', {
+        found: cachedClaims?.length || 0,
+        hasError: !!cacheError,
+        error: cacheError?.message
+      });
 
       // Se cache válido encontrado, retornar imediatamente
       if (!cacheError && cachedClaims && cachedClaims.length > 0) {
@@ -175,6 +184,8 @@ export function useMLClaimsFromCache({
       };
     },
     enabled: enabled && integration_account_ids.length > 0,
+    // ✅ CRITICAL: Garantir que não executa múltiplas vezes simultaneamente
+    refetchOnMount: false, // Evita refetch desnecessário no mount
     // ✅ COMBO 2 - Configuração otimizada conforme especificação
     staleTime: 60 * 1000, // 1 minuto - dados frescos
     gcTime: 10 * 60 * 1000, // 10 minutos - manter em memória
