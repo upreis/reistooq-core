@@ -71,33 +71,10 @@ export class ClaimsService {
 
     logger.success(`Total de claims buscados: ${allClaims.length}`);
 
-    // Filtrar por data se especificado
-    if (dateFrom || dateTo) {
-      const originalCount = allClaims.length;
-      const dateFromObj = dateFrom ? new Date(dateFrom) : null;
-      const dateToObj = dateTo ? new Date(dateTo) : null;
-
-      // DEBUG: log das datas de filtro e sample de claims
-      logger.info(`📅 DEBUG FILTRO - dateFrom: ${dateFrom} (obj: ${dateFromObj?.toISOString()})`);
-      logger.info(`📅 DEBUG FILTRO - dateTo: ${dateTo} (obj: ${dateToObj?.toISOString()})`);
-      
-      if (allClaims.length > 0) {
-        const firstClaim = allClaims[0];
-        const lastClaim = allClaims[allClaims.length - 1];
-        logger.info(`📅 DEBUG FILTRO - Primeiro claim date_created: ${firstClaim.date_created}`);
-        logger.info(`📅 DEBUG FILTRO - Último claim date_created: ${lastClaim.date_created}`);
-      }
-
-      allClaims = allClaims.filter((claim: any) => {
-        const claimDate = new Date(claim.date_created);
-        if (dateFromObj && claimDate < dateFromObj) return false;
-        if (dateToObj && claimDate > dateToObj) return false;
-        return true;
-      });
-
-      logger.info(`📅 Filtro de data aplicado: ${originalCount} → ${allClaims.length} claims`);
-    }
-
+    // ✅ FASE 1 FIX: Remover filtro redundante de data
+    // A API ML já filtra corretamente via parâmetros date_created.from/to na URL
+    // Filtro adicional aqui é redundante e pode descartar claims válidos
+    
     return allClaims;
   }
 
