@@ -32,9 +32,17 @@ export class ClaimsService {
         sort: 'date_created:desc'
       });
 
+      // Adicionar filtros de data na URL (crítico para buscar período correto)
+      if (dateFrom) {
+        params.append('date_created.from', dateFrom);
+      }
+      if (dateTo) {
+        params.append('date_created.to', dateTo);
+      }
+
       const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
       
-      logger.debug(`📄 Página offset=${offset}...`);
+      logger.debug(`📄 Página offset=${offset}, periodo: ${dateFrom || 'início'} até ${dateTo || 'agora'}`);
 
       const response = await fetchMLWithRetry(claimsUrl, accessToken);
 
