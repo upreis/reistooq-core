@@ -1,6 +1,17 @@
 /**
- * 🔄 HOOK - ML Claims com Cache-First Strategy
- * Implementa Combo 2: prioriza cache ml_claims, fallback para API
+ * 🚀 COMBO 2 - ML CLAIMS FROM CACHE
+ * Hook unificado para consultar ml_claims table (cache) com fallback para API
+ * 
+ * ESPECIFICAÇÃO COMBO 2:
+ * - staleTime: 60s (dados considerados frescos por 1 minuto)
+ * - gcTime: 10min (mantém em memória por 10 minutos)
+ * - refetchOnWindowFocus: true (atualiza ao voltar para aba)
+ * - refetchInterval: 60s (polling automático a cada minuto)
+ * 
+ * FLUXO:
+ * 1. Consulta ml_claims table (sincronizada via CRON a cada 10min)
+ * 2. Se cache válido (< 5min): retorna imediatamente (CACHE HIT)
+ * 3. Se cache expirado/vazio: fallback para get-devolucoes-direct (API)
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -33,7 +44,7 @@ export function useMLClaimsFromCache({
 }: UseMLClaimsFromCacheParams) {
   
   return useQuery<CachedClaimsResponse>({
-    queryKey: ['ml-claims-cache', integration_account_ids, date_from, date_to],
+    queryKey: ['ml-claims-cache', integration_account_ids.sort().join(','), date_from, date_to],
     queryFn: async () => {
       console.log('🔍 [useMLClaimsFromCache] Iniciando busca...');
       
@@ -153,9 +164,11 @@ export function useMLClaimsFromCache({
       };
     },
     enabled: enabled && integration_account_ids.length > 0,
-    staleTime: CACHE_TTL_MINUTES * 60 * 1000, // React Query considera stale após 5min
-    gcTime: 10 * 60 * 1000, // Garbage collect após 10min
-    refetchOnWindowFocus: false,
+    // ✅ COMBO 2 - Configuração otimizada conforme especificação
+    staleTime: 60 * 1000, // 1 minuto (ao invés de 5min) - dados frescos
+    gcTime: 10 * 60 * 1000, // 10 minutos - manter em memória
+    refetchOnWindowFocus: true, // ✅ Refetch ao voltar para aba
+    refetchInterval: 60 * 1000, // ✅ POLLING: atualizar a cada 60 segundos
     retry: 2
   });
 }
