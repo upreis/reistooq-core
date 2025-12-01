@@ -164,88 +164,42 @@ export const Devolucao2025Page = () => {
   // ✅ REMOVIDO: shouldFetch causava bloqueio de buscas
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
-  // 🚀 COMBO 2 - ESTRATÉGIA HÍBRIDA: Consultar cache primeiro
-  // ✅ CORREÇÃO FASE 1: Fallback garantido para evitar accountIds vazio
-  // Se selectedAccounts vazio, usa todas as contas disponíveis
+  // 🚀 COMBO 2 - ÚNICA FONTE DE VERDADE
+  // ✅ CORREÇÃO AUDITORIA 2+3: useMLClaimsFromCache JÁ faz tudo (cache + API fallback + polling)
+  // Não precisamos de segundo useQuery - isso causava duplicação de chamadas
+  
+  // Calcular accountIds com fallback
   const accountIds = selectedAccounts.length > 0 
     ? selectedAccounts 
     : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
-  // ✅ COMBO 2: Hook com polling a cada 60s + refetch ao voltar para aba
+  // ✅ CORREÇÃO AUDITORIA 4: Enabled sempre true se accounts disponível (evita race condition)
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
     date_from: backendDateRange.from.toISOString(),
     date_to: backendDateRange.to.toISOString(),
-    enabled: accountIds.length > 0 // Executa se tiver contas
+    enabled: accountIds.length > 0 || accounts.length > 0 // Fallback para accounts
   });
 
-  // ✅ CORREÇÃO 9: Cache válido requer dados não vazios
-  const useCacheData = !cacheQuery.isLoading && 
-    cacheQuery.data && 
-    !cacheQuery.data.cache_expired && 
-    cacheQuery.data.devolucoes.length > 0;
-
-  // ✅ CORREÇÃO 8: FALLBACK considera cache vazio como expirado + permite fallback para todas contas
-  const shouldFetchFromAPI = accountIds.length > 0 && 
-    !cacheQuery.isLoading && 
-    (cacheQuery.data?.cache_expired || !cacheQuery.data || cacheQuery.data.devolucoes.length === 0);
-
-  // ✅ Buscar devoluções via get-devolucoes-direct (apenas se cache expirou)
-  const {
-    data: apiData,
-    isLoading: isLoadingAPI,
-    error: errorAPI,
-    refetch,
-    isFetching
-  } = useQuery({
-    queryKey: ['devolucoes-direct', accountIds.sort().join(','), backendDateRange.from.toISOString(), backendDateRange.to.toISOString()],
-    queryFn: async () => {
-      console.log('📡 [API FALLBACK] Fetching from get-devolucoes-direct...');
-      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-        body: {
-          integration_account_ids: accountIds,
-          date_from: backendDateRange.from.toISOString(),
-          date_to: backendDateRange.to.toISOString()
-        }
-      });
-
-      if (error) {
-        console.error('❌ [API] Error fetching devoluções:', error);
-        throw error;
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to fetch devoluções');
-      }
-
-      console.log(`✅ [API] Fetched ${data.devolucoes?.length || 0} devoluções`);
-      return data.devolucoes || [];
-    },
-    enabled: shouldFetchFromAPI,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    retry: 2
-  });
-
-  // Consolidar dados: priorizar cache válido, fallback para API
-  const devolucoesCompletas = useCacheData && cacheQuery.data 
-    ? cacheQuery.data.devolucoes 
-    : (apiData || []);
+  // ✅ SIMPLIFICADO: useMLClaimsFromCache retorna TUDO (cache OU api via fallback interno)
+  const devolucoesCompletas = cacheQuery.data?.devolucoes || [];
+  const dataSource = cacheQuery.data?.source || 'loading';
+  const isLoading = cacheQuery.isLoading;
+  const isFetching = cacheQuery.isFetching;
+  const error = cacheQuery.error;
   
-  // ✅ COMBO 2: Detectar fonte de dados para ajustar filtros
-  const dataSource = useCacheData ? 'cache' : 'api';
-  
-  const isLoading = cacheQuery.isLoading || isLoadingAPI;
-  const error = cacheQuery.error || errorAPI;
+  // Helper para identificar se está usando cache válido
+  const useCacheData = dataSource === 'cache' && !cacheQuery.data?.cache_expired;
 
-  // 📊 Log detalhado da fonte de dados
+  // 📊 Log detalhado da fonte de dados (COMBO 2)
   useEffect(() => {
     if (!isLoading && devolucoesCompletas.length > 0) {
-      console.log('📊 [COMBO 2] Fonte de dados:', {
-        fonte: useCacheData ? '✅ CACHE (ml_claims)' : '📡 API (get-devolucoes-direct)',
+      console.log('📊 [COMBO 2] Fonte única de verdade:', {
+        fonte: dataSource === 'cache' ? '✅ CACHE (ml_claims)' : '📡 API (get-devolucoes-direct)',
         total: devolucoesCompletas.length,
         cache_last_synced: cacheQuery.data?.last_synced_at,
-        performance: useCacheData ? 'INSTANTÂNEO' : 'NORMAL'
+        cache_expired: cacheQuery.data?.cache_expired,
+        performance: useCacheData ? '⚡ INSTANTÂNEO' : '🔄 NORMAL'
       });
     }
   }, [isLoading, devolucoesCompletas.length, useCacheData, cacheQuery.data]);
@@ -396,7 +350,7 @@ export const Devolucao2025Page = () => {
       // Invalidar AMBOS caches: React Query cache + Supabase cache
       queryClient.invalidateQueries({ queryKey: ['ml-claims-cache'] });
       queryClient.invalidateQueries({ queryKey: ['devolucoes-unified-ml-claims'] });
-      await refetch();
+      await cacheQuery.refetch(); // ✅ CORREÇÃO AUDITORIA: usar cacheQuery.refetch
       toast.success('Dados atualizados com sucesso!');
     } catch (error) {
       console.error('❌ [BUSCA MANUAL] Erro ao buscar devoluções:', error);
@@ -404,7 +358,7 @@ export const Devolucao2025Page = () => {
     } finally {
       setIsManualSearching(false);
     }
-  }, [refetch, selectedAccounts, queryClient]);
+  }, [cacheQuery, selectedAccounts, queryClient]);
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
@@ -523,7 +477,7 @@ export const Devolucao2025Page = () => {
             {!isLoading && devolucoesCompletas.length > 0 && (
               <div className="absolute top-2 right-6 z-20 flex items-center gap-2">
                 {/* ✨ COMBO 2: Indicador de polling ativo */}
-                {(cacheQuery.isFetching || isFetching) && !isLoading && (
+                {isFetching && !isLoading && (
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
                     <RefreshCw className="w-3 h-3 animate-spin" />
                     Atualizando...

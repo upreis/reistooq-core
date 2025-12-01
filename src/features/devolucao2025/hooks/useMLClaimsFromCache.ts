@@ -44,7 +44,8 @@ export function useMLClaimsFromCache({
 }: UseMLClaimsFromCacheParams) {
   
   return useQuery<CachedClaimsResponse>({
-    queryKey: ['ml-claims-cache', integration_account_ids.sort().join(','), date_from, date_to],
+    // ✅ CORREÇÃO AUDITORIA 1: slice() evita mutação do array original
+    queryKey: ['ml-claims-cache', integration_account_ids.slice().sort().join(','), date_from, date_to],
     queryFn: async () => {
       console.log('🔍 [useMLClaimsFromCache] Iniciando busca...');
       
