@@ -3345,48 +3345,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ml_claims_sync_status: {
-        Row: {
-          claims_cached: number | null
-          claims_fetched: number | null
-          created_at: string | null
-          id: string
-          integration_account_id: string
-          last_sync_at: string | null
-          last_sync_error: string | null
-          last_sync_status: string | null
-          organization_id: string
-          sync_duration_ms: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          claims_cached?: number | null
-          claims_fetched?: number | null
-          created_at?: string | null
-          id?: string
-          integration_account_id: string
-          last_sync_at?: string | null
-          last_sync_error?: string | null
-          last_sync_status?: string | null
-          organization_id: string
-          sync_duration_ms?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          claims_cached?: number | null
-          claims_fetched?: number | null
-          created_at?: string | null
-          id?: string
-          integration_account_id?: string
-          last_sync_at?: string | null
-          last_sync_error?: string | null
-          last_sync_status?: string | null
-          organization_id?: string
-          sync_duration_ms?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       ml_devolucoes_historico_acoes: {
         Row: {
           action_data: Json | null
