@@ -204,28 +204,33 @@ export function ReclamacoesPage() {
     });
   };
 
-  // Enriquecer dados com status de análise
-  const reclamacoesEnriquecidas = useMemo(() => {
+  // ✅ OTIMIZAÇÃO: Adicionar status local ANTES de filtrar (leve)
+  const reclamacoesComStatus = useMemo(() => {
     return allReclamacoes.map((claim: any) => ({
       ...claim,
       status_analise_local: analiseStatus[claim.claim_id] || 'pendente',
-      anotacao_local: anotacoes[claim.claim_id] || '',
-      lifecycle_status: calcularStatusCiclo(claim)
+      anotacao_local: anotacoes[claim.claim_id] || ''
+      // NÃO calcular lifecycle_status aqui (pesado)
     }));
   }, [allReclamacoes, analiseStatus, anotacoes]);
 
-  // Aplicar filtros de lifecycle e resumo
+  // Filtrar por tab (ativas vs histórico) ANTES de processar lifecycle
+  const reclamacoesTab = useMemo(() => {
+    return reclamacoesComStatus.filter((claim: any) => {
+      const status = claim.status_analise_local;
+      if (activeTab === 'ativas') {
+        return ACTIVE_STATUSES.includes(status as any);
+      } else {
+        return HISTORIC_STATUSES.includes(status as any);
+      }
+    });
+  }, [reclamacoesComStatus, activeTab]);
+  
+  // Aplicar filtros de resumo (sem lifecycle ainda)
   const reclamacoesFiltradas = useMemo(() => {
-    let result = reclamacoesEnriquecidas;
+    let result = reclamacoesTab;
     
-    // Filtro lifecycle
-    if (lifecycleFilter) {
-      result = result.filter((claim: any) => 
-        claim.lifecycle_status?.status === lifecycleFilter
-      );
-    }
-    
-    // Filtro resumo
+    // Filtro resumo básico
     if (filtroResumo) {
       result = result.filter((claim: any) => {
         if (filtroResumo.tipo === 'prazo') {
@@ -238,10 +243,8 @@ export function ReclamacoesPage() {
           const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
           
           if (filtroResumo.valor === 'vencido') {
-            // Vencidos = acima de 3 dias úteis
             return diasUteis > 3;
           } else if (filtroResumo.valor === 'a_vencer') {
-            // A Vencer = de 0 a 3 dias úteis
             return diasUteis >= 0 && diasUteis <= 3;
           }
         } else if (filtroResumo.tipo === 'status') {
@@ -254,33 +257,57 @@ export function ReclamacoesPage() {
     }
     
     return result;
-  }, [reclamacoesEnriquecidas, lifecycleFilter, filtroResumo]);
+  }, [reclamacoesTab, filtroResumo]);
 
-  // Filtrar por tab (ativas vs histórico)
-  const reclamacoesTab = useMemo(() => {
-    return reclamacoesFiltradas.filter((claim: any) => {
-      const status = claim.status_analise_local;
-      if (activeTab === 'ativas') {
-        return ACTIVE_STATUSES.includes(status as any);
-      } else {
-        return HISTORIC_STATUSES.includes(status as any);
-      }
-    });
-  }, [reclamacoesFiltradas, activeTab]);
-
-  // Paginação e contadores de abas
-  const totalPages = Math.ceil(reclamacoesTab.length / itemsPerPage);
+  // Paginação ANTES de enriquecer com lifecycle
+  const totalPages = Math.ceil(reclamacoesFiltradas.length / itemsPerPage);
   
   const reclamacoesPaginadas = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return reclamacoesTab.slice(start, end);
-  }, [reclamacoesTab, currentPage, itemsPerPage]);
+    const paginaAtual = reclamacoesFiltradas.slice(start, end);
+    
+    // ✅ OTIMIZAÇÃO: Enriquecer APENAS a página atual com lifecycle (50 items ao invés de 641)
+    return paginaAtual.map((claim: any) => ({
+      ...claim,
+      lifecycle_status: calcularStatusCiclo(claim)
+    }));
+  }, [reclamacoesFiltradas, currentPage, itemsPerPage]);
+  
+  // Para filtro de lifecycle, precisamos calcular em todos (mas só quando filtro ativo)
+  const reclamacoesComLifecycle = useMemo(() => {
+    if (!lifecycleFilter) return reclamacoesFiltradas;
+    
+    return reclamacoesFiltradas
+      .map(claim => ({
+        ...claim,
+        lifecycle_status: calcularStatusCiclo(claim)
+      }))
+      .filter((claim: any) => claim.lifecycle_status?.status === lifecycleFilter);
+  }, [reclamacoesFiltradas, lifecycleFilter]);
+  
+  // ✅ Para componentes que precisam lifecycle de TODOS (AlertaBanner, QuickFilter, Resumo)
+  // Calcular apenas quando absolutamente necessário
+  const reclamacoesComLifecycleCompleto = useMemo(() => {
+    return reclamacoesComStatus.map(claim => ({
+      ...claim,
+      lifecycle_status: calcularStatusCiclo(claim)
+    }));
+  }, [reclamacoesComStatus]);
+  
+  // Se lifecycle filter ativo, re-paginar resultados filtrados
+  const reclamacoesFinais = useMemo(() => {
+    if (!lifecycleFilter) return reclamacoesPaginadas;
+    
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return reclamacoesComLifecycle.slice(start, end);
+  }, [lifecycleFilter, reclamacoesComLifecycle, reclamacoesPaginadas, currentPage, itemsPerPage]);
   
   const tabCounts = useMemo(() => ({
-    ativas: reclamacoesFiltradas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length,
-    historico: reclamacoesFiltradas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length
-  }), [reclamacoesFiltradas]);
+    ativas: reclamacoesComStatus.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length,
+    historico: reclamacoesComStatus.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length
+  }), [reclamacoesComStatus]);
 
   // Handlers
   const handleStatusChange = (claimId: string, newStatus: StatusAnalise) => {
@@ -381,7 +408,7 @@ export function ReclamacoesPage() {
                 
                 {/* Alertas de ciclo de vida - Posicionado no canto direito */}
                 <div className="w-full max-w-sm shrink-0">
-                  <ReclamacoesLifecycleAlert reclamacoes={reclamacoesEnriquecidas} />
+                  <ReclamacoesLifecycleAlert reclamacoes={reclamacoesComLifecycleCompleto} />
                 </div>
               </div>
             </div>
@@ -391,9 +418,9 @@ export function ReclamacoesPage() {
               <ReclamacoesLifecycleQuickFilter
                 onFilterChange={setLifecycleFilter}
                 counts={{
-                  critical: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'critical').length,
-                  urgent: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'urgent').length,
-                  attention: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'attention').length,
+                  critical: reclamacoesComLifecycleCompleto.filter(c => c.lifecycle_status?.status === 'critical').length,
+                  urgent: reclamacoesComLifecycleCompleto.filter(c => c.lifecycle_status?.status === 'urgent').length,
+                  attention: reclamacoesComLifecycleCompleto.filter(c => c.lifecycle_status?.status === 'attention').length,
                 }}
               />
             </div>
@@ -405,10 +432,10 @@ export function ReclamacoesPage() {
                 <div className="flex items-center gap-3 flex-nowrap">
                   <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
                     <TabsTrigger value="ativas" className="h-10">
-                      Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
+                      Ativas ({reclamacoesComStatus.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
                     </TabsTrigger>
                     <TabsTrigger value="historico" className="h-10">
-                      Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
+                      Histórico ({reclamacoesComStatus.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
                     </TabsTrigger>
                   </TabsList>
                   
@@ -444,7 +471,7 @@ export function ReclamacoesPage() {
                 {/* Resumo de Métricas - após as abas */}
                 <div className="px-4 md:px-6 mt-12">
                   <ReclamacoesResumo 
-                    reclamacoes={reclamacoesEnriquecidas} 
+                    reclamacoes={reclamacoesComLifecycleCompleto} 
                     onFiltroClick={setFiltroResumo}
                     filtroAtivo={filtroResumo}
                   />
