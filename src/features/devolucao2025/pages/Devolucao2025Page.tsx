@@ -168,12 +168,12 @@ export const Devolucao2025Page = () => {
   // ✅ CORREÇÃO AUDITORIA 2+3: useMLClaimsFromCache JÁ faz tudo (cache + API fallback + polling)
   // Não precisamos de segundo useQuery - isso causava duplicação de chamadas
   
-  // Calcular accountIds com fallback
-  const accountIds = selectedAccounts.length > 0 
-    ? selectedAccounts 
+  // ✅ CORREÇÃO AUDITORIA 5: Usar appliedAccounts (sincronizado) ao invés de selectedAccounts (pode estar vazio no mount)
+  const accountIds = appliedAccounts.length > 0 
+    ? appliedAccounts 
     : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
-  // ✅ CORREÇÃO AUDITORIA 4: Enabled sempre true se accounts disponível (evita race condition)
+  // ✅ CORREÇÃO AUDITORIA 6: Enabled sempre true se accounts disponível (evita race condition)
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
     date_from: backendDateRange.from.toISOString(),
@@ -362,8 +362,8 @@ export const Devolucao2025Page = () => {
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
-    // Cancela a query em andamento
-    queryClient.cancelQueries({ queryKey: ['devolucoes-unified-ml-claims'] });
+    // ✅ CORREÇÃO AUDITORIA 7: Cancelar query com queryKey correta
+    queryClient.cancelQueries({ queryKey: ['ml-claims-cache'] });
     setIsManualSearching(false);
     toast.info('Busca cancelada');
   }, [queryClient]);
@@ -476,8 +476,8 @@ export const Devolucao2025Page = () => {
             {/* 📊 Indicador de fonte de dados + Polling status */}
             {!isLoading && devolucoesCompletas.length > 0 && (
               <div className="absolute top-2 right-6 z-20 flex items-center gap-2">
-                {/* ✨ COMBO 2: Indicador de polling ativo */}
-                {isFetching && !isLoading && (
+                {/* ✨ COMBO 2: Indicador de polling ativo (não mostrar durante busca manual) */}
+                {isFetching && !isLoading && !isManualSearching && (
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
                     <RefreshCw className="w-3 h-3 animate-spin" />
                     Atualizando...
