@@ -384,11 +384,11 @@ export const Devolucao2025Page = () => {
   // Sistema de Alertas (sobre dados completos)
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoesCompletas);
 
-  // FASE 4: Polling automático (sobre dados completos)
-  // ✅ CORREÇÃO CRÍTICA 4: Simplificar lógica - polling ativo se há dados e não está em loading
+  // ✅ COMBO 2 FASE 2: Polling agora é nativo do useMLClaimsFromCache (refetchInterval: 60s)
+  // useDevolucoesPolling DESABILITADO para evitar polling duplo
   const { forceRefresh, isPolling } = useDevolucoesPolling({
-    enabled: devolucoesCompletas.length > 0 && !isLoading && !error,
-    interval: 60000, // 1 minuto
+    enabled: false, // ❌ DESABILITADO - polling agora é do React Query nativo
+    interval: 60000,
     onNewData: (newCount) => {
       toast.success(`${newCount} nova(s) devolução(ões) detectada(s)`, {
         description: 'Os dados foram atualizados automaticamente',
