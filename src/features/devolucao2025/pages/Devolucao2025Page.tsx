@@ -165,14 +165,14 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
   // 🚀 COMBO 2 - ESTRATÉGIA HÍBRIDA: Consultar cache primeiro
-  // ✅ CORREÇÃO 11: Não fazer fallback para todas contas (performance + dados irrelevantes)
-  const accountIds = appliedAccounts.length > 0 ? appliedAccounts : [];
+  // ✅ CORREÇÃO 12: Fallback para todas contas quando appliedAccounts vazio no mount
+  const accountIds = appliedAccounts.length > 0 ? appliedAccounts : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
     date_from: backendDateRange.from.toISOString(),
     date_to: backendDateRange.to.toISOString(),
-    enabled: accountIds.length > 0
+    enabled: accountIds.length > 0 // Agora sempre true se accounts carregou
   });
 
   // ✅ CORREÇÃO 9: Cache válido requer dados não vazios
@@ -181,7 +181,7 @@ export const Devolucao2025Page = () => {
     !cacheQuery.data.cache_expired && 
     cacheQuery.data.devolucoes.length > 0;
 
-  // ✅ CORREÇÃO 8: FALLBACK considera cache vazio como expirado
+  // ✅ CORREÇÃO 8: FALLBACK considera cache vazio como expirado + permite fallback para todas contas
   const shouldFetchFromAPI = accountIds.length > 0 && 
     !cacheQuery.isLoading && 
     (cacheQuery.data?.cache_expired || !cacheQuery.data || cacheQuery.data.devolucoes.length === 0);
