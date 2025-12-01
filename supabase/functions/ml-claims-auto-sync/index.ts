@@ -171,6 +171,21 @@ Deno.serve(async (req) => {
           console.error('⚠️ Error updating sync status:', statusError);
         }
 
+        // ✅ FASE 3: Limpeza automática de cache expirado após sync de cada conta
+        console.log(`🗑️ Cleaning expired cache for organization ${account.organization_id}...`);
+        const { data: deletedCache, error: cleanupError } = await supabaseAdmin
+          .from('ml_claims_cache')
+          .delete()
+          .eq('organization_id', account.organization_id)
+          .lt('ttl_expires_at', new Date().toISOString())
+          .select('claim_id');
+        
+        if (cleanupError) {
+          console.error('⚠️ Failed to clean expired cache:', cleanupError);
+        } else if (deletedCache && deletedCache.length > 0) {
+          console.log(`✅ Cleaned ${deletedCache.length} expired cache entries`);
+        }
+
         // Atualizar resultados
         results.accounts_synced++;
         results.total_claims_fetched += claimsFetched;
