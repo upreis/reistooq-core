@@ -2470,40 +2470,58 @@ export type Database = {
       integration_accounts: {
         Row: {
           account_identifier: string | null
+          claims_cached: number | null
+          claims_fetched: number | null
           cnpj: string | null
           created_at: string
           id: string
           is_active: boolean
+          last_claims_sync_at: string | null
+          last_sync_error: string | null
+          last_sync_status: string | null
           name: string
           organization_id: string | null
           provider: Database["public"]["Enums"]["integration_provider"]
           public_auth: Json | null
+          sync_duration_ms: number | null
           token_status: string | null
           updated_at: string
         }
         Insert: {
           account_identifier?: string | null
+          claims_cached?: number | null
+          claims_fetched?: number | null
           cnpj?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
+          last_claims_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
           name: string
           organization_id?: string | null
           provider: Database["public"]["Enums"]["integration_provider"]
           public_auth?: Json | null
+          sync_duration_ms?: number | null
           token_status?: string | null
           updated_at?: string
         }
         Update: {
           account_identifier?: string | null
+          claims_cached?: number | null
+          claims_fetched?: number | null
           cnpj?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
+          last_claims_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
           name?: string
           organization_id?: string | null
           provider?: Database["public"]["Enums"]["integration_provider"]
           public_auth?: Json | null
+          sync_duration_ms?: number | null
           token_status?: string | null
           updated_at?: string
         }
