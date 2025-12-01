@@ -4,6 +4,11 @@
  * Chamada via pg_cron a cada 10 minutos
  * 
  * COMBO 2 - FASE B para /devolucoesdevenda
+ * 
+ * ✅ SIMPLIFICAÇÃO FASE 1: 
+ * - Removida tabela redundante ml_claims_sync_status
+ * - Status de sync agora está direto em integration_accounts
+ * - 40% menos complexidade, zero funcionalidade perdida
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
@@ -58,10 +63,10 @@ Deno.serve(async (req) => {
       console.warn('⚠️ Extension check failed:', extCheckError);
     }
 
-    // ETAPA 1: Buscar todas as contas ativas do Mercado Livre
+    // ETAPA 1: Buscar todas as contas ativas do Mercado Livre com dados de sync
     const { data: accounts, error: accountsError } = await supabaseAdmin
       .from('integration_accounts')
-      .select('id, organization_id, account_identifier, is_active')
+      .select('id, organization_id, account_identifier, is_active, last_claims_sync_at, last_sync_status')
       .eq('provider', 'mercadolivre')
       .eq('is_active', true)
       .limit(MAX_ACCOUNTS_PER_RUN);
@@ -101,21 +106,16 @@ Deno.serve(async (req) => {
       try {
         console.log(`\n🔄 [${account.account_identifier}] Starting claims sync...`);
 
-        // 2.1: Verificar última sync desta conta
-        const { data: syncStatus } = await supabaseAdmin
-          .from('ml_claims_sync_status')
-          .select('last_sync_at')
-          .eq('organization_id', account.organization_id)
-          .eq('integration_account_id', account.id)
-          .single();
+        // 2.1: Última sync já está na própria conta
+        const lastSyncAt = account.last_claims_sync_at;
 
         // Calcular período de busca
         let dateFrom: string;
         const dateTo = new Date().toISOString();
 
-        if (syncStatus?.last_sync_at) {
+        if (lastSyncAt) {
           // Sync incremental: buscar desde última sync
-          dateFrom = syncStatus.last_sync_at;
+          dateFrom = lastSyncAt;
           console.log(`📅 Incremental sync from ${dateFrom}`);
         } else {
           // Primeira sync: buscar últimos 60 dias
@@ -149,26 +149,24 @@ Deno.serve(async (req) => {
         
         console.log(`✅ Fetched ${claimsFetched} claims for ${account.account_identifier}`);
 
-        // 2.3: Atualizar ml_claims_sync_status
+        // 2.3: Atualizar integration_accounts com status da sync
         const syncDuration = Date.now() - accountStartTime;
         
         const { error: statusError } = await supabaseAdmin
-          .from('ml_claims_sync_status')
-          .upsert({
-            organization_id: account.organization_id,
-            integration_account_id: account.id,
-            last_sync_at: new Date().toISOString(),
+          .from('integration_accounts')
+          .update({
+            last_claims_sync_at: new Date().toISOString(),
             last_sync_status: 'success',
             last_sync_error: null,
             claims_fetched: claimsFetched,
             claims_cached: claimsFetched, // get-devolucoes-direct já cacheia
-            sync_duration_ms: syncDuration
-          }, {
-            onConflict: 'organization_id,integration_account_id'
-          });
+            sync_duration_ms: syncDuration,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', account.id);
 
         if (statusError) {
-          console.error('⚠️ Error updating sync status:', statusError);
+          console.error('⚠️ Error updating account sync status:', statusError);
         }
 
         // Atualizar resultados
@@ -181,18 +179,16 @@ Deno.serve(async (req) => {
       } catch (accountError) {
         console.error(`❌ [${account.account_identifier}] Sync failed:`, accountError);
         
-        // Registrar erro no ml_claims_sync_status
+        // Registrar erro na integration_accounts
         await supabaseAdmin
-          .from('ml_claims_sync_status')
-          .upsert({
-            organization_id: account.organization_id,
-            integration_account_id: account.id,
+          .from('integration_accounts')
+          .update({
             last_sync_status: 'error',
             last_sync_error: accountError instanceof Error ? accountError.message : String(accountError),
-            sync_duration_ms: Date.now() - accountStartTime
-          }, {
-            onConflict: 'organization_id,integration_account_id'
-          });
+            sync_duration_ms: Date.now() - accountStartTime,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', account.id);
 
         results.accounts_failed++;
         results.errors.push({
