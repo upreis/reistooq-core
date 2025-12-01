@@ -441,7 +441,7 @@ serve(async (req) => {
       
       logger.info(`✅ [STAGE 2] Completado em ${(stage2Duration / 1000).toFixed(1)}s`);
       logger.info(`⏱️ [FASE 1+2] Tempo total: ${(totalDuration / 1000).toFixed(1)}s`);
-      logger.info(`   📊 Eficiência: ${eliminated} claims eliminados economizaram ~${(eliminated * 2).toFixed(0)}s`);
+      logger.info(`   📊 Total claims processados: ${allEnrichedClaims.length}`);
       
       const claimsWithArrivalDates = allEnrichedClaims;
 
