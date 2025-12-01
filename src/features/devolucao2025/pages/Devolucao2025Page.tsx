@@ -165,8 +165,8 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
   // 🚀 COMBO 2 - ESTRATÉGIA HÍBRIDA: Consultar cache primeiro
-  // ✅ CORREÇÃO 12: Fallback para todas contas quando appliedAccounts vazio no mount
-  const accountIds = appliedAccounts.length > 0 ? appliedAccounts : (accounts.length > 0 ? accounts.map(a => a.id) : []);
+  // ✅ CORREÇÃO 13: Usar selectedAccounts (URL params) diretamente - evita race condition
+  const accountIds = selectedAccounts.length > 0 ? selectedAccounts : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
