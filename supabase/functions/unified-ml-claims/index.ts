@@ -153,7 +153,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
+    const { integration_account_ids, force_refresh = false } = params;
+    
+    // ✅ FASE 1 CORREÇÃO: Adicionar fallback para date_from e date_to
+    // Se não fornecidos, usar valores safe para evitar buscar TODO histórico da API ML
+    let { date_from, date_to } = params;
+    
+    if (!date_from || !date_to) {
+      const now = new Date();
+      const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      
+      if (!date_from) {
+        date_from = sixtyDaysAgo.toISOString();
+        logger.warn('⚠️ date_from not provided - using 60 days ago as default');
+      }
+      
+      if (!date_to) {
+        date_to = now.toISOString();
+        logger.warn('⚠️ date_to not provided - using now as default');
+      }
+    }
 
     // Validar array de contas
     if (!integration_account_ids || integration_account_ids.length === 0) {
@@ -182,9 +201,10 @@ Deno.serve(async (req) => {
     logger.info('Request validated', {
       organization_id,
       accounts: integration_account_ids.length,
-      date_from,
-      date_to,
-      force_refresh
+      date_from: date_from,
+      date_to: date_to,
+      force_refresh,
+      using_defaults: !params.date_from || !params.date_to
     });
 
     // ETAPA 1: Verificar cache (se não for force_refresh)
