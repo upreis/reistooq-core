@@ -131,11 +131,19 @@ export function ReclamacoesPage() {
   const calcularDataInicio = (periodo: string) => {
     const hoje = new Date();
     const dias = parseInt(periodo);
-    hoje.setDate(hoje.getDate() - dias);
+    
+    // 🔥 FIX: Validar que dias é um número válido, default para 7 dias
+    if (isNaN(dias) || dias <= 0) {
+      console.warn('⚠️ Período inválido:', periodo, '- usando default 7 dias');
+      hoje.setDate(hoje.getDate() - 7);
+    } else {
+      hoje.setDate(hoje.getDate() - dias);
+    }
+    
     return hoje.toISOString();
   };
 
-  const dateFromISO = calcularDataInicio(unifiedFilters.periodo);
+  const dateFromISO = calcularDataInicio(unifiedFilters.periodo || '7');
   const dateToISO = new Date().toISOString();
 
   // ✅ COMBO 2: Buscar reclamações usando cache-first + fallback API
