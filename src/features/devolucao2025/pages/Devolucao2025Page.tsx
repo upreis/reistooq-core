@@ -228,6 +228,9 @@ export const Devolucao2025Page = () => {
     ? cacheQuery.data.devolucoes 
     : (apiData || []);
   
+  // ✅ COMBO 2: Detectar fonte de dados para ajustar filtros
+  const dataSource = useCacheData ? 'cache' : 'api';
+  
   const isLoading = cacheQuery.isLoading || isLoadingAPI;
   const error = cacheQuery.error || errorAPI;
 
@@ -248,16 +251,20 @@ export const Devolucao2025Page = () => {
     console.log(`🔍 [FILTRO LOCAL] Iniciando com ${devolucoesCompletas.length} devoluções completas`);
     let filtered = devolucoesCompletas;
     
-    // 🔍 FILTRO CRÍTICO: Apenas devoluções que REALMENTE entraram no processo de devolução
-    // Elimina claims que ainda não viraram returns (sem dados de produto, rastreamento, etc.)
-    const beforeReturnFilter = filtered.length;
-    filtered = filtered.filter(dev => {
-      // Deve ter return_id válido OU status_return válido (indica que tem return_details_v2)
-      const hasReturnId = dev.return_id && dev.return_id.trim() !== '';
-      const hasReturnStatus = dev.status_return && dev.status_return !== '-' && dev.status_return.trim() !== '';
-      return hasReturnId || hasReturnStatus;
-    });
-    console.log(`🔍 [FILTRO DEVOLUÇÕES REAIS] ${beforeReturnFilter} → ${filtered.length} (eliminados ${beforeReturnFilter - filtered.length} claims sem devolução)`);
+    // 🔍 FILTRO CRÍTICO DE RETURN: Apenas aplicar se dados vierem da API (enriquecidos)
+    // Dados do CACHE (Combo 2) não têm return_id/status_return, então pular este filtro
+    if (dataSource === 'api') {
+      const beforeReturnFilter = filtered.length;
+      filtered = filtered.filter(dev => {
+        // API retorna dados enriquecidos com return_id e status_return
+        const hasReturnId = dev.return_id && dev.return_id.trim() !== '';
+        const hasReturnStatus = dev.status_return && dev.status_return !== '-' && dev.status_return.trim() !== '';
+        return hasReturnId || hasReturnStatus;
+      });
+      console.log(`🔍 [FILTRO DEVOLUÇÕES REAIS - API] ${beforeReturnFilter} → ${filtered.length} (eliminados ${beforeReturnFilter - filtered.length} claims sem devolução)`);
+    } else {
+      console.log(`⚡ [FILTRO DEVOLUÇÕES REAIS - CACHE] Pulando filtro (cache Combo 2 não tem return_id)`);
+    }
     
     // Filtro de período (local)
     if (dateRange.from && dateRange.to) {
@@ -272,9 +279,9 @@ export const Devolucao2025Page = () => {
     
     // ✅ Filtro de contas removido - já filtrado no backend via selectedAccounts
     
-    console.log(`🎯 [FILTRO LOCAL FINAL] ${filtered.length}/${devolucoesCompletas.length} devoluções após todos os filtros`);
+    console.log(`🎯 [FILTRO LOCAL FINAL] ${filtered.length}/${devolucoesCompletas.length} devoluções após todos os filtros (fonte: ${dataSource})`);
     return filtered;
-  }, [devolucoesCompletas, dateRange]);
+  }, [devolucoesCompletas, dateRange, dataSource]);
 
   // Enriquecer devoluções com status de análise local
   const devolucoesEnriquecidas = useMemo(() => {
