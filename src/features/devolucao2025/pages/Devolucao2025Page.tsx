@@ -26,7 +26,6 @@ import { COLUMNS_CONFIG } from '../config/columns';
 import { usePersistentDevolucoesStateV2 } from '../hooks/usePersistentDevolucoesStateV2';
 import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnified';
 import { useDevolucoesColumnManager } from '../hooks/useDevolucoesColumnManager';
-import { useDevolucoesPolling } from '../hooks/useDevolucoesPolling';
 import { useDevolucoesAggregator } from '../hooks/useDevolucoesAggregator';
 import { useMLClaimsFromCache } from '@/hooks/useMLClaimsFromCache';
 import { RefreshCw } from 'lucide-react';
@@ -385,19 +384,8 @@ export const Devolucao2025Page = () => {
   // Sistema de Alertas (sobre dados completos)
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoesCompletas);
 
-  // ✅ COMBO 2 FASE 2: Polling agora é nativo do useMLClaimsFromCache (refetchInterval: 60s)
-  // useDevolucoesPolling DESABILITADO para evitar polling duplo
-  const { forceRefresh, isPolling } = useDevolucoesPolling({
-    enabled: false, // ❌ DESABILITADO - polling agora é do React Query nativo
-    interval: 60000,
-    onNewData: (newCount) => {
-      toast.success(`${newCount} nova(s) devolução(ões) detectada(s)`, {
-        description: 'Os dados foram atualizados automaticamente',
-        duration: 5000,
-      });
-    },
-    pauseOnInteraction: true,
-  });
+  // ✅ COMBO 2: Polling é nativo do useMLClaimsFromCache (refetchInterval: 60s)
+  // Não precisa de polling separado - React Query gerencia automaticamente
 
   // FASE 4: Agregação de métricas (sobre dados filtrados)
   const metrics = useDevolucoesAggregator(devolucoes, analiseStatus);
