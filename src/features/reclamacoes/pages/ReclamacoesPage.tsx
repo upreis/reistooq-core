@@ -162,15 +162,25 @@ export function ReclamacoesPage() {
 
   // ✅ COMBO 2: Extrair reclamações da resposta do cache
   const allReclamacoes = useMemo(() => {
+    console.log('🔍 [ReclamacoesPage allReclamacoes] Processando cacheResponse:', {
+      hasCacheResponse: !!cacheResponse,
+      success: cacheResponse?.success,
+      hasReclamacoes: !!cacheResponse?.reclamacoes,
+      reclamacoesLength: cacheResponse?.reclamacoes?.length,
+      source: cacheResponse?.source
+    });
+    
     if (cacheResponse?.success && cacheResponse.reclamacoes) {
-      console.log('📋 [ReclamacoesPage] Dados recebidos:', {
+      console.log('📋 [ReclamacoesPage] ✅ Dados extraídos:', {
         total: cacheResponse.reclamacoes.length,
         source: cacheResponse.source
       });
       return cacheResponse.reclamacoes;
     }
+    
+    console.log('⚠️ [ReclamacoesPage] Retornando array vazio');
     return [];
-  }, [cacheResponse]); // ✅ Removido loadingReclamacoes para evitar loop
+  }, [cacheResponse]);
 
   // ✅ COMBO 2: Buscar reclamações - Manual refetch
   const handleBuscarReclamacoes = async () => {
@@ -362,8 +372,16 @@ export function ReclamacoesPage() {
   }
 
   // ✅ FIX: Mostrar dados mesmo durante isFetching (polling)
-  // Apenas bloquear UI se for primeira busca (loadingReclamacoes && allReclamacoes.length === 0)
-  const isInitialLoading = loadingReclamacoes && allReclamacoes.length === 0;
+  // Apenas bloquear UI se for primeira busca SEM cache response válido
+  const isInitialLoading = loadingReclamacoes && !cacheResponse;
+
+  console.log('🎯 [ReclamacoesPage] Estado de Loading:', {
+    loadingReclamacoes,
+    isInitialLoading,
+    hasCacheResponse: !!cacheResponse,
+    allReclamacoesLength: allReclamacoes.length,
+    isFetching
+  });
 
   if (isInitialLoading) {
     return (
