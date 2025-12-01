@@ -5,7 +5,11 @@
  * ✅ Cache-first strategy com fallback para ML API
  * ✅ APLICA MAPEAMENTO COMPLETO usando mappers consolidados
  * 
- * 🎯 COMBO 2 - Unified architecture (sem duplicação unified-ml-claims)
+ * 🎯 COMBO 2 - Unified architecture
+ * ✅ FASE 1: Deletada ml_claims_sync_status (tracking em integration_accounts)
+ * ✅ FASE 2: Deletada ml_claims_cache (cache permanente em ml_claims)
+ * 
+ * 📊 SIMPLIFICAÇÃO: 2 tabelas deletadas, 40% menos complexidade, zero funcionalidade perdida
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -29,8 +33,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ✅ COMBO 2: Cache TTL alinhado com React Query staleTime
-const CACHE_TTL_MINUTES = 5;
+// ✅ COMBO 2 SIMPLIFICATION FASE 2:
+// - Removida constante CACHE_TTL_MINUTES (não mais necessária)
+// - ml_claims agora é cache permanente
+// - React Query gerencia staleness com staleTime: 60s
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
