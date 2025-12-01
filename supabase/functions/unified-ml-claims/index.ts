@@ -375,30 +375,55 @@ Deno.serve(async (req) => {
     logger.success(`Total claims fetched: ${allClaims.length}`);
 
     // ✅ COMBO 2: Write-through caching - salvar claims buscados em cache
-    if (allClaims.length > 0) {
+    if (allClaims.length > 0 && accountIds.length > 0) {
       logger.progress(`Saving ${allClaims.length} claims to cache...`);
       const ttl_minutes = 5;
-      const cacheRecords = allClaims.map(claim => ({
-        claim_id: String(claim.id),
-        organization_id: organizationId,
-        integration_account_id: accountIds[0] || '', // Associar à primeira conta
-        claim_data: claim,
-        cached_at: new Date().toISOString(),
-        ttl_expires_at: new Date(Date.now() + ttl_minutes * 60 * 1000).toISOString()
-      }));
-
-      const { error: cacheWriteError } = await supabaseAdmin
-        .from('ml_claims_cache')
-        .upsert(cacheRecords, {
-          onConflict: 'claim_id,organization_id',
-          ignoreDuplicates: false
-        });
-
-      if (cacheWriteError) {
-        logger.warn(`⚠️ Failed to write claims to cache: ${cacheWriteError.message}`);
-      } else {
-        logger.success(`💾 Cached ${allClaims.length} claims (TTL: ${ttl_minutes}min)`);
+      
+      // Mapear seller_id para integration_account_id correto
+      const sellerToAccountMap = new Map<string, string>();
+      for (const accountId of accountIds) {
+        const account = integrationAccounts.find(acc => acc.id === accountId);
+        if (account?.seller_id) {
+          sellerToAccountMap.set(String(account.seller_id), accountId);
+        }
       }
+
+      const cacheRecords = allClaims.map(claim => {
+        const sellerId = String(claim.seller_id || '');
+        const integrationAccountId = sellerToAccountMap.get(sellerId) || accountIds[0] || '';
+        
+        return {
+          claim_id: String(claim.id),
+          organization_id: organizationId,
+          integration_account_id: integrationAccountId,
+          claim_data: claim,
+          cached_at: new Date().toISOString(),
+          ttl_expires_at: new Date(Date.now() + ttl_minutes * 60 * 1000).toISOString()
+        };
+      });
+
+      // Upsert em batches de 100 para evitar timeout
+      const batchSize = 100;
+      let totalCached = 0;
+      for (let i = 0; i < cacheRecords.length; i += batchSize) {
+        const batch = cacheRecords.slice(i, i + batchSize);
+        const { error: cacheWriteError } = await supabaseAdmin
+          .from('ml_claims_cache')
+          .upsert(batch, {
+            onConflict: 'claim_id,organization_id',
+            ignoreDuplicates: false
+          });
+
+        if (cacheWriteError) {
+          logger.warn(`⚠️ Failed to write batch ${Math.floor(i/batchSize)+1} to cache: ${cacheWriteError.message}`);
+        } else {
+          totalCached += batch.length;
+        }
+      }
+      
+      logger.success(`💾 Cached ${totalCached}/${allClaims.length} claims (TTL: ${ttl_minutes}min)`);
+    } else if (accountIds.length === 0) {
+      logger.warn('⚠️ Skipping cache write: no valid accountIds provided');
     }
 
     // ✅ FASE 3: Limpeza automática de cache expirado (após busca para evitar race condition)
