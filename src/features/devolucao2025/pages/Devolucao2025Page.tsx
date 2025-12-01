@@ -28,7 +28,7 @@ import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnifie
 import { useDevolucoesColumnManager } from '../hooks/useDevolucoesColumnManager';
 import { useDevolucoesPolling } from '../hooks/useDevolucoesPolling';
 import { useDevolucoesAggregator } from '../hooks/useDevolucoesAggregator';
-import { useMLClaimsFromCache } from '../hooks/useMLClaimsFromCache';
+import { useMLClaimsFromCache } from '@/hooks/useMLClaimsFromCache';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
