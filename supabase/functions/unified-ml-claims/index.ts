@@ -25,7 +25,8 @@ interface RequestParams {
   force_refresh?: boolean;
 }
 
-const CACHE_TTL_MINUTES = 15;
+// ✅ FASE 3 CORREÇÃO: TTL alinhado com Combo 2 spec (5 minutos = staleTime)
+const CACHE_TTL_MINUTES = 5;
 
 /**
  * 🔧 HELPER: Extrai campos estruturados do claim para ml_claims
@@ -231,6 +232,18 @@ Deno.serve(async (req) => {
       force_refresh,
       using_defaults: !params.date_from || !params.date_to
     });
+
+    // ✅ FASE 3: Limpeza automática de cache expirado
+    logger.progress('Cleaning expired cache entries...');
+    const { data: deletedCache, error: cleanupError } = await supabaseAdmin
+      .from('ml_claims_cache')
+      .delete()
+      .lt('ttl_expires_at', new Date().toISOString())
+      .select('claim_id');
+    
+    if (!cleanupError && deletedCache && deletedCache.length > 0) {
+      logger.success(`🗑️ Cleaned ${deletedCache.length} expired cache entries`);
+    }
 
     // ETAPA 1: Verificar cache (se não for force_refresh)
     if (!force_refresh) {
