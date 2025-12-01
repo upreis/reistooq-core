@@ -47,7 +47,21 @@ export function useMLClaimsFromCache({
     // ✅ CORREÇÃO AUDITORIA 1: slice() evita mutação do array original
     queryKey: ['ml-claims-cache', integration_account_ids.slice().sort().join(','), date_from, date_to],
     queryFn: async () => {
-      console.log('🔍 [useMLClaimsFromCache] Iniciando busca...');
+      // ✅ CRITICAL: Verificar sessão antes de chamar Edge Function
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('❌ No active session - user must be logged in');
+        throw new Error('User must be logged in to fetch claims');
+      }
+      
+      console.log('🔍 [useMLClaimsFromCache] Iniciando busca...', {
+        accounts: integration_account_ids.length,
+        date_from,
+        date_to,
+        hasSession: !!session,
+        userId: session.user?.id
+      });
       
       // Validação de contas
       if (!integration_account_ids || integration_account_ids.length === 0) {
