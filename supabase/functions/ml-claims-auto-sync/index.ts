@@ -125,17 +125,17 @@ Deno.serve(async (req) => {
           console.log(`📅 Initial sync - last 60 days from ${dateFrom}`);
         }
 
-        // 2.2: Buscar claims via unified-ml-claims
-        console.log(`📡 Calling unified-ml-claims for ${account.account_identifier}...`);
+        // 2.2: Buscar claims via get-devolucoes-direct (UNIFIED)
+        console.log(`📡 Calling get-devolucoes-direct for ${account.account_identifier}...`);
         
         const { data: claimsResponse, error: claimsError } = await supabaseAdmin.functions.invoke(
-          'unified-ml-claims',
+          'get-devolucoes-direct',
           {
             body: {
               integration_account_ids: [account.id],
               date_from: dateFrom,
               date_to: dateTo,
-              force_refresh: false // Usar cache se disponível
+              force_refresh: true // Force refresh para garantir dados atualizados
             }
           }
         );
@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
           throw new Error(`Claims fetch failed: ${claimsError.message}`);
         }
 
-        const claims = claimsResponse?.claims || [];
+        const claims = claimsResponse?.data || [];
         const claimsFetched = claims.length;
         
         console.log(`✅ Fetched ${claimsFetched} claims for ${account.account_identifier}`);
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
             last_sync_status: 'success',
             last_sync_error: null,
             claims_fetched: claimsFetched,
-            claims_cached: claimsFetched, // unified-ml-claims já cacheia
+            claims_cached: claimsFetched, // get-devolucoes-direct já cacheia
             sync_duration_ms: syncDuration
           }, {
             onConflict: 'organization_id,integration_account_id'
