@@ -268,26 +268,11 @@ serve(async (req) => {
       const stage1Duration = Date.now() - stage1Start;
       logger.info(`✅ [STAGE 1] Completado em ${(stage1Duration / 1000).toFixed(1)}s`);
       
-      // 🔍 FILTRO INTELIGENTE: Apenas claims com return iniciado
+      // ✅ FILTRO RELAXADO: Mostrar TODOS os claims (filtro aplicado no frontend se necessário)
       const beforeFilter = claims.length;
-      const claimsWithReturn = claims.filter((claim: any) => {
-        const returnDetails = claim.return_details_v2;
-        
-        // Verificar se return foi realmente iniciado
-        const hasReturnId = returnDetails?.id && String(returnDetails.id).trim() !== '';
-        const hasReturnStatus = returnDetails?.status && returnDetails.status !== 'pending';
-        const hasShipments = returnDetails?.shipments && Array.isArray(returnDetails.shipments) && returnDetails.shipments.length > 0;
-        
-        // 🔒 Lógica mais restritiva: return_id OU (status + shipments juntos)
-        return hasReturnId || (hasReturnStatus && hasShipments);
-      });
+      const claimsWithReturn = claims; // NÃO FILTRAR - mostrar tudo
       
-      const eliminated = beforeFilter - claimsWithReturn.length;
-      const percentEliminated = beforeFilter > 0 ? ((eliminated / beforeFilter) * 100).toFixed(1) : '0';
-      
-      logger.info(`🔍 [FILTRO] ${beforeFilter} → ${claimsWithReturn.length} claims com return iniciado`);
-      logger.info(`   ✂️ Eliminados: ${eliminated} claims sem return real (${percentEliminated}%)`);
-      logger.info(`   💰 Economia: ~${eliminated * 3} chamadas à API ML evitadas (orderData + messages + productInfo)`);
+      logger.info(`✅ [SEM FILTRO] Mantendo TODOS os ${beforeFilter} claims para enriquecimento completo`);
       
       // STAGE 2: Full enrichment apenas para claims com return
       logger.progress(`⚡ [${accountId.slice(0, 8)}] STAGE 2: Enriquecimento completo de ${claimsWithReturn.length} claims...`);
