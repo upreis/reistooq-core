@@ -3345,36 +3345,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ml_claims_cache: {
-        Row: {
-          cached_at: string | null
-          claim_data: Json
-          claim_id: string
-          id: string
-          integration_account_id: string
-          organization_id: string
-          ttl_expires_at: string
-        }
-        Insert: {
-          cached_at?: string | null
-          claim_data: Json
-          claim_id: string
-          id?: string
-          integration_account_id: string
-          organization_id: string
-          ttl_expires_at: string
-        }
-        Update: {
-          cached_at?: string | null
-          claim_data?: Json
-          claim_id?: string
-          id?: string
-          integration_account_id?: string
-          organization_id?: string
-          ttl_expires_at?: string
-        }
-        Relationships: []
-      }
       ml_claims_sync_status: {
         Row: {
           claims_cached: number | null

@@ -1,12 +1,17 @@
 /**
  * 🚀 COMBO 2 - ML CLAIMS FROM CACHE
- * Hook unificado para consultar ml_claims table (cache) com fallback para API
+ * Hook unificado para consultar ml_claims table (cache permanente) com fallback para API
  * 
  * ESPECIFICAÇÃO COMBO 2:
  * - staleTime: 60s (dados considerados frescos por 1 minuto)
  * - gcTime: 10min (mantém em memória por 10 minutos)
  * - refetchOnWindowFocus: true (atualiza ao voltar para aba)
  * - refetchInterval: 60s (polling automático a cada minuto)
+ * 
+ * 🎯 SIMPLIFICAÇÃO FASE 2:
+ * - ml_claims agora é cache permanente (sem TTL no banco)
+ * - React Query gerencia staleness (staleTime: 60s)
+ * - ml_claims_cache deletada (duplicação removida)
  * 
  * FLUXO:
  * 1. Consulta ml_claims table (sincronizada via CRON a cada 10min)
