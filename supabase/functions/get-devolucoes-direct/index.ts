@@ -38,7 +38,7 @@ serve(async (req) => {
   }
 
   try {
-    logger.section('GET DEVOLUCOES DIRECT - COMBO 2 UNIFIED');
+    logger.progress('GET DEVOLUCOES DIRECT - COMBO 2 UNIFIED');
     
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -137,7 +137,7 @@ serve(async (req) => {
         .gt('ttl_expires_at', new Date().toISOString());
 
       if (!cacheError && cachedClaims && cachedClaims.length > 0) {
-        logger.success(`Cache HIT - ${cachedClaims.length} claims from cache`);
+        logger.progress(`Cache HIT - ${cachedClaims.length} claims from cache`);
         
         // Filtrar por data em memória
         let filteredClaims = cachedClaims.map(entry => entry.claim_data);
@@ -619,7 +619,7 @@ serve(async (req) => {
         if (cacheError) {
           logger.error('Cache error:', cacheError);
         } else {
-          logger.success(`Cache: Saved ${cacheEntries.length} claims`);
+          logger.progress(`Cache: Saved ${cacheEntries.length} claims`);
         }
       }
       
