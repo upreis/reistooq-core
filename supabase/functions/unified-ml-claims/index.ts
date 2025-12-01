@@ -1,12 +1,16 @@
 /**
  * 🔄 UNIFIED ML CLAIMS - SINGLE SOURCE OF TRUTH
  * Edge Function unificada para busca de claims/devoluções do Mercado Livre
- * Implementa write-through caching com fallback para ML API
+ * Implementa write-through caching com fallback para ML API DIRETA
  * 
- * COMBO 2 - FASE B para /devolucoesdevenda
+ * ✅ REFATORADO: Busca direta da API ML (sem triple chaining)
+ * Padrão idêntico a unified-ml-orders para consistency
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import { logger } from './utils/logger.ts';
+import { TokenManager } from './utils/tokenManager.ts';
+import { ClaimsService } from './services/ClaimsService.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,29 +28,28 @@ interface RequestParams {
 const CACHE_TTL_MINUTES = 15;
 
 /**
- * 🔧 HELPER: Extrai campos estruturados do claim_data para ml_claims
+ * 🔧 HELPER: Extrai campos estruturados do claim para ml_claims
  */
 function extractClaimFields(claim: any, accountId: string, organizationId: string) {
-  // ✅ CORREÇÃO 2: buyer_id como string (ML IDs podem exceder Number.MAX_SAFE_INTEGER)
-  const buyerId = claim.comprador_id?.toString() || null;
+  const buyerId = claim.buyer?.id?.toString() || claim.buyer_id?.toString() || null;
 
   return {
-    claim_id: claim.claim_id?.toString() || claim.id?.toString(),
+    claim_id: claim.id?.toString(),
     organization_id: organizationId,
     integration_account_id: accountId,
-    order_id: claim.order_id?.toString() || '',
+    order_id: claim.resource_id?.toString() || '',
     return_id: claim.return_id?.toString() || null,
-    status: claim.status_devolucao || claim.status || null,
-    stage: claim.claim_stage || null,
+    status: claim.status || null,
+    stage: claim.stage || null,
     reason_id: claim.reason_id || null,
-    date_created: claim.data_criacao || claim.date_created || null,
-    date_closed: claim.data_fechamento_devolucao || claim.date_closed || null,
-    last_updated: claim.ultima_atualizacao_real || claim.last_updated || null,
-    total_amount: parseFloat(claim.valor_original_produto || 0),
-    refund_amount: parseFloat(claim.valor_reembolso || 0),
-    currency_id: claim.moeda_reembolso || 'BRL',
+    date_created: claim.date_created || null,
+    date_closed: claim.date_closed || null,
+    last_updated: claim.last_updated || null,
+    total_amount: parseFloat(claim.quantity?.amount || 0),
+    refund_amount: 0, // Será calculado depois se necessário
+    currency_id: claim.quantity?.unit || 'BRL',
     buyer_id: buyerId,
-    buyer_nickname: claim.comprador_nickname || null,
+    buyer_nickname: claim.buyer?.nickname || null,
     claim_data: claim,
     last_synced_at: new Date().toISOString()
   };
@@ -59,11 +62,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // ✅ CRITICAL: Como verify_jwt = true, Supabase já validou o JWT
-    const authHeader = req.headers.get('Authorization');
+    logger.section('UNIFIED ML CLAIMS - DIRECT API FETCH');
     
+    // Validar Authorization header
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('❌ No authorization header provided');
+      logger.error('No authorization header provided');
       return new Response(
         JSON.stringify({ success: false, error: 'No authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -76,10 +80,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Parse request body FIRST (precisa para detectar service role calls)
+    // Parse request body
     const params: RequestParams = await req.json();
     
-    // Extrair user do JWT
+    // Extrair user/role do JWT
     const jwt = authHeader.replace('Bearer ', '');
     const [, payloadBase64] = jwt.split('.');
     const payload = JSON.parse(atob(payloadBase64));
@@ -88,11 +92,10 @@ Deno.serve(async (req) => {
     
     let organization_id: string | null = null;
     
-    // ✅ CORREÇÃO CRÍTICA: Suportar chamadas de service role (background CRON)
+    // Suportar chamadas de service role (background CRON)
     if (role === 'service_role') {
-      console.log('🤖 Service role detected - background call');
+      logger.info('🤖 Service role detected - background call');
       
-      // Para service role, buscar organization_id das contas
       if (!params.integration_account_ids || params.integration_account_ids.length === 0) {
         return new Response(
           JSON.stringify({ 
@@ -103,7 +106,7 @@ Deno.serve(async (req) => {
         );
       }
       
-      // Buscar organization_id da primeira conta (todas devem ser da mesma org)
+      // Buscar organization_id da primeira conta
       const { data: account } = await supabaseAdmin
         .from('integration_accounts')
         .select('organization_id')
@@ -119,19 +122,19 @@ Deno.serve(async (req) => {
         );
       }
       
-      console.log('✅ Organization resolved from account:', organization_id);
+      logger.success('Organization resolved from account');
       
     } else {
       // Chamada de usuário autenticado
       if (!userId) {
-        console.error('❌ No user ID in JWT for authenticated call');
+        logger.error('No user ID in JWT for authenticated call');
         return new Response(
           JSON.stringify({ success: false, error: 'Invalid token' }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      console.log('✅ User authenticated:', userId);
+      logger.success('User authenticated');
 
       // Buscar organization_id do usuário
       const { data: profile } = await supabaseAdmin
@@ -150,10 +153,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Destructure params (já foi parsed acima)
     const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
 
-    // ✅ CORREÇÃO 3: Validar array vazio E UUIDs válidos
+    // Validar array de contas
     if (!integration_account_ids || integration_account_ids.length === 0) {
       return new Response(
         JSON.stringify({ 
@@ -177,7 +179,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('📥 Unified ML Claims - Request:', {
+    logger.info('Request validated', {
       organization_id,
       accounts: integration_account_ids.length,
       date_from,
@@ -185,9 +187,9 @@ Deno.serve(async (req) => {
       force_refresh
     });
 
-    // ETAPA 1: Verificar cache no Supabase (se não for force_refresh)
+    // ETAPA 1: Verificar cache (se não for force_refresh)
     if (!force_refresh) {
-      console.log('🔍 Checking cache...');
+      logger.progress('Checking cache...');
       
       const { data: cachedClaims, error: cacheError } = await supabaseAdmin
         .from('ml_claims_cache')
@@ -197,14 +199,14 @@ Deno.serve(async (req) => {
         .gt('ttl_expires_at', new Date().toISOString());
 
       if (!cacheError && cachedClaims && cachedClaims.length > 0) {
-        console.log(`✅ Cache HIT - ${cachedClaims.length} claims from cache`);
+        logger.success(`Cache HIT - ${cachedClaims.length} claims from cache`);
         
         // Filtrar por data range se especificado
         let filteredClaims = cachedClaims.map(entry => entry.claim_data);
         
         if (date_from || date_to) {
           filteredClaims = filteredClaims.filter((claim: any) => {
-            const claimDate = new Date(claim.data_criacao || claim.date_created);
+            const claimDate = new Date(claim.date_created);
             if (date_from && claimDate < new Date(date_from)) return false;
             if (date_to && claimDate > new Date(date_to)) return false;
             return true;
@@ -224,132 +226,111 @@ Deno.serve(async (req) => {
         );
       }
       
-      console.log('❌ Cache MISS - fetching from ML API');
+      logger.info('Cache MISS - fetching from ML API');
     } else {
-      console.log('🔄 Force refresh - bypassing cache and invalidating old cache');
+      logger.progress('Force refresh - invalidating old cache');
       
       // Invalidar cache antigo
-      const { error: deleteError } = await supabaseAdmin
+      await supabaseAdmin
         .from('ml_claims_cache')
         .delete()
         .eq('organization_id', organization_id)
         .in('integration_account_id', integration_account_ids);
       
-      if (deleteError) {
-        console.error('⚠️ Error invalidating old cache:', deleteError);
-      } else {
-        console.log('✅ Old cache invalidated for accounts:', integration_account_ids);
-      }
+      logger.success('Old cache invalidated');
     }
 
-    // ETAPA 2: Buscar da ML API (cache miss ou force refresh)
-    // ✅ CORREÇÃO 4: Chamar get-devolucoes-direct (mantém enriquecimento específico)
-    // ⚠️ PROBLEMA CRÍTICO 3 (EDGE FUNCTION CHAINING): 
-    //    Arquitetura atual: ml-claims-auto-sync → unified-ml-claims → get-devolucoes-direct → ML API
-    //    Impacto: 3-4x latência + custos + timeout risk
-    //    TODO URGENTE: Migrar para chamada direta ML API ou implementar background tasks
-    const allClaims: any[] = [];
+    // ETAPA 2: Buscar DIRETAMENTE da ML API (sem triple chaining)
+    logger.progress('Fetching claims directly from ML API...');
     
-    // ✅ CORREÇÃO: Declarar results ANTES do loop
-    const results: any = {
-      errors: []
-    };
+    const tokenManager = new TokenManager(supabaseAdmin);
+    const claimsService = new ClaimsService();
+    const allClaims: any[] = [];
+    const results: any = { errors: [] };
     
     for (const accountId of integration_account_ids) {
-      console.log(`📡 Fetching claims for account ${accountId}...`);
-      
-      const claimsResponse = await supabaseAdmin.functions.invoke('get-devolucoes-direct', {
-        body: {
-          integration_account_id: accountId,
+      try {
+        logger.progress(`Processing account ${accountId.slice(0, 8)}...`);
+        
+        // Obter token válido para a conta
+        const { token, sellerId } = await tokenManager.getValidToken(accountId);
+        
+        // Buscar claims diretamente da API ML
+        const claims = await claimsService.fetchAllClaims(
+          sellerId,
+          token,
           date_from,
           date_to
-        }
-      });
+        );
+        
+        logger.success(`Fetched ${claims.length} claims for account ${accountId.slice(0, 8)}`);
+        allClaims.push(...claims);
 
-      if (claimsResponse.error) {
-        console.error(`❌ Error fetching account ${accountId}:`, claimsResponse.error);
+        // ETAPA 3: Write-through caching
+        if (claims.length > 0) {
+          logger.progress(`Saving ${claims.length} claims to cache and ml_claims...`);
+          
+          // 3.1: Salvar em ml_claims_cache (TTL cache)
+          const cacheEntries = claims.map((claim: any) => ({
+            organization_id,
+            integration_account_id: accountId,
+            claim_id: claim.id?.toString(),
+            claim_data: claim,
+            cached_at: new Date().toISOString(),
+            ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
+          }));
+
+          const { error: cacheError } = await supabaseAdmin
+            .from('ml_claims_cache')
+            .upsert(cacheEntries, {
+              onConflict: 'organization_id,integration_account_id,claim_id'
+            });
+
+          if (cacheError) {
+            logger.error('Error saving to cache:', cacheError);
+          } else {
+            logger.success(`Cache: Saved ${cacheEntries.length} claims`);
+          }
+
+          // 3.2: Salvar em ml_claims (persistência permanente)
+          try {
+            const mlClaimsEntries = claims.map((claim: any) => 
+              extractClaimFields(claim, accountId, organization_id)
+            );
+
+            const { error: mlClaimsError } = await supabaseAdmin
+              .from('ml_claims')
+              .upsert(mlClaimsEntries, {
+                onConflict: 'organization_id,integration_account_id,claim_id',
+                ignoreDuplicates: false
+              });
+
+            if (mlClaimsError) {
+              logger.error('Error saving to ml_claims:', mlClaimsError);
+            } else {
+              logger.success(`ml_claims: Saved ${mlClaimsEntries.length} claims permanently`);
+            }
+          } catch (error) {
+            logger.error('Exception in ml_claims persistence:', error);
+          }
+        }
+      } catch (error: any) {
+        logger.error(`Error processing account ${accountId}:`, error);
         results.errors.push({
           account_id: accountId,
-          error: claimsResponse.error.message || 'Unknown error'
+          error: error.message || 'Unknown error'
         });
-        continue;
-      }
-
-      const accountClaims = claimsResponse.data?.devolucoes || [];
-      console.log(`✅ Fetched ${accountClaims.length} claims for account ${accountId}`);
-      
-      allClaims.push(...accountClaims);
-
-      // ETAPA 3: Write-through caching - salvar no cache E na tabela permanente
-      if (accountClaims.length > 0) {
-        console.log(`💾 Saving ${accountClaims.length} claims to cache and ml_claims...`);
-        
-        // 3.1: Salvar em ml_claims_cache (TTL cache temporário)
-        const cacheEntries = accountClaims.map((claim: any) => ({
-          organization_id,
-          integration_account_id: accountId,
-          claim_id: claim.claim_id?.toString() || claim.id?.toString(),
-          claim_data: claim,
-          cached_at: new Date().toISOString(),
-          ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
-        }));
-
-        const { error: cacheError } = await supabaseAdmin
-          .from('ml_claims_cache')
-          .upsert(cacheEntries, {
-            onConflict: 'organization_id,integration_account_id,claim_id'
-          });
-
-        if (cacheError) {
-          console.error('❌ Error saving to cache:', cacheError);
-        } else {
-          console.log(`✅ Cache: Saved ${cacheEntries.length} claims`);
-        }
-
-        // 3.2: Salvar em ml_claims (persistência permanente com campos estruturados)
-        // ✅ CORREÇÃO 5: Logar detalhes de erro para debug
-        try {
-          const mlClaimsEntries = accountClaims.map((claim: any) => 
-            extractClaimFields(claim, accountId, organization_id)
-          );
-
-          const { error: mlClaimsError } = await supabaseAdmin
-            .from('ml_claims')
-            .upsert(mlClaimsEntries, {
-              onConflict: 'organization_id,integration_account_id,claim_id',
-              ignoreDuplicates: false
-            });
-
-          if (mlClaimsError) {
-            console.error('❌ Error saving to ml_claims:', mlClaimsError);
-            console.error('📋 Error details:', {
-              code: mlClaimsError.code,
-              message: mlClaimsError.message,
-              details: mlClaimsError.details,
-              hint: mlClaimsError.hint
-            });
-          } else {
-            console.log(`✅ ml_claims: Saved ${mlClaimsEntries.length} claims permanently`);
-          }
-        } catch (error) {
-          console.error('❌ Exception in ml_claims persistence:', error);
-          console.error('📋 Exception details:', {
-            name: error instanceof Error ? error.name : 'Unknown',
-            message: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined
-          });
-        }
       }
     }
 
-    console.log(`✅ Total claims fetched: ${allClaims.length}`);
+    logger.success(`Total claims fetched: ${allClaims.length}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         claims: allClaims,
         total: allClaims.length,
-        source: 'ml_api',
+        source: 'ml_api_direct',
         cached_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString(),
         ...(results.errors.length > 0 && { warnings: results.errors })
@@ -357,8 +338,8 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error('❌ Unified ML Claims Error:', error);
+  } catch (error: any) {
+    logger.error('Unified ML Claims Error:', error);
     return new Response(
       JSON.stringify({
         success: false,
