@@ -139,6 +139,11 @@ export function ReclamacoesPage() {
   const dateToISO = new Date().toISOString();
 
   // ✅ COMBO 2: Buscar reclamações usando cache-first + fallback API
+  // 🔧 FIX: usar fallback para accounts evitando array vazio
+  const accountsForQuery = selectedAccountIds && selectedAccountIds.length > 0 
+    ? selectedAccountIds 
+    : (mlAccounts?.map(acc => acc.id) || []);
+    
   const { 
     data: cacheResponse, 
     isLoading: loadingReclamacoes, 
@@ -146,19 +151,29 @@ export function ReclamacoesPage() {
     error: errorReclamacoes, 
     refetch: refetchReclamacoes 
   } = useMLClaimsFromCache({
-    integration_account_ids: selectedAccountIds || [],
+    integration_account_ids: accountsForQuery,
     date_from: dateFromISO,
     date_to: dateToISO,
-    enabled: selectedAccountIds.length > 0 || (mlAccounts && mlAccounts.length > 0)
+    enabled: accountsForQuery.length > 0 // ✅ só executar se tiver contas
   });
 
   // ✅ COMBO 2: Extrair reclamações da resposta do cache
   const allReclamacoes = useMemo(() => {
     if (cacheResponse?.success && cacheResponse.reclamacoes) {
+      console.log('📋 [ReclamacoesPage] Dados recebidos:', {
+        total: cacheResponse.reclamacoes.length,
+        source: cacheResponse.source,
+        isLoading: loadingReclamacoes
+      });
       return cacheResponse.reclamacoes;
     }
+    console.log('⚠️ [ReclamacoesPage] Sem dados:', {
+      hasResponse: !!cacheResponse,
+      success: cacheResponse?.success,
+      isLoading: loadingReclamacoes
+    });
     return [];
-  }, [cacheResponse]);
+  }, [cacheResponse, loadingReclamacoes]);
 
   // ✅ COMBO 2: Buscar reclamações - Manual refetch
   const handleBuscarReclamacoes = async () => {
