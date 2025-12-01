@@ -26,7 +26,8 @@ import { RECLAMACOES_COLUMN_DEFINITIONS } from '../config/reclamacoes-column-def
 import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Radio } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { logger } from '@/utils/logger';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -366,14 +367,15 @@ export function ReclamacoesPage() {
                 <div className="flex-1 flex items-center gap-3">
                   <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
                   
-                  {/* ✅ COMBO 2: Badge de polling em background */}
+                  {/* ✅ COMBO 2 FASE 3: Badge de polling automático (60s) */}
                   {isFetching && !loadingReclamacoes && (
-                    <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md animate-pulse">
-                      <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
-                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                        Atualizando...
-                      </span>
-                    </div>
+                    <Badge 
+                      variant="outline" 
+                      className="gap-2 animate-pulse border-blue-500/30 bg-blue-500/5 text-blue-600 dark:text-blue-400"
+                    >
+                      <Radio className="h-3 w-3" />
+                      <span className="text-xs font-medium">Atualizando dados...</span>
+                    </Badge>
                   )}
                 </div>
                 
