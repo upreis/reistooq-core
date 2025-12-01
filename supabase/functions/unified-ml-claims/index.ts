@@ -76,39 +76,81 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Parse request body FIRST (precisa para detectar service role calls)
+    const params: RequestParams = await req.json();
+    
     // Extrair user do JWT
     const jwt = authHeader.replace('Bearer ', '');
     const [, payloadBase64] = jwt.split('.');
     const payload = JSON.parse(atob(payloadBase64));
     const userId = payload.sub;
+    const role = payload.role;
     
-    if (!userId) {
-      console.error('❌ No user ID in JWT');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    let organization_id: string | null = null;
     
-    console.log('✅ User authenticated:', userId);
+    // ✅ CORREÇÃO CRÍTICA: Suportar chamadas de service role (background CRON)
+    if (role === 'service_role') {
+      console.log('🤖 Service role detected - background call');
+      
+      // Para service role, buscar organization_id das contas
+      if (!params.integration_account_ids || params.integration_account_ids.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'integration_account_ids required for service role calls' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Buscar organization_id da primeira conta (todas devem ser da mesma org)
+      const { data: account } = await supabaseAdmin
+        .from('integration_accounts')
+        .select('organization_id')
+        .eq('id', params.integration_account_ids[0])
+        .single();
+      
+      organization_id = account?.organization_id || null;
+      
+      if (!organization_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Organization not found for account' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log('✅ Organization resolved from account:', organization_id);
+      
+    } else {
+      // Chamada de usuário autenticado
+      if (!userId) {
+        console.error('❌ No user ID in JWT for authenticated call');
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log('✅ User authenticated:', userId);
 
-    // Buscar organization_id do usuário
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('organizacao_id')
-      .eq('id', userId)
-      .single();
+      // Buscar organization_id do usuário
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', userId)
+        .single();
 
-    const organization_id = profile?.organizacao_id;
-    if (!organization_id) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Organization not found' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      organization_id = profile?.organizacao_id || null;
+      
+      if (!organization_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Organization not found' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    // Parse request body
-    const params: RequestParams = await req.json();
+    // Destructure params (já foi parsed acima)
     const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
 
     // ✅ CORREÇÃO 3: Validar array vazio E UUIDs válidos
