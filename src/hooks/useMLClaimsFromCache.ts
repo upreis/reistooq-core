@@ -167,14 +167,14 @@ export function useMLClaimsFromCache({
         throw new Error(apiData?.error || 'Erro desconhecido ao buscar claims');
       }
 
-      console.log(`✅ [API SUCCESS] ${apiData.devolucoes?.length || 0} claims da API`);
+      console.log(`✅ [API SUCCESS] ${apiData.data?.length || 0} claims da API`);
 
       // Retornar dados frescos da API
       return {
         success: true,
         source: 'api',
-        devolucoes: apiData.devolucoes || [],
-        total_count: apiData.total_count || apiData.devolucoes?.length || 0,
+        devolucoes: apiData.data || [],
+        total_count: apiData.total || apiData.data?.length || 0,
         cache_expired: true
       };
     },
