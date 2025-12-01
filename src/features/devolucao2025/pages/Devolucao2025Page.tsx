@@ -350,8 +350,7 @@ export const Devolucao2025Page = () => {
     try {
       // Invalidar AMBOS caches: React Query cache + Supabase cache
       queryClient.invalidateQueries({ queryKey: ['ml-claims-cache'] });
-      queryClient.invalidateQueries({ queryKey: ['devolucoes-unified-ml-claims'] });
-      await cacheQuery.refetch(); // ✅ CORREÇÃO AUDITORIA: usar cacheQuery.refetch
+      await cacheQuery.refetch(); // Buscar dados atualizados
       toast.success('Dados atualizados com sucesso!');
     } catch (error) {
       console.error('❌ [BUSCA MANUAL] Erro ao buscar devoluções:', error);

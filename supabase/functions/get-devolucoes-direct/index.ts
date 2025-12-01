@@ -1,10 +1,11 @@
 /**
- * 🔥 GET DEVOLUCOES DIRECT - BUSCA DIRETO DA API ML
- * Copia EXATA do padrão de ml-claims-fetch que FUNCIONA
- * NÃO usa cache do banco - SEMPRE busca fresco da API
+ * 🔥 GET DEVOLUCOES DIRECT - SINGLE SOURCE OF TRUTH
+ * Busca claims da ML API com enriquecimento completo + write-through caching
+ * ✅ Suporta chamadas de usuários E service_role (CRON background jobs)
+ * ✅ Cache-first strategy com fallback para ML API
  * ✅ APLICA MAPEAMENTO COMPLETO usando mappers consolidados
  * 
- * 🔄 FORCE REDEPLOY 2025-11-26 18:03 - Trigger automatic delete+redeploy workflow
+ * 🎯 COMBO 2 - Unified architecture (sem duplicação unified-ml-claims)
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -28,58 +29,157 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ✅ COMBO 2: Cache TTL alinhado com React Query staleTime
+const CACHE_TTL_MINUTES = 5;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // 🔥🔥🔥 HARD DEPLOYMENT CHECK - VERSION 17:52 🔥🔥🔥
-    console.log('🔥🔥🔥🔥🔥 INÍCIO DA FUNÇÃO - VERSION 2025-11-26-17:52 🔥🔥🔥🔥🔥');
+    logger.section('GET DEVOLUCOES DIRECT - COMBO 2 UNIFIED');
     
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    console.log('🔥 PARSING REQUEST BODY...');
+    // Validar Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      logger.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ success: false, error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // SERVICE CLIENT
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false }
+    });
+
+    // Parse request body
     const { 
       integration_account_id,      // ✅ Single account (retrocompatibilidade)
       integration_account_ids,      // 🆕 Multiple accounts (nova feature)
       date_from, 
       date_to,
-      filter_claim_id                // 🆕 FASE C.3: Filtro por claim_id específico
+      filter_claim_id,              // 🆕 FASE C.3: Filtro por claim_id específico
+      force_refresh = false         // 🆕 COMBO 2: Force refresh ignora cache
     } = await req.json();
-
-    console.log('🔥 REQUEST PARSED - PARAMS:', { integration_account_id, integration_account_ids, date_from, date_to });
     
     // 🔄 Normalizar para array sempre (simplifica lógica)
     const accountIds = integration_account_ids 
       ? (Array.isArray(integration_account_ids) ? integration_account_ids : [integration_account_ids])
       : (integration_account_id ? [integration_account_id] : []);
-
-    console.log('🔥 ACCOUNTS NORMALIZADOS:', accountIds);
     
     // ✅ Validar se temos ao menos uma conta
     if (accountIds.length === 0 || accountIds.some(id => !id)) {
-      console.log('🔥 ERRO: Nenhuma conta válida');
       throw new Error('Nenhuma conta válida fornecida. Envie integration_account_id ou integration_account_ids.');
     }
     
-    console.log('🔥 VALIDAÇÃO OK - Prosseguindo com', accountIds.length, 'conta(s)');
+    // 🔐 COMBO 2: Suporte a service_role (CRON) e authenticated users
+    const jwt = authHeader.replace('Bearer ', '');
+    const [, payloadBase64] = jwt.split('.');
+    const payload = JSON.parse(atob(payloadBase64));
+    const userId = payload.sub;
+    const role = payload.role;
     
-    logger.progress(`[get-devolucoes-direct] Iniciando busca para ${accountIds.length} conta(s)`);
-    logger.debug('Parâmetros:', { accountIds, date_from, date_to });
+    let organization_id: string | null = null;
+    
+    if (role === 'service_role') {
+      logger.info('🤖 Service role detected - background call');
+      
+      // Buscar organization_id da primeira conta
+      const { data: account } = await supabaseAdmin
+        .from('integration_accounts')
+        .select('organization_id')
+        .eq('id', accountIds[0])
+        .single();
+      
+      organization_id = account?.organization_id || null;
+      
+      if (!organization_id) {
+        throw new Error('Organization not found for account');
+      }
+      
+    } else {
+      // Chamada de usuário autenticado
+      if (!userId) {
+        throw new Error('Invalid token - no user ID');
+      }
+      
+      // Buscar organization_id do usuário
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', userId)
+        .single();
 
-    // ✅ SERVICE CLIENT
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false }
-    });
+      organization_id = profile?.organizacao_id || null;
+      
+      if (!organization_id) {
+        throw new Error('Organization not found for user');
+      }
+    }
+    
+    logger.progress(`Iniciando busca para ${accountIds.length} conta(s)`);
+    logger.debug('Parâmetros:', { accountIds, date_from, date_to, force_refresh, organization_id });
+
+    // 🎯 COMBO 2 - ETAPA 1: Verificar cache (se não for force_refresh)
+    if (!force_refresh) {
+      logger.progress('Checking cache...');
+      
+      const { data: cachedClaims, error: cacheError } = await supabaseAdmin
+        .from('ml_claims_cache')
+        .select('*')
+        .eq('organization_id', organization_id)
+        .in('integration_account_id', accountIds)
+        .gt('ttl_expires_at', new Date().toISOString());
+
+      if (!cacheError && cachedClaims && cachedClaims.length > 0) {
+        logger.success(`Cache HIT - ${cachedClaims.length} claims from cache`);
+        
+        // Filtrar por data em memória
+        let filteredClaims = cachedClaims.map(entry => entry.claim_data);
+        
+        if (date_from || date_to) {
+          filteredClaims = filteredClaims.filter((claim: any) => {
+            const claimDate = new Date(claim.data_criacao || claim.date_created);
+            if (date_from && claimDate < new Date(date_from)) return false;
+            if (date_to && claimDate > new Date(date_to)) return false;
+            return true;
+          });
+        }
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: filteredClaims,
+            total: filteredClaims.length,
+            source: 'cache'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      logger.info('Cache MISS - fetching from ML API');
+    } else {
+      logger.progress('Force refresh - invalidating cache');
+      
+      // ✅ FASE 3: Cleanup de cache expirado antes de sync
+      await supabaseAdmin
+        .from('ml_claims_cache')
+        .delete()
+        .eq('organization_id', organization_id)
+        .in('integration_account_id', accountIds);
+    }
 
     // 🔄 FUNÇÃO HELPER: Processar uma conta individual
     const processAccount = async (accountId: string) => {
       logger.progress(`📥 [Conta ${accountId.slice(0, 8)}] Iniciando processamento...`);
 
       // Buscar dados da conta
-      const { data: account, error: accountError } = await supabase
+      const { data: account, error: accountError } = await supabaseAdmin
         .from('integration_accounts')
         .select('account_identifier, name')
         .eq('id', accountId)
@@ -95,7 +195,7 @@ serve(async (req) => {
       const accountName = account.name || `Conta ${sellerId}`;
 
       // Buscar token
-      const { data: secretRow, error: secretError } = await supabase
+      const { data: secretRow, error: secretError } = await supabaseAdmin
         .from('integration_secrets')
         .select('simple_tokens, use_simple')
         .eq('integration_account_id', accountId)
@@ -497,6 +597,32 @@ serve(async (req) => {
 
       logger.progress(`✅ [${accountId.slice(0, 8)}] ${mappedClaims.length} claims mapeados`);
       
+      // 🎯 COMBO 2 - ETAPA 2: Write-through caching
+      if (mappedClaims.length > 0) {
+        logger.progress(`💾 Salvando ${mappedClaims.length} claims em cache...`);
+        
+        const cacheEntries = mappedClaims.map((claim: any) => ({
+          organization_id,
+          integration_account_id: accountId,
+          claim_id: claim.claim_id?.toString() || claim.id?.toString(),
+          claim_data: claim,
+          cached_at: new Date().toISOString(),
+          ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
+        }));
+
+        const { error: cacheError } = await supabaseAdmin
+          .from('ml_claims_cache')
+          .upsert(cacheEntries, {
+            onConflict: 'organization_id,integration_account_id,claim_id'
+          });
+
+        if (cacheError) {
+          logger.error('Cache error:', cacheError);
+        } else {
+          logger.success(`Cache: Saved ${cacheEntries.length} claims`);
+        }
+      }
+      
       return mappedClaims;
     }; // Fim processAccount
 
@@ -523,6 +649,7 @@ serve(async (req) => {
         success: true,
         data: allMappedClaims,
         total: allMappedClaims.length,
+        source: 'ml_api', // Indica que veio da API (vs cache)
         accounts_processed: accountIds.length,
         date_range: { from: date_from, to: date_to }
       }),
