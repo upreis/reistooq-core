@@ -165,14 +165,18 @@ export const Devolucao2025Page = () => {
   // React Query gerencia automaticamente baseado em enabled + queryKey changes
 
   // 🚀 COMBO 2 - ESTRATÉGIA HÍBRIDA: Consultar cache primeiro
-  // ✅ CORREÇÃO 13: Usar selectedAccounts (URL params) diretamente - evita race condition
-  const accountIds = selectedAccounts.length > 0 ? selectedAccounts : (accounts.length > 0 ? accounts.map(a => a.id) : []);
+  // ✅ CORREÇÃO FASE 1: Fallback garantido para evitar accountIds vazio
+  // Se selectedAccounts vazio, usa todas as contas disponíveis
+  const accountIds = selectedAccounts.length > 0 
+    ? selectedAccounts 
+    : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
+  // ✅ COMBO 2: Hook com polling a cada 60s + refetch ao voltar para aba
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
     date_from: backendDateRange.from.toISOString(),
     date_to: backendDateRange.to.toISOString(),
-    enabled: accountIds.length > 0 // Agora sempre true se accounts carregou
+    enabled: accountIds.length > 0 // Executa se tiver contas
   });
 
   // ✅ CORREÇÃO 9: Cache válido requer dados não vazios
@@ -515,9 +519,18 @@ export const Devolucao2025Page = () => {
 
           {/* Tabela */}
           <div className="px-4 md:px-6 mt-2 relative">
-            {/* 📊 Indicador de fonte de dados */}
+            {/* 📊 Indicador de fonte de dados + Polling status */}
             {!isLoading && devolucoesCompletas.length > 0 && (
-              <div className="absolute top-2 right-6 z-20">
+              <div className="absolute top-2 right-6 z-20 flex items-center gap-2">
+                {/* ✨ COMBO 2: Indicador de polling ativo */}
+                {(cacheQuery.isFetching || isFetching) && !isLoading && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    Atualizando...
+                  </div>
+                )}
+                
+                {/* Badge de fonte de dados */}
                 <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                   useCacheData 
                     ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20' 
