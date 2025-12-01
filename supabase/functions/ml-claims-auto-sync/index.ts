@@ -118,11 +118,11 @@ Deno.serve(async (req) => {
           dateFrom = syncStatus.last_sync_at;
           console.log(`📅 Incremental sync from ${dateFrom}`);
         } else {
-          // Primeira sync: buscar últimos 7 dias
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          dateFrom = sevenDaysAgo.toISOString();
-          console.log(`📅 Initial sync - last 7 days from ${dateFrom}`);
+          // Primeira sync: buscar últimos 60 dias
+          const sixtyDaysAgo = new Date();
+          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+          dateFrom = sixtyDaysAgo.toISOString();
+          console.log(`📅 Initial sync - last 60 days from ${dateFrom}`);
         }
 
         // 2.2: Buscar claims via unified-ml-claims
