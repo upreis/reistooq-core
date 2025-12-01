@@ -225,11 +225,12 @@ export const Devolucao2025Page = () => {
     }
     
     // Filtro de período (local)
+    // ✅ CORREÇÃO CRÍTICA: Usar 'date_created' (campo do cache Combo 2), não 'data_criacao'
     if (dateRange.from && dateRange.to) {
       const beforeFilter = filtered.length;
       filtered = filtered.filter(dev => {
-        if (!dev.data_criacao) return false;
-        const dataCriacao = parseISO(dev.data_criacao);
+        if (!dev.date_created) return false; // ✅ Campo correto do cache
+        const dataCriacao = parseISO(dev.date_created);
         return dataCriacao >= dateRange.from && dataCriacao <= dateRange.to;
       });
       console.log(`📅 [FILTRO PERÍODO] ${beforeFilter} → ${filtered.length} (período: ${dateRange.from.toLocaleDateString()} a ${dateRange.to.toLocaleDateString()})`);
