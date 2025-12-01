@@ -374,6 +374,33 @@ Deno.serve(async (req) => {
 
     logger.success(`Total claims fetched: ${allClaims.length}`);
 
+    // ✅ COMBO 2: Write-through caching - salvar claims buscados em cache
+    if (allClaims.length > 0) {
+      logger.progress(`Saving ${allClaims.length} claims to cache...`);
+      const ttl_minutes = 5;
+      const cacheRecords = allClaims.map(claim => ({
+        claim_id: String(claim.id),
+        organization_id: organizationId,
+        integration_account_id: accountIds[0] || '', // Associar à primeira conta
+        claim_data: claim,
+        cached_at: new Date().toISOString(),
+        ttl_expires_at: new Date(Date.now() + ttl_minutes * 60 * 1000).toISOString()
+      }));
+
+      const { error: cacheWriteError } = await supabaseAdmin
+        .from('ml_claims_cache')
+        .upsert(cacheRecords, {
+          onConflict: 'claim_id,organization_id',
+          ignoreDuplicates: false
+        });
+
+      if (cacheWriteError) {
+        logger.warn(`⚠️ Failed to write claims to cache: ${cacheWriteError.message}`);
+      } else {
+        logger.success(`💾 Cached ${allClaims.length} claims (TTL: ${ttl_minutes}min)`);
+      }
+    }
+
     // ✅ FASE 3: Limpeza automática de cache expirado (após busca para evitar race condition)
     logger.progress('Cleaning expired cache entries...');
     const { data: deletedCache, error: cleanupError } = await supabaseAdmin
