@@ -11,6 +11,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { logger } from './utils/logger.ts';
 import { TokenManager } from './utils/tokenManager.ts';
 import { ClaimsService } from './services/ClaimsService.ts';
+import { enrichMultipleShipments } from './services/ShipmentEnrichmentService.ts';
+import { mapDevolucaoCompleta } from './mapeamento.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -305,26 +307,147 @@ Deno.serve(async (req) => {
         const { token, sellerId } = await tokenManager.getValidToken(accountId);
         
         // Buscar claims diretamente da API ML
-        const claims = await claimsService.fetchAllClaims(
+        const rawClaims = await claimsService.fetchAllClaims(
           sellerId,
           token,
           date_from,
           date_to
         );
         
-        logger.success(`Fetched ${claims.length} claims for account ${accountId.slice(0, 8)}`);
-        allClaims.push(...claims);
+        logger.success(`Fetched ${rawClaims.length} claims for account ${accountId.slice(0, 8)}`);
+        
+        // ⚡ ENRIQUECIMENTO COMPLETO (igual get-devolucoes-direct)
+        logger.progress(`⚡ [${accountId.slice(0, 8)}] Iniciando enriquecimento de ${rawClaims.length} claims...`);
+        
+        const BATCH_SIZE = 10;
+        const TIMEOUT_MS = 5000;
+        
+        // Helper: timeout para promises
+        const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
+          return Promise.race([
+            promise,
+            new Promise<T>((resolve) => setTimeout(() => resolve(fallback), timeoutMs))
+          ]);
+        };
+        
+        // Helper: buscar endpoint da API ML
+        const fetchMlApi = async (endpoint: string) => {
+          try {
+            const response = await withTimeout(
+              fetch(endpoint, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              }),
+              TIMEOUT_MS,
+              null
+            );
+            
+            if (response?.ok) {
+              return await response.json();
+            }
+          } catch (err) {
+            logger.warn(`API error for ${endpoint}:`, err);
+          }
+          return null;
+        };
+        
+        // STAGE 1: Buscar return_details_v2 para todos
+        logger.progress(`📦 [STAGE 1] Buscando return_details_v2...`);
+        for (let i = 0; i < rawClaims.length; i += BATCH_SIZE) {
+          const batch = rawClaims.slice(i, i + BATCH_SIZE);
+          
+          await Promise.all(
+            batch.map(async (claim: any) => {
+              const returnData = await fetchMlApi(
+                `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/returns`
+              );
+              claim.return_details_v2 = returnData;
+            })
+          );
+        }
+        
+        // Filtrar apenas claims com return iniciado
+        const claimsWithReturn = rawClaims.filter((claim: any) => {
+          const returnDetails = claim.return_details_v2;
+          const hasReturnId = returnDetails?.id && String(returnDetails.id).trim() !== '';
+          const hasReturnStatus = returnDetails?.status && returnDetails.status !== 'pending';
+          const hasShipments = returnDetails?.shipments?.length > 0;
+          return hasReturnId || (hasReturnStatus && hasShipments);
+        });
+        
+        logger.info(`🔍 [FILTRO] ${rawClaims.length} → ${claimsWithReturn.length} claims com return iniciado`);
+        
+        // STAGE 2: Enriquecimento completo
+        logger.progress(`⚡ [STAGE 2] Enriquecimento completo de ${claimsWithReturn.length} claims...`);
+        
+        const enrichedClaims: any[] = [];
+        for (let i = 0; i < claimsWithReturn.length; i += BATCH_SIZE) {
+          const batch = claimsWithReturn.slice(i, i + BATCH_SIZE);
+          
+          const enrichedBatch = await Promise.all(
+            batch.map(async (claim: any) => {
+              // Buscar em paralelo: order, messages, product
+              const [orderData, claimMessages] = await Promise.all([
+                fetchMlApi(`https://api.mercadolibre.com/orders/${claim.resource_id}`),
+                fetchMlApi(`https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`)
+              ]);
+              
+              // Product info (depende de orderData)
+              const itemId = orderData?.order_items?.[0]?.item?.id;
+              let productInfo = null;
+              if (itemId && typeof itemId === 'string' && itemId.trim() !== '') {
+                productInfo = await fetchMlApi(`https://api.mercadolibre.com/items/${itemId}`);
+              }
+              
+              // Construir claim enriquecido
+              const enrichedClaim = {
+                ...claim,
+                order_data: orderData,
+                claim_messages: claimMessages,
+                product_info: productInfo
+              };
+              
+              return enrichedClaim;
+            })
+          );
+          
+          // Enriquecer shipments do batch
+          const ordersToEnrich = enrichedBatch
+            .filter(claim => claim.order_data?.shipping?.id)
+            .map(claim => claim.order_data);
+          
+          if (ordersToEnrich.length > 0) {
+            const enrichedOrders = await enrichMultipleShipments(ordersToEnrich, token);
+            let enrichedIndex = 0;
+            for (const claim of enrichedBatch) {
+              if (claim.order_data?.shipping?.id) {
+                claim.order_data = enrichedOrders[enrichedIndex];
+                enrichedIndex++;
+              }
+            }
+          }
+          
+          enrichedClaims.push(...enrichedBatch);
+        }
+        
+        logger.success(`✅ Enriquecimento completo: ${enrichedClaims.length} claims`);
+        
+        // ✅ APLICAR MAPEAMENTO COMPLETO antes de adicionar a allClaims
+        const mappedClaims = enrichedClaims.map(claim => 
+          mapDevolucaoCompleta(claim, accountId, 'Account', claim.reason_id)
+        );
+        
+        allClaims.push(...mappedClaims);
 
         // ETAPA 3: Write-through caching
-        if (claims.length > 0) {
-          logger.progress(`Saving ${claims.length} claims to cache and ml_claims...`);
+        if (mappedClaims.length > 0) {
+          logger.progress(`Saving ${mappedClaims.length} mapped claims to cache and ml_claims...`);
           
-          // 3.1: Salvar em ml_claims_cache (TTL cache)
-          const cacheEntries = claims.map((claim: any) => ({
+          // 3.1: Salvar em ml_claims_cache (TTL cache) - usar claim MAPEADO
+          const cacheEntries = mappedClaims.map((mappedClaim: any) => ({
             organization_id,
             integration_account_id: accountId,
-            claim_id: claim.id?.toString(),
-            claim_data: claim,
+            claim_id: mappedClaim.claim_id?.toString() || mappedClaim.id?.toString(),
+            claim_data: mappedClaim, // ✅ Claim MAPEADO com todos os campos
             cached_at: new Date().toISOString(),
             ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
           }));
@@ -338,14 +461,31 @@ Deno.serve(async (req) => {
           if (cacheError) {
             logger.error('Error saving to cache:', cacheError);
           } else {
-            logger.success(`Cache: Saved ${cacheEntries.length} claims`);
+            logger.success(`Cache: Saved ${cacheEntries.length} mapped claims`);
           }
 
-          // 3.2: Salvar em ml_claims (persistência permanente)
+          // 3.2: Salvar em ml_claims (persistência permanente) - usar claim MAPEADO
           try {
-            const mlClaimsEntries = claims.map((claim: any) => 
-              extractClaimFields(claim, accountId, organization_id)
-            );
+            const mlClaimsEntries = mappedClaims.map((mappedClaim: any) => ({
+              claim_id: mappedClaim.claim_id?.toString() || mappedClaim.id?.toString(),
+              organization_id,
+              integration_account_id: accountId,
+              order_id: mappedClaim.order_id?.toString() || '',
+              return_id: mappedClaim.return_id?.toString() || null,
+              status: mappedClaim.status_devolucao || null,
+              stage: mappedClaim.claim_stage || null,
+              reason_id: mappedClaim.reason_id || null,
+              date_created: mappedClaim.data_criacao_claim || mappedClaim.date_created || null,
+              date_closed: mappedClaim.data_fechamento_claim || null,
+              last_updated: mappedClaim.data_ultima_movimentacao || null,
+              total_amount: parseFloat(mappedClaim.valor_original_produto || 0),
+              refund_amount: parseFloat(mappedClaim.valor_reembolso_produto || 0),
+              currency_id: mappedClaim.moeda_reembolso || 'BRL',
+              buyer_id: mappedClaim.comprador_id || null,
+              buyer_nickname: mappedClaim.comprador_nickname || null,
+              claim_data: mappedClaim, // ✅ Claim MAPEADO completo
+              last_synced_at: new Date().toISOString()
+            }));
 
             const { error: mlClaimsError } = await supabaseAdmin
               .from('ml_claims')
@@ -357,7 +497,7 @@ Deno.serve(async (req) => {
             if (mlClaimsError) {
               logger.error('Error saving to ml_claims:', mlClaimsError);
             } else {
-              logger.success(`ml_claims: Saved ${mlClaimsEntries.length} claims permanently`);
+              logger.success(`ml_claims: Saved ${mlClaimsEntries.length} mapped claims permanently`);
             }
           } catch (error) {
             logger.error('Exception in ml_claims persistence:', error);
