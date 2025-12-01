@@ -379,28 +379,37 @@ Deno.serve(async (req) => {
       logger.progress(`Saving ${allClaims.length} claims to cache...`);
       const ttl_minutes = 5;
       
-      // Mapear seller_id para integration_account_id correto
+      // Mapear seller_id para integration_account_id correto usando integrationAccounts
       const sellerToAccountMap = new Map<string, string>();
-      for (const accountId of accountIds) {
-        const account = integrationAccounts.find(acc => acc.id === accountId);
-        if (account?.seller_id) {
-          sellerToAccountMap.set(String(account.seller_id), accountId);
+      for (const account of integrationAccounts) {
+        if (account.seller_id && accountIds.includes(account.id)) {
+          sellerToAccountMap.set(String(account.seller_id), account.id);
         }
       }
 
-      const cacheRecords = allClaims.map(claim => {
-        const sellerId = String(claim.seller_id || '');
-        const integrationAccountId = sellerToAccountMap.get(sellerId) || accountIds[0] || '';
+      const cacheRecords: any[] = [];
+      let skippedClaims = 0;
+
+      for (const claim of allClaims) {
+        // Extrair seller_id do claim (pode estar em diferentes lugares)
+        const sellerId = String(claim.seller_id || claim.seller?.id || '');
+        const integrationAccountId = sellerToAccountMap.get(sellerId);
         
-        return {
+        if (!integrationAccountId) {
+          logger.warn(`⚠️ Skipping claim ${claim.id}: seller_id ${sellerId} not found in accounts`);
+          skippedClaims++;
+          continue;
+        }
+        
+        cacheRecords.push({
           claim_id: String(claim.id),
           organization_id: organizationId,
           integration_account_id: integrationAccountId,
           claim_data: claim,
           cached_at: new Date().toISOString(),
           ttl_expires_at: new Date(Date.now() + ttl_minutes * 60 * 1000).toISOString()
-        };
-      });
+        });
+      }
 
       // Upsert em batches de 100 para evitar timeout
       const batchSize = 100;
@@ -421,6 +430,9 @@ Deno.serve(async (req) => {
         }
       }
       
+      if (skippedClaims > 0) {
+        logger.warn(`⚠️ Skipped ${skippedClaims} claims without valid seller mapping`);
+      }
       logger.success(`💾 Cached ${totalCached}/${allClaims.length} claims (TTL: ${ttl_minutes}min)`);
     } else if (accountIds.length === 0) {
       logger.warn('⚠️ Skipping cache write: no valid accountIds provided');
