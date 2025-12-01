@@ -361,6 +361,19 @@ export function ReclamacoesPage() {
     return <ReclamacoesEmptyState type="no-integration" />;
   }
 
+  // ✅ FIX: Mostrar dados mesmo durante isFetching (polling)
+  // Apenas bloquear UI se for primeira busca (loadingReclamacoes && allReclamacoes.length === 0)
+  const isInitialLoading = loadingReclamacoes && allReclamacoes.length === 0;
+
+  if (isInitialLoading) {
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+        <p className="mt-4 text-muted-foreground">Carregando reclamações...</p>
+      </div>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div className="w-full">
