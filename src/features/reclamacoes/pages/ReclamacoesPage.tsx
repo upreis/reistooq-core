@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { useReclamacoesFiltersUnified } from '../hooks/useReclamacoesFiltersUnified';
 import { useReclamacoesColumnManager } from '../hooks/useReclamacoesColumnManager';
+import { useMLClaimsFromCache } from '../hooks/useMLClaimsFromCache';
 import type { VisibilityState } from '@tanstack/react-table';
 
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
@@ -125,134 +126,40 @@ export function ReclamacoesPage() {
     }
   }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState?.selectedAccounts, selectedAccountIds]);
 
-  // Buscar reclamações com React Query + Cache
-  const { data: queryData, isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
-    queryKey: ['reclamacoes', selectedAccountIds, unifiedFilters.periodo, unifiedFilters.status, unifiedFilters.type, unifiedFilters.stage],
-    enabled: false,
-    queryFn: async () => {
-      
-      if (!selectedAccountIds || selectedAccountIds.length === 0) {
-        return [];
-      }
+  // ✅ COMBO 2: Calcular período ISO para busca
+  const calcularDataInicio = (periodo: string) => {
+    const hoje = new Date();
+    const dias = parseInt(periodo);
+    hoje.setDate(hoje.getDate() - dias);
+    return hoje.toISOString();
+  };
 
-      // Buscar seller_id das contas
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('integration_accounts')
-        .select('id, account_identifier, name')
-        .in('id', selectedAccountIds);
+  const dateFromISO = calcularDataInicio(unifiedFilters.periodo);
+  const dateToISO = new Date().toISOString();
 
-      if (accountsError || !accountsData || accountsData.length === 0) {
-        throw new Error('Não foi possível obter informações das contas do Mercado Livre');
-      }
-
-      // Buscar claims de todas as contas
-      const allClaims: any[] = [];
-      
-      for (const account of accountsData) {
-        if (!account.account_identifier) {
-          console.warn(`Conta ${account.id} sem seller_id`);
-          continue;
-        }
-
-        // Calcular data inicial baseada no período
-        const calcularDataInicio = (periodo: string) => {
-          const hoje = new Date();
-          const dias = parseInt(periodo);
-          hoje.setDate(hoje.getDate() - dias);
-          return hoje.toISOString();
-        };
-
-        const dataInicio = calcularDataInicio(unifiedFilters.periodo);
-        const dataFim = new Date().toISOString();
-
-        // Buscar em lotes de 100
-        let offset = 0;
-        const limit = 100;
-        let hasMore = true;
-
-        while (hasMore) {
-          const { data, error: fetchError } = await supabase.functions.invoke('ml-claims-fetch', {
-            body: {
-              accountId: account.id,
-              sellerId: account.account_identifier,
-              filters: {
-                date_from: dataInicio,
-                date_to: dataFim,
-                status: unifiedFilters.status,
-                stage: unifiedFilters.stage,
-                type: unifiedFilters.type,
-              },
-              limit,
-              offset,
-            },
-          });
-
-          if (fetchError) {
-            console.error(`Erro ao buscar claims de ${account.name}:`, fetchError);
-            break;
-          }
-
-          const claims = data?.claims || [];
-          
-          if (claims.length === 0) {
-            hasMore = false;
-          } else {
-            // Adicionar account_name a cada claim
-            const claimsWithAccount = claims.map((c: any) => ({
-              ...c,
-              account_name: account.name,
-              account_id: account.id
-            }));
-            
-            allClaims.push(...claimsWithAccount);
-            offset += limit;
-            
-            if (claims.length < limit) {
-              hasMore = false;
-            }
-          }
-        }
-      }
-
-      persistentCache.saveState({
-        reclamacoes: allClaims,
-        // Filtros, contas, página são mantidos do estado atual do cache
-        // Filtros, contas, página são mantidos do estado atual do cache
-        selectedAccounts: persistentCache.persistedState?.selectedAccounts || selectedAccountIds,
-        filters: persistentCache.persistedState?.filters || {
-          periodo: unifiedFilters.periodo,
-          status: unifiedFilters.status,
-          type: unifiedFilters.type,
-          stage: unifiedFilters.stage
-        },
-        currentPage: persistentCache.persistedState?.currentPage || currentPage,
-        itemsPerPage: persistentCache.persistedState?.itemsPerPage || itemsPerPage,
-        cachedAt: Date.now(),
-        version: 2
-      });
-      
-      return allClaims;
-    },
-    
-    refetchOnWindowFocus: false,
-    staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
-    gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
+  // ✅ COMBO 2: Buscar reclamações usando cache-first + fallback API
+  const { 
+    data: cacheResponse, 
+    isLoading: loadingReclamacoes, 
+    isFetching,
+    error: errorReclamacoes, 
+    refetch: refetchReclamacoes 
+  } = useMLClaimsFromCache({
+    integration_account_ids: selectedAccountIds || [],
+    date_from: dateFromISO,
+    date_to: dateToISO,
+    enabled: selectedAccountIds.length > 0 || (mlAccounts && mlAccounts.length > 0)
   });
 
-  // Usar cache ou dados da query
+  // ✅ COMBO 2: Extrair reclamações da resposta do cache
   const allReclamacoes = useMemo(() => {
-    if (queryData && queryData.length > 0) {
-      return queryData;
+    if (cacheResponse?.success && cacheResponse.reclamacoes) {
+      return cacheResponse.reclamacoes;
     }
-    
-    if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
-      return persistentCache.persistedState.reclamacoes;
-    }
-    
     return [];
-  }, [queryData, persistentCache.persistedState?.reclamacoes, persistentCache.hasValidPersistedState]);
+  }, [cacheResponse]);
 
-  // Buscar reclamações - Função principal
+  // ✅ COMBO 2: Buscar reclamações - Manual refetch
   const handleBuscarReclamacoes = async () => {
     if (!selectedAccountIds?.length) {
       toast({
@@ -268,9 +175,11 @@ export function ReclamacoesPage() {
     try {
       await refetchReclamacoes();
       
+      const source = cacheResponse?.source === 'cache' ? 'cache' : 'API';
+      
       toast({
         title: "✅ Sucesso",
-        description: `Busca concluída com sucesso`,
+        description: `Busca concluída com sucesso (fonte: ${source})`,
       });
     } catch (error) {
       toast({
@@ -283,9 +192,9 @@ export function ReclamacoesPage() {
     }
   };
 
-  // Cancelar busca
+  // ✅ COMBO 2: Cancelar busca
   const handleCancelarBusca = () => {
-    queryClient.cancelQueries({ queryKey: ['reclamacoes', selectedAccountIds, unifiedFilters.periodo, unifiedFilters.status, unifiedFilters.type, unifiedFilters.stage] });
+    queryClient.cancelQueries({ queryKey: ['reclamacoes-ml-claims-cache', selectedAccountIds.slice().sort().join(','), dateFromISO, dateToISO] });
     setIsManualSearching(false);
     
     toast({
@@ -454,8 +363,18 @@ export function ReclamacoesPage() {
             {/* Header */}
             <div className="px-4 md:px-6 py-3 mt-2">
               <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
+                <div className="flex-1 flex items-center gap-3">
                   <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
+                  
+                  {/* ✅ COMBO 2: Badge de polling em background */}
+                  {isFetching && !loadingReclamacoes && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md animate-pulse">
+                      <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
+                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                        Atualizando...
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Alertas de ciclo de vida - Posicionado no canto direito */}
