@@ -233,18 +233,6 @@ Deno.serve(async (req) => {
       using_defaults: !params.date_from || !params.date_to
     });
 
-    // ✅ FASE 3: Limpeza automática de cache expirado
-    logger.progress('Cleaning expired cache entries...');
-    const { data: deletedCache, error: cleanupError } = await supabaseAdmin
-      .from('ml_claims_cache')
-      .delete()
-      .lt('ttl_expires_at', new Date().toISOString())
-      .select('claim_id');
-    
-    if (!cleanupError && deletedCache && deletedCache.length > 0) {
-      logger.success(`🗑️ Cleaned ${deletedCache.length} expired cache entries`);
-    }
-
     // ETAPA 1: Verificar cache (se não for force_refresh)
     if (!force_refresh) {
       logger.progress('Checking cache...');
@@ -385,6 +373,22 @@ Deno.serve(async (req) => {
     }
 
     logger.success(`Total claims fetched: ${allClaims.length}`);
+
+    // ✅ FASE 3: Limpeza automática de cache expirado (após busca para evitar race condition)
+    logger.progress('Cleaning expired cache entries...');
+    const { data: deletedCache, error: cleanupError } = await supabaseAdmin
+      .from('ml_claims_cache')
+      .delete()
+      .lt('ttl_expires_at', new Date().toISOString())
+      .select('claim_id');
+    
+    if (cleanupError) {
+      logger.warn(`⚠️ Failed to clean expired cache: ${cleanupError.message}`);
+    } else if (deletedCache && deletedCache.length > 0) {
+      logger.success(`🗑️ Cleaned ${deletedCache.length} expired cache entries`);
+    } else {
+      logger.info('✨ No expired cache entries to clean');
+    }
 
     return new Response(
       JSON.stringify({
