@@ -74,6 +74,8 @@ export function useMLClaimsFromCache({
         sessionUserId: session.user.id
       });
       
+      // ✅ CRÍTICO: NÃO usar filtro last_synced_at - causa race condition com 0 results
+      // Deixar React Query gerenciar staleness via staleTime (60s)
       const { data: cachedClaims, error: cacheError } = await supabase
         .from('ml_claims')
         .select('*')
