@@ -139,10 +139,13 @@ export function ReclamacoesPage() {
   const dateToISO = new Date().toISOString();
 
   // ✅ COMBO 2: Buscar reclamações usando cache-first + fallback API
-  // 🔧 FIX: usar fallback para accounts evitando array vazio
-  const accountsForQuery = selectedAccountIds && selectedAccountIds.length > 0 
-    ? selectedAccountIds 
-    : (mlAccounts?.map(acc => acc.id) || []);
+  // 🔧 FIX: Estabilizar accountsForQuery com useMemo para evitar loop infinito
+  const accountsForQuery = useMemo(() => {
+    if (selectedAccountIds && selectedAccountIds.length > 0) {
+      return selectedAccountIds;
+    }
+    return mlAccounts?.map(acc => acc.id) || [];
+  }, [selectedAccountIds, mlAccounts]);
     
   const { 
     data: cacheResponse, 
@@ -162,18 +165,12 @@ export function ReclamacoesPage() {
     if (cacheResponse?.success && cacheResponse.reclamacoes) {
       console.log('📋 [ReclamacoesPage] Dados recebidos:', {
         total: cacheResponse.reclamacoes.length,
-        source: cacheResponse.source,
-        isLoading: loadingReclamacoes
+        source: cacheResponse.source
       });
       return cacheResponse.reclamacoes;
     }
-    console.log('⚠️ [ReclamacoesPage] Sem dados:', {
-      hasResponse: !!cacheResponse,
-      success: cacheResponse?.success,
-      isLoading: loadingReclamacoes
-    });
     return [];
-  }, [cacheResponse, loadingReclamacoes]);
+  }, [cacheResponse]); // ✅ Removido loadingReclamacoes para evitar loop
 
   // ✅ COMBO 2: Buscar reclamações - Manual refetch
   const handleBuscarReclamacoes = async () => {
