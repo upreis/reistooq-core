@@ -85,13 +85,14 @@ export const Devolucao2025Page = () => {
   // ✅ CORREÇÃO 10+5: Lazy initializer para evitar race condition
   const [appliedAccounts, setAppliedAccounts] = useState<string[]>(() => selectedAccounts);
 
-  // Sincronizar dateRange com periodo (SEMPRE 60 dias no backend)
+  // ✅ CORREÇÃO: Calcular datas baseado no periodo selecionado (igual /vendas-online)
   const backendDateRange = useMemo(() => {
     const hoje = new Date();
     const inicio = new Date();
-    inicio.setDate(hoje.getDate() - 60); // Sempre buscar 60 dias
+    const dias = parseInt(periodo); // ✅ Usar periodo do filtro
+    inicio.setDate(hoje.getDate() - dias);
     return { from: inicio, to: hoje };
-  }, []);
+  }, [periodo]); // ✅ Recalcular quando periodo mudar
   
   // DateRange visual para filtro local (baseado em periodo do usuário)
   useEffect(() => {
