@@ -67,17 +67,14 @@ export function useMLClaimsFromCache({
         throw new Error('Nenhuma conta selecionada');
       }
 
-      // ✅ PASSO 1: Tentar buscar do CACHE primeiro
-      console.log('📦 [RECLAMACOES CACHE] Tentando buscar de ml_claims...');
-      
-      const cacheExpiresAt = new Date();
-      cacheExpiresAt.setMinutes(cacheExpiresAt.getMinutes() - CACHE_TTL_MINUTES);
+      // ✅ COMBO 2 OPÇÃO B: Buscar SEMPRE do banco (sem filtro de TTL)
+      // React Query staleTime (60s) gerencia freshness, não o filtro de cache
+      console.log('📦 [RECLAMACOES CACHE] Buscando de ml_claims...');
       
       const { data: cachedClaims, error: cacheError } = await supabase
         .from('ml_claims')
         .select('*')
         .in('integration_account_id', integration_account_ids)
-        .gte('last_synced_at', cacheExpiresAt.toISOString()) // Cache válido (< 5 min)
         .order('date_created', { ascending: false });
 
       // Se cache válido encontrado, retornar imediatamente
