@@ -79,13 +79,14 @@ export function useMLClaimsFromCache({
       const cacheExpiresAt = new Date();
       cacheExpiresAt.setMinutes(cacheExpiresAt.getMinutes() - CACHE_TTL_MINUTES);
       
-      // ✅ CORREÇÃO EGRESS 1: SELECT apenas colunas essenciais (sem claim_data JSONB gigante)
+      // ✅ SELECT claim_data JSONB para ter dados enriquecidos completos
       const { data: cachedClaims, error: cacheError } = await supabase
         .from('ml_claims')
         .select(`
           id, claim_id, order_id, return_id, status, stage, reason_id,
           date_created, date_closed, last_updated, total_amount, refund_amount,
-          currency_id, buyer_id, buyer_nickname, integration_account_id, last_synced_at
+          currency_id, buyer_id, buyer_nickname, integration_account_id, last_synced_at,
+          claim_data
         `)
         .in('integration_account_id', integration_account_ids)
         .gte('last_synced_at', cacheExpiresAt.toISOString()) // Cache válido (< 5 min)
@@ -95,30 +96,37 @@ export function useMLClaimsFromCache({
       if (!cacheError && cachedClaims && cachedClaims.length > 0) {
         console.log(`✅ [CACHE HIT] ${cachedClaims.length} claims do cache (< 5min)`);
         
-        // ✅ CORREÇÃO EGRESS 2: Mapear apenas dados essenciais (sem claim_data JSONB)
-        const devolucoes = cachedClaims.map(claim => ({
-          // Dados básicos do cache (já suficientes para UI)
-          id: claim.id,
-          claim_id: claim.claim_id,
-          order_id: claim.order_id,
-          return_id: claim.return_id,
-          status: claim.status,
-          stage: claim.stage,
-          reason_id: claim.reason_id,
-          date_created: claim.date_created,
-          date_closed: claim.date_closed,
-          last_updated: claim.last_updated,
-          total_amount: claim.total_amount,
-          refund_amount: claim.refund_amount,
-          currency_id: claim.currency_id,
-          buyer_id: claim.buyer_id,
-          buyer_nickname: claim.buyer_nickname,
+        // ✅ Mapear dados completos incluindo claim_data enriquecido
+        const devolucoes = cachedClaims.map(claim => {
+          const claimData = claim.claim_data as any;
           
-          // Metadata
-          integration_account_id: claim.integration_account_id,
-          last_synced_at: claim.last_synced_at,
-          _cache_source: 'ml_claims'
-        }));
+          return {
+            // Dados básicos do cache
+            id: claim.id,
+            claim_id: claim.claim_id,
+            order_id: claim.order_id,
+            return_id: claim.return_id,
+            status: claim.status,
+            stage: claim.stage,
+            reason_id: claim.reason_id,
+            date_created: claim.date_created,
+            date_closed: claim.date_closed,
+            last_updated: claim.last_updated,
+            total_amount: claim.total_amount,
+            refund_amount: claim.refund_amount,
+            currency_id: claim.currency_id,
+            buyer_id: claim.buyer_id,
+            buyer_nickname: claim.buyer_nickname,
+            
+            // ✅ CRITICAL: claim_data com enriquecimento completo (65 colunas)
+            ...(claimData?.unified || {}),
+            
+            // Metadata
+            integration_account_id: claim.integration_account_id,
+            last_synced_at: claim.last_synced_at,
+            _cache_source: 'ml_claims'
+          };
+        });
 
         // Aplicar filtro de data localmente se especificado
         let filteredDevolucoes = devolucoes;
