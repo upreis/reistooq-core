@@ -81,26 +81,13 @@ export function useMLClaimsFromCache({
       // ✅ CRÍTICO: NÃO usar filtro last_synced_at - causa race condition com 0 results
       // Deixar React Query gerenciar staleness via staleTime (60s)
       
-      // 🔧 FIX: Adicionar timeout na query para evitar travamento
-      const queryTimeout = new Promise<{ data: null; error: Error }>((_, reject) => 
-        setTimeout(() => reject({ data: null, error: new Error('Query timeout após 10s') }), 10000)
-      );
-      
-      const queryPromise = supabase
+      // 🔧 OTIMIZAÇÃO: Query otimizada com limit e select específico
+      const { data: cachedClaims, error: cacheError } = await supabase
         .from('ml_claims')
-        .select('*')
+        .select('id, claim_id, order_id, return_id, status, stage, reason_id, date_created, date_closed, last_updated, total_amount, refund_amount, currency_id, buyer_id, buyer_nickname, claim_data, integration_account_id, last_synced_at')
         .in('integration_account_id', integration_account_ids)
         .order('date_created', { ascending: false })
-        .limit(1000); // Limitar para evitar sobrecarga
-      
-      // Race entre query e timeout
-      const { data: cachedClaims, error: cacheError } = await Promise.race([
-        queryPromise,
-        queryTimeout
-      ]).catch((err) => {
-        console.error('❌ [RECLAMACOES CACHE] Timeout ou erro na query:', err);
-        return { data: null, error: err };
-      }) as { data: any[] | null; error: any };
+        .limit(500); // ✅ Reduzir limit para 500 (performance)
       
       console.log('📊 [RECLAMACOES CACHE RESULT]', {
         found: cachedClaims?.length || 0,
@@ -171,66 +158,40 @@ export function useMLClaimsFromCache({
       // ❌ CACHE MISS ou EXPIRADO
       console.log('⚠️ [RECLAMACOES CACHE MISS] Cache vazio ou expirado, chamando API...');
 
-      // ✅ PASSO 2: FALLBACK para ml-claims-fetch (API fresca)
-      console.log('📡 [RECLAMACOES API] Chamando ml-claims-fetch...');
+      // ✅ PASSO 2: FALLBACK para get-devolucoes-direct (COMBO 2 unified source)
+      console.log('📡 [RECLAMACOES API] Chamando get-devolucoes-direct...');
       
-      // ⚠️ ml-claims-fetch aceita apenas 1 accountId + sellerId por vez
-      // Para múltiplas contas, chamamos em paralelo
-      const claimsPromises = integration_account_ids.map(async (accountId) => {
-        // Buscar seller_id da conta
-        const { data: account } = await supabase
-          .from('integration_accounts')
-          .select('account_identifier')
-          .eq('id', accountId)
-          .single();
-        
-        if (!account?.account_identifier) {
-          console.warn(`⚠️ Conta ${accountId} sem account_identifier`);
-          return [];
-        }
-        
-        const { data: fetchData, error: fetchError } = await supabase.functions.invoke(
-          'ml-claims-fetch',
-          {
-            body: {
-              accountId,
-              sellerId: account.account_identifier,
-              filters: {
-                date_from,
-                date_to
-              }
-            }
+      const { data: apiData, error: apiError } = await supabase.functions.invoke(
+        'get-devolucoes-direct',
+        {
+          body: {
+            integration_account_ids, // ✅ Suporta múltiplas contas
+            date_from,
+            date_to,
+            force_refresh: true // ✅ Force refresh para buscar ML API
           }
-        );
-        
-        if (fetchError) {
-          console.error(`❌ Erro ml-claims-fetch [${accountId}]:`, fetchError);
-          return [];
         }
-        
-        return fetchData?.data || [];
-      });
-      
-      const allClaimsArrays = await Promise.all(claimsPromises);
-      const apiData = {
-        success: true,
-        data: allClaimsArrays.flat(),
-        total: allClaimsArrays.flat().length
-      };
-      
-      const apiError = null;
+      );
 
-      // Validações removidas - apiData já é garantido ter success e data
+      if (apiError) {
+        console.error('❌ [RECLAMACOES API ERROR]', apiError);
+        throw new Error(`Erro ao buscar claims: ${apiError.message}`);
+      }
+
+      if (!apiData?.success) {
+        throw new Error(apiData?.error || 'Erro desconhecido ao buscar claims');
+      }
 
       console.log(`✅ [RECLAMACOES API SUCCESS] ${apiData.data?.length || 0} claims da API`);
 
+      // ✅ COMBO 2: get-devolucoes-direct já salvou em ml_claims automaticamente
       // Retornar dados frescos da API
       return {
         success: true,
         source: 'api',
         reclamacoes: apiData.data || [],
         total_count: apiData.total || apiData.data?.length || 0,
-        cache_expired: true
+        cache_expired: false // ✅ Cache foi atualizado pela Edge Function
       };
     },
     enabled: enabled && integration_account_ids.length > 0,
