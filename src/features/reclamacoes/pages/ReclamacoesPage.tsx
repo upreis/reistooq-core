@@ -136,6 +136,24 @@ export function ReclamacoesPage() {
     }
   }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState?.selectedAccounts, selectedAccountIds]);
 
+  // 🚀 COMBO 2.1: Resetar shouldFetch quando filtros mudam (força busca manual)
+  const previousFiltersRef = React.useRef<string>('');
+  
+  useEffect(() => {
+    const currentFiltersKey = JSON.stringify({
+      accounts: selectedAccountIds,
+      periodo: unifiedFilters.periodo
+    });
+    
+    // Se filtros mudaram E já houve busca anterior, resetar shouldFetch
+    if (previousFiltersRef.current && previousFiltersRef.current !== currentFiltersKey) {
+      console.log('🔄 [COMBO 2.1] Filtros mudaram - resetando shouldFetch para aguardar clique');
+      setShouldFetch(false);
+    }
+    
+    previousFiltersRef.current = currentFiltersKey;
+  }, [selectedAccountIds, unifiedFilters.periodo]);
+  
   // 🚀 COMBO 2: Calcular datas baseado no período
   const { dateFrom, dateTo } = useMemo(() => {
     const hoje = new Date();
