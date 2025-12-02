@@ -38,6 +38,7 @@ export const RECLAMACOES_COLUMN_DEFINITIONS: ColumnConfig[] = [
   // Razão
   { id: 'reason_id', label: 'N.º da Razão da Reclamação', group: 'Razão' },
   { id: 'reason_name', label: 'Nome da Razão', group: 'Razão' },
+  { id: 'reason_detail', label: 'Detalhe da Razão', group: 'Razão' },
   
   // Recurso
   { id: 'resource_id', label: 'N.º do Recurso Origem', group: 'Recurso' },
