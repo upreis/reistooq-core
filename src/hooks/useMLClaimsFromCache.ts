@@ -88,15 +88,18 @@ export function useMLClaimsFromCache({
         .in('integration_account_id', integration_account_ids)
         .order('date_created', { ascending: false });
 
-      // ✅ VERIFICAR SE CACHE TEM DADOS ÚTEIS (pack_items com SKU, etc.)
-      // O cache ml_claims tem pack_items/pack_data - usar isso como indicador de dados válidos
+      // ✅ VERIFICAR SE CACHE TEM DADOS ÚTEIS (order_items com SKU, etc.)
+      // O cache ml_claims tem dados em claim_data.raw - usar isso como indicador de dados válidos
       const cacheHasUsefulData = cachedClaims?.some(claim => {
         const claimData = claim.claim_data as any;
-        // Verificar se tem dados de produto (pack_items ou pack_data.items)
-        const hasPackItems = claimData?.pack_items?.[0]?.seller_sku || claimData?.pack_data?.items?.[0]?.seller_sku;
+        const rawData = claimData?.raw || claimData || {};
+        const orderItem = rawData?.order_data?.order_items?.[0]?.item;
+        // Verificar se tem dados de produto
+        const hasOrderItems = orderItem?.seller_sku || orderItem?.title;
+        const hasPackItems = rawData?.pack_items?.[0]?.seller_sku || rawData?.pack_data?.items?.[0]?.seller_sku;
         // Ou dados básicos do claim
-        const hasBasicData = claimData?.status || claimData?.stage || claimData?.type;
-        return hasPackItems || hasBasicData;
+        const hasBasicData = rawData?.dados_claim?.id || rawData?.order_data?.id;
+        return hasOrderItems || hasPackItems || hasBasicData;
       });
 
       // Se cache válido E TEM DADOS ÚTEIS, usar cache
@@ -107,49 +110,68 @@ export function useMLClaimsFromCache({
         const devolucoes = cachedClaims.map(claim => {
           const claimData = claim.claim_data as any;
           
-          // ✅ ALIASES DE COMPATIBILIDADE: mapear campos do backend para campos esperados pelo frontend
-          // Os dados de produto estão em pack_items[0] ou pack_data.items[0], não diretamente no claim_data
-          const packItem = claimData?.pack_items?.[0] || claimData?.pack_data?.items?.[0] || {};
+          // ✅ ESTRUTURA CORRETA: dados estão em claim_data.raw
+          const rawData = claimData?.raw || claimData || {};
+          const dadosClaim = rawData?.dados_claim || {};
+          const orderData = rawData?.order_data || {};
           
-          const compatibilityFields = claimData ? {
+          // ✅ PRODUTO - dados vêm de order_items[0].item OU pack_items[0]
+          const orderItem = orderData?.order_items?.[0] || {};
+          const itemData = orderItem?.item || {};
+          const packItem = rawData?.pack_items?.[0] || rawData?.pack_data?.items?.[0] || {};
+          
+          const compatibilityFields = {
             // Datas
-            order_date_created: claimData.data_venda_original || claimData.order_date_created,
+            order_date_created: orderData.date_created || dadosClaim.date_created,
+            date_created: dadosClaim.date_created || claim.date_created,
+            date_closed: dadosClaim.date_closed || orderData.date_closed || claim.date_closed,
+            last_updated: dadosClaim.last_updated || claim.last_updated,
             
-            // ✅ PRODUTO - dados vêm de pack_items[0]
-            order_item_quantity: packItem.quantity || claimData.quantidade || claimData.order_item_quantity,
-            order_item_seller_sku: packItem.seller_sku || claimData.sku || claimData.order_item_seller_sku,
-            order_item_title: packItem.title || claimData.produto_titulo || claimData.order_item_title,
-            order_item_unit_price: packItem.unit_price || claimData.valor_original_produto || claimData.order_item_unit_price,
+            // ✅ PRODUTO - dados vêm de order_items[0].item
+            order_item_quantity: orderItem.quantity || packItem.quantity || 1,
+            order_item_seller_sku: itemData.seller_sku || packItem.seller_sku || '',
+            order_item_title: itemData.title || packItem.title || '',
+            order_item_unit_price: orderItem.unit_price || orderItem.full_unit_price || packItem.unit_price || 0,
             
             // Financeiro
-            order_total: claimData.total || claimData.order_total || (packItem.unit_price && packItem.quantity ? packItem.unit_price * packItem.quantity : null),
-            amount_value: claimData.valor_retido || claimData.amount_value || claimData.refund_amount,
-            amount_currency: claimData.moeda_reembolso || claimData.currency_id || 'BRL',
+            order_total: orderData.paid_amount || orderData.total_amount || 0,
+            amount_value: claim.total_amount || claim.refund_amount || 0,
+            amount_currency: orderData.currency_id || 'BRL',
             
-            // Razões
-            reason_name: claimData.subtipo_problema || claimData.reason_name,
-            reason_category: claimData.motivo_categoria || claimData.reason_category,
+            // Razões - buscar de reason dentro de dados_claim
+            reason_id: dadosClaim.reason?.id || claim.reason_id,
+            reason_name: dadosClaim.reason?.name || dadosClaim.reason?.description || '',
+            reason_detail: dadosClaim.reason?.detail || '',
+            reason_category: dadosClaim.reason?.category || '',
             
             // Resolução
-            resolution_benefited: claimData.resolution?.benefited || claimData.resultado_final,
-            resolution_reason: claimData.resolution?.reason || claimData.metodo_resolucao,
-            resolution_date: claimData.data_fechamento_claim || claimData.resolution_date,
+            resolution_benefited: dadosClaim.resolution?.benefited || '',
+            resolution_reason: dadosClaim.resolution?.reason || '',
+            resolution_date: dadosClaim.date_closed || claim.date_closed,
             
             // Recurso
-            resource: claimData.tipo_claim || claimData.resource,
-            resource_id: claimData.order_id || claimData.resource_id,
+            resource: dadosClaim.type || 'claim',
+            resource_id: String(dadosClaim.id || claim.claim_id),
             
             // Comprador
-            buyer_nickname: claimData.comprador_nickname || claimData.buyer_nickname,
-            buyer_name: claimData.comprador_nome_completo || claimData.buyer_name,
+            buyer_id: orderData.buyer?.id || claim.buyer_id,
+            buyer_nickname: orderData.buyer?.nickname || claim.buyer_nickname,
+            buyer_name: `${orderData.buyer?.first_name || ''} ${orderData.buyer?.last_name || ''}`.trim(),
+            
+            // Status
+            status: dadosClaim.status || claim.status,
+            stage: dadosClaim.stage || claim.stage,
+            fulfilled: dadosClaim.fulfilled,
             
             // Metadados adicionais
-            site_id: claimData.marketplace_origem || 'MLB',
-            tracking_number: claimData.codigo_rastreamento || claimData.tracking_number,
-            order_status: claimData.status_pedido || claimData.order_status,
-            type: claimData.tipo_claim || claimData.type,
-            account_name: claimData.account_name,
-          } : {};
+            site_id: orderData.context?.site || 'MLB',
+            order_id: String(orderData.id || claim.order_id),
+            pack_id: orderData.pack_id ? String(orderData.pack_id) : null,
+            
+            // Shipping
+            shipping_id: orderData.shipping?.id,
+            tracking_number: orderData.shipping?.tracking_number || '',
+          };
           
           return {
             // Dados básicos do cache
