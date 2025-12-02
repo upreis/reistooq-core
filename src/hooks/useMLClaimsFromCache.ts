@@ -22,6 +22,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// 🗺️ MAPEAMENTO: reason_id PREFIXO → Nome da Razão (conforme documentação API ML)
+const REASON_ID_MAP: Record<string, string> = {
+  'PNR': 'Produto Não Recebido',
+  'PDD': 'Produto Diferente ou Defeituoso',
+  'CS': 'Compra Cancelada',
+};
+
+// Helper para obter nome da razão pelo prefixo do reason_id
+const getReasonName = (reasonId: string | undefined): string | null => {
+  if (!reasonId) return null;
+  const prefix = reasonId.replace(/[0-9]/g, '').toUpperCase();
+  return REASON_ID_MAP[prefix] || null;
+};
+
 // 🗺️ MAPEAMENTO: resolution.reason → Português (conforme documentação API ML)
 const RESOLUTION_REASON_MAP: Record<string, string> = {
   already_shipped: 'Produto a caminho',
@@ -188,9 +202,9 @@ export function useMLClaimsFromCache({
             // ✅ TIPO DE RECLAMAÇÃO - campo 'type' para coluna
             type: claimData?.tipo_claim || claimData?.tipo_devolucao || claimData?.claim_type || rawDadosClaim?.type || 'claim',
             
-            // ✅ RAZÕES - dados da API (reason_id vem direto do raw)
+            // ✅ RAZÕES - dados da API (reason_id vem direto do raw) + mapeamento por prefixo
             reason_id: rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id || '',
-            reason_name: claimData?.motivo_nome || claimData?.reason_name || '',
+            reason_name: getReasonName(rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id) || claimData?.motivo_nome || claimData?.reason_name || '',
             reason_detail: claimData?.motivo_detalhe || claimData?.reason_detail || '',
             reason_category: claimData?.motivo_categoria || claimData?.reason_category || '',
             
