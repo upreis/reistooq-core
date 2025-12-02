@@ -73,19 +73,20 @@ export function useReclamacoesFiltersUnified() {
     const cachedFilters: Partial<ReclamacoesFilters> = {};
     
     if (!isInitialized && persistentCache.persistedState) {
-      if (!urlFilters.periodo) {
+      if (!urlFilters.periodo && persistentCache.persistedState.filters?.periodo) {
         cachedFilters.periodo = persistentCache.persistedState.filters.periodo;
+        console.log('📦 [CACHE] Restaurando período do cache:', cachedFilters.periodo);
       }
       if (!urlFilters.status) {
-        cachedFilters.status = persistentCache.persistedState.filters.status;
+        cachedFilters.status = persistentCache.persistedState.filters?.status;
       }
       if (!urlFilters.type) {
-        cachedFilters.type = persistentCache.persistedState.filters.type;
+        cachedFilters.type = persistentCache.persistedState.filters?.type;
       }
       if (!urlFilters.stage) {
-        cachedFilters.stage = persistentCache.persistedState.filters.stage;
+        cachedFilters.stage = persistentCache.persistedState.filters?.stage;
       }
-      if (!urlFilters.selectedAccounts) {
+      if (!urlFilters.selectedAccounts && persistentCache.persistedState.selectedAccounts?.length) {
         cachedFilters.selectedAccounts = persistentCache.persistedState.selectedAccounts;
       }
       if (!urlFilters.currentPage) {
@@ -93,6 +94,23 @@ export function useReclamacoesFiltersUnified() {
       }
       if (!urlFilters.itemsPerPage) {
         cachedFilters.itemsPerPage = persistentCache.persistedState.itemsPerPage;
+      }
+    }
+    
+    // 🚀 COMBO 2.1: Também verificar cache local de dados para período
+    const localCacheKey = 'RECLAMACOES_LOCAL_CACHE_V1';
+    if (!urlFilters.periodo && !cachedFilters.periodo) {
+      try {
+        const localCache = localStorage.getItem(localCacheKey);
+        if (localCache) {
+          const parsed = JSON.parse(localCache);
+          if (parsed.filters?.periodo) {
+            cachedFilters.periodo = parsed.filters.periodo;
+            console.log('📦 [LOCAL CACHE] Restaurando período:', cachedFilters.periodo);
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Erro ao restaurar período do cache local:', e);
       }
     }
     

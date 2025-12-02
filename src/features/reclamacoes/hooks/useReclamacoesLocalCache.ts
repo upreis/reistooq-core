@@ -91,23 +91,31 @@ export function useReclamacoesLocalCache() {
   }, []);
 
   // Verificar se cache é válido para os filtros atuais
+  // 🚀 COMBO 2.1: Mais flexível - apenas verifica contas (período é restaurado separadamente)
   const isCacheValidForFilters = useCallback((filters: CacheFilters): boolean => {
     if (!cachedEntry) return false;
     
+    // Verificar se contas são as mesmas
     const sameAccounts = 
       cachedEntry.filters.accounts.slice().sort().join(',') === 
       filters.accounts.slice().sort().join(',');
-    const samePeriodo = cachedEntry.filters.periodo === filters.periodo;
     
-    const isValid = sameAccounts && samePeriodo;
+    // 🚀 COMBO 2.1: Não exigir mesmo período - dados podem ser mostrados com aviso "desatualizado"
+    // O período será restaurado do cache se não estiver na URL
     
     console.log('🔍 [CACHE] Validação:', {
       sameAccounts,
-      samePeriodo,
-      isValid
+      cachedPeriodo: cachedEntry.filters.periodo,
+      requestedPeriodo: filters.periodo,
+      isValid: sameAccounts
     });
     
-    return isValid;
+    return sameAccounts; // Apenas contas precisam bater
+  }, [cachedEntry]);
+
+  // 🚀 COMBO 2.1: Retornar período do cache para restauração
+  const cachedPeriodo = useMemo(() => {
+    return cachedEntry?.filters?.periodo || null;
   }, [cachedEntry]);
 
   // Idade do cache em minutos
@@ -130,6 +138,7 @@ export function useReclamacoesLocalCache() {
     cachedTotalCount: cachedEntry?.totalCount || 0,
     cacheTimestamp: cachedEntry?.timestamp || null,
     cacheAge,
+    cachedPeriodo, // 🚀 COMBO 2.1: Período do cache para restauração
     
     // Estado
     hasCachedData: !!(cachedEntry?.data?.length),
