@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
-export const useReclamacoesRealtime = (enabled: boolean = true) => {
+export const useReclamacoesRealtime = (enabled: boolean = false) => { // ❌ DESABILITADO: causando loop infinito de timeout
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
