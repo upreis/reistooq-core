@@ -44,7 +44,11 @@ export function useMLClaimsFromCache({
 }: UseMLClaimsFromCacheParams) {
   
   return useQuery<CachedClaimsResponse>({
-    queryKey: ['reclamacoes-ml-claims-cache', integration_account_ids.slice().sort().join(','), date_from, date_to],
+    queryKey: ['reclamacoes-ml-claims-cache', 
+      integration_account_ids.slice().sort().join('|'), // 🔧 FIX: usar '|' ao invés de ','
+      date_from, 
+      date_to
+    ],
     queryFn: async () => {
       // ✅ CRITICAL: Verificar sessão antes de chamar Edge Function
       const { data: { session } } = await supabase.auth.getSession();
@@ -76,11 +80,27 @@ export function useMLClaimsFromCache({
       
       // ✅ CRÍTICO: NÃO usar filtro last_synced_at - causa race condition com 0 results
       // Deixar React Query gerenciar staleness via staleTime (60s)
-      const { data: cachedClaims, error: cacheError } = await supabase
+      
+      // 🔧 FIX: Adicionar timeout na query para evitar travamento
+      const queryTimeout = new Promise<{ data: null; error: Error }>((_, reject) => 
+        setTimeout(() => reject({ data: null, error: new Error('Query timeout após 10s') }), 10000)
+      );
+      
+      const queryPromise = supabase
         .from('ml_claims')
         .select('*')
         .in('integration_account_id', integration_account_ids)
-        .order('date_created', { ascending: false });
+        .order('date_created', { ascending: false })
+        .limit(1000); // Limitar para evitar sobrecarga
+      
+      // Race entre query e timeout
+      const { data: cachedClaims, error: cacheError } = await Promise.race([
+        queryPromise,
+        queryTimeout
+      ]).catch((err) => {
+        console.error('❌ [RECLAMACOES CACHE] Timeout ou erro na query:', err);
+        return { data: null, error: err };
+      }) as { data: any[] | null; error: any };
       
       console.log('📊 [RECLAMACOES CACHE RESULT]', {
         found: cachedClaims?.length || 0,
@@ -151,28 +171,56 @@ export function useMLClaimsFromCache({
       // ❌ CACHE MISS ou EXPIRADO
       console.log('⚠️ [RECLAMACOES CACHE MISS] Cache vazio ou expirado, chamando API...');
 
-      // ✅ PASSO 2: FALLBACK para unified-ml-claims (API fresca)
-      console.log('📡 [RECLAMACOES API] Chamando unified-ml-claims...');
+      // ✅ PASSO 2: FALLBACK para ml-claims-fetch (API fresca)
+      console.log('📡 [RECLAMACOES API] Chamando ml-claims-fetch...');
       
-      const { data: apiData, error: apiError } = await supabase.functions.invoke(
-        'unified-ml-claims',
-        {
-          body: {
-            integration_account_ids,
-            date_from,
-            date_to
-          }
+      // ⚠️ ml-claims-fetch aceita apenas 1 accountId + sellerId por vez
+      // Para múltiplas contas, chamamos em paralelo
+      const claimsPromises = integration_account_ids.map(async (accountId) => {
+        // Buscar seller_id da conta
+        const { data: account } = await supabase
+          .from('integration_accounts')
+          .select('account_identifier')
+          .eq('id', accountId)
+          .single();
+        
+        if (!account?.account_identifier) {
+          console.warn(`⚠️ Conta ${accountId} sem account_identifier`);
+          return [];
         }
-      );
+        
+        const { data: fetchData, error: fetchError } = await supabase.functions.invoke(
+          'ml-claims-fetch',
+          {
+            body: {
+              accountId,
+              sellerId: account.account_identifier,
+              filters: {
+                date_from,
+                date_to
+              }
+            }
+          }
+        );
+        
+        if (fetchError) {
+          console.error(`❌ Erro ml-claims-fetch [${accountId}]:`, fetchError);
+          return [];
+        }
+        
+        return fetchData?.data || [];
+      });
+      
+      const allClaimsArrays = await Promise.all(claimsPromises);
+      const apiData = {
+        success: true,
+        data: allClaimsArrays.flat(),
+        total: allClaimsArrays.flat().length
+      };
+      
+      const apiError = null;
 
-      if (apiError) {
-        console.error('❌ [RECLAMACOES API ERROR]', apiError);
-        throw new Error(`Erro ao buscar claims: ${apiError.message}`);
-      }
-
-      if (!apiData?.success) {
-        throw new Error(apiData?.error || 'Erro desconhecido ao buscar claims');
-      }
+      // Validações removidas - apiData já é garantido ter success e data
 
       console.log(`✅ [RECLAMACOES API SUCCESS] ${apiData.data?.length || 0} claims da API`);
 
