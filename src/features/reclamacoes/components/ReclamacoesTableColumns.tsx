@@ -150,10 +150,23 @@ const translations: Record<string, string> = {
  * Traduz e formata textos do inglês para português
  * Converte snake_case para espaços e traduz termos conhecidos
  */
-const translateText = (text: string | null | undefined): string => {
-  if (!text) return '-';
+const translateText = (text: unknown): string => {
+  // ✅ COMBO 2.1 FIX: Garantir que text é string antes de processar
+  if (text === null || text === undefined) return '-';
   
-  const lowerText = text.toLowerCase().trim();
+  // Se for objeto, tentar extrair valor útil
+  if (typeof text === 'object') {
+    const obj = text as Record<string, unknown>;
+    // Tentar campos comuns
+    const value = obj.name || obj.description || obj.value || obj.id || '';
+    return translateText(String(value));
+  }
+  
+  // Converter para string se não for
+  const textStr = String(text);
+  if (!textStr || textStr === 'undefined' || textStr === 'null') return '-';
+  
+  const lowerText = textStr.toLowerCase().trim();
   
   // Verifica se existe tradução direta da frase completa
   if (translations[lowerText]) {
