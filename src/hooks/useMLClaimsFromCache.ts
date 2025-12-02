@@ -96,6 +96,43 @@ export function useMLClaimsFromCache({
         const devolucoes = cachedClaims.map(claim => {
           const claimData = claim.claim_data as any;
           
+          // ✅ ALIASES DE COMPATIBILIDADE: mapear campos do backend para campos esperados pelo frontend
+          // O backend usa nomes diferentes (ex: data_venda_original) do que as colunas esperam (order_date_created)
+          const compatibilityFields = claimData ? {
+            // Datas
+            order_date_created: claimData.data_venda_original || claimData.order_date_created,
+            
+            // Produto
+            order_item_quantity: claimData.quantidade || claimData.order_item_quantity,
+            order_item_seller_sku: claimData.sku || claimData.order_item_seller_sku,
+            order_item_title: claimData.produto_titulo || claimData.order_item_title,
+            order_item_unit_price: claimData.valor_original_produto || claimData.order_item_unit_price,
+            
+            // Financeiro
+            order_total: claimData.total || claimData.order_total || claimData.valor_original_produto,
+            amount_value: claimData.valor_retido || claimData.amount_value,
+            amount_currency: claimData.moeda_reembolso || claimData.currency_id || 'BRL',
+            
+            // Razões
+            reason_name: claimData.subtipo_problema || claimData.reason_name,
+            reason_category: claimData.motivo_categoria || claimData.reason_category,
+            
+            // Resolução
+            resolution_benefited: claimData.resolution?.benefited || claimData.resultado_final,
+            resolution_reason: claimData.resolution?.reason || claimData.metodo_resolucao,
+            resolution_date: claimData.data_fechamento_claim || claimData.resolution_date,
+            
+            // Recurso
+            resource: claimData.tipo_claim || claimData.resource,
+            resource_id: claimData.order_id || claimData.resource_id,
+            
+            // Metadados adicionais
+            site_id: claimData.marketplace_origem || 'MLB',
+            tracking_number: claimData.codigo_rastreamento || claimData.tracking_number,
+            order_status: claimData.status_pedido || claimData.order_status,
+            type: claimData.tipo_claim || claimData.type,
+          } : {};
+          
           return {
             // Dados básicos do cache
             id: claim.id,
@@ -114,9 +151,11 @@ export function useMLClaimsFromCache({
             buyer_id: claim.buyer_id,
             buyer_nickname: claim.buyer_nickname,
             
-            // ✅ CRITICAL: spread claim_data DIRETAMENTE (não .unified)
-            // Os dados enriquecidos estão em claim_data raiz, não em claim_data.unified
+            // ✅ CRITICAL: spread claim_data DIRETAMENTE (dados enriquecidos)
             ...(claimData || {}),
+            
+            // ✅ ALIASES: sobrescrever com campos de compatibilidade para colunas da tabela
+            ...compatibilityFields,
             
             // Metadata
             integration_account_id: claim.integration_account_id,
