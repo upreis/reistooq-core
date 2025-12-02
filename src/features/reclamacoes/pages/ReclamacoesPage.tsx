@@ -143,8 +143,9 @@ export function ReclamacoesPage() {
     return hoje.toISOString();
   };
 
-  const dateFromISO = calcularDataInicio(unifiedFilters.periodo || '7');
-  const dateToISO = new Date().toISOString();
+  // ✅ Memoizar datas para evitar recálculo a cada render
+  const dateFromISO = useMemo(() => calcularDataInicio(unifiedFilters.periodo || '7'), [unifiedFilters.periodo]);
+  const dateToISO = useMemo(() => new Date().toISOString(), []); // ⚠️ Fixo no mount para evitar mudança constante
 
   // ✅ COMBO 2: Buscar reclamações usando cache-first + fallback API
   // 🔧 FIX: Estabilizar accountsForQuery com useMemo para evitar loop infinito
@@ -153,7 +154,7 @@ export function ReclamacoesPage() {
       return selectedAccountIds;
     }
     return mlAccounts?.map(acc => acc.id) || [];
-  }, [selectedAccountIds, mlAccounts]);
+  }, [selectedAccountIds?.join('|'), mlAccounts]); // ✅ Usar join para comparação estável
     
   const { 
     data: cacheResponse, 
