@@ -79,9 +79,14 @@ export function useMLClaimsFromCache({
       const cacheExpiresAt = new Date();
       cacheExpiresAt.setMinutes(cacheExpiresAt.getMinutes() - CACHE_TTL_MINUTES);
       
+      // ✅ CORREÇÃO EGRESS 1: SELECT apenas colunas essenciais (sem claim_data JSONB gigante)
       const { data: cachedClaims, error: cacheError } = await supabase
         .from('ml_claims')
-        .select('*')
+        .select(`
+          id, claim_id, order_id, return_id, status, stage, reason_id,
+          date_created, date_closed, last_updated, total_amount, refund_amount,
+          currency_id, buyer_id, buyer_nickname, integration_account_id, last_synced_at
+        `)
         .in('integration_account_id', integration_account_ids)
         .gte('last_synced_at', cacheExpiresAt.toISOString()) // Cache válido (< 5 min)
         .order('date_created', { ascending: false });
@@ -90,40 +95,30 @@ export function useMLClaimsFromCache({
       if (!cacheError && cachedClaims && cachedClaims.length > 0) {
         console.log(`✅ [CACHE HIT] ${cachedClaims.length} claims do cache (< 5min)`);
         
-        // Mapear dados do cache para formato esperado
-        const devolucoes = cachedClaims.map(claim => {
-          // Parse claim_data JSONB com validação
-          const claimDataObj = typeof claim.claim_data === 'object' && claim.claim_data !== null
-            ? claim.claim_data
-            : {};
+        // ✅ CORREÇÃO EGRESS 2: Mapear apenas dados essenciais (sem claim_data JSONB)
+        const devolucoes = cachedClaims.map(claim => ({
+          // Dados básicos do cache (já suficientes para UI)
+          id: claim.id,
+          claim_id: claim.claim_id,
+          order_id: claim.order_id,
+          return_id: claim.return_id,
+          status: claim.status,
+          stage: claim.stage,
+          reason_id: claim.reason_id,
+          date_created: claim.date_created,
+          date_closed: claim.date_closed,
+          last_updated: claim.last_updated,
+          total_amount: claim.total_amount,
+          refund_amount: claim.refund_amount,
+          currency_id: claim.currency_id,
+          buyer_id: claim.buyer_id,
+          buyer_nickname: claim.buyer_nickname,
           
-          return {
-            // Dados básicos do cache
-            id: claim.id,
-            claim_id: claim.claim_id,
-            order_id: claim.order_id,
-            return_id: claim.return_id,
-            status: claim.status,
-            stage: claim.stage,
-            reason_id: claim.reason_id,
-            date_created: claim.date_created,
-            date_closed: claim.date_closed,
-            last_updated: claim.last_updated,
-            total_amount: claim.total_amount,
-            refund_amount: claim.refund_amount,
-            currency_id: claim.currency_id,
-            buyer_id: claim.buyer_id,
-            buyer_nickname: claim.buyer_nickname,
-            
-            // Dados completos enriquecidos do JSONB
-            ...claimDataObj,
-            
-            // Metadata
-            integration_account_id: claim.integration_account_id,
-            last_synced_at: claim.last_synced_at,
-            _cache_source: 'ml_claims'
-          };
-        });
+          // Metadata
+          integration_account_id: claim.integration_account_id,
+          last_synced_at: claim.last_synced_at,
+          _cache_source: 'ml_claims'
+        }));
 
         // Aplicar filtro de data localmente se especificado
         let filteredDevolucoes = devolucoes;
@@ -184,11 +179,11 @@ export function useMLClaimsFromCache({
       };
     },
     enabled: enabled && integration_account_ids.length > 0,
-    // ✅ COMBO 2 - Configuração otimizada conforme especificação
-    staleTime: 60 * 1000, // 1 minuto (ao invés de 5min) - dados frescos
-    gcTime: 10 * 60 * 1000, // 10 minutos - manter em memória
-    refetchOnWindowFocus: true, // ✅ Refetch ao voltar para aba
-    refetchInterval: 60 * 1000, // ✅ POLLING: atualizar a cada 60 segundos
+    // ✅ CORREÇÃO EGRESS 3: Reduzir polling de 60s para 5 minutos
+    staleTime: 5 * 60 * 1000, // 5 minutos - reduzir refetches
+    gcTime: 15 * 60 * 1000, // 15 minutos - manter em memória por mais tempo
+    refetchOnWindowFocus: false, // ❌ DESATIVAR: evita refetch ao voltar para aba
+    refetchInterval: 5 * 60 * 1000, // ✅ POLLING: atualizar a cada 5 minutos (60x menos requests)
     retry: 2
   });
 }
