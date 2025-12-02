@@ -1,7 +1,10 @@
 /**
  * 🤖 ML CLAIMS AUTO SYNC - Background Job
  * Sincroniza claims/devoluções do Mercado Livre automaticamente em background
- * Chamada via pg_cron a cada 10 minutos
+ * 
+ * ✅ CORREÇÃO EGRESS (Dez 2024):
+ * - Frequência reduzida: CRON executa a cada 1 HORA (não 10 min)
+ * - Reduz egress de ~4.5GB/dia para ~0.75GB/dia (6x menos)
  * 
  * COMBO 2 - FASE B para /devolucoesdevenda
  * 
@@ -19,7 +22,7 @@ const corsHeaders = {
 };
 
 // Configurações
-const SYNC_INTERVAL_MINUTES = 10; // Buscar claims dos últimos 10 minutos
+const SYNC_INTERVAL_MINUTES = 60; // ✅ CORREÇÃO EGRESS: Buscar claims da última 1 HORA (não 10min)
 const MAX_ACCOUNTS_PER_RUN = 20; // Limitar para não estourar tempo
 
 Deno.serve(async (req) => {
