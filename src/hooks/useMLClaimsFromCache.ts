@@ -88,17 +88,20 @@ export function useMLClaimsFromCache({
         .in('integration_account_id', integration_account_ids)
         .order('date_created', { ascending: false });
 
-      // ✅ VERIFICAR SE CACHE TEM DADOS ENRIQUECIDOS (reason_name, etc.)
-      // Se não tiver, forçar fallback para get-devolucoes-direct
-      const cacheHasEnrichedData = cachedClaims?.some(claim => {
+      // ✅ VERIFICAR SE CACHE TEM DADOS ÚTEIS (pack_items com SKU, etc.)
+      // O cache ml_claims tem pack_items/pack_data - usar isso como indicador de dados válidos
+      const cacheHasUsefulData = cachedClaims?.some(claim => {
         const claimData = claim.claim_data as any;
-        // Verificar se tem pelo menos um campo de enriquecimento
-        return claimData?.reason_name || claimData?.reason_detail || claimData?.motivo_categoria;
+        // Verificar se tem dados de produto (pack_items ou pack_data.items)
+        const hasPackItems = claimData?.pack_items?.[0]?.seller_sku || claimData?.pack_data?.items?.[0]?.seller_sku;
+        // Ou dados básicos do claim
+        const hasBasicData = claimData?.status || claimData?.stage || claimData?.type;
+        return hasPackItems || hasBasicData;
       });
 
-      // Se cache válido E TEM DADOS ENRIQUECIDOS, usar cache
-      if (!cacheError && cachedClaims && cachedClaims.length > 0 && cacheHasEnrichedData) {
-        console.log(`✅ [CACHE HIT] ${cachedClaims.length} claims do cache COM enriquecimento`);
+      // Se cache válido E TEM DADOS ÚTEIS, usar cache
+      if (!cacheError && cachedClaims && cachedClaims.length > 0 && cacheHasUsefulData) {
+        console.log(`✅ [CACHE HIT] ${cachedClaims.length} claims do cache COM dados úteis (pack_items)`);
         
         // ✅ Mapear dados completos incluindo claim_data enriquecido
         const devolucoes = cachedClaims.map(claim => {
@@ -200,8 +203,8 @@ export function useMLClaimsFromCache({
         };
       }
 
-      // ❌ CACHE MISS ou SEM ENRIQUECIMENTO
-      console.log('⚠️ [CACHE MISS] Cache vazio, expirado ou SEM dados enriquecidos, chamando API para enriquecimento completo...');
+      // ❌ CACHE MISS ou SEM DADOS ÚTEIS
+      console.log('⚠️ [CACHE MISS] Cache vazio, expirado ou sem dados úteis, chamando API...');
 
       // ✅ PASSO 2: FALLBACK para get-devolucoes-direct (API fresca COM ENRIQUECIMENTO COMPLETO)
       console.log('📡 [API] Chamando get-devolucoes-direct para dados enriquecidos (reason_name, reason_detail, etc.)...');
