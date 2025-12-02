@@ -39,8 +39,6 @@ interface CachedClaimsResponse {
   error?: string;
 }
 
-const CACHE_TTL_MINUTES = 5; // Cache válido por 5 minutos
-
 export function useMLClaimsFromCache({
   integration_account_ids,
   date_from,
@@ -73,11 +71,10 @@ export function useMLClaimsFromCache({
         throw new Error('Nenhuma conta selecionada');
       }
 
-      // ✅ PASSO 1: Tentar buscar do CACHE primeiro
-      console.log('📦 [CACHE] Tentando buscar de ml_claims...');
-      
-      const cacheExpiresAt = new Date();
-      cacheExpiresAt.setMinutes(cacheExpiresAt.getMinutes() - CACHE_TTL_MINUTES);
+      // ✅ PASSO 1: Buscar do CACHE ml_claims (sincronizado via CRON)
+      // ✅ CORREÇÃO AUDITORIA: Removido filtro gte('last_synced_at') que causava 0 claims
+      // React Query gerencia staleness via staleTime, não precisamos filtrar por timestamp
+      console.log('📦 [CACHE] Buscando de ml_claims...');
       
       // ✅ SELECT claim_data JSONB para ter dados enriquecidos completos
       const { data: cachedClaims, error: cacheError } = await supabase
@@ -89,7 +86,6 @@ export function useMLClaimsFromCache({
           claim_data
         `)
         .in('integration_account_id', integration_account_ids)
-        .gte('last_synced_at', cacheExpiresAt.toISOString()) // Cache válido (< 5 min)
         .order('date_created', { ascending: false });
 
       // Se cache válido encontrado, retornar imediatamente
