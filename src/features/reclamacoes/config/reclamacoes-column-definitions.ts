@@ -38,8 +38,6 @@ export const RECLAMACOES_COLUMN_DEFINITIONS: ColumnConfig[] = [
   // Razão
   { id: 'reason_id', label: 'N.º da Razão da Reclamação', group: 'Razão' },
   { id: 'reason_name', label: 'Nome da Razão', group: 'Razão' },
-  { id: 'reason_detail', label: 'Detalhe da Razão', group: 'Razão' },
-  { id: 'reason_category', label: 'Categoria da Razão', group: 'Razão' },
   
   // Recurso
   { id: 'resource_id', label: 'N.º do Recurso Origem', group: 'Recurso' },
@@ -52,9 +50,6 @@ export const RECLAMACOES_COLUMN_DEFINITIONS: ColumnConfig[] = [
   
   // Metadados
   { id: 'site_id', label: 'Site ID', group: 'Metadados' },
-  { id: 'tem_trocas', label: 'Trocas', group: 'Metadados' },
-  { id: 'tem_mediacao', label: 'Mediação', group: 'Metadados' },
   { id: 'order_id', label: 'N.º da Venda', group: 'Metadados' },
-  { id: 'order_status', label: 'Status da Venda', group: 'Metadados' },
   { id: 'tracking_number', label: 'Número de Rastreio', group: 'Metadados' },
 ];
