@@ -110,67 +110,72 @@ export function useMLClaimsFromCache({
         const devolucoes = cachedClaims.map(claim => {
           const claimData = claim.claim_data as any;
           
-          // ✅ ESTRUTURA CORRETA: dados estão em claim_data.raw
-          const rawData = claimData?.raw || claimData || {};
-          const dadosClaim = rawData?.dados_claim || {};
-          const orderData = rawData?.order_data || {};
+          // ✅ ESTRUTURA CORRETA: dados estão DIRETAMENTE em claim_data (não em .raw)
+          // Ex: claimData.pack_items, claimData.comprador_nome_completo, etc.
           
-          // ✅ PRODUTO - dados vêm de order_items[0].item OU pack_items[0]
-          const orderItem = orderData?.order_items?.[0] || {};
-          const itemData = orderItem?.item || {};
-          const packItem = rawData?.pack_items?.[0] || rawData?.pack_data?.items?.[0] || {};
+          // ✅ PRODUTO - dados vêm de pack_items[0] OU pack_data.items[0] DIRETAMENTE
+          const packItem = claimData?.pack_items?.[0] || claimData?.pack_data?.items?.[0] || {};
+          
+          // Fallback para dados de product_info se não tiver pack_items
+          const productInfo = claimData?.product_info || {};
           
           const compatibilityFields = {
-            // Datas
-            order_date_created: orderData.date_created || dadosClaim.date_created,
-            date_created: dadosClaim.date_created || claim.date_created,
-            date_closed: dadosClaim.date_closed || orderData.date_closed || claim.date_closed,
-            last_updated: dadosClaim.last_updated || claim.last_updated,
+            // Datas - usar dados diretos de claimData
+            order_date_created: claimData?.data_venda_original || claimData?.data_criacao,
+            date_created: claimData?.data_criacao_claim || claimData?.data_criacao || claim.date_created,
+            date_closed: claimData?.data_fechamento_claim || claimData?.data_fechamento_devolucao || claim.date_closed,
+            last_updated: claimData?.data_ultima_atualizacao_return || claim.last_updated,
             
-            // ✅ PRODUTO - dados vêm de order_items[0].item
-            order_item_quantity: orderItem.quantity || packItem.quantity || 1,
-            order_item_seller_sku: itemData.seller_sku || packItem.seller_sku || '',
-            order_item_title: itemData.title || packItem.title || '',
-            order_item_unit_price: orderItem.unit_price || orderItem.full_unit_price || packItem.unit_price || 0,
+            // ✅ PRODUTO - dados vêm de pack_items DIRETAMENTE
+            order_item_quantity: packItem.quantity || 1,
+            order_item_seller_sku: packItem.seller_sku || productInfo.seller_custom_field || '',
+            order_item_title: packItem.title || productInfo.title || '',
+            order_item_unit_price: packItem.unit_price || 0,
             
-            // Financeiro
-            order_total: orderData.paid_amount || orderData.total_amount || 0,
-            amount_value: claim.total_amount || claim.refund_amount || 0,
-            amount_currency: orderData.currency_id || 'BRL',
+            // Financeiro - dados diretos
+            order_total: claimData?.valor_total || claimData?.valor_original_produto || 0,
+            amount_value: claim.total_amount || claim.refund_amount || claimData?.valor_reembolso || 0,
+            amount_currency: claimData?.moeda_reembolso || 'BRL',
             
-            // Razões - buscar de reason dentro de dados_claim
-            reason_id: dadosClaim.reason?.id || claim.reason_id,
-            reason_name: dadosClaim.reason?.name || dadosClaim.reason?.description || '',
-            reason_detail: dadosClaim.reason?.detail || '',
-            reason_category: dadosClaim.reason?.category || '',
+            // Razões - dados diretos
+            reason_id: claimData?.motivo_id || claim.reason_id,
+            reason_name: claimData?.motivo_nome || claimData?.reason_name || '',
+            reason_detail: claimData?.motivo_detalhe || claimData?.reason_detail || '',
+            reason_category: claimData?.motivo_categoria || claimData?.reason_category || '',
             
-            // Resolução
-            resolution_benefited: dadosClaim.resolution?.benefited || '',
-            resolution_reason: dadosClaim.resolution?.reason || '',
-            resolution_date: dadosClaim.date_closed || claim.date_closed,
+            // Resolução - dados diretos
+            resolution_benefited: claimData?.resolucao_beneficiado || claimData?.resolution_benefited || '',
+            resolution_reason: claimData?.resolucao_motivo || claimData?.resolution_reason || '',
+            resolution_date: claimData?.data_fechamento_claim || claim.date_closed,
             
             // Recurso
-            resource: dadosClaim.type || 'claim',
-            resource_id: String(dadosClaim.id || claim.claim_id),
+            resource: claimData?.tipo_devolucao || 'claim',
+            resource_id: String(claimData?.claim_id || claim.claim_id),
             
-            // Comprador
-            buyer_id: orderData.buyer?.id || claim.buyer_id,
-            buyer_nickname: orderData.buyer?.nickname || claim.buyer_nickname,
-            buyer_name: `${orderData.buyer?.first_name || ''} ${orderData.buyer?.last_name || ''}`.trim(),
+            // Comprador - dados diretos
+            buyer_id: claimData?.comprador_id || claim.buyer_id,
+            buyer_nickname: claimData?.comprador_nickname || claim.buyer_nickname,
+            buyer_name: claimData?.comprador_nome_completo || '',
             
-            // Status
-            status: dadosClaim.status || claim.status,
-            stage: dadosClaim.stage || claim.stage,
-            fulfilled: dadosClaim.fulfilled,
+            // Status - dados diretos
+            status: claimData?.status_claim || claim.status,
+            stage: claimData?.claim_stage || claim.stage,
+            fulfilled: claimData?.fulfilled,
             
             // Metadados adicionais
-            site_id: orderData.context?.site || 'MLB',
-            order_id: String(orderData.id || claim.order_id),
-            pack_id: orderData.pack_id ? String(orderData.pack_id) : null,
+            site_id: claimData?.marketplace_origem || 'MLB',
+            order_id: String(claimData?.order_id || claim.order_id),
+            pack_id: claimData?.pack_id ? String(claimData.pack_id) : null,
             
-            // Shipping
-            shipping_id: orderData.shipping?.id,
-            tracking_number: orderData.shipping?.tracking_number || '',
+            // Shipping - dados diretos
+            shipping_id: claimData?.shipment_id,
+            tracking_number: claimData?.codigo_rastreamento || '',
+            
+            // ✅ EXTRA: campos que estavam faltando
+            empresa: claimData?.account_name || '',
+            tipo_claim: claimData?.tipo_claim || '',
+            metodo_reembolso: claimData?.metodo_reembolso || '',
+            impacto_reputacao: claimData?.impacto_reputacao || '',
           };
           
           return {
@@ -192,6 +197,7 @@ export function useMLClaimsFromCache({
             buyer_nickname: claim.buyer_nickname,
             
             // ✅ CRITICAL: spread claim_data DIRETAMENTE (dados enriquecidos)
+            // Isso traz TODOS os 65+ campos do enriquecimento
             ...(claimData || {}),
             
             // ✅ ALIASES: sobrescrever com campos de compatibilidade para colunas da tabela
