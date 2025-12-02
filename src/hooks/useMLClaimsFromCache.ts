@@ -22,6 +22,69 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// 🗺️ MAPEAMENTO: reason_id PREFIXO → Nome, Detalhe, Categoria (conforme documentação API ML)
+// Prefixos: PNR = Produto Não Recebido, PDD = Produto Diferente/Defeituoso, CS = Compra Cancelada, SRF = Seller Return Failed
+interface ReasonMapping {
+  name: string;
+  detail: string;
+  category: string;
+}
+
+const REASON_PREFIX_MAP: Record<string, ReasonMapping> = {
+  // PNR - Produto Não Recebido
+  'PNR': {
+    name: 'Produto Não Recebido',
+    detail: 'O comprador informa que não recebeu o produto',
+    category: 'Entrega'
+  },
+  // PDD - Produto Diferente ou Defeituoso
+  'PDD': {
+    name: 'Produto Diferente ou Defeituoso',
+    detail: 'O produto recebido é diferente do anunciado ou apresenta defeito',
+    category: 'Qualidade'
+  },
+  // CS - Compra Cancelada
+  'CS': {
+    name: 'Compra Cancelada',
+    detail: 'A compra foi cancelada pelo comprador ou vendedor',
+    category: 'Cancelamento'
+  },
+  // SRF - Seller Return Failed (razões de revisão falhada pelo vendedor)
+  'SRF': {
+    name: 'Revisão de Devolução Falhada',
+    detail: 'O vendedor indicou problema na revisão da devolução',
+    category: 'Devolução'
+  },
+  // INV - Invoice/Nota Fiscal
+  'INV': {
+    name: 'Problema com Nota Fiscal',
+    detail: 'Problemas relacionados à nota fiscal do produto',
+    category: 'Fiscal'
+  },
+  // WRN - Warranty (Garantia)
+  'WRN': {
+    name: 'Problema de Garantia',
+    detail: 'Reclamação relacionada à garantia do produto',
+    category: 'Garantia'
+  },
+  // SHP - Shipping (Envio)
+  'SHP': {
+    name: 'Problema de Envio',
+    detail: 'Problemas ocorridos durante o processo de envio',
+    category: 'Logística'
+  },
+};
+
+// Helper para obter mapeamento do reason_id pelo prefixo
+const getReasonMapping = (reasonId: string | undefined): ReasonMapping | null => {
+  if (!reasonId) return null;
+  
+  // Extrair prefixo (primeiras 2-3 letras antes do número)
+  const prefix = reasonId.replace(/[0-9]/g, '').toUpperCase();
+  
+  return REASON_PREFIX_MAP[prefix] || null;
+};
+
 // 🗺️ MAPEAMENTO: resolution.reason → Português (conforme documentação API ML)
 const RESOLUTION_REASON_MAP: Record<string, string> = {
   already_shipped: 'Produto a caminho',
@@ -188,11 +251,23 @@ export function useMLClaimsFromCache({
             // ✅ TIPO DE RECLAMAÇÃO - campo 'type' para coluna
             type: claimData?.tipo_claim || claimData?.tipo_devolucao || claimData?.claim_type || rawDadosClaim?.type || 'claim',
             
-            // ✅ RAZÕES - dados da API (reason_id vem direto do raw)
+            // ✅ RAZÕES - dados da API (reason_id vem direto do raw) + mapeamento por prefixo
             reason_id: rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id || '',
-            reason_name: claimData?.motivo_nome || claimData?.reason_name || '', // ML não retorna nome, apenas ID
-            reason_detail: claimData?.motivo_detalhe || claimData?.reason_detail || '',
-            reason_category: claimData?.motivo_categoria || claimData?.reason_category || '',
+            reason_name: (() => {
+              const reasonId = rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id;
+              const mapping = getReasonMapping(reasonId);
+              return mapping?.name || claimData?.motivo_nome || claimData?.reason_name || '';
+            })(),
+            reason_detail: (() => {
+              const reasonId = rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id;
+              const mapping = getReasonMapping(reasonId);
+              return mapping?.detail || claimData?.motivo_detalhe || claimData?.reason_detail || '';
+            })(),
+            reason_category: (() => {
+              const reasonId = rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id;
+              const mapping = getReasonMapping(reasonId);
+              return mapping?.category || claimData?.motivo_categoria || claimData?.reason_category || '';
+            })(),
             
             // ✅ RESOLUÇÃO - dados vêm de raw.dados_claim.resolution (conforme doc API ML)
             resolution_benefited: (() => {
