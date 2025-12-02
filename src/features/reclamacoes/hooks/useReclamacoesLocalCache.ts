@@ -90,27 +90,28 @@ export function useReclamacoesLocalCache() {
     console.log('🗑️ [CACHE] Cache limpo');
   }, []);
 
-  // Verificar se cache é válido para os filtros atuais
-  // 🚀 COMBO 2.1: Mais flexível - apenas verifica contas (período é restaurado separadamente)
+  // 🚀 COMBO 2.1: Verificar se cache é válido para restauração
+  // SIMPLIFICADO: Se tem dados no cache, é válido para exibição instantânea
+  // O período do cache será usado para restaurar filtros
   const isCacheValidForFilters = useCallback((filters: CacheFilters): boolean => {
     if (!cachedEntry) return false;
+    if (!cachedEntry.data || cachedEntry.data.length === 0) return false;
     
-    // Verificar se contas são as mesmas
-    const sameAccounts = 
-      cachedEntry.filters.accounts.slice().sort().join(',') === 
-      filters.accounts.slice().sort().join(',');
-    
-    // 🚀 COMBO 2.1: Não exigir mesmo período - dados podem ser mostrados com aviso "desatualizado"
-    // O período será restaurado do cache se não estiver na URL
+    // 🚀 COMBO 2.1: Verificar apenas se contas estão presentes no cache
+    // (dados podem ter sido buscados com mais contas, isso é OK)
+    const cachedAccountsSet = new Set(cachedEntry.filters.accounts);
+    const requestedAccountsExist = filters.accounts.length === 0 || 
+      filters.accounts.some(acc => cachedAccountsSet.has(acc));
     
     console.log('🔍 [CACHE] Validação:', {
-      sameAccounts,
+      hasCachedData: cachedEntry.data.length,
       cachedPeriodo: cachedEntry.filters.periodo,
       requestedPeriodo: filters.periodo,
-      isValid: sameAccounts
+      requestedAccountsExist,
+      isValid: requestedAccountsExist
     });
     
-    return sameAccounts; // Apenas contas precisam bater
+    return requestedAccountsExist;
   }, [cachedEntry]);
 
   // 🚀 COMBO 2.1: Retornar período do cache para restauração
