@@ -11,6 +11,7 @@ import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { useReclamacoesFiltersUnified } from '../hooks/useReclamacoesFiltersUnified';
 import { useReclamacoesColumnManager } from '../hooks/useReclamacoesColumnManager';
 import { useMLClaimsFromCache } from '@/hooks/useMLClaimsFromCache';
+import { useReclamacoesLocalCache } from '../hooks/useReclamacoesLocalCache';
 import type { VisibilityState } from '@tanstack/react-table';
 
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
@@ -89,6 +90,12 @@ export function ReclamacoesPage() {
   // Estado de busca manual
   const [isManualSearching, setIsManualSearching] = useState(false);
   
+  // 🚀 COMBO 2.1: Estado para controle de busca MANUAL (não automática)
+  const [shouldFetch, setShouldFetch] = useState(false);
+  
+  // 🚀 COMBO 2.1: Hook de cache local para restauração instantânea
+  const localCache = useReclamacoesLocalCache();
+  
   // Constantes derivadas dos filtros unificados
   const selectedAccountIds = unifiedFilters.selectedAccounts;
   const currentPage = unifiedFilters.currentPage || 1;
@@ -139,7 +146,8 @@ export function ReclamacoesPage() {
     };
   }, [unifiedFilters.periodo]);
 
-  // 🚀 COMBO 2: Usar hook unificado que lê do cache ml_claims
+  // 🚀 COMBO 2.1: Usar hook unificado que lê do cache ml_claims
+  // MUDANÇA: enabled depende de shouldFetch (busca manual) ao invés de automático
   const { 
     data: cacheResponse, 
     isLoading: loadingReclamacoes, 
@@ -149,15 +157,51 @@ export function ReclamacoesPage() {
     integration_account_ids: selectedAccountIds || [],
     date_from: dateFrom,
     date_to: dateTo,
-    enabled: (selectedAccountIds?.length || 0) > 0
+    enabled: shouldFetch && (selectedAccountIds?.length || 0) > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
-  // 🚀 COMBO 2: Usar dados do cache ml_claims
+  // 🚀 COMBO 2.1: Usar dados do cache local OU do servidor
+  // Prioridade: dados da API > cache local
   const allReclamacoes = useMemo(() => {
-    return cacheResponse?.devolucoes || [];
-  }, [cacheResponse?.devolucoes]);
+    // Se temos dados da API, usar eles
+    if (cacheResponse?.devolucoes?.length) {
+      return cacheResponse.devolucoes;
+    }
+    // Senão, verificar cache local (restauração instantânea)
+    if (localCache.hasCachedData) {
+      const currentFilters = {
+        accounts: selectedAccountIds || [],
+        periodo: unifiedFilters.periodo,
+        dateFrom,
+        dateTo
+      };
+      // Só usar cache local se filtros forem compatíveis
+      if (localCache.isCacheValidForFilters(currentFilters)) {
+        console.log('⚡ [COMBO 2.1] Usando dados do cache local (instantâneo)');
+        return localCache.cachedData || [];
+      }
+    }
+    return [];
+  }, [cacheResponse?.devolucoes, localCache.hasCachedData, localCache.cachedData, selectedAccountIds, unifiedFilters.periodo, dateFrom, dateTo]);
 
-  // 🚀 COMBO 2: Buscar reclamações invalidando cache
+  // 🚀 COMBO 2.1: Salvar dados no cache local após busca bem-sucedida
+  useEffect(() => {
+    if (cacheResponse?.devolucoes?.length && shouldFetch) {
+      const currentFilters = {
+        accounts: selectedAccountIds || [],
+        periodo: unifiedFilters.periodo,
+        dateFrom,
+        dateTo
+      };
+      localCache.saveToCache(
+        cacheResponse.devolucoes,
+        currentFilters,
+        cacheResponse.total_count || cacheResponse.devolucoes.length
+      );
+    }
+  }, [cacheResponse?.devolucoes, shouldFetch, selectedAccountIds, unifiedFilters.periodo, dateFrom, dateTo]);
+
+  // 🚀 COMBO 2.1: Buscar reclamações (MANUAL - apenas ao clicar)
   const handleBuscarReclamacoes = async () => {
     if (!selectedAccountIds?.length) {
       toast({
@@ -169,6 +213,9 @@ export function ReclamacoesPage() {
     }
 
     setIsManualSearching(true);
+    
+    // ✅ COMBO 2.1: Ativar busca
+    setShouldFetch(true);
 
     try {
       // Invalidar cache para forçar nova busca
@@ -178,7 +225,7 @@ export function ReclamacoesPage() {
       
       toast({
         title: "✅ Sucesso",
-        description: `Busca concluída com sucesso`,
+        description: `Busca iniciada...`,
       });
     } catch (error) {
       toast({
