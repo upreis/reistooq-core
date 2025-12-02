@@ -110,6 +110,9 @@ export function useMLClaimsFromCache({
         const devolucoes = cachedClaims.map(claim => {
           const claimData = claim.claim_data as any;
           
+          // ✅ RAW DATA: dados originais da API ML (resolution, reason_id, etc)
+          const rawDadosClaim = claimData?.raw?.dados_claim || {};
+          
           // ✅ ESTRUTURA CORRETA: dados estão DIRETAMENTE em claim_data (não em .raw)
           // Ex: claimData.pack_items, claimData.comprador_nome_completo, etc.
           
@@ -138,18 +141,27 @@ export function useMLClaimsFromCache({
             amount_currency: claimData?.moeda_reembolso || 'BRL',
             
             // ✅ TIPO DE RECLAMAÇÃO - campo 'type' para coluna
-            type: claimData?.tipo_claim || claimData?.tipo_devolucao || claimData?.claim_type || 'claim',
+            type: claimData?.tipo_claim || claimData?.tipo_devolucao || claimData?.claim_type || rawDadosClaim?.type || 'claim',
             
-            // ✅ RAZÕES - dados diretos do claim_data
-            reason_id: claimData?.motivo_id || claimData?.reason_id || claim.reason_id,
-            reason_name: claimData?.motivo_nome || claimData?.reason_name || '',
+            // ✅ RAZÕES - dados da API (reason_id vem direto do raw)
+            reason_id: rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id || '',
+            reason_name: claimData?.motivo_nome || claimData?.reason_name || '', // ML não retorna nome, apenas ID
             reason_detail: claimData?.motivo_detalhe || claimData?.reason_detail || '',
             reason_category: claimData?.motivo_categoria || claimData?.reason_category || '',
             
-            // ✅ RESOLUÇÃO - dados diretos
-            resolution_benefited: claimData?.resolucao_beneficiado || claimData?.resolution_benefited || '',
-            resolution_reason: claimData?.resolucao_motivo || claimData?.resolution_reason || '',
-            resolution_date: claimData?.data_fechamento_claim || claim.date_closed,
+            // ✅ RESOLUÇÃO - dados vêm de raw.dados_claim.resolution (conforme doc API ML)
+            resolution_benefited: (() => {
+              const benefited = rawDadosClaim?.resolution?.benefited;
+              if (Array.isArray(benefited)) {
+                return benefited.map((b: string) => 
+                  b === 'complainant' ? 'Comprador' : b === 'respondent' ? 'Vendedor' : b
+                ).join(', ');
+              }
+              return claimData?.resolucao_beneficiado || '';
+            })(),
+            resolution_reason: rawDadosClaim?.resolution?.reason || claimData?.resolucao_motivo || '',
+            resolution_date: rawDadosClaim?.resolution?.date_created || claimData?.data_fechamento_claim || claim.date_closed,
+            resolution_closed_by: rawDadosClaim?.resolution?.closed_by || '',
             
             // ✅ TROCAS e MEDIAÇÃO - campos booleanos
             tem_trocas: claimData?.eh_troca ?? false,
