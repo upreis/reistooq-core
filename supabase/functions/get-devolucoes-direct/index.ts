@@ -317,7 +317,7 @@ serve(async (req) => {
       const BATCH_SIZE = 10;
       const TIMEOUT_MS = 5000; // ⏱️ Timeout de 5s por enriquecimento
       const CONCURRENCY_LIMIT = 5; // ✅ Máximo 5 requisições paralelas simultâneas
-      const limit = pLimit(CONCURRENCY_LIMIT); // Criar throttler
+      const pLimiter = pLimit(CONCURRENCY_LIMIT); // Criar throttler (renomeado para evitar conflito com limit=50)
       
       // 🔧 Helper: Adicionar timeout a qualquer Promise
       const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
@@ -338,7 +338,7 @@ serve(async (req) => {
         
         // ✅ THROTTLING: Limitar concorrência com p-limit
         const enrichedBatch = await Promise.all(
-          batch.map((claim: any) => limit(async () => {
+          batch.map((claim: any) => pLimiter(async () => {
             try {
               // Buscar return_details_v2 da API
               const fetchPromise = validateAndFetch(
@@ -401,7 +401,7 @@ serve(async (req) => {
         
         // ✅ THROTTLING: Limitar concorrência com p-limit
         const enrichedBatch = await Promise.all(
-          batch.map((claim: any, index: number) => limit(async () => {
+          batch.map((claim: any, index: number) => pLimiter(async () => {
             const claimIndex = i + index + 1;
             
             // ⚡ EXECUTAR 3 BUSCAS EM PARALELO COM TIMEOUT (return_details_v2 já foi buscado no Stage 1)
