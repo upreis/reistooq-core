@@ -229,6 +229,32 @@ export function useMLClaimsFromCache({
               return closedBy || '';
             })(),
             
+            // ✅ IMPACTO FINANCEIRO - calculado baseado em status e resolution
+            impacto_financeiro: ((): 'ganho' | 'perda' | 'coberto_ml' | 'neutro' | null => {
+              const status = claimData?.status_claim || claim.status;
+              const resolution = rawDadosClaim?.resolution;
+              
+              // Se não está fechado, é pendente/neutro
+              if (status !== 'closed') return 'neutro';
+              
+              // Se fechou, verificar quem foi beneficiado
+              const benefited = resolution?.benefited || [];
+              const appliedCoverage = resolution?.applied_coverage;
+              
+              // Beneficiado = vendedor (respondent) = ganho para o vendedor
+              if (benefited.includes('respondent')) return 'ganho';
+              
+              // Beneficiado = comprador (complainant)
+              if (benefited.includes('complainant')) {
+                // Se ML cobriu = não há perda para vendedor
+                if (appliedCoverage === true) return 'coberto_ml';
+                // Se ML não cobriu = perda para vendedor
+                return 'perda';
+              }
+              
+              return 'neutro';
+            })(),
+            
             // ✅ TROCAS e MEDIAÇÃO - campos booleanos
             tem_trocas: claimData?.eh_troca ?? false,
             tem_mediacao: claimData?.em_mediacao ?? false,
