@@ -151,53 +151,77 @@ const translations: Record<string, string> = {
  * Converte snake_case para espaços e traduz termos conhecidos
  */
 const translateText = (text: unknown): string => {
-  // ✅ COMBO 2.1 FIX: Garantir que text é string antes de processar
-  if (text === null || text === undefined) return '-';
+  // ✅ COMBO 2.1 FIX: Validação robusta de entrada
+  try {
+    // Caso 1: null/undefined
+    if (text === null || text === undefined) return '-';
+    
+    // Caso 2: Array - pegar primeiro elemento válido
+    if (Array.isArray(text)) {
+      if (text.length === 0) return '-';
+      return translateText(text[0]);
+    }
+    
+    // Caso 3: Objeto - extrair valor útil
+    if (typeof text === 'object') {
+      const obj = text as Record<string, unknown>;
+      const value = obj.name || obj.description || obj.value || obj.id || obj.text || '';
+      if (!value) return '-';
+      return translateText(value);
+    }
+    
+    // Caso 4: Número/Boolean - converter para string
+    if (typeof text === 'number' || typeof text === 'boolean') {
+      return String(text);
+    }
+    
+    // Caso 5: String - processar normalmente
+    if (typeof text !== 'string') {
+      return '-';
+    }
+    
+    const textStr = text.trim();
+    if (!textStr || textStr === 'undefined' || textStr === 'null' || textStr === '[object Object]') {
+      return '-';
+    }
+    
+    const lowerText = textStr.toLowerCase();
   
-  // Se for objeto, tentar extrair valor útil
-  if (typeof text === 'object') {
-    const obj = text as Record<string, unknown>;
-    // Tentar campos comuns
-    const value = obj.name || obj.description || obj.value || obj.id || '';
-    return translateText(String(value));
+    // Verifica se existe tradução direta da frase completa
+    if (translations[lowerText]) {
+      return translations[lowerText];
+    }
+    
+    // Converte snake_case e underscores para espaços
+    const withSpaces = lowerText.replace(/_/g, ' ');
+    
+    // Verifica novamente após conversão
+    if (translations[withSpaces]) {
+      return translations[withSpaces];
+    }
+    
+    // Traduz palavra por palavra
+    const translated = withSpaces
+      .split(' ')
+      .map(word => {
+        // Remove pontuação para traduzir
+        const cleanWord = word.replace(/[.,;!?]/g, '');
+        return translations[cleanWord] || word;
+      })
+      .join(' ');
+    
+    // Capitaliza primeira letra de cada palavra
+    const capitalized = translated
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    return capitalized;
+  } catch (error) {
+    // Fallback seguro para qualquer erro inesperado
+    console.warn('[translateText] Erro ao traduzir:', text, error);
+    return '-';
   }
-  
-  // Converter para string se não for
-  const textStr = String(text);
-  if (!textStr || textStr === 'undefined' || textStr === 'null') return '-';
-  
-  const lowerText = textStr.toLowerCase().trim();
-  
-  // Verifica se existe tradução direta da frase completa
-  if (translations[lowerText]) {
-    return translations[lowerText];
-  }
-  
-  // Converte snake_case e underscores para espaços
-  const withSpaces = lowerText.replace(/_/g, ' ');
-  
-  // Verifica novamente após conversão
-  if (translations[withSpaces]) {
-    return translations[withSpaces];
-  }
-  
-  // Traduz palavra por palavra
-  const translated = withSpaces
-    .split(' ')
-    .map(word => {
-      // Remove pontuação para traduzir
-      const cleanWord = word.replace(/[.,;!?]/g, '');
-      return translations[cleanWord] || word;
-    })
-    .join(' ');
-  
-  // Capitaliza primeira letra de cada palavra
-  const capitalized = translated
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-  
-  return capitalized;
 };
 
 
