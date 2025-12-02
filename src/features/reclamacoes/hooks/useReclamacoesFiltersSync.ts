@@ -52,8 +52,10 @@ function parseFiltersFromUrl(searchParams: URLSearchParams): Partial<Reclamacoes
 function encodeFiltersToUrl(filters: ReclamacoesFilters): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.periodo) { // 🔥 CORREÇÃO: Sempre incluir periodo na URL (removido !== '7')
+  // 🚀 COMBO 2.1: SEMPRE incluir período na URL para persistência
+  if (filters.periodo) {
     params.set('periodo', filters.periodo);
+    console.log('🔗 [URL] Período incluído:', filters.periodo);
   }
 
   if (filters.status && filters.status !== '') {
@@ -107,7 +109,7 @@ export function useReclamacoesFiltersSync(
         console.log('🔗 Atualizando URL com filtros:', filters);
         setSearchParams(newParams, { replace: true });
       }
-    }, 500); // Debounce de 500ms
+    }, 100); // 🚀 COMBO 2.1: Reduzido para 100ms para garantir persistência
 
     return () => clearTimeout(timer);
   }, [filters, setSearchParams]);
