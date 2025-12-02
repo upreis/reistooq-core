@@ -303,6 +303,12 @@ Antes de aplicar Combo 2.1, SEMPRE fazer auditoria:
 
 ### PASSO 2: PLANEJAMENTO
 
+**REGRA OBRIGATÓRIA:** Após implementar CADA fase, a AI DEVE:
+1. ✅ Auditar o código aplicado
+2. ✅ Verificar erros de sintaxe/lógica
+3. ✅ Testar edge cases
+4. ✅ Só então informar que fase está completa
+
 Criar plano em fases:
 
 ```markdown
