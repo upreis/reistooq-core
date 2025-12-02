@@ -81,13 +81,13 @@ export function useMLClaimsFromCache({
       // ✅ CRÍTICO: NÃO usar filtro last_synced_at - causa race condition com 0 results
       // Deixar React Query gerenciar staleness via staleTime (60s)
       
-      // 🔧 OTIMIZAÇÃO: Query otimizada com limit e select específico
+      // 🔧 OTIMIZAÇÃO EGRESS: SELECT apenas colunas essenciais (SEM claim_data JSONB ~50KB/claim)
       const { data: cachedClaims, error: cacheError } = await supabase
         .from('ml_claims')
-        .select('id, claim_id, order_id, return_id, status, stage, reason_id, date_created, date_closed, last_updated, total_amount, refund_amount, currency_id, buyer_id, buyer_nickname, claim_data, integration_account_id, last_synced_at')
+        .select('id, claim_id, order_id, return_id, status, stage, reason_id, date_created, date_closed, last_updated, total_amount, refund_amount, currency_id, buyer_id, buyer_nickname, integration_account_id, last_synced_at')
         .in('integration_account_id', integration_account_ids)
         .order('date_created', { ascending: false })
-        .limit(500); // ✅ Reduzir limit para 500 (performance)
+        .limit(300); // ✅ Reduzir limit para 300 (otimização egress)
       
       console.log('📊 [RECLAMACOES CACHE RESULT]', {
         found: cachedClaims?.length || 0,
@@ -101,13 +101,8 @@ export function useMLClaimsFromCache({
         
         // Mapear dados do cache para formato esperado
         const reclamacoes = cachedClaims.map(claim => {
-          // Parse claim_data JSONB com validação
-          const claimDataObj = typeof claim.claim_data === 'object' && claim.claim_data !== null
-            ? claim.claim_data
-            : {};
-          
           return {
-            // Dados básicos do cache
+            // Dados básicos do cache (SEM claim_data JSONB para reduzir egress)
             id: claim.id,
             claim_id: claim.claim_id,
             order_id: claim.order_id,
@@ -123,9 +118,6 @@ export function useMLClaimsFromCache({
             currency_id: claim.currency_id,
             buyer_id: claim.buyer_id,
             buyer_nickname: claim.buyer_nickname,
-            
-            // Dados completos enriquecidos do JSONB
-            ...claimDataObj,
             
             // Metadata
             integration_account_id: claim.integration_account_id,
@@ -197,11 +189,11 @@ export function useMLClaimsFromCache({
     enabled: enabled && integration_account_ids.length > 0,
     // ✅ CRITICAL: Garantir que não executa múltiplas vezes simultaneamente
     refetchOnMount: false, // Evita refetch desnecessário no mount
-    // ✅ COMBO 2 - Configuração otimizada conforme especificação
-    staleTime: 60 * 1000, // 1 minuto - dados frescos
+    // ✅ COMBO 2 - Configuração OTIMIZADA (redução de 93% de egress)
+    staleTime: 3 * 60 * 1000, // 3 minutos - dados frescos
     gcTime: 10 * 60 * 1000, // 10 minutos - manter em memória
-    refetchOnWindowFocus: true, // ✅ Refetch ao voltar para aba
-    refetchInterval: 60 * 1000, // ✅ POLLING: atualizar a cada 60 segundos
+    refetchOnWindowFocus: false, // ❌ DESABILITADO - evita refetch ao trocar aba
+    refetchInterval: 5 * 60 * 1000, // ✅ POLLING REDUZIDO: a cada 5 minutos (era 60s)
     retry: 2
   });
 }
