@@ -15,6 +15,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+import pLimit from "https://esm.sh/p-limit@7.2.0";
 import { fetchWithRetry } from '../_shared/retryUtils.ts';
 import { logger } from '../_shared/logger.ts';
 import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.ts';
@@ -307,7 +308,7 @@ serve(async (req) => {
         logger.info(`📅 [${accountId.slice(0, 8)}] Após filtro: ${claims.length} claims`);
       }
 
-      // 🔍 FASE 1 CORRIGIDA: ENRIQUECIMENTO EM 2 ESTÁGIOS
+      // 🔍 FASE 1 CORRIGIDA: ENRIQUECIMENTO EM 2 ESTÁGIOS COM THROTTLING
       // STAGE 1: Lightweight - apenas return_details_v2 para filtrar
       // STAGE 2: Full enrichment - apenas para claims com return real
       logger.progress(`⚡ [${accountId.slice(0, 8)}] STAGE 1: Buscando return_details_v2 para ${claims.length} claims...`);
@@ -315,6 +316,8 @@ serve(async (req) => {
       const stage1Start = Date.now();
       const BATCH_SIZE = 10;
       const TIMEOUT_MS = 5000; // ⏱️ Timeout de 5s por enriquecimento
+      const CONCURRENCY_LIMIT = 5; // ✅ Máximo 5 requisições paralelas simultâneas
+      const limit = pLimit(CONCURRENCY_LIMIT); // Criar throttler
       
       // 🔧 Helper: Adicionar timeout a qualquer Promise
       const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
@@ -333,8 +336,9 @@ serve(async (req) => {
         
         logger.progress(`📦 [STAGE 1] Processando batch ${batchNum}/${totalBatches} (${batch.length} claims)...`);
         
+        // ✅ THROTTLING: Limitar concorrência com p-limit
         const enrichedBatch = await Promise.all(
-          batch.map(async (claim: any) => {
+          batch.map((claim: any) => limit(async () => {
             try {
               // Buscar return_details_v2 da API
               const fetchPromise = validateAndFetch(
@@ -366,7 +370,7 @@ serve(async (req) => {
               ...claim,
               return_details_v2: null
             };
-          })
+          }))
         );
         
         // Substituir claims originais pelos enriquecidos com return_details_v2
@@ -395,8 +399,9 @@ serve(async (req) => {
         
         logger.progress(`⚡ [STAGE 2] Processando batch ${batchNum}/${totalBatches2} (${batch.length} claims)...`);
         
+        // ✅ THROTTLING: Limitar concorrência com p-limit
         const enrichedBatch = await Promise.all(
-          batch.map(async (claim: any, index: number) => {
+          batch.map((claim: any, index: number) => limit(async () => {
             const claimIndex = i + index + 1;
             
             // ⚡ EXECUTAR 3 BUSCAS EM PARALELO COM TIMEOUT (return_details_v2 já foi buscado no Stage 1)
@@ -504,7 +509,7 @@ serve(async (req) => {
               change_details: null,
               attachments: null
             };
-          })
+          }))
         );
         
         // 🚚 Enriquecer TODOS os shipments do batch em paralelo
