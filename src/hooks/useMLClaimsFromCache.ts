@@ -22,6 +22,51 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// 🗺️ MAPEAMENTO: resolution.reason → Português (conforme documentação API ML)
+const RESOLUTION_REASON_MAP: Record<string, string> = {
+  already_shipped: 'Produto a caminho',
+  buyer_claim_opened: 'Devolução encerrada por nova reclamação',
+  buyer_dispute_opened: 'Devolução encerrada por nova disputa com mediação do ML',
+  charged_back: 'Encerramento por chargeback',
+  coverage_decision: 'Disputa encerrada com cobertura do ML',
+  found_missing_parts: 'Comprador encontrou peças faltantes',
+  item_returned: 'Produto devolvido',
+  no_bpp: 'Encerramento sem cobertura do ML',
+  not_delivered: 'Produto não entregue',
+  opened_claim_by_mistake: 'Reclamação aberta por engano',
+  partial_refunded: 'Reembolso parcial concedido',
+  payment_refunded: 'Pagamento reembolsado',
+  prefered_to_keep_product: 'Comprador preferiu ficar com o produto',
+  product_delivered: 'Decisão do representante do ML',
+  reimbursed: 'Reembolsado',
+  rep_resolution: 'Decisão do representante do ML',
+  respondent_timeout: 'Vendedor não respondeu',
+  return_canceled: 'Devolução cancelada pelo comprador',
+  return_expired: 'Devolução expirada sem atualização de status',
+  seller_asked_to_close_claim: 'Vendedor pediu para fechar a reclamação',
+  seller_did_not_help: 'Comprador resolveu sem ajuda do vendedor',
+  seller_explained_functions: 'Vendedor explicou o funcionamento do item',
+  seller_sent_product: 'Vendedor enviou o produto',
+  timeout: 'Encerrada por inatividade do comprador',
+  warehouse_decision: 'Encerramento por demora na análise no depósito',
+  warehouse_timeout: 'Encerramento por expiração de tempo no depósito',
+  worked_out_with_seller: 'Resolvido diretamente com o vendedor',
+  low_cost: 'Custo de envio maior que o valor do produto',
+  item_changed: 'Troca concluída com sucesso',
+  change_expired: 'Troca não realizada dentro do prazo',
+  change_cancelled_buyer: 'Troca cancelada pelo comprador',
+  change_cancelled_seller: 'Troca cancelada pelo vendedor',
+  change_cancelled_meli: 'Troca cancelada pelo Mercado Livre',
+  shipment_not_stopped: 'Envio não foi interrompido',
+  cancel_installation: 'Cancelamento de serviço de instalação',
+};
+
+// Helper para traduzir resolution.reason
+const translateResolutionReason = (reason: string | undefined): string => {
+  if (!reason) return '';
+  return RESOLUTION_REASON_MAP[reason] || reason;
+};
+
 interface UseMLClaimsFromCacheParams {
   integration_account_ids: string[];
   date_from?: string;
@@ -159,9 +204,16 @@ export function useMLClaimsFromCache({
               }
               return claimData?.resolucao_beneficiado || '';
             })(),
-            resolution_reason: rawDadosClaim?.resolution?.reason || claimData?.resolucao_motivo || '',
+            // ✅ Traduzido para português usando mapeamento da documentação ML
+            resolution_reason: translateResolutionReason(rawDadosClaim?.resolution?.reason) || claimData?.resolucao_motivo || '',
             resolution_date: rawDadosClaim?.resolution?.date_created || claimData?.data_fechamento_claim || claim.date_closed,
-            resolution_closed_by: rawDadosClaim?.resolution?.closed_by || '',
+            resolution_closed_by: (() => {
+              const closedBy = rawDadosClaim?.resolution?.closed_by;
+              if (closedBy === 'mediator') return 'Mediador';
+              if (closedBy === 'buyer') return 'Comprador';
+              if (closedBy === 'seller') return 'Vendedor';
+              return closedBy || '';
+            })(),
             
             // ✅ TROCAS e MEDIAÇÃO - campos booleanos
             tem_trocas: claimData?.eh_troca ?? false,
