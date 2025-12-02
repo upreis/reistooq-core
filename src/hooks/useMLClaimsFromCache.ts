@@ -29,11 +29,25 @@ const REASON_ID_MAP: Record<string, string> = {
   'CS': 'Compra Cancelada',
 };
 
+// 🗺️ MAPEAMENTO: reason_id PREFIXO → Detalhe da Razão (conforme documentação API ML)
+const REASON_DETAIL_MAP: Record<string, string> = {
+  'PNR': 'O comprador informa que não recebeu o produto',
+  'PDD': 'O produto recebido é diferente do anunciado ou apresenta defeito',
+  'CS': 'A compra foi cancelada pelo comprador ou vendedor',
+};
+
 // Helper para obter nome da razão pelo prefixo do reason_id
 const getReasonName = (reasonId: string | undefined): string | null => {
   if (!reasonId) return null;
   const prefix = reasonId.replace(/[0-9]/g, '').toUpperCase();
   return REASON_ID_MAP[prefix] || null;
+};
+
+// Helper para obter detalhe da razão pelo prefixo do reason_id
+const getReasonDetail = (reasonId: string | undefined): string | null => {
+  if (!reasonId) return null;
+  const prefix = reasonId.replace(/[0-9]/g, '').toUpperCase();
+  return REASON_DETAIL_MAP[prefix] || null;
 };
 
 // 🗺️ MAPEAMENTO: resolution.reason → Português (conforme documentação API ML)
@@ -205,7 +219,7 @@ export function useMLClaimsFromCache({
             // ✅ RAZÕES - dados da API (reason_id vem direto do raw) + mapeamento por prefixo
             reason_id: rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id || '',
             reason_name: getReasonName(rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id) || claimData?.motivo_nome || claimData?.reason_name || '',
-            reason_detail: claimData?.motivo_detalhe || claimData?.reason_detail || '',
+            reason_detail: getReasonDetail(rawDadosClaim?.reason_id || claimData?.motivo_id || claim.reason_id) || claimData?.motivo_detalhe || claimData?.reason_detail || '',
             reason_category: claimData?.motivo_categoria || claimData?.reason_category || '',
             
             // ✅ RESOLUÇÃO - dados vêm de raw.dados_claim.resolution (conforme doc API ML)
