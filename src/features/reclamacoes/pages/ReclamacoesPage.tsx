@@ -93,6 +93,9 @@ export function ReclamacoesPage() {
   // 🚀 COMBO 2.1: Estado para controle de busca MANUAL (não automática)
   const [shouldFetch, setShouldFetch] = useState(false);
   
+  // 🚀 COMBO 2.1: Ref para rastrear se já restaurou filtros do cache
+  const hasRestoredFromCacheRef = React.useRef(false);
+  
   // 🚀 COMBO 2.1: Hook de cache local para restauração instantânea
   const localCache = useReclamacoesLocalCache();
   
@@ -160,9 +163,53 @@ export function ReclamacoesPage() {
     enabled: shouldFetch && (selectedAccountIds?.length || 0) > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
+  // 🚀 COMBO 2.1: Restaurar período do cache local ao montar (APENAS UMA VEZ)
+  useEffect(() => {
+    // Já restaurou? Não fazer nada
+    if (hasRestoredFromCacheRef.current) return;
+    
+    // Se não houve busca ainda E temos cache válido, restaurar filtros
+    if (!shouldFetch && localCache.hasCachedData && localCache.cachedFilters) {
+      const cachedPeriodo = localCache.cachedFilters.periodo;
+      const cachedAccounts = localCache.cachedFilters.accounts;
+      
+      let didRestore = false;
+      
+      // Se o período atual é o DEFAULT (7) e o cache tem outro, restaurar do cache
+      if (cachedPeriodo && cachedPeriodo !== '7') {
+        console.log('🔄 [COMBO 2.1] Restaurando período do cache local:', cachedPeriodo);
+        updateFilter('periodo', cachedPeriodo);
+        didRestore = true;
+      }
+      
+      // Se contas não estão selecionadas mas cache tem, restaurar
+      if (cachedAccounts?.length) {
+        console.log('🔄 [COMBO 2.1] Restaurando contas do cache local:', cachedAccounts.length);
+        updateFilter('selectedAccounts', cachedAccounts);
+        didRestore = true;
+      }
+      
+      // Marcar como restaurado para não repetir
+      hasRestoredFromCacheRef.current = true;
+      
+      if (didRestore) {
+        console.log('✅ [COMBO 2.1] Restauração de filtros do cache concluída');
+      }
+    }
+  }, [localCache.hasCachedData, localCache.cachedFilters, shouldFetch, updateFilter]);
+
   // 🚀 COMBO 2.1: Determinar fonte dos dados (API ou cache local)
   const dataSource = useMemo<'api' | 'cache' | 'none'>(() => {
+    // Se API retornou dados, usar API
     if (cacheResponse?.devolucoes?.length) return 'api';
+    
+    // 🚀 COMBO 2.1: Se não houve busca manual ainda, usar cache local se existir
+    if (!shouldFetch && localCache.hasCachedData) {
+      console.log('⚡ [COMBO 2.1] Usando cache local (sem busca manual ainda)');
+      return 'cache';
+    }
+    
+    // Se houve busca mas cache local é válido para filtros atuais
     if (localCache.hasCachedData) {
       const currentFilters = {
         accounts: selectedAccountIds || [],
@@ -172,8 +219,9 @@ export function ReclamacoesPage() {
       };
       if (localCache.isCacheValidForFilters(currentFilters)) return 'cache';
     }
+    
     return 'none';
-  }, [cacheResponse?.devolucoes, localCache.hasCachedData, selectedAccountIds, unifiedFilters.periodo, dateFrom, dateTo]);
+  }, [cacheResponse?.devolucoes, localCache.hasCachedData, selectedAccountIds, unifiedFilters.periodo, dateFrom, dateTo, shouldFetch]);
 
   // 🚀 COMBO 2.1: Usar dados do cache local OU do servidor
   const allReclamacoes = useMemo(() => {

@@ -144,9 +144,11 @@ export function useReclamacoesFiltersUnified() {
     };
   }, []); // Array vazio = só roda no mount/unmount
 
-  // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
+  // 🚀 COMBO 2.1: Sincronizar com URL APENAS após inicialização completa
+  // Isso evita que DEFAULT_FILTERS sobrescrevam a URL antes da restauração do cache
+  const filtersForSync = isInitialized ? filters : DEFAULT_FILTERS;
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
-    filters,
+    filtersForSync,
     () => {} // Não fazer nada quando URL mudar - restauração já foi feita acima
   );
 
