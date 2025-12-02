@@ -225,17 +225,35 @@ const translateText = (text: unknown): string => {
 };
 
 
-const getStatusBadge = (status: string) => {
+// ✅ COMBO 2.1 FIX: Validação robusta para badges
+const safeString = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    return String(obj.name || obj.value || obj.id || '');
+  }
+  return '';
+};
+
+const getStatusBadge = (status: unknown) => {
+  const statusStr = safeString(status);
+  if (!statusStr) return <span className="text-muted-foreground">-</span>;
+  
   const variants: Record<string, any> = {
     opened: { variant: 'default', label: 'Aberta' },
     closed: { variant: 'secondary', label: 'Fechada' },
     under_review: { variant: 'outline', label: 'Em análise' }
   };
-  const config = variants[status] || { variant: 'default', label: status };
+  const config = variants[statusStr] || { variant: 'default', label: statusStr };
   return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
-const getTypeBadge = (type: string) => {
+const getTypeBadge = (type: unknown) => {
+  const typeStr = safeString(type);
+  if (!typeStr) return <span className="text-muted-foreground">-</span>;
+  
   const typeConfig: Record<string, { variant: any; label: string; className?: string }> = {
     mediations: { variant: 'destructive', label: 'Mediação' },
     returns: { variant: 'outline', label: 'Devolução', className: 'bg-yellow-400 text-black border-yellow-500 font-semibold' },
@@ -246,12 +264,14 @@ const getTypeBadge = (type: string) => {
     change: { variant: 'default', label: 'Troca' },
     service: { variant: 'secondary', label: 'Serviço' }
   };
-  const config = typeConfig[type] || { variant: 'default', label: type };
+  const config = typeConfig[typeStr] || { variant: 'default', label: typeStr };
   return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
 };
 
-const getStageBadge = (stage: string | null) => {
-  if (!stage) return '-';
+const getStageBadge = (stage: unknown) => {
+  const stageStr = safeString(stage);
+  if (!stageStr) return <span className="text-muted-foreground">-</span>;
+  
   const stageConfig: Record<string, { variant: any; label: string }> = {
     claim: { variant: 'default', label: 'Reclamação' },
     dispute: { variant: 'destructive', label: 'Mediação ML' },
@@ -259,25 +279,33 @@ const getStageBadge = (stage: string | null) => {
     none: { variant: 'outline', label: 'N/A' },
     stale: { variant: 'outline', label: 'Stale' }
   };
-  const config = stageConfig[stage] || { variant: 'default', label: stage };
+  const config = stageConfig[stageStr] || { variant: 'default', label: stageStr };
   return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
-const formatDate = (date: string | null) => {
+const formatDate = (date: unknown) => {
   if (!date) return '-';
   try {
-    return format(new Date(date), 'dd/MM/yy HH:mm', { locale: ptBR });
+    const dateStr = typeof date === 'string' ? date : String(date);
+    if (dateStr === '[object Object]' || dateStr === 'undefined' || dateStr === 'null') return '-';
+    return format(new Date(dateStr), 'dd/MM/yy HH:mm', { locale: ptBR });
   } catch {
     return '-';
   }
 };
 
-const formatCurrency = (value: number | null, currency: string = 'BRL') => {
-  if (!value) return '-';
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: currency
-  }).format(value);
+const formatCurrency = (value: unknown, currency: string = 'BRL') => {
+  if (value === null || value === undefined) return '-';
+  const numValue = typeof value === 'number' ? value : parseFloat(String(value));
+  if (isNaN(numValue)) return '-';
+  try {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: currency || 'BRL'
+    }).format(numValue);
+  } catch {
+    return '-';
+  }
 };
 
 export const reclamacoesColumns = (
