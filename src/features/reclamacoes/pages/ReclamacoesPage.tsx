@@ -160,14 +160,9 @@ export function ReclamacoesPage() {
     enabled: shouldFetch && (selectedAccountIds?.length || 0) > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
-  // 🚀 COMBO 2.1: Usar dados do cache local OU do servidor
-  // Prioridade: dados da API > cache local
-  const allReclamacoes = useMemo(() => {
-    // Se temos dados da API, usar eles
-    if (cacheResponse?.devolucoes?.length) {
-      return cacheResponse.devolucoes;
-    }
-    // Senão, verificar cache local (restauração instantânea)
+  // 🚀 COMBO 2.1: Determinar fonte dos dados (API ou cache local)
+  const dataSource = useMemo<'api' | 'cache' | 'none'>(() => {
+    if (cacheResponse?.devolucoes?.length) return 'api';
     if (localCache.hasCachedData) {
       const currentFilters = {
         accounts: selectedAccountIds || [],
@@ -175,14 +170,29 @@ export function ReclamacoesPage() {
         dateFrom,
         dateTo
       };
-      // Só usar cache local se filtros forem compatíveis
-      if (localCache.isCacheValidForFilters(currentFilters)) {
-        console.log('⚡ [COMBO 2.1] Usando dados do cache local (instantâneo)');
-        return localCache.cachedData || [];
-      }
+      if (localCache.isCacheValidForFilters(currentFilters)) return 'cache';
+    }
+    return 'none';
+  }, [cacheResponse?.devolucoes, localCache.hasCachedData, selectedAccountIds, unifiedFilters.periodo, dateFrom, dateTo]);
+
+  // 🚀 COMBO 2.1: Usar dados do cache local OU do servidor
+  const allReclamacoes = useMemo(() => {
+    if (dataSource === 'api') {
+      return cacheResponse?.devolucoes || [];
+    }
+    if (dataSource === 'cache') {
+      console.log('⚡ [COMBO 2.1] Usando dados do cache local (instantâneo)');
+      return localCache.cachedData || [];
     }
     return [];
-  }, [cacheResponse?.devolucoes, localCache.hasCachedData, localCache.cachedData, selectedAccountIds, unifiedFilters.periodo, dateFrom, dateTo]);
+  }, [dataSource, cacheResponse?.devolucoes, localCache.cachedData]);
+
+  // 🚀 COMBO 2.1: Total count (API ou cache local)
+  const totalCount = useMemo(() => {
+    if (dataSource === 'api') return cacheResponse?.total_count || 0;
+    if (dataSource === 'cache') return localCache.cachedTotalCount || 0;
+    return 0;
+  }, [dataSource, cacheResponse?.total_count, localCache.cachedTotalCount]);
 
   // 🚀 COMBO 2.1: Salvar dados no cache local após busca bem-sucedida
   useEffect(() => {
@@ -412,7 +422,22 @@ export function ReclamacoesPage() {
             <div className="px-4 md:px-6 py-3 mt-2">
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
+                    {/* 🚀 COMBO 2.1: Badge de fonte de dados */}
+                    {dataSource === 'cache' && (
+                      <span className={`text-xs px-2 py-1 rounded-full ${localCache.isCacheStale ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
+                        {localCache.isCacheStale 
+                          ? `⏰ Cache (${localCache.cacheAge}min) - Pode estar desatualizado` 
+                          : `⚡ Cache (${localCache.cacheAge}min)`}
+                      </span>
+                    )}
+                    {isFetching && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 animate-pulse">
+                        🔄 Atualizando...
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Alertas de ciclo de vida - Posicionado no canto direito */}
