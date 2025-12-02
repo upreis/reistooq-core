@@ -137,19 +137,31 @@ export function useMLClaimsFromCache({
             amount_value: claim.total_amount || claim.refund_amount || claimData?.valor_reembolso || 0,
             amount_currency: claimData?.moeda_reembolso || 'BRL',
             
-            // Razões - dados diretos
-            reason_id: claimData?.motivo_id || claim.reason_id,
+            // ✅ TIPO DE RECLAMAÇÃO - campo 'type' para coluna
+            type: claimData?.tipo_claim || claimData?.tipo_devolucao || claimData?.claim_type || 'claim',
+            
+            // ✅ RAZÕES - dados diretos do claim_data
+            reason_id: claimData?.motivo_id || claimData?.reason_id || claim.reason_id,
             reason_name: claimData?.motivo_nome || claimData?.reason_name || '',
             reason_detail: claimData?.motivo_detalhe || claimData?.reason_detail || '',
             reason_category: claimData?.motivo_categoria || claimData?.reason_category || '',
             
-            // Resolução - dados diretos
+            // ✅ RESOLUÇÃO - dados diretos
             resolution_benefited: claimData?.resolucao_beneficiado || claimData?.resolution_benefited || '',
             resolution_reason: claimData?.resolucao_motivo || claimData?.resolution_reason || '',
             resolution_date: claimData?.data_fechamento_claim || claim.date_closed,
             
+            // ✅ TROCAS e MEDIAÇÃO - campos booleanos
+            tem_trocas: claimData?.eh_troca ?? false,
+            tem_mediacao: claimData?.em_mediacao ?? false,
+            eh_troca: claimData?.eh_troca ?? false,
+            em_mediacao: claimData?.em_mediacao ?? false,
+            
+            // ✅ STATUS DA VENDA
+            order_status: claimData?.status_pedido || claimData?.order_status || '',
+            
             // Recurso
-            resource: claimData?.tipo_devolucao || 'claim',
+            resource: claimData?.tipo_devolucao || claimData?.resource || 'claim',
             resource_id: String(claimData?.claim_id || claim.claim_id),
             
             // Comprador - dados diretos
@@ -171,7 +183,7 @@ export function useMLClaimsFromCache({
             shipping_id: claimData?.shipment_id,
             tracking_number: claimData?.codigo_rastreamento || '',
             
-            // ✅ EXTRA: campos que estavam faltando
+            // ✅ EXTRA: campos adicionais
             empresa: claimData?.account_name || '',
             tipo_claim: claimData?.tipo_claim || '',
             metodo_reembolso: claimData?.metodo_reembolso || '',
