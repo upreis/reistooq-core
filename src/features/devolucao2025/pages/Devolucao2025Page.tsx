@@ -341,16 +341,27 @@ export const Devolucao2025Page = () => {
 
   // Handler para aplicar filtros - força refetch com invalidação de cache
   const handleApplyFilters = useCallback(async () => {
-    console.log('🔄 Aplicando filtros e buscando dados (force refresh)...');
+    console.log('🔄 Aplicando filtros e buscando dados (force refresh)...', {
+      selectedAccounts: selectedAccounts.length,
+      appliedAccounts: appliedAccounts.length
+    });
     setIsManualSearching(true);
     
-    // Aplicar os filtros selecionados
+    // ✅ CORREÇÃO CRÍTICA: Aplicar filtros ANTES de invalidar cache
+    // Isso garante que próxima query use os filtros corretos
     setAppliedAccounts(selectedAccounts);
     
+    // ✅ Aguardar próximo tick para garantir que estado foi atualizado
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
     try {
-      // Invalidar AMBOS caches: React Query cache + Supabase cache
-      queryClient.invalidateQueries({ queryKey: ['ml-claims-cache'] });
-      await cacheQuery.refetch(); // Buscar dados atualizados
+      // Invalidar TODAS as queries de ml-claims-cache (força nova busca)
+      await queryClient.invalidateQueries({ 
+        queryKey: ['ml-claims-cache'],
+        refetchType: 'all' 
+      });
+      
+      console.log('✅ Cache invalidado, refetch automático disparado');
       toast.success('Dados atualizados com sucesso!');
     } catch (error) {
       console.error('❌ [BUSCA MANUAL] Erro ao buscar devoluções:', error);
@@ -358,7 +369,7 @@ export const Devolucao2025Page = () => {
     } finally {
       setIsManualSearching(false);
     }
-  }, [cacheQuery, selectedAccounts, queryClient]);
+  }, [selectedAccounts, appliedAccounts, queryClient]);
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
