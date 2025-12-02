@@ -97,20 +97,22 @@ export function useMLClaimsFromCache({
           const claimData = claim.claim_data as any;
           
           // ✅ ALIASES DE COMPATIBILIDADE: mapear campos do backend para campos esperados pelo frontend
-          // O backend usa nomes diferentes (ex: data_venda_original) do que as colunas esperam (order_date_created)
+          // Os dados de produto estão em pack_items[0] ou pack_data.items[0], não diretamente no claim_data
+          const packItem = claimData?.pack_items?.[0] || claimData?.pack_data?.items?.[0] || {};
+          
           const compatibilityFields = claimData ? {
             // Datas
             order_date_created: claimData.data_venda_original || claimData.order_date_created,
             
-            // Produto
-            order_item_quantity: claimData.quantidade || claimData.order_item_quantity,
-            order_item_seller_sku: claimData.sku || claimData.order_item_seller_sku,
-            order_item_title: claimData.produto_titulo || claimData.order_item_title,
-            order_item_unit_price: claimData.valor_original_produto || claimData.order_item_unit_price,
+            // ✅ PRODUTO - dados vêm de pack_items[0]
+            order_item_quantity: packItem.quantity || claimData.quantidade || claimData.order_item_quantity,
+            order_item_seller_sku: packItem.seller_sku || claimData.sku || claimData.order_item_seller_sku,
+            order_item_title: packItem.title || claimData.produto_titulo || claimData.order_item_title,
+            order_item_unit_price: packItem.unit_price || claimData.valor_original_produto || claimData.order_item_unit_price,
             
             // Financeiro
-            order_total: claimData.total || claimData.order_total || claimData.valor_original_produto,
-            amount_value: claimData.valor_retido || claimData.amount_value,
+            order_total: claimData.total || claimData.order_total || (packItem.unit_price && packItem.quantity ? packItem.unit_price * packItem.quantity : null),
+            amount_value: claimData.valor_retido || claimData.amount_value || claimData.refund_amount,
             amount_currency: claimData.moeda_reembolso || claimData.currency_id || 'BRL',
             
             // Razões
@@ -126,11 +128,16 @@ export function useMLClaimsFromCache({
             resource: claimData.tipo_claim || claimData.resource,
             resource_id: claimData.order_id || claimData.resource_id,
             
+            // Comprador
+            buyer_nickname: claimData.comprador_nickname || claimData.buyer_nickname,
+            buyer_name: claimData.comprador_nome_completo || claimData.buyer_name,
+            
             // Metadados adicionais
             site_id: claimData.marketplace_origem || 'MLB',
             tracking_number: claimData.codigo_rastreamento || claimData.tracking_number,
             order_status: claimData.status_pedido || claimData.order_status,
             type: claimData.tipo_claim || claimData.type,
+            account_name: claimData.account_name,
           } : {};
           
           return {
