@@ -88,9 +88,17 @@ export function useMLClaimsFromCache({
         .in('integration_account_id', integration_account_ids)
         .order('date_created', { ascending: false });
 
-      // Se cache válido encontrado, retornar imediatamente
-      if (!cacheError && cachedClaims && cachedClaims.length > 0) {
-        console.log(`✅ [CACHE HIT] ${cachedClaims.length} claims do cache (< 5min)`);
+      // ✅ VERIFICAR SE CACHE TEM DADOS ENRIQUECIDOS (reason_name, etc.)
+      // Se não tiver, forçar fallback para get-devolucoes-direct
+      const cacheHasEnrichedData = cachedClaims?.some(claim => {
+        const claimData = claim.claim_data as any;
+        // Verificar se tem pelo menos um campo de enriquecimento
+        return claimData?.reason_name || claimData?.reason_detail || claimData?.motivo_categoria;
+      });
+
+      // Se cache válido E TEM DADOS ENRIQUECIDOS, usar cache
+      if (!cacheError && cachedClaims && cachedClaims.length > 0 && cacheHasEnrichedData) {
+        console.log(`✅ [CACHE HIT] ${cachedClaims.length} claims do cache COM enriquecimento`);
         
         // ✅ Mapear dados completos incluindo claim_data enriquecido
         const devolucoes = cachedClaims.map(claim => {
@@ -192,11 +200,11 @@ export function useMLClaimsFromCache({
         };
       }
 
-      // ❌ CACHE MISS ou EXPIRADO
-      console.log('⚠️ [CACHE MISS] Cache vazio ou expirado, chamando API...');
+      // ❌ CACHE MISS ou SEM ENRIQUECIMENTO
+      console.log('⚠️ [CACHE MISS] Cache vazio, expirado ou SEM dados enriquecidos, chamando API para enriquecimento completo...');
 
-      // ✅ PASSO 2: FALLBACK para get-devolucoes-direct (API fresca)
-      console.log('📡 [API] Chamando get-devolucoes-direct...');
+      // ✅ PASSO 2: FALLBACK para get-devolucoes-direct (API fresca COM ENRIQUECIMENTO COMPLETO)
+      console.log('📡 [API] Chamando get-devolucoes-direct para dados enriquecidos (reason_name, reason_detail, etc.)...');
       
       const { data: apiData, error: apiError } = await supabase.functions.invoke(
         'get-devolucoes-direct',
