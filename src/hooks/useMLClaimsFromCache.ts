@@ -118,8 +118,9 @@ export function useMLClaimsFromCache({
             buyer_id: claim.buyer_id,
             buyer_nickname: claim.buyer_nickname,
             
-            // ✅ CRITICAL: claim_data com enriquecimento completo (65 colunas)
-            ...(claimData?.unified || {}),
+            // ✅ CRITICAL: spread claim_data DIRETAMENTE (não .unified)
+            // Os dados enriquecidos estão em claim_data raiz, não em claim_data.unified
+            ...(claimData || {}),
             
             // Metadata
             integration_account_id: claim.integration_account_id,
