@@ -52,7 +52,10 @@ export function ColumnManager({ manager, onColumnsChange }: ColumnManagerProps) 
     return groups;
   }, [filteredColumns]);
 
-  const visibleCount = state.visibleColumns.size;
+  // Contar apenas colunas visíveis que existem nas definições
+  const visibleCount = [...state.visibleColumns].filter(key => 
+    definitions.some(def => def.key === key)
+  ).length;
   const totalCount = definitions.length;
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
