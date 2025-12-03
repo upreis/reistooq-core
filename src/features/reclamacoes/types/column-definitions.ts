@@ -67,7 +67,7 @@ export interface UseReclamacoesColumnManagerReturn {
   profiles: ReclamacoesColumnProfile[];
 }
 
-// 📋 TODAS AS 36 COLUNAS DISPONÍVEIS
+// 📋 TODAS AS 32 COLUNAS DISPONÍVEIS
 export const RECLAMACOES_COLUMN_DEFINITIONS: ReclamacoesColumnDefinition[] = [
   // ✅ ESSENCIAIS
   {
@@ -436,7 +436,7 @@ export const RECLAMACOES_DEFAULT_PROFILES: ReclamacoesColumnProfile[] = [
   {
     id: 'completo',
     name: 'Completo',
-    description: 'Todas as 36 colunas visíveis',
+    description: 'Todas as 32 colunas visíveis',
     columns: RECLAMACOES_COLUMN_DEFINITIONS.map(col => col.key),
   },
   {
