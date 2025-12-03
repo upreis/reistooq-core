@@ -748,23 +748,6 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('reason_detail'))}</span>,
   },
   {
-    id: 'reason_category',
-    accessorKey: 'reason_category',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Categoria da Razão
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('reason_category'))}</span>,
-  },
-  {
     id: 'resource_id',
     accessorKey: 'resource_id',
     header: ({ column }) => {
@@ -884,24 +867,6 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{row.getValue('order_item_title') || '-'}</span>,
   },
   {
-    id: 'tem_trocas',
-    accessorKey: 'tem_trocas',
-    header: () => <span className="font-semibold text-sm">Trocas</span>,
-    cell: ({ row }) => {
-      const temTrocas = row.getValue('tem_trocas');
-      return temTrocas ? <Badge variant="outline">Sim</Badge> : <span className="text-muted-foreground text-xs">Não</span>;
-    },
-  },
-  {
-    id: 'tem_mediacao',
-    accessorKey: 'tem_mediacao',
-    header: () => <span className="font-semibold text-sm">Mediação</span>,
-    cell: ({ row }) => {
-      const temMediacao = row.getValue('tem_mediacao');
-      return temMediacao ? <Badge variant="destructive">Sim</Badge> : <span className="text-muted-foreground text-xs">Não</span>;
-    },
-  },
-  {
     id: 'order_id',
     accessorKey: 'order_id',
     header: ({ column }) => {
@@ -917,23 +882,6 @@ export const reclamacoesColumns = (
       );
     },
     cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('order_id') || '-'}</span>,
-  },
-  {
-    id: 'order_status',
-    accessorKey: 'order_status',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Status da Venda
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('order_status'))}</span>,
   },
   {
     id: 'tracking_number',
