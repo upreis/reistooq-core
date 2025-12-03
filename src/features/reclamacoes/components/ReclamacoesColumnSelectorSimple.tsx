@@ -95,12 +95,17 @@ export function ReclamacoesColumnSelectorSimple({
     onVisibleColumnsChange([]);
   };
 
+  // Contar apenas colunas visíveis que existem nas definições
+  const validVisibleCount = visibleColumns.filter(id => 
+    columns.some(col => col.id === id)
+  ).length;
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="h-10">
           <Settings2 className="h-4 w-4 mr-2" />
-          Colunas ({visibleColumns.length}/{columns.length})
+          Colunas ({validVisibleCount}/{columns.length})
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 max-h-[600px] overflow-y-auto">
