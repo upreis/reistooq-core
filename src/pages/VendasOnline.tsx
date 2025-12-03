@@ -25,7 +25,7 @@ import { useSidebarUI } from '@/context/SidebarUIContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Package, TrendingUp, Clock, CheckCircle, RefreshCw } from 'lucide-react';
+import { Package, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useVendaStorage } from '@/features/vendas-online/hooks/useVendaStorage';
 import type { StatusAnalise } from '@/features/vendas-online/types/venda-analise.types';
@@ -33,9 +33,7 @@ import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/
 import { differenceInBusinessDays, parseISO } from 'date-fns';
 import { VENDAS_ALL_COLUMNS, VENDAS_DEFAULT_VISIBLE_COLUMNS } from '@/features/vendas-online/config/vendas-columns-config';
 import { useVendasColumnManager } from '@/features/vendas-online/hooks/useVendasColumnManager'; // 🎯 FASE 3
-import { useVendasPolling } from '@/features/vendas-online/hooks/useVendasPolling'; // 🎯 FASE 4
 import { useVendasAggregator } from '@/features/vendas-online/hooks/useVendasAggregator'; // 🎯 FASE 4
-import { toast } from 'sonner'; // 🎯 FASE 4
 import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
 
 interface MLAccount {
@@ -103,17 +101,6 @@ export default function VendasOnline() {
     keys: visibleColumnKeys
   });
   
-  // 🎯 FASE 4: POLLING AUTOMÁTICO
-  const [pollingEnabled, setPollingEnabled] = useState(false);
-  const { forceRefresh, isPolling } = useVendasPolling({
-    enabled: pollingEnabled,
-    interval: 60000, // 1 minuto
-    onNewData: (count) => {
-      if (count > 0) {
-        toast.success(`${count} nova${count > 1 ? 's' : ''} venda${count > 1 ? 's' : ''} detectada${count > 1 ? 's' : ''}!`);
-      }
-    }
-  });
   
   // ✅ CONTROLE MANUAL DE BUSCA
   const [isManualSearching, setIsManualSearching] = useState(false);
@@ -379,11 +366,10 @@ export default function VendasOnline() {
         ativas: metrics.totalAtivas,
         historico: metrics.totalHistorico,
         valorTotal: `R$ ${metrics.valorTotal.toFixed(2)}`,
-        valorMedio: `R$ ${metrics.valorMedio.toFixed(2)}`,
-        polling: isPolling ? '🔄 Ativo' : '⏸️ Pausado'
+        valorMedio: `R$ ${metrics.valorMedio.toFixed(2)}`
       });
     }
-  }, [metrics, isPolling]);
+  }, [metrics]);
 
   return (
     <div className="w-full">
@@ -393,36 +379,10 @@ export default function VendasOnline() {
             <MLOrdersNav />
           </div>
           
-          {/* Header com controle de polling */}
-          <div className="px-4 md:px-6 py-3 mt-2 flex items-center justify-between">
+          {/* Header */}
+          <div className="px-4 md:px-6 py-3 mt-2">
             <h1 className="text-3xl font-bold">Vendas Online</h1>
-            
-            {/* 🎯 FASE 4: Controle de Polling */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant={pollingEnabled ? "default" : "outline"}
-                size="sm"
-                onClick={() => setPollingEnabled(!pollingEnabled)}
-                className="h-8"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isPolling ? 'animate-spin' : ''}`} />
-                {pollingEnabled ? 'Auto-Atualização Ativa' : 'Ativar Auto-Atualização'}
-              </Button>
-              
-              {!pollingEnabled && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={forceRefresh}
-                  className="h-8"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Atualizar Agora
-                </Button>
-              )}
-            </div>
           </div>
-          
           
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6 mt-2">
