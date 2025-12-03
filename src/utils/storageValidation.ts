@@ -14,6 +14,10 @@ interface FilterValidationSchema {
   contasML?: string[];
   statusPedido?: string[];
   situacoes?: string[];
+  periodo?: string; // 🔧 CORREÇÃO: Adicionar campo periodo
+  status?: string;  // 🔧 CORREÇÃO: Adicionar outros campos de filtros
+  type?: string;
+  stage?: string;
 }
 
 // F4.1: Validador de esquemas de dados
@@ -28,6 +32,37 @@ export class LocalStorageValidator {
     }
     
     const cleaned: FilterValidationSchema = {};
+    
+    // 🔧 CORREÇÃO CRÍTICA: Validar periodo (campo mais importante!)
+    if (data.periodo !== undefined) {
+      if (typeof data.periodo === 'string' && data.periodo.length <= 10) {
+        cleaned.periodo = data.periodo;
+        console.log('✅ [VALIDATOR] Período preservado:', data.periodo);
+      } else {
+        errors.push('Campo periodo inválido');
+      }
+    }
+    
+    // 🔧 CORREÇÃO: Validar status
+    if (data.status !== undefined) {
+      if (typeof data.status === 'string' && data.status.length <= 100) {
+        cleaned.status = data.status;
+      }
+    }
+    
+    // 🔧 CORREÇÃO: Validar type
+    if (data.type !== undefined) {
+      if (typeof data.type === 'string' && data.type.length <= 100) {
+        cleaned.type = data.type;
+      }
+    }
+    
+    // 🔧 CORREÇÃO: Validar stage
+    if (data.stage !== undefined) {
+      if (typeof data.stage === 'string' && data.stage.length <= 100) {
+        cleaned.stage = data.stage;
+      }
+    }
     
     // Validar search
     if (data.search !== undefined) {
