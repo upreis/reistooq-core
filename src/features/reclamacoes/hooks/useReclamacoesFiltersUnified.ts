@@ -97,21 +97,11 @@ export function useReclamacoesFiltersUnified() {
       }
     }
     
-    // 🚀 COMBO 2.1: Também verificar cache local de dados para período
-    const localCacheKey = 'RECLAMACOES_LOCAL_CACHE_V1';
-    if (!urlFilters.periodo && !cachedFilters.periodo) {
-      try {
-        const localCache = localStorage.getItem(localCacheKey);
-        if (localCache) {
-          const parsed = JSON.parse(localCache);
-          if (parsed.filters?.periodo) {
-            cachedFilters.periodo = parsed.filters.periodo;
-            console.log('📦 [LOCAL CACHE] Restaurando período:', cachedFilters.periodo);
-          }
-        }
-      } catch (e) {
-        console.warn('⚠️ Erro ao restaurar período do cache local:', e);
-      }
+    // ✅ FASE 1-2: Limpar cache antigo duplicado (uma única vez)
+    const OLD_CACHE_KEY = 'RECLAMACOES_LOCAL_CACHE_V1';
+    if (localStorage.getItem(OLD_CACHE_KEY)) {
+      localStorage.removeItem(OLD_CACHE_KEY);
+      console.log('🗑️ Cache antigo removido:', OLD_CACHE_KEY);
     }
     
     // 3. Merge: Defaults → Cache (só primeira vez) → URL (sempre tem prioridade)
