@@ -287,8 +287,9 @@ export default function VendasOnline() {
     return orders.map(venda => ({
       ...venda,
       status_analise_local: analiseStatus[venda.id.toString()] || 'pendente' as StatusAnalise,
-      // ✅ ADICIONAR account_name seguindo padrão /reclamacoes
-      account_name: accountsMap.get((venda as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
+      // ✅ CORREÇÃO: Priorizar account_name já existente nos dados (cache)
+      // Só fazer lookup no accountsMap se não existir
+      account_name: (venda as any).account_name || accountsMap.get((venda as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
     }));
   }, [orders, analiseStatus, accountsMap, filters.selectedAccounts]);
   
