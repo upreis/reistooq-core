@@ -28,6 +28,7 @@ import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnifie
 import { useDevolucoesColumnManager } from '../hooks/useDevolucoesColumnManager';
 import { useDevolucoesAggregator } from '../hooks/useDevolucoesAggregator';
 import { useMLClaimsFromCache } from '@/hooks/useMLClaimsFromCache';
+import { useDevolucoesLocalCache } from '../hooks/useDevolucoesLocalCache';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
@@ -54,6 +55,12 @@ export const Devolucao2025Page = () => {
   } = useDevolucoesFiltersUnified();
   
   const columnManager = useDevolucoesColumnManager();
+  
+  // 🚀 COMBO 2.1: Cache local para restauração instantânea
+  const localCache = useDevolucoesLocalCache();
+  
+  // 🚀 COMBO 2.1: Estado de busca controlado (NÃO busca automaticamente)
+  const [shouldFetch, setShouldFetch] = useState(false);
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -161,48 +168,83 @@ export const Devolucao2025Page = () => {
     }
   }, [selectedAccounts, appliedAccounts, accounts]);
 
-  // ✅ REMOVIDO: shouldFetch causava bloqueio de buscas
-  // React Query gerencia automaticamente baseado em enabled + queryKey changes
-
-  // 🚀 COMBO 2 - ÚNICA FONTE DE VERDADE
-  // ✅ CORREÇÃO AUDITORIA 2+3: useMLClaimsFromCache JÁ faz tudo (cache + API fallback + polling)
-  // Não precisamos de segundo useQuery - isso causava duplicação de chamadas
+  // 🚀 COMBO 2.1 - BUSCA MANUAL OBRIGATÓRIA
+  // enabled: false inicial → só busca quando shouldFetch = true (clique no botão)
   
-  // ✅ CORREÇÃO AUDITORIA 5: Usar appliedAccounts (sincronizado) ao invés de selectedAccounts (pode estar vazio no mount)
+  // ✅ CORREÇÃO AUDITORIA 5: Usar appliedAccounts (sincronizado) ao invés de selectedAccounts
   const accountIds = appliedAccounts.length > 0 
     ? appliedAccounts 
     : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
-  // ✅ CORREÇÃO AUDITORIA 6: Enabled sempre true se accounts disponível (evita race condition)
+  // 🚀 COMBO 2.1: enabled = shouldFetch (NÃO busca automaticamente)
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
     date_from: backendDateRange.from.toISOString(),
     date_to: backendDateRange.to.toISOString(),
-    enabled: accountIds.length > 0 || accounts.length > 0 // Fallback para accounts
+    enabled: shouldFetch && accountIds.length > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
-  // ✅ SIMPLIFICADO: useMLClaimsFromCache retorna TUDO (cache OU api via fallback interno)
-  const devolucoesCompletas = cacheQuery.data?.devolucoes || [];
-  const dataSource = cacheQuery.data?.source || 'loading';
-  const isLoading = cacheQuery.isLoading;
+  // 🚀 COMBO 2.1: Usar dados do localStorage OU da API (prioridade: localStorage)
+  const devolucoesCompletas = useMemo(() => {
+    // Se tem dados da API, usar eles
+    if (cacheQuery.data?.devolucoes?.length > 0) {
+      return cacheQuery.data.devolucoes;
+    }
+    // Se não buscou ainda mas tem cache local, usar cache local
+    if (!shouldFetch && localCache.hasCachedData && localCache.cachedData) {
+      console.log('⚡ [COMBO 2.1] Usando dados do localStorage:', localCache.cachedData.length);
+      return localCache.cachedData;
+    }
+    return [];
+  }, [cacheQuery.data?.devolucoes, shouldFetch, localCache.hasCachedData, localCache.cachedData]);
+
+  const dataSource = cacheQuery.data?.source || (localCache.hasCachedData ? 'localStorage' : 'loading');
+  const isLoading = shouldFetch && cacheQuery.isLoading;
   const isFetching = cacheQuery.isFetching;
   const error = cacheQuery.error;
   
   // Helper para identificar se está usando cache válido
   const useCacheData = dataSource === 'cache' && !cacheQuery.data?.cache_expired;
 
-  // 📊 Log detalhado da fonte de dados (COMBO 2)
+  // 🚀 COMBO 2.1: Salvar no localStorage quando busca retornar dados
   useEffect(() => {
+    if (cacheQuery.data?.devolucoes?.length > 0 && shouldFetch) {
+      localCache.saveToCache(
+        cacheQuery.data.devolucoes,
+        {
+          accounts: accountIds,
+          periodo,
+          dateFrom: backendDateRange.from.toISOString(),
+          dateTo: backendDateRange.to.toISOString()
+        },
+        cacheQuery.data.total_count
+      );
+    }
+  }, [cacheQuery.data?.devolucoes, shouldFetch, accountIds, periodo, backendDateRange]);
+
+  // 📊 Log detalhado da fonte de dados (COMBO 2.1)
+  useEffect(() => {
+    console.log('🚀 [COMBO 2.1] Estado atual:', {
+      shouldFetch,
+      hasCachedData: localCache.hasCachedData,
+      cacheAge: localCache.cacheAge ? `${localCache.cacheAge} min` : 'N/A',
+      devolucoesCount: devolucoesCompletas.length,
+      dataSource,
+      isLoading
+    });
+    
     if (!isLoading && devolucoesCompletas.length > 0) {
-      console.log('📊 [COMBO 2] Fonte única de verdade:', {
-        fonte: dataSource === 'cache' ? '✅ CACHE (ml_claims)' : '📡 API (get-devolucoes-direct)',
+      console.log('📊 [COMBO 2.1] Fonte de dados:', {
+        fonte: dataSource === 'localStorage' 
+          ? '⚡ LOCAL STORAGE (instantâneo)' 
+          : dataSource === 'cache' 
+            ? '✅ SUPABASE CACHE (ml_claims)' 
+            : '📡 API (get-devolucoes-direct)',
         total: devolucoesCompletas.length,
-        cache_last_synced: cacheQuery.data?.last_synced_at,
-        cache_expired: cacheQuery.data?.cache_expired,
-        performance: useCacheData ? '⚡ INSTANTÂNEO' : '🔄 NORMAL'
+        performance: dataSource === 'localStorage' ? '⚡ INSTANTÂNEO' : '🔄 NORMAL'
       });
     }
-  }, [isLoading, devolucoesCompletas.length, useCacheData, cacheQuery.data]);
+  }, [isLoading, devolucoesCompletas.length, dataSource, shouldFetch, localCache.hasCachedData, localCache.cacheAge]);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
@@ -341,15 +383,17 @@ export const Devolucao2025Page = () => {
 
   // Handler para aplicar filtros - força refetch com invalidação de cache
   const handleApplyFilters = useCallback(async () => {
-    console.log('🔄 Aplicando filtros e buscando dados (force refresh)...', {
+    console.log('🔄 [COMBO 2.1] Aplicando filtros e buscando dados...', {
       selectedAccounts: selectedAccounts.length,
       appliedAccounts: appliedAccounts.length
     });
     setIsManualSearching(true);
     
-    // ✅ CORREÇÃO CRÍTICA: Aplicar filtros ANTES de invalidar cache
-    // Isso garante que próxima query use os filtros corretos
+    // ✅ COMBO 2.1: Aplicar filtros ANTES de habilitar busca
     setAppliedAccounts(selectedAccounts);
+    
+    // 🚀 COMBO 2.1: Habilitar busca (enabled: true)
+    setShouldFetch(true);
     
     // ✅ Aguardar próximo tick para garantir que estado foi atualizado
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -361,8 +405,8 @@ export const Devolucao2025Page = () => {
         refetchType: 'all' 
       });
       
-      console.log('✅ Cache invalidado, refetch automático disparado');
-      toast.success('Dados atualizados com sucesso!');
+      console.log('✅ [COMBO 2.1] Busca disparada');
+      toast.success('Buscando dados...');
     } catch (error) {
       console.error('❌ [BUSCA MANUAL] Erro ao buscar devoluções:', error);
       toast.error('Erro ao buscar devoluções');
@@ -373,8 +417,8 @@ export const Devolucao2025Page = () => {
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
-    // ✅ CORREÇÃO AUDITORIA 7: Cancelar query com queryKey correta
     queryClient.cancelQueries({ queryKey: ['ml-claims-cache'] });
+    setShouldFetch(false); // 🚀 COMBO 2.1: Desabilitar busca
     setIsManualSearching(false);
     toast.info('Busca cancelada');
   }, [queryClient]);
