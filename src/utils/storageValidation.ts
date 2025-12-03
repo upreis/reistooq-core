@@ -163,6 +163,9 @@ export class LocalStorageValidator {
       date = value;
     } else if (typeof value === 'string') {
       date = new Date(value);
+    } else if (typeof value === 'number') {
+      // 🔧 CORREÇÃO: Aceitar timestamps numéricos (Date.now())
+      date = new Date(value);
     } else {
       return null;
     }
