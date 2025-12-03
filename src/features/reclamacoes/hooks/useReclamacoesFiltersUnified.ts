@@ -46,26 +46,31 @@ export function useReclamacoesFiltersUnified() {
     // 🔥 Marcar que estamos restaurando
     isRestoringFromUrl.current = true;
     
-    // 1. Parsear filtros da URL PRIMEIRO (prioridade absoluta)
+    // 1. Parsear filtros da URL PRIMEIRO
     const urlFilters: Partial<ReclamacoesFilters> = {};
     const hasUrlParams = searchParams.toString().length > 0;
     
-    // 🔧 CORREÇÃO: Verificar se período do cache é diferente do default
-    // Se sim, não capturar período da URL quando é o default (permitir cache prevalecer)
+    // 🔧 CORREÇÃO CRÍTICA: Verificar se cache tem período diferente do default
     const cachedPeriodo = persistentCache.persistedState?.filters?.periodo;
     const urlPeriodo = searchParams.get('periodo');
     
-    // Só usar período da URL se:
-    // 1. Não é o default, OU
-    // 2. Cache não tem período diferente do default
-    const shouldUseUrlPeriodo = urlPeriodo && (
-      urlPeriodo !== DEFAULT_FILTERS.periodo || 
-      !cachedPeriodo || 
-      cachedPeriodo === DEFAULT_FILTERS.periodo
-    );
+    // 🔧 CORREÇÃO: CACHE tem prioridade sobre URL quando:
+    // - Cache existe com período diferente do default
+    // - URL só tem o período default (não foi alterado pelo usuário)
+    const cacheHasCustomPeriodo = cachedPeriodo && cachedPeriodo !== DEFAULT_FILTERS.periodo;
+    const urlHasDefaultPeriodo = urlPeriodo === DEFAULT_FILTERS.periodo || !urlPeriodo;
+    
+    // Usar período da URL APENAS se:
+    // - URL tem período NÃO-default (usuário explicitamente selecionou via URL compartilhada)
+    // - OU cache não tem período customizado
+    const shouldUseUrlPeriodo = urlPeriodo && !urlHasDefaultPeriodo;
     
     if (shouldUseUrlPeriodo) {
       urlFilters.periodo = urlPeriodo;
+      console.log('🔗 [URL] Usando período da URL (não-default):', urlPeriodo);
+    } else if (cacheHasCustomPeriodo) {
+      // Cache tem período customizado e URL só tem default - NÃO capturar da URL
+      console.log('📦 [CACHE] Ignorando período default da URL, cache tem:', cachedPeriodo);
     }
     
     const status = searchParams.get('status');
@@ -165,11 +170,11 @@ export function useReclamacoesFiltersUnified() {
   }, []); // Array vazio = só roda no mount/unmount
 
   // 🚀 COMBO 2.1: Sincronizar com URL APENAS após inicialização completa
-  // Isso evita que DEFAULT_FILTERS sobrescrevam a URL antes da restauração do cache
-  const filtersForSync = isInitialized ? filters : DEFAULT_FILTERS;
+  // 🔧 CORREÇÃO CRÍTICA: Passar isInitialized para bloquear sincronização até cache restaurar
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
-    filtersForSync,
-    () => {} // Não fazer nada quando URL mudar - restauração já foi feita acima
+    filters,
+    () => {}, // Não fazer nada quando URL mudar - restauração já foi feita acima
+    isInitialized // 🔧 CORREÇÃO: Só sincronizar após cache ser restaurado
   );
 
   // 🔥 CORREÇÃO: Salvar filtros automaticamente no cache quando mudarem (com debounce)
