@@ -243,6 +243,9 @@ export const Devolucao2025Page = () => {
 
   // 🚀 COMBO 2.1 CORRIGIDO: Salvar no localStorage SEMPRE que tiver dados novos
   // ✅ ERRO 1 CORRIGIDO: Removido condição shouldFetch - salva sempre que Supabase retorna dados
+  // ✅ AUDITORIA: Usar saveToCache diretamente (memoizado) para evitar loop infinito
+  const { saveToCache } = localCache;
+  
   useEffect(() => {
     const devolucoes = cacheQuery.data?.devolucoes;
     const totalCount = cacheQuery.data?.total_count || 0;
@@ -251,7 +254,7 @@ export const Devolucao2025Page = () => {
     if (devolucoes && devolucoes.length > 0) {
       console.log('💾 [COMBO 2.1] Salvando dados no localStorage:', devolucoes.length);
       
-      localCache.saveToCache(
+      saveToCache(
         devolucoes,
         {
           accounts: accountIds,
@@ -262,7 +265,7 @@ export const Devolucao2025Page = () => {
         totalCount
       );
     }
-  }, [cacheQuery.data, accountIds, periodo, backendDateRange, localCache]);
+  }, [cacheQuery.data, accountIds, periodo, backendDateRange, saveToCache]);
 
   // 📊 Log detalhado da fonte de dados (COMBO 2.1)
   useEffect(() => {
