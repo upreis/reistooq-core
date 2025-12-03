@@ -1,7 +1,7 @@
 /**
  * 🗄️ DEVOLUÇÕES STORE - Zustand
  * Store único para gerenciar dados de devoluções com restauração instantânea
- * Padrão idêntico ao vendasStore.ts de /vendas-online
+ * ✅ COM PERSISTÊNCIA AUTOMÁTICA no localStorage
  */
 
 import { create } from 'zustand';
@@ -36,11 +36,52 @@ interface DevolucoesState {
   hasDevolucoes: () => boolean;
 }
 
+const STORAGE_KEY = 'devolucoes-store';
+
+// ✅ Carregar estado do localStorage (igual reclamacoesStore)
+const loadPersistedState = (): { devolucoes: DevolucaoData[], total: number, dataSource: 'localStorage' | 'empty' } => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Validar TTL (30 minutos)
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+        console.log('📦 [DEVOLUCOES-STORE] Restaurando estado do localStorage:', {
+          devolucoes: parsed.devolucoes?.length || 0
+        });
+        return {
+          devolucoes: parsed.devolucoes || [],
+          total: parsed.devolucoes?.length || 0,
+          dataSource: 'localStorage'
+        };
+      }
+    }
+  } catch (error) {
+    console.error('[DEVOLUCOES-STORE] Erro ao carregar estado:', error);
+  }
+  return { devolucoes: [], total: 0, dataSource: 'empty' };
+};
+
+// ✅ Salvar estado no localStorage
+const persistState = (devolucoes: DevolucaoData[]) => {
+  try {
+    const toSave = {
+      devolucoes,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (error) {
+    console.error('[DEVOLUCOES-STORE] Erro ao salvar estado:', error);
+  }
+};
+
+const persistedState = loadPersistedState();
+
 export const useDevolucoesStore = create<DevolucoesState>((set, get) => ({
-  // Initial state
-  devolucoes: [],
-  total: 0,
-  dataSource: 'empty',
+  // Initial state (com hydration do localStorage)
+  devolucoes: persistedState.devolucoes,
+  total: persistedState.total,
+  dataSource: persistedState.dataSource,
   lastUpdatedAt: null,
   isLoading: false,
   isFetching: false,
@@ -57,6 +98,8 @@ export const useDevolucoesStore = create<DevolucoesState>((set, get) => ({
       isLoading: false,
       error: null
     });
+    // ✅ Persistir automaticamente
+    persistState(devolucoes);
   },
   
   clearDevolucoes: () => set({ 

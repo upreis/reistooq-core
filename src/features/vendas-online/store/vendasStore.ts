@@ -1,6 +1,7 @@
 /**
  * 🗄️ VENDAS STORE - Zustand
- * Store único para gerenciar todo o estado de Vendas Online
+ * Store único para gerenciar todo o estado de Vendas Canceladas
+ * ✅ COM PERSISTÊNCIA AUTOMÁTICA no localStorage
  */
 
 import { create } from 'zustand';
@@ -52,6 +53,8 @@ interface VendasState {
   getShippingById: (shippingId: number) => MLShipping | undefined;
 }
 
+const STORAGE_KEY = 'vendas-canceladas-store';
+
 const initialFilters: VendasFilters = {
   search: '',
   status: [],
@@ -69,9 +72,47 @@ const initialPagination: VendasPagination = {
   total: 0
 };
 
+// ✅ Carregar estado do localStorage (igual reclamacoesStore)
+const loadPersistedState = (): { orders: MLOrder[], pagination: VendasPagination } => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Validar TTL (30 minutos)
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+        console.log('📦 [VENDAS-STORE] Restaurando estado do localStorage:', {
+          orders: parsed.orders?.length || 0
+        });
+        return {
+          orders: parsed.orders || [],
+          pagination: { ...initialPagination, total: parsed.orders?.length || 0 }
+        };
+      }
+    }
+  } catch (error) {
+    console.error('[VENDAS-STORE] Erro ao carregar estado:', error);
+  }
+  return { orders: [], pagination: initialPagination };
+};
+
+// ✅ Salvar estado no localStorage
+const persistState = (orders: MLOrder[]) => {
+  try {
+    const toSave = {
+      orders,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (error) {
+    console.error('[VENDAS-STORE] Erro ao salvar estado:', error);
+  }
+};
+
+const persistedState = loadPersistedState();
+
 export const useVendasStore = create<VendasState>((set, get) => ({
-  // Initial state
-  orders: [],
+  // Initial state (com hydration do localStorage)
+  orders: persistedState.orders,
   packs: {},
   shippings: {},
   anotacoes: (() => {
@@ -83,16 +124,20 @@ export const useVendasStore = create<VendasState>((set, get) => ({
     }
   })(),
   filters: initialFilters,
-  pagination: initialPagination,
+  pagination: persistedState.pagination,
   isLoading: false,
   isLoadingMore: false,
   error: null,
   
   // Actions
-  setOrders: (orders, total) => set({ 
-    orders, 
-    pagination: { ...get().pagination, total } 
-  }),
+  setOrders: (orders, total) => {
+    set({ 
+      orders, 
+      pagination: { ...get().pagination, total } 
+    });
+    // ✅ Persistir automaticamente
+    persistState(orders);
+  },
   
   setPacks: (packs) => set({ packs }),
   
