@@ -15,6 +15,10 @@ interface ContributionDay {
   }>;
 }
 
+/**
+ * Hook para buscar dados de devoluções do calendário
+ * ✅ COMBO 2.1: Lê de ml_claims (mesma fonte que /devolucoesdevenda)
+ */
 export const useDevolucaoCalendarData = () => {
   const [data, setData] = useState<ContributionDay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,82 +30,94 @@ export const useDevolucaoCalendarData = () => {
     setError(null);
     
     try {
-      // Buscar últimos 60 dias
+      // Buscar últimos 60 dias de ml_claims (devoluções/claims)
       const sixtyDaysAgo = subDays(new Date(), 60).toISOString();
       
-      const { data: devolucoes, error: fetchError } = await supabase
-        .from('devolucoes_avancadas')
-        .select('*')
-        .gte('data_criacao', sixtyDaysAgo)
-        .order('data_criacao', { ascending: false });
+      // ✅ COMBO 2.1: Busca de ml_claims (fonte única de dados do CRON)
+      const { data: claims, error: fetchError } = await supabase
+        .from('ml_claims')
+        .select('claim_id, order_id, claim_type, status, date_created, claim_data, last_synced_at')
+        .gte('date_created', sixtyDaysAgo)
+        .order('date_created', { ascending: false });
 
       if (fetchError) {
         throw fetchError;
       }
 
-      if (!devolucoes || devolucoes.length === 0) {
-        console.log('📊 Sem devoluções encontradas (últimos 60 dias)');
+      if (!claims || claims.length === 0) {
+        console.log('📊 Sem devoluções encontradas em ml_claims (últimos 60 dias)');
         setData([]);
         setLoading(false);
         return;
       }
 
-      console.log('📊 🔄 Carregando dados de devoluções para calendário (REALTIME):', {
-        totalDevolucoes: devolucoes.length,
+      console.log('📊 🔄 Carregando dados de devoluções do ml_claims para calendário (COMBO 2.1):', {
+        totalClaims: claims.length,
         periodo: '60 dias'
       });
 
-      // Agrupar devoluções por data (chegada e análise)
-      const groupedByDate = devolucoes.reduce((acc: Record<string, ContributionDay>, devolucao: any) => {
-        // Processar data de chegada (delivery)
-        if (devolucao.data_chegada_produto) {
-          const dateStr = format(parseISO(devolucao.data_chegada_produto), 'yyyy-MM-dd');
-          
-          if (!acc[dateStr]) {
-            acc[dateStr] = {
-              date: dateStr,
-              count: 0,
-              returns: []
-            };
+      // Agrupar devoluções por data
+      const groupedByDate = claims.reduce((acc: Record<string, ContributionDay>, claim: any) => {
+        const claimData = claim.claim_data || {};
+        
+        // Processar data de criação (delivery - quando foi criada a devolução)
+        if (claim.date_created) {
+          try {
+            const dateStr = format(parseISO(claim.date_created), 'yyyy-MM-dd');
+            
+            if (!acc[dateStr]) {
+              acc[dateStr] = {
+                date: dateStr,
+                count: 0,
+                returns: []
+              };
+            }
+            
+            acc[dateStr].count += 1;
+            acc[dateStr].returns!.push({
+              dateType: 'delivery',
+              order_id: claim.order_id || claimData.resource_id || claim.claim_id,
+              status_devolucao: claim.status || claimData.status,
+              produto_titulo: claimData.items?.[0]?.title || claimData.product_info?.title || 'Produto',
+              sku: claimData.items?.[0]?.seller_sku || ''
+            });
+          } catch (e) {
+            // Ignorar data inválida
           }
-          
-          acc[dateStr].count += 1;
-          acc[dateStr].returns!.push({
-            dateType: 'delivery',
-            order_id: devolucao.order_id,
-            status_devolucao: devolucao.status_devolucao,
-            produto_titulo: devolucao.produto_titulo,
-            sku: devolucao.sku
-          });
         }
         
-        // Processar data de análise/fechamento (review)
-        if (devolucao.data_fechamento_devolucao) {
-          const dateStr = format(parseISO(devolucao.data_fechamento_devolucao), 'yyyy-MM-dd');
-          
-          if (!acc[dateStr]) {
-            acc[dateStr] = {
-              date: dateStr,
-              count: 0,
-              returns: []
-            };
+        // Processar data de fechamento/resolução (review)
+        const closedDate = claimData.date_closed || claimData.resolution?.date_created;
+        if (closedDate && claim.status === 'closed') {
+          try {
+            const dateStr = format(parseISO(closedDate), 'yyyy-MM-dd');
+            
+            if (!acc[dateStr]) {
+              acc[dateStr] = {
+                date: dateStr,
+                count: 0,
+                returns: []
+              };
+            }
+            
+            acc[dateStr].count += 1;
+            acc[dateStr].returns!.push({
+              dateType: 'review',
+              order_id: claim.order_id || claimData.resource_id || claim.claim_id,
+              status_devolucao: claim.status || claimData.status,
+              produto_titulo: claimData.items?.[0]?.title || claimData.product_info?.title || 'Produto',
+              sku: claimData.items?.[0]?.seller_sku || ''
+            });
+          } catch (e) {
+            // Ignorar data inválida
           }
-          
-          acc[dateStr].count += 1;
-          acc[dateStr].returns!.push({
-            dateType: 'review',
-            order_id: devolucao.order_id,
-            status_devolucao: devolucao.status_devolucao,
-            produto_titulo: devolucao.produto_titulo,
-            sku: devolucao.sku
-          });
         }
         
         return acc;
       }, {});
 
       const finalData = Object.values(groupedByDate) as ContributionDay[];
-      console.log('✅ Dados do calendário de devoluções processados:', {
+      console.log('✅ Dados do calendário de devoluções processados (ml_claims):', {
         total: finalData.length,
         entregas: finalData.filter((d: ContributionDay) => d.returns?.some(r => r.dateType === 'delivery')).length,
         revisoes: finalData.filter((d: ContributionDay) => d.returns?.some(r => r.dateType === 'review')).length
@@ -121,25 +137,25 @@ export const useDevolucaoCalendarData = () => {
     fetchData();
 
     // Configurar Supabase Realtime para atualizações automáticas
-    console.log('🔄 Ativando Realtime para calendário de devoluções...');
+    console.log('🔄 Ativando Realtime para calendário de devoluções (ml_claims)...');
     
     const channel = supabase
-      .channel('devolucoes-calendar-realtime')
+      .channel('ml-claims-calendar-realtime')
       .on(
         'postgres_changes',
         {
           event: '*', // INSERT, UPDATE, DELETE
           schema: 'public',
-          table: 'devolucoes_avancadas'
+          table: 'ml_claims'
         },
         (payload) => {
-          console.log('🔄 Mudança detectada em devoluções:', payload.eventType);
+          console.log('🔄 Mudança detectada em ml_claims:', payload.eventType);
           fetchData(); // Recarregar dados automaticamente
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Realtime conectado para calendário de devoluções');
+          console.log('✅ Realtime conectado para calendário de devoluções (ml_claims)');
         }
       });
 
