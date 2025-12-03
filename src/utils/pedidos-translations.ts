@@ -83,6 +83,12 @@ export const translateShippingSubstatus = (substatus: string): string => {
     'at_warehouse': 'No Armazém',
     'at warehouse': 'No Armazém',
     'warehouse': 'Armazém',
+    'ready_to_pack': 'Pronto para Embalar',
+    'ready to pack': 'Pronto para Embalar',
+    'waiting_for_confirmation': 'Aguardando Confirmação',
+    'waiting for confirmation': 'Aguardando Confirmação',
+    'in_packing_list': 'Na Lista de Embalagem',
+    'in packing list': 'Na Lista de Embalagem',
     
     // Adicionando mais status específicos do ML
     'handling': 'Em Processamento',
