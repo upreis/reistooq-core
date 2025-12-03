@@ -90,7 +90,8 @@ function encodeFiltersToUrl(filters: ReclamacoesFilters): URLSearchParams {
  */
 export function useReclamacoesFiltersSync(
   filters: ReclamacoesFilters,
-  onFiltersChange: (newFilters: Partial<ReclamacoesFilters>) => void
+  onFiltersChange: (newFilters: Partial<ReclamacoesFilters>) => void,
+  isInitialized: boolean = false // 🔧 CORREÇÃO: Só sincronizar após inicialização
 ) {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -98,7 +99,14 @@ export function useReclamacoesFiltersSync(
   // Agora isso é feito no useReclamacoesFiltersUnified com merge correto Cache + URL
 
   // Atualizar URL quando filtros mudarem (debounced)
+  // 🔧 CORREÇÃO CRÍTICA: Só sincronizar APÓS cache ser restaurado
   useEffect(() => {
+    // 🔧 CORREÇÃO: Não atualizar URL até inicialização completa
+    if (!isInitialized) {
+      console.log('⏭️ [URL] Aguardando inicialização antes de sincronizar URL');
+      return;
+    }
+
     const timer = setTimeout(() => {
       const newParams = encodeFiltersToUrl(filters);
       const currentParams = searchParams.toString();
@@ -109,10 +117,10 @@ export function useReclamacoesFiltersSync(
         console.log('🔗 Atualizando URL com filtros:', filters);
         setSearchParams(newParams, { replace: true });
       }
-    }, 100); // 🚀 COMBO 2.1: Reduzido para 100ms para garantir persistência
+    }, 300); // 🔧 CORREÇÃO: Aumentado para 300ms para garantir que cache restaure primeiro
 
     return () => clearTimeout(timer);
-  }, [filters, setSearchParams]);
+  }, [filters, setSearchParams, isInitialized]);
 
   return {
     parseFiltersFromUrl,
