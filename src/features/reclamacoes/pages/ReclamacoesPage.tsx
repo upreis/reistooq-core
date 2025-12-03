@@ -238,6 +238,11 @@ export function ReclamacoesPage() {
   useEffect(() => {
     if (cacheResponse?.devolucoes?.length && shouldFetch) {
       console.log('💾 [RECLAMACOES] Salvando em persistentCache:', cacheResponse.devolucoes.length);
+      
+      // ✅ AUDITORIA: Atualizar estado local para consistência
+      setReclamacoesCached(cacheResponse.devolucoes);
+      setTotalCached(cacheResponse.devolucoes.length);
+      
       persistentCache.saveDataCache(
         cacheResponse.devolucoes,
         selectedAccountIds || [],
