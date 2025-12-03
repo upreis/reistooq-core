@@ -180,22 +180,25 @@ export function ReclamacoesPage() {
   });
 
   // ✅ OPÇÃO A: Restauração de DADOS SEMPRE ao montar (sem bloqueador ref)
+  // Usar inicialização SÍNCRONA via lazy initializer do useState seria ideal,
+  // mas persistentCache não está disponível no primeiro render.
+  // Solução: garantir que effect rode mesmo se isStateLoaded já era true
+  const cachedReclamacoes = persistentCache.persistedState?.reclamacoes;
+  
   useEffect(() => {
     if (!persistentCache.isStateLoaded) return;
+    if (!cachedReclamacoes?.length) return;
+    if (reclamacoesCached.length > 0) return; // Já tem dados, não substituir
     
-    const cached = persistentCache.persistedState;
-    if (cached?.reclamacoes?.length > 0 && reclamacoesCached.length === 0) {
-      console.log('📦 [RECLAMACOES] Restaurando DADOS do cache:', {
-        reclamacoes: cached.reclamacoes.length,
-        contas: cached.selectedAccounts?.length,
-        periodo: cached.filters?.periodo
-      });
-      
-      // ✅ Popular estado com dados do cache
-      setReclamacoesCached(cached.reclamacoes);
-      setTotalCached(cached.reclamacoes.length);
-    }
-  }, [persistentCache.isStateLoaded]);
+    console.log('📦 [RECLAMACOES] Restaurando DADOS do cache:', {
+      reclamacoes: cachedReclamacoes.length,
+      contas: persistentCache.persistedState?.selectedAccounts?.length,
+      periodo: persistentCache.persistedState?.filters?.periodo
+    });
+    
+    setReclamacoesCached(cachedReclamacoes);
+    setTotalCached(cachedReclamacoes.length);
+  }, [persistentCache.isStateLoaded, cachedReclamacoes, reclamacoesCached.length]);
 
   // ✅ ERRO 3 CORRIGIDO: Determinar fonte usando estado local (igual /vendas-online)
   const hasCachedData = reclamacoesCached.length > 0;
