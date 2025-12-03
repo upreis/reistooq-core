@@ -1,13 +1,13 @@
 /**
  * 🗄️ HOOK PARA STORAGE DE STATUS DE ANÁLISE E ANOTAÇÕES
- * Armazena dados localmente no navegador do usuário para vendas online
+ * Armazena dados localmente no navegador do usuário para vendas canceladas
  */
 
 import { useState, useEffect } from 'react';
 import type { StatusAnalise } from '../types/venda-analise.types';
 
-const STORAGE_KEY_STATUS = 'vendas_online_analise_status';
-const STORAGE_KEY_ANOTACOES = 'vendas_online_anotacoes';
+const STORAGE_KEY_STATUS = 'vendas_canceladas_analise_status';
+const STORAGE_KEY_ANOTACOES = 'vendas_canceladas_anotacoes';
 
 export const useVendaStorage = () => {
   const [analiseStatus, setAnaliseStatusState] = useState<Record<string, StatusAnalise>>({});

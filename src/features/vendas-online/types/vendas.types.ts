@@ -1,5 +1,5 @@
 /**
- * 🏷️ TYPES - VENDAS ONLINE
+ * 🏷️ TYPES - VENDAS CANCELADAS
  * Baseado nas APIs oficiais do Mercado Livre - TODAS AS PROPRIEDADES DISPONÍVEIS
  */
 

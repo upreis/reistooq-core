@@ -142,7 +142,7 @@ export default function Header() {
     
     // Pedidos e Vendas
     if (path === '/pedidos') return { icon: pedidosIcon, label: 'Vendas', isImage: true };
-    if (path.startsWith('/vendas-online')) return { icon: vendasOnlineIcon, label: 'Vendas Online', isImage: true };
+    if (path.startsWith('/vendas-canceladas')) return { icon: vendasOnlineIcon, label: 'Vendas Canceladas', isImage: true };
     
     if (path.startsWith('/devolucoesdevenda')) return { icon: devolucoesdevendaIcon, label: 'Devoluções de Venda', isImage: true };
     if (path.startsWith('/reclamacoes')) return { icon: reclamacoesIcon, label: 'Reclamações', isImage: true };
@@ -225,7 +225,7 @@ export default function Header() {
 
         {/* Navigation - Centered */}
         <div className="flex-1 flex justify-center">
-          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-online' || location.pathname === '/devolucoesdevenda') && <OMSNavLimelight />}
+          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-canceladas' || location.pathname === '/devolucoesdevenda') && <OMSNavLimelight />}
           {location.pathname.startsWith('/dashboardinicial') && <DashboardInicialNav />}
           {location.pathname.startsWith('/estoque') && <EstoqueNav />}
           {location.pathname.startsWith('/compras') && <ComprasNavLimelight />}

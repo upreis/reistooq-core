@@ -1,6 +1,6 @@
 /**
  * 🔄 PAGINATION CONTROLS
- * Controles de paginação para Vendas Online
+ * Controles de paginação para Vendas Canceladas
  */
 
 import { Button } from '@/components/ui/button';

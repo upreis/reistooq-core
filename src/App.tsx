@@ -145,8 +145,8 @@ function App() {
                     <Route path="scanner" element={<Scanner />} />
                     <Route path="historico" element={<Historico />} />
                     
-                    {/* Vendas */}
-                    <Route path="vendas-online" element={<VendasOnline />} />
+                    {/* Vendas Canceladas */}
+                    <Route path="vendas-canceladas" element={<VendasOnline />} />
                     
                     {/* Devoluções */}
                     <Route path="devolucoesdevenda" element={<DevolucoesDeVenda />} />

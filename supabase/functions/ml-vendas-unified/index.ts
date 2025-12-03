@@ -1,6 +1,6 @@
 /**
  * 🚀 ML VENDAS UNIFIED
- * Edge Function unificada para Vendas Online do Mercado Livre
+ * Edge Function unificada para Vendas Canceladas do Mercado Livre
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';

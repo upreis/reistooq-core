@@ -1,6 +1,6 @@
 /**
  * 🔍 VENDAS FILTERS BAR
- * Barra de filtros para Vendas Online
+ * Barra de filtros para Vendas Canceladas
  */
 
 import { Search, Filter, X } from 'lucide-react';

@@ -1,5 +1,5 @@
 /**
- * 📦 VENDAS ONLINE - Página Principal
+ * 📦 VENDAS CANCELADAS - Página Principal
  * 🎯 EVOLUÍDA: Fases 1-4 completas
  * 
  * FASE 1: Cache Validation e Versionamento ✅
@@ -7,7 +7,7 @@
  * FASE 3: Advanced Column Management ✅
  * FASE 4: Analytics & Polling ✅
  * 
- * Gerenciamento completo de vendas do Mercado Livre
+ * Gerenciamento completo de vendas canceladas do Mercado Livre
  */
 
 import { useState, useMemo, useEffect } from 'react';

@@ -1,5 +1,5 @@
 /**
- * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS - VENDAS ONLINE
+ * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS - VENDAS CANCELADAS
  * FASE 2.2: Usando utilities compartilhadas de @/core/filters
  */
 

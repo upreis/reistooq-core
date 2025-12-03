@@ -1,5 +1,5 @@
 /**
- * 📊 VENDAS ONLINE TABLE
+ * 📊 VENDAS CANCELADAS TABLE
  * Container para a tabela de vendas com filtros e ações
  */
 

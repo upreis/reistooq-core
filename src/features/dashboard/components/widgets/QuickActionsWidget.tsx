@@ -29,9 +29,9 @@ const DEFAULT_SHORTCUTS: Service[] = [
     gradient: 'bg-gradient-to-br from-amber-500 to-orange-600'
   },
   {
-    name: 'Vendas Online',
+    name: 'Vendas Canceladas',
     imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
-    href: '/vendas-online',
+    href: '/vendas-canceladas',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
   },
   {
