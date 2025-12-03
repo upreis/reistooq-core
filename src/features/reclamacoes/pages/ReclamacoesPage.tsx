@@ -190,26 +190,21 @@ export function ReclamacoesPage() {
 
   // ✅ OPÇÃO B: Zustand Store restaura automaticamente do localStorage
   // O store já inicializa com dados do localStorage (loadPersistedState)
-  // Não precisa de useEffect para restauração manual
-  
-  useEffect(() => {
-    // Log para debug - store já restaurou automaticamente
-    if (reclamacoesCached.length > 0) {
-      console.log('📦 [RECLAMACOES] Store já restaurou dados:', reclamacoesCached.length);
-    }
-  }, []);
 
-  // ✅ ERRO 3 CORRIGIDO: Determinar fonte usando estado local (igual /vendas-online)
+  // ✅ Determinar fonte usando estado do store (igual /vendas-online)
   const hasCachedData = reclamacoesCached.length > 0;
   
   const dataSource = useMemo<'api' | 'cache' | 'none'>(() => {
-    if (cacheResponse?.devolucoes?.length) return 'api';
+    if (cacheResponse?.devolucoes?.length) {
+      setDataSource('api'); // Sincronizar com store
+      return 'api';
+    }
     if (!shouldFetch && hasCachedData) {
       console.log('⚡ [RECLAMACOES] Usando dados restaurados (instantâneo)');
       return 'cache';
     }
     return 'none';
-  }, [cacheResponse?.devolucoes, hasCachedData, shouldFetch]);
+  }, [cacheResponse?.devolucoes, hasCachedData, shouldFetch, setDataSource]);
 
   // ✅ ERRO 3 CORRIGIDO: Usar estado local restaurado (igual /vendas-online)
   const allReclamacoes = useMemo(() => {
@@ -231,23 +226,15 @@ export function ReclamacoesPage() {
   }, [dataSource, cacheResponse?.total_count, totalCached]);
 
   // ✅ OPÇÃO B: Salvar no Zustand Store (persistência automática)
+  // Store já salva automaticamente em localStorage, não precisamos do persistentCache
   useEffect(() => {
     if (cacheResponse?.devolucoes?.length && shouldFetch) {
       console.log('💾 [RECLAMACOES] Salvando no Store:', cacheResponse.devolucoes.length);
       
-      // ✅ Store persiste automaticamente no localStorage
+      // ✅ Store persiste automaticamente no localStorage (única fonte)
       setReclamacoesCached(cacheResponse.devolucoes);
-      
-      persistentCache.saveDataCache(
-        cacheResponse.devolucoes,
-        selectedAccountIds || [],
-        { periodo: unifiedFilters.periodo, status: unifiedFilters.status },
-        currentPage,
-        itemsPerPage,
-        columnManager.visibleColumnKeys
-      );
     }
-  }, [cacheResponse?.devolucoes, shouldFetch, selectedAccountIds, unifiedFilters.periodo, currentPage, itemsPerPage]);
+  }, [cacheResponse?.devolucoes, shouldFetch, setReclamacoesCached]);
 
   // 🚀 COMBO 2.1: Buscar reclamações (MANUAL - apenas ao clicar)
   const handleBuscarReclamacoes = async () => {

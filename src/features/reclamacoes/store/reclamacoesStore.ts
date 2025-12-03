@@ -5,7 +5,10 @@
  */
 
 import { create } from 'zustand';
-import { FullReclamacao } from '@/lib/validation';
+
+// ✅ CORREÇÃO: Usar any[] pois dados da API ML têm estrutura dinâmica
+// Os dados vêm do useMLClaimsFromCache que retorna any[]
+type ReclamacaoData = any;
 
 interface ReclamacoesFilters {
   search: string;
@@ -24,8 +27,8 @@ interface ReclamacoesPagination {
 }
 
 interface ReclamacoesState {
-  // Data
-  reclamacoes: FullReclamacao[];
+  // Data - usando any[] pois API ML retorna estrutura dinâmica
+  reclamacoes: ReclamacaoData[];
   
   // 📝 Anotações locais
   anotacoes: Record<string, string>;
@@ -50,8 +53,8 @@ interface ReclamacoesState {
   error: string | null;
   
   // Actions
-  setReclamacoes: (reclamacoes: FullReclamacao[], total?: number) => void;
-  appendReclamacoes: (reclamacoes: FullReclamacao[]) => void;
+  setReclamacoes: (reclamacoes: ReclamacaoData[], total?: number) => void;
+  appendReclamacoes: (reclamacoes: ReclamacaoData[]) => void;
   clearReclamacoes: () => void;
   
   // 📝 Anotações
@@ -75,7 +78,7 @@ interface ReclamacoesState {
   setDataSource: (source: 'cache' | 'api' | null) => void;
   
   // Computed
-  getReclamacaoById: (reclamacaoId: string) => FullReclamacao | undefined;
+  getReclamacaoById: (reclamacaoId: string) => ReclamacaoData | undefined;
   
   // Hydration
   hydrate: (data: Partial<ReclamacoesState>) => void;
