@@ -193,8 +193,16 @@ export const Devolucao2025Page = () => {
   const shouldQueryCache = shouldFetch || (!localCache.hasCachedData && !hasDevolucoes() && accountIds.length > 0);
   
   // ✅ ERRO 2 CORRIGIDO: Restauração DIRETA no store no mount (padrão /vendas-online)
+  // ✅ AUDITORIA: Verifica se store JÁ tem dados antes de restaurar (evita sobrescrever dados mais recentes)
   useEffect(() => {
     if (hasRestoredFromCache.current) return;
+    
+    // ✅ Se store já tem dados (persist entre navegações), não sobrescrever com localStorage
+    if (hasDevolucoes()) {
+      console.log('⚡ [STORE] Store já tem dados, pulando restauração do localStorage');
+      hasRestoredFromCache.current = true;
+      return;
+    }
     
     const cached = localCache.cachedData;
     const totalCount = localCache.cachedTotalCount || 0;
@@ -204,7 +212,7 @@ export const Devolucao2025Page = () => {
       setDevolucoes(cached, totalCount, 'localStorage');
       hasRestoredFromCache.current = true;
     }
-  }, [localCache.cachedData, localCache.cachedTotalCount, setDevolucoes]);
+  }, [localCache.cachedData, localCache.cachedTotalCount, setDevolucoes, hasDevolucoes]);
   
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
