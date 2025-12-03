@@ -97,9 +97,6 @@ export function ReclamacoesPage() {
   const [reclamacoesCached, setReclamacoesCached] = useState<any[]>([]);
   const [totalCached, setTotalCached] = useState(0);
   
-  // 🚀 COMBO 2.1: Ref para rastrear se já restaurou dados do cache
-  const hasRestoredFromCacheRef = React.useRef(false);
-  
   // Constantes derivadas dos filtros unificados
   const selectedAccountIds = unifiedFilters.selectedAccounts;
   const currentPage = unifiedFilters.currentPage || 1;
@@ -182,26 +179,23 @@ export function ReclamacoesPage() {
     enabled: shouldFetch && (selectedAccountIds?.length || 0) > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
-  // ✅ ERRO 3 CORRIGIDO: Restauração de DADOS no mount (igual /vendas-online linha 161)
+  // ✅ OPÇÃO A: Restauração de DADOS SEMPRE ao montar (sem bloqueador ref)
   useEffect(() => {
-    if (hasRestoredFromCacheRef.current) return;
     if (!persistentCache.isStateLoaded) return;
     
     const cached = persistentCache.persistedState;
-    if (cached?.reclamacoes?.length > 0) {
+    if (cached?.reclamacoes?.length > 0 && reclamacoesCached.length === 0) {
       console.log('📦 [RECLAMACOES] Restaurando DADOS do cache:', {
         reclamacoes: cached.reclamacoes.length,
         contas: cached.selectedAccounts?.length,
         periodo: cached.filters?.periodo
       });
       
-      // ✅ ERRO 3: Popular estado com dados do cache (igual setOrders em /vendas-online)
+      // ✅ Popular estado com dados do cache
       setReclamacoesCached(cached.reclamacoes);
       setTotalCached(cached.reclamacoes.length);
-      
-      hasRestoredFromCacheRef.current = true;
     }
-  }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
+  }, [persistentCache.isStateLoaded]);
 
   // ✅ ERRO 3 CORRIGIDO: Determinar fonte usando estado local (igual /vendas-online)
   const hasCachedData = reclamacoesCached.length > 0;
