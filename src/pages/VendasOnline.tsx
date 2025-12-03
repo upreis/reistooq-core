@@ -381,7 +381,7 @@ export default function VendasOnline() {
           
           {/* Header */}
           <div className="px-4 md:px-6 py-3 mt-2">
-            <h1 className="text-3xl font-bold">Vendas Online</h1>
+            <h1 className="text-3xl font-bold">Vendas Canceladas</h1>
           </div>
           
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
