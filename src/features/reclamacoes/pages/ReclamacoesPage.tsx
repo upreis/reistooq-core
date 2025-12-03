@@ -11,7 +11,7 @@ import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { useReclamacoesFiltersUnified } from '../hooks/useReclamacoesFiltersUnified';
 import { useReclamacoesColumnManager } from '../hooks/useReclamacoesColumnManager';
 import { useMLClaimsFromCache } from '@/hooks/useMLClaimsFromCache';
-// ✅ ERRO 1+2 CORRIGIDO: Removido useReclamacoesLocalCache duplicado - usar apenas persistentCache
+import { useReclamacoesStore } from '../store/reclamacoesStore';
 import type { VisibilityState } from '@tanstack/react-table';
 
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
@@ -90,12 +90,21 @@ export function ReclamacoesPage() {
   // Estado de busca manual
   const [isManualSearching, setIsManualSearching] = useState(false);
   
+  // 🚀 OPÇÃO B: Zustand Store para estado global (igual vendasStore.ts)
+  const {
+    reclamacoes: reclamacoesCached,
+    setReclamacoes: setReclamacoesCached,
+    dataSource: storeDataSource,
+    setDataSource,
+    isLoading: storeLoading,
+    setLoading: setStoreLoading
+  } = useReclamacoesStore();
+  
   // 🚀 COMBO 2.1: Estado para controle de busca MANUAL (não automática)
   const [shouldFetch, setShouldFetch] = useState(false);
   
-  // ✅ ERRO 3 CORRIGIDO: Estado para DADOS restaurados (igual /vendas-online)
-  const [reclamacoesCached, setReclamacoesCached] = useState<any[]>([]);
-  const [totalCached, setTotalCached] = useState(0);
+  // Total derivado do store
+  const totalCached = reclamacoesCached.length;
   
   // Constantes derivadas dos filtros unificados
   const selectedAccountIds = unifiedFilters.selectedAccounts;
@@ -179,26 +188,16 @@ export function ReclamacoesPage() {
     enabled: shouldFetch && (selectedAccountIds?.length || 0) > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
-  // ✅ OPÇÃO A: Restauração de DADOS SEMPRE ao montar (sem bloqueador ref)
-  // Usar inicialização SÍNCRONA via lazy initializer do useState seria ideal,
-  // mas persistentCache não está disponível no primeiro render.
-  // Solução: garantir que effect rode mesmo se isStateLoaded já era true
-  const cachedReclamacoes = persistentCache.persistedState?.reclamacoes;
+  // ✅ OPÇÃO B: Zustand Store restaura automaticamente do localStorage
+  // O store já inicializa com dados do localStorage (loadPersistedState)
+  // Não precisa de useEffect para restauração manual
   
   useEffect(() => {
-    if (!persistentCache.isStateLoaded) return;
-    if (!cachedReclamacoes?.length) return;
-    if (reclamacoesCached.length > 0) return; // Já tem dados, não substituir
-    
-    console.log('📦 [RECLAMACOES] Restaurando DADOS do cache:', {
-      reclamacoes: cachedReclamacoes.length,
-      contas: persistentCache.persistedState?.selectedAccounts?.length,
-      periodo: persistentCache.persistedState?.filters?.periodo
-    });
-    
-    setReclamacoesCached(cachedReclamacoes);
-    setTotalCached(cachedReclamacoes.length);
-  }, [persistentCache.isStateLoaded, cachedReclamacoes, reclamacoesCached.length]);
+    // Log para debug - store já restaurou automaticamente
+    if (reclamacoesCached.length > 0) {
+      console.log('📦 [RECLAMACOES] Store já restaurou dados:', reclamacoesCached.length);
+    }
+  }, []);
 
   // ✅ ERRO 3 CORRIGIDO: Determinar fonte usando estado local (igual /vendas-online)
   const hasCachedData = reclamacoesCached.length > 0;
@@ -231,14 +230,13 @@ export function ReclamacoesPage() {
     return 0;
   }, [dataSource, cacheResponse?.total_count, totalCached]);
 
-  // ✅ ERRO 1+2+4 CORRIGIDO: Salvar usando persistentCache.saveDataCache (igual /vendas-online)
+  // ✅ OPÇÃO B: Salvar no Zustand Store (persistência automática)
   useEffect(() => {
     if (cacheResponse?.devolucoes?.length && shouldFetch) {
-      console.log('💾 [RECLAMACOES] Salvando em persistentCache:', cacheResponse.devolucoes.length);
+      console.log('💾 [RECLAMACOES] Salvando no Store:', cacheResponse.devolucoes.length);
       
-      // ✅ AUDITORIA: Atualizar estado local para consistência
+      // ✅ Store persiste automaticamente no localStorage
       setReclamacoesCached(cacheResponse.devolucoes);
-      setTotalCached(cacheResponse.devolucoes.length);
       
       persistentCache.saveDataCache(
         cacheResponse.devolucoes,
