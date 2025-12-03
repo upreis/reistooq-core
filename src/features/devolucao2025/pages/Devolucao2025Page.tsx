@@ -176,12 +176,15 @@ export const Devolucao2025Page = () => {
     ? appliedAccounts 
     : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
-  // 🚀 ESTRATÉGIA HÍBRIDA (igual /vendas-online): Consultar cache SEMPRE se há contas
+  // 🚀 COMBO 2.1 CORRIGIDO: NÃO consultar automaticamente
+  // Igual /vendas-online: só busca quando shouldFetch=true OU quando não há cache local
+  const shouldQueryCache = shouldFetch || (!localCache.hasCachedData && accountIds.length > 0);
+  
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
     date_from: backendDateRange.from.toISOString(),
     date_to: backendDateRange.to.toISOString(),
-    enabled: accountIds.length > 0 // ✅ SEMPRE consultar cache se há contas
+    enabled: shouldQueryCache // ✅ COMBO 2.1: Só busca quando necessário
   });
 
   // 🔧 CORREÇÃO: Se cache retornou dados válidos E não está loading, usar cache
