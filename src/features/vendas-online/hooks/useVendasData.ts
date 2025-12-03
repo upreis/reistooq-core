@@ -3,7 +3,7 @@
  * Hook HÍBRIDO: consulta ml_orders cache primeiro, fallback para API ML
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import { useVendasStore } from '../store/vendasStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +25,7 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
     throw new Error('Integration Account ID é obrigatório');
   }
 
-  console.log('[useVendasData] Buscando orders do ML:', params);
+  console.log('🌐 [useVendasData] Buscando orders da API ML:', params);
 
   // 🔧 CORREÇÃO CRÍTICA: Usar unified-ml-orders com write-through caching
   const { data, error } = await supabase.functions.invoke('unified-ml-orders', {
@@ -38,11 +38,11 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
   });
 
   if (error) {
-    console.error('[useVendasData] Erro ao buscar orders:', error);
+    console.error('❌ [useVendasData] Erro ao buscar orders:', error);
     throw error;
   }
 
-  console.log('[useVendasData] Resposta unified-ml-orders:', data?.orders?.length || 0);
+  console.log('✅ [useVendasData] Resposta unified-ml-orders:', data?.orders?.length || 0);
 
   // ✅ unified-ml-orders retorna orders diretamente
   const orders = data?.orders || [];
@@ -87,6 +87,9 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     setError
   } = useVendasStore();
 
+  // 🎯 Ref para evitar múltiplas buscas
+  const hasFetchedFromAPI = useRef(false);
+
   // 🚀 ESTRATÉGIA HÍBRIDA: Consultar cache primeiro
   const cacheQuery = useMLOrdersFromCache({
     integrationAccountIds: selectedAccountIds,
@@ -95,8 +98,7 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     enabled: shouldFetch && selectedAccountIds.length > 0
   });
 
-  // 🔧 CORREÇÃO FASE C.3: Adicionar verificação de isLoading para evitar race condition
-  // Se cache retornou dados válidos E não está loading, usar cache
+  // 🔧 CORREÇÃO: Se cache retornou dados válidos E não está loading, usar cache
   const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
 
   // ✅ FALLBACK: Buscar de API ML apenas se cache expirou/vazio E cache terminou loading
@@ -118,10 +120,11 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
       ]
     : null;
 
-  // 🎯 COMBO 2.1: Fetch com SWR (NÃO automático, depende de shouldFetchFromAPI)
+  // 🎯 COMBO 2.1: Fetch com SWR
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     async () => {
+      console.log('🔄 [SWR] Executando fetch de API ML...');
       // ✅ Buscar de TODAS as contas selecionadas (similar a /reclamacoes)
       const allOrders: any[] = [];
       
@@ -149,12 +152,28 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateOnMount: false, // 🎯 COMBO 2.1: NÃO buscar ao montar
+      revalidateOnMount: true, // 🎯 CORREÇÃO: Permitir busca quando key muda
       dedupingInterval: 30000 // Cache de 30s
     }
   );
 
-  // 🔧 CORREÇÃO FASE C.4: Consolidar updates em único useEffect para evitar flicker
+  // 🎯 COMBO 2.1: Disparar busca automática quando cache expirou
+  useEffect(() => {
+    if (shouldFetchFromAPI && swrKey && !hasFetchedFromAPI.current && !isLoading && !data) {
+      console.log('🚀 [useVendasData] Cache expirado, disparando busca da API...');
+      hasFetchedFromAPI.current = true;
+      mutate();
+    }
+  }, [shouldFetchFromAPI, swrKey, isLoading, data, mutate]);
+
+  // Reset flag quando shouldFetch muda
+  useEffect(() => {
+    if (!shouldFetch) {
+      hasFetchedFromAPI.current = false;
+    }
+  }, [shouldFetch]);
+
+  // 🔧 Consolidar updates em único useEffect para evitar flicker
   useEffect(() => {
     // Atualizar loading state
     setLoading(cacheQuery.isLoading || isLoading);
