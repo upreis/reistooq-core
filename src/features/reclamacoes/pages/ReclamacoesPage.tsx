@@ -94,10 +94,7 @@ export function ReclamacoesPage() {
   const {
     reclamacoes: reclamacoesCached,
     setReclamacoes: setReclamacoesCached,
-    dataSource: storeDataSource,
-    setDataSource,
-    isLoading: storeLoading,
-    setLoading: setStoreLoading
+    setDataSource
   } = useReclamacoesStore();
   
   // 🚀 COMBO 2.1: Estado para controle de busca MANUAL (não automática)
@@ -191,20 +188,26 @@ export function ReclamacoesPage() {
   // ✅ OPÇÃO B: Zustand Store restaura automaticamente do localStorage
   // O store já inicializa com dados do localStorage (loadPersistedState)
 
-  // ✅ Determinar fonte usando estado do store (igual /vendas-online)
+  // ✅ Determinar fonte usando estado do store
   const hasCachedData = reclamacoesCached.length > 0;
   
+  // ✅ CORREÇÃO: useMemo NÃO deve ter side-effects - calcular apenas
   const dataSource = useMemo<'api' | 'cache' | 'none'>(() => {
-    if (cacheResponse?.devolucoes?.length) {
-      setDataSource('api'); // Sincronizar com store
-      return 'api';
-    }
-    if (!shouldFetch && hasCachedData) {
-      console.log('⚡ [RECLAMACOES] Usando dados restaurados (instantâneo)');
-      return 'cache';
-    }
+    if (cacheResponse?.devolucoes?.length) return 'api';
+    if (!shouldFetch && hasCachedData) return 'cache';
     return 'none';
-  }, [cacheResponse?.devolucoes, hasCachedData, shouldFetch, setDataSource]);
+  }, [cacheResponse?.devolucoes, hasCachedData, shouldFetch]);
+  
+  // ✅ CORREÇÃO: Sincronizar dataSource com store via useEffect (side-effect correto)
+  useEffect(() => {
+    if (dataSource === 'api') {
+      setDataSource('api');
+    } else if (dataSource === 'cache') {
+      setDataSource('cache');
+    } else {
+      setDataSource(null);
+    }
+  }, [dataSource, setDataSource]);
 
   // ✅ ERRO 3 CORRIGIDO: Usar estado local restaurado (igual /vendas-online)
   const allReclamacoes = useMemo(() => {
