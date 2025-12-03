@@ -51,24 +51,33 @@ export function useVendasFiltersUnified() {
   });
 
   // 🔧 CORREÇÃO: Sincronizar filtros quando cache é carregado (após mount)
+  // Problema: useState inicializa ANTES do cache carregar (async), então sempre usa default
+  // Solução: Quando cache carrega, verificar se tem dados salvos e restaurar
   useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
-      // Só restaurar se não há valores na URL (URL tem prioridade)
-      const urlPeriodo = searchParams.get('periodo');
-      const urlAccounts = searchParams.get('contas');
       
-      if (!urlPeriodo && !urlAccounts && cached.filters) {
-        console.log('🔄 [VENDAS FILTERS] Restaurando filtros do cache:', cached.filters);
+      // Verificar se cache tem período diferente do atual (indica última busca do usuário)
+      if (cached.filters?.periodo && cached.filters.periodo !== filters.periodo) {
+        console.log('🔄 [VENDAS FILTERS] Restaurando período do cache:', cached.filters.periodo);
         setFilters(prev => ({
           ...prev,
-          periodo: cached.filters.periodo || prev.periodo,
+          periodo: cached.filters.periodo,
           searchTerm: cached.filters.search || prev.searchTerm,
-          selectedAccounts: cached.selectedAccounts || prev.selectedAccounts,
+        }));
+      }
+      
+      // Restaurar contas se cache tem contas e estado atual está vazio
+      if (cached.selectedAccounts?.length > 0 && filters.selectedAccounts.length === 0) {
+        console.log('🔄 [VENDAS FILTERS] Restaurando contas do cache:', cached.selectedAccounts.length);
+        setFilters(prev => ({
+          ...prev,
+          selectedAccounts: cached.selectedAccounts,
         }));
       }
     }
-  }, [persistentCache.isStateLoaded, persistentCache.persistedState, searchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persistentCache.isStateLoaded]); // Executar apenas quando cache terminar de carregar
 
   // Sincronizar com URL
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useVendasFiltersSync(
