@@ -67,8 +67,6 @@ export function ReclamacoesPage() {
     persistentCache
   } = useReclamacoesFiltersUnified();
   
-  const [isStateLoaded, setIsStateLoaded] = useState(false);
-  
   // Estados locais adicionais (não relacionados a filtros)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
