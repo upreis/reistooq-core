@@ -1,16 +1,20 @@
 /**
- * 🎛️ SELETOR DE COLUNAS
- * Permite usuário escolher quais colunas visualizar
+ * 🎛️ SELETOR DE COLUNAS - DEVOLUÇÕES
+ * Padronizado com /reclamacoes (DropdownMenu)
  */
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Columns3, Search } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 
 export interface ColumnConfig {
   id: string;
@@ -29,8 +33,8 @@ export const ColumnSelector = ({
   visibleColumns, 
   onVisibleColumnsChange 
 }: ColumnSelectorProps) => {
-  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   // Agrupar colunas por grupo
   const groupedColumns = columns.reduce((acc, col) => {
@@ -39,7 +43,7 @@ export const ColumnSelector = ({
     return acc;
   }, {} as Record<string, ColumnConfig[]>);
 
-  // Filtrar colunas pela busca
+  // Filtrar colunas baseado na busca
   const filteredGroups = Object.entries(groupedColumns).reduce((acc, [group, cols]) => {
     const filtered = cols.filter(col => 
       col.label.toLowerCase().includes(search.toLowerCase())
@@ -51,23 +55,23 @@ export const ColumnSelector = ({
   }, {} as Record<string, ColumnConfig[]>);
 
   const toggleColumn = (columnId: string) => {
-    if (visibleColumns.includes(columnId)) {
-      onVisibleColumnsChange(visibleColumns.filter(id => id !== columnId));
-    } else {
-      onVisibleColumnsChange([...visibleColumns, columnId]);
-    }
+    const newVisible = visibleColumns.includes(columnId)
+      ? visibleColumns.filter(id => id !== columnId)
+      : [...visibleColumns, columnId];
+    onVisibleColumnsChange(newVisible);
   };
 
   const toggleGroup = (group: string) => {
     const groupColumns = groupedColumns[group].map(col => col.id);
     const allVisible = groupColumns.every(id => visibleColumns.includes(id));
     
+    let newVisible: string[];
     if (allVisible) {
-      onVisibleColumnsChange(visibleColumns.filter(id => !groupColumns.includes(id)));
+      newVisible = visibleColumns.filter(id => !groupColumns.includes(id));
     } else {
-      const newVisible = [...new Set([...visibleColumns, ...groupColumns])];
-      onVisibleColumnsChange(newVisible);
+      newVisible = [...new Set([...visibleColumns, ...groupColumns])];
     }
+    onVisibleColumnsChange(newVisible);
   };
 
   const selectAll = () => {
@@ -78,71 +82,69 @@ export const ColumnSelector = ({
     onVisibleColumnsChange([]);
   };
 
+  // Contar apenas colunas visíveis que existem nas definições
+  const validVisibleCount = visibleColumns.filter(id => 
+    columns.some(col => col.id === id)
+  ).length;
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Columns3 className="h-4 w-4" />
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-10">
+          <Settings2 className="h-4 w-4 mr-2" />
+          Colunas ({validVisibleCount}/{columns.length})
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-3 border-b space-y-2">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar colunas..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8"
-            />
-          </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 max-h-[600px] overflow-y-auto">
+        <DropdownMenuLabel className="flex items-center justify-between">
+          <span>Selecionar Colunas</span>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={selectAll} className="flex-1">
-              Selecionar Todas
+            <Button variant="ghost" size="sm" onClick={selectAll} className="h-6 text-xs">
+              Todas
             </Button>
-            <Button size="sm" variant="outline" onClick={deselectAll} className="flex-1">
-              Limpar
+            <Button variant="ghost" size="sm" onClick={deselectAll} className="h-6 text-xs">
+              Nenhuma
             </Button>
           </div>
+        </DropdownMenuLabel>
+        
+        <div className="px-2 pb-2">
+          <Input
+            placeholder="Buscar coluna..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8"
+          />
         </div>
+        
+        <DropdownMenuSeparator />
 
-        <ScrollArea className="h-96">
-          <div className="p-3 space-y-4">
-            {Object.entries(filteredGroups).map(([group, cols]) => {
-              const groupColumns = cols.map(col => col.id);
-              const allVisible = groupColumns.every(id => visibleColumns.includes(id));
-              const someVisible = groupColumns.some(id => visibleColumns.includes(id));
-
-              return (
-                <div key={group} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={allVisible}
-                      onCheckedChange={() => toggleGroup(group)}
-                      className={someVisible && !allVisible ? 'data-[state=checked]:bg-primary/50' : ''}
-                    />
-                    <span className="font-medium text-sm">{group}</span>
-                    <Badge variant="secondary" className="ml-auto text-xs">
-                      {groupColumns.filter(id => visibleColumns.includes(id)).length}/{groupColumns.length}
-                    </Badge>
-                  </div>
-                  <div className="ml-6 space-y-2">
-                    {cols.map((col) => (
-                      <div key={col.id} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={visibleColumns.includes(col.id)}
-                          onCheckedChange={() => toggleColumn(col.id)}
-                        />
-                        <span className="text-sm">{col.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+        {Object.entries(filteredGroups).map(([group, cols]) => (
+          <div key={group}>
+            <DropdownMenuLabel className="flex items-center justify-between">
+              <span className="text-xs font-semibold">{group}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleGroup(group)}
+                className="h-5 text-xs"
+              >
+                {cols.every(col => visibleColumns.includes(col.id)) ? 'Ocultar' : 'Mostrar'}
+              </Button>
+            </DropdownMenuLabel>
+            {cols.map(col => (
+              <DropdownMenuCheckboxItem
+                key={col.id}
+                checked={visibleColumns.includes(col.id)}
+                onCheckedChange={() => toggleColumn(col.id)}
+              >
+                {col.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+            <DropdownMenuSeparator />
           </div>
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
