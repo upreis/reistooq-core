@@ -1,19 +1,21 @@
 /**
  * 🎛️ COLUMN MANAGER - VENDAS ONLINE
- * Sistema avançado de gerenciamento de colunas
- * Baseado no padrão da página /pedidos
+ * Seletor de colunas padronizado (padrão /reclamacoes)
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, Search } from 'lucide-react';
-import { COLUMN_DEFINITIONS, CATEGORY_LABELS, DEFAULT_PROFILES } from '../config/columns.config';
+import { COLUMN_DEFINITIONS, CATEGORY_LABELS } from '../config/columns.config';
 import type { UseColumnManagerReturn } from '../types/columns.types';
 import { useVendasColumnManager } from '../hooks/useVendasColumnManager';
 
@@ -24,211 +26,118 @@ interface ColumnManagerProps {
 
 export function ColumnManager({ manager, onColumnsChange }: ColumnManagerProps) {
   const defaultManager = useVendasColumnManager();
-  const { state, actions, definitions, profiles } = manager || defaultManager;
+  const { state, actions, definitions } = manager || defaultManager;
   
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-
-  // Filtrar colunas
-  const filteredColumns = useMemo(() => {
-    return definitions.filter(col => {
-      const matchesSearch = col.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          col.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || col.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [definitions, searchTerm, selectedCategory]);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   // Agrupar colunas por categoria
-  const groupedColumns = useMemo(() => {
-    const groups: Record<string, typeof definitions> = {};
-    filteredColumns.forEach(col => {
-      if (!groups[col.category]) {
-        groups[col.category] = [];
-      }
-      groups[col.category].push(col);
-    });
-    return groups;
-  }, [filteredColumns]);
+  const groupedColumns = definitions.reduce((acc, col) => {
+    const group = CATEGORY_LABELS[col.category] || col.category;
+    if (!acc[group]) {
+      acc[group] = [];
+    }
+    acc[group].push(col);
+    return acc;
+  }, {} as Record<string, typeof definitions>);
 
-  // Contar apenas colunas visíveis que existem nas definições
-  const visibleCount = [...state.visibleColumns].filter(key => 
-    definitions.some(def => def.key === key)
-  ).length;
-  const totalCount = definitions.length;
+  // Filtrar colunas baseado na busca
+  const filteredGroups = Object.entries(groupedColumns).reduce((acc, [group, cols]) => {
+    const filtered = cols.filter(col => 
+      col.label.toLowerCase().includes(search.toLowerCase())
+    );
+    if (filtered.length > 0) {
+      acc[group] = filtered;
+    }
+    return acc;
+  }, {} as Record<string, typeof definitions>);
 
-  const handleCategoryToggle = (category: string, checked: boolean) => {
-    const categoryColumns = definitions.filter(col => col.category === category);
-    if (checked) {
-      categoryColumns.forEach(col => actions.showColumn(col.key));
+  const toggleColumn = (key: string) => {
+    actions.toggleColumn(key);
+  };
+
+  const toggleGroup = (group: string) => {
+    const groupColumns = groupedColumns[group].map(col => col.key);
+    const allVisible = groupColumns.every(key => state.visibleColumns.has(key));
+    
+    if (allVisible) {
+      groupColumns.forEach(key => actions.hideColumn(key));
     } else {
-      categoryColumns.forEach(col => actions.hideColumn(col.key));
+      groupColumns.forEach(key => actions.showColumn(key));
     }
   };
 
-  const getCategoryStats = (category: string) => {
-    const categoryColumns = definitions.filter(col => col.category === category);
-    const visibleInCategory = categoryColumns.filter(col => state.visibleColumns.has(col.key)).length;
-    return { visible: visibleInCategory, total: categoryColumns.length };
+  const selectAll = () => {
+    actions.setVisibleColumns(definitions.map(d => d.key));
   };
 
+  const deselectAll = () => {
+    actions.setVisibleColumns([]);
+  };
+
+  // Contar apenas colunas visíveis que existem nas definições
+  const validVisibleCount = [...state.visibleColumns].filter(key => 
+    definitions.some(def => def.key === key)
+  ).length;
+
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="h-10 gap-2">
-          <Settings className="h-4 w-4" />
-          Colunas ({visibleCount})
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-10">
+          <Settings2 className="h-4 w-4 mr-2" />
+          Colunas ({validVisibleCount}/{definitions.length})
         </Button>
-      </SheetTrigger>
-      
-      <SheetContent className="w-[600px] sm:w-[700px]">
-        <SheetHeader>
-          <SheetTitle>Gerenciar Colunas</SheetTitle>
-        </SheetHeader>
-
-        <div className="mt-6 space-y-6">
-          {/* Seletor de Perfis */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Perfis Pré-definidos</label>
-            <Select 
-              value={state.activeProfile || ''} 
-              onValueChange={actions.loadProfile}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um perfil" />
-              </SelectTrigger>
-              <SelectContent>
-                {profiles.map(profile => (
-                  <SelectItem key={profile.id} value={profile.id}>
-                    {profile.name} ({profile.columns.length} colunas)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {state.activeProfile 
-                ? profiles.find(p => p.id === state.activeProfile)?.description
-                : 'Selecione um perfil para aplicar configuração pré-definida'}
-            </p>
-          </div>
-
-          {/* Ações Rápidas */}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 max-h-[600px] overflow-y-auto">
+        <DropdownMenuLabel className="flex items-center justify-between">
+          <span>Selecionar Colunas</span>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={actions.resetToEssentials}
-              className="flex-1"
-            >
-              Essenciais
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={actions.resetToDefault}
-              className="flex-1"
-            >
-              Padrão
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => actions.setVisibleColumns(definitions.map(d => d.key))}
-              className="flex-1"
-            >
+            <Button variant="ghost" size="sm" onClick={selectAll} className="h-6 text-xs">
               Todas
             </Button>
-          </div>
-
-          {/* Filtros */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar coluna..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todas as categorias" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as categorias</SelectItem>
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Lista de Colunas */}
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-6">
-              {Object.entries(groupedColumns).map(([category, columns]) => {
-                const stats = getCategoryStats(category);
-                const allVisible = stats.visible === stats.total;
-                const someVisible = stats.visible > 0 && stats.visible < stats.total;
-
-                return (
-                  <div key={category} className="space-y-3">
-                    {/* Header da Categoria */}
-                    <div className="flex items-center gap-2 sticky top-0 bg-background py-2 border-b">
-                      <Checkbox
-                        checked={allVisible}
-                        data-state={someVisible ? 'indeterminate' : undefined}
-                        onCheckedChange={(checked) => handleCategoryToggle(category, checked as boolean)}
-                      />
-                      <span className="font-medium text-sm">
-                        {CATEGORY_LABELS[category] || category}
-                      </span>
-                      <Badge variant="secondary" className="ml-auto">
-                        {stats.visible}/{stats.total}
-                      </Badge>
-                    </div>
-
-                    {/* Colunas da Categoria */}
-                    <div className="space-y-2 pl-6">
-                      {columns.map(col => (
-                        <div key={col.key} className="flex items-start gap-2 py-1">
-                          <Checkbox
-                            checked={state.visibleColumns.has(col.key)}
-                            onCheckedChange={() => actions.toggleColumn(col.key)}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <label className="text-sm cursor-pointer">
-                              {col.label}
-                            </label>
-                            {col.description && (
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {col.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <span className="text-sm text-muted-foreground">
-              {visibleCount} de {totalCount} colunas selecionadas
-            </span>
-            <Button onClick={() => setIsOpen(false)}>
-              Aplicar
+            <Button variant="ghost" size="sm" onClick={deselectAll} className="h-6 text-xs">
+              Nenhuma
             </Button>
           </div>
+        </DropdownMenuLabel>
+        
+        <div className="px-2 pb-2">
+          <Input
+            placeholder="Buscar coluna..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8"
+          />
         </div>
-      </SheetContent>
-    </Sheet>
+        
+        <DropdownMenuSeparator />
+
+        {Object.entries(filteredGroups).map(([group, cols]) => (
+          <div key={group}>
+            <DropdownMenuLabel className="flex items-center justify-between">
+              <span className="text-xs font-semibold">{group}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleGroup(group)}
+                className="h-5 text-xs"
+              >
+                {cols.every(col => state.visibleColumns.has(col.key)) ? 'Ocultar' : 'Mostrar'}
+              </Button>
+            </DropdownMenuLabel>
+            {cols.map(col => (
+              <DropdownMenuCheckboxItem
+                key={col.key}
+                checked={state.visibleColumns.has(col.key)}
+                onCheckedChange={() => toggleColumn(col.key)}
+              >
+                {col.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+            <DropdownMenuSeparator />
+          </div>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
