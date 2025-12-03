@@ -72,7 +72,6 @@ export function ReclamacoesFilters({ filters, onFiltersChange }: ReclamacoesFilt
               <SelectItem value="15">Últimos 15 dias</SelectItem>
               <SelectItem value="30">Últimos 30 dias</SelectItem>
               <SelectItem value="60">Últimos 60 dias</SelectItem>
-              <SelectItem value="custom">Personalizado</SelectItem>
             </SelectContent>
           </Select>
         </div>

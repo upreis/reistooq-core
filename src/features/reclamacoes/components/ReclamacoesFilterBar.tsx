@@ -73,8 +73,7 @@ export function ReclamacoesFilterBar({
       '7': 'Últimos 7 dias',
       '15': 'Últimos 15 dias',
       '30': 'Últimos 30 dias',
-      '60': 'Últimos 60 dias',
-      'custom': 'Personalizado'
+      '60': 'Últimos 60 dias'
     };
     return labels[value] || 'Últimos 7 dias';
   };
@@ -179,7 +178,6 @@ export function ReclamacoesFilterBar({
                 <SelectItem value="15">Últimos 15 dias</SelectItem>
                 <SelectItem value="30">Últimos 30 dias</SelectItem>
                 <SelectItem value="60">Últimos 60 dias</SelectItem>
-                <SelectItem value="custom">Personalizado</SelectItem>
               </SelectContent>
             </Select>
           </div>
