@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { FlipButton } from '@/components/ui/flip-button';
 import type { Table } from '@tanstack/react-table';
+import { ReclamacoesColumnSelectorSimple, type ColumnConfig } from './ReclamacoesColumnSelectorSimple';
 
 interface MLAccount {
   id: string;
@@ -33,6 +33,10 @@ interface ReclamacoesFilterBarProps {
   isLoading?: boolean;
   onCancel?: () => void;
   table?: Table<any>;
+  // Column selector props
+  columnDefinitions?: ColumnConfig[];
+  visibleColumns?: string[];
+  onVisibleColumnsChange?: (columns: string[]) => void;
 }
 
 export function ReclamacoesFilterBar({
@@ -46,7 +50,10 @@ export function ReclamacoesFilterBar({
   onBuscar,
   isLoading = false,
   onCancel,
-  table
+  table,
+  columnDefinitions,
+  visibleColumns,
+  onVisibleColumnsChange
 }: ReclamacoesFilterBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
@@ -192,6 +199,17 @@ export function ReclamacoesFilterBar({
             onClick={isLoading && onCancel ? onCancel : onBuscar}
           />
         </div>
+
+        {/* Seletor de Colunas */}
+        {columnDefinitions && visibleColumns && onVisibleColumnsChange && (
+          <div className="flex-shrink-0">
+            <ReclamacoesColumnSelectorSimple
+              columns={columnDefinitions}
+              visibleColumns={visibleColumns}
+              onVisibleColumnsChange={onVisibleColumnsChange}
+            />
+          </div>
+        )}
 
       </div>
 

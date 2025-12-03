@@ -22,7 +22,6 @@ import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAle
 import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
 import { ReclamacoesAnotacoesModal } from '../components/modals/ReclamacoesAnotacoesModal';
 import { ReclamacoesResumo } from '../components/ReclamacoesResumo';
-import { ReclamacoesColumnSelectorSimple } from '../components/ReclamacoesColumnSelectorSimple';
 import { RECLAMACOES_COLUMN_DEFINITIONS } from '../config/reclamacoes-column-definitions';
 import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
@@ -498,25 +497,19 @@ export function ReclamacoesPage() {
                   </TabsList>
                   
                   {/* Filtros integrados + Seletor de Colunas */}
-                  <div className="flex-1 min-w-0 flex items-center gap-3">
-                    <div className="flex-1">
-                      <ReclamacoesFilterBar
-                        accounts={mlAccounts || []}
-                        selectedAccountIds={selectedAccountIds}
-                        onAccountsChange={(ids) => updateFilter('selectedAccounts', ids)}
-                        periodo={unifiedFilters.periodo}
-                        onPeriodoChange={(periodo) => updateFilter('periodo', periodo)}
-                        searchTerm={unifiedFilters.status}
-                        onSearchChange={(term) => updateFilter('status', term)}
-                        onBuscar={handleBuscarReclamacoes}
-                        isLoading={isManualSearching}
-                        onCancel={handleCancelarBusca}
-                      />
-                    </div>
-                    
-                    {/* Seletor de Colunas SIMPLES */}
-                    <ReclamacoesColumnSelectorSimple
-                      columns={RECLAMACOES_COLUMN_DEFINITIONS}
+                  <div className="flex-1 min-w-0">
+                    <ReclamacoesFilterBar
+                      accounts={mlAccounts || []}
+                      selectedAccountIds={selectedAccountIds}
+                      onAccountsChange={(ids) => updateFilter('selectedAccounts', ids)}
+                      periodo={unifiedFilters.periodo}
+                      onPeriodoChange={(periodo) => updateFilter('periodo', periodo)}
+                      searchTerm={unifiedFilters.status}
+                      onSearchChange={(term) => updateFilter('status', term)}
+                      onBuscar={handleBuscarReclamacoes}
+                      isLoading={isManualSearching}
+                      onCancel={handleCancelarBusca}
+                      columnDefinitions={RECLAMACOES_COLUMN_DEFINITIONS}
                       visibleColumns={columnManager.visibleColumnKeys}
                       onVisibleColumnsChange={(keys) => {
                         console.log('🎛️ [Page] onVisibleColumnsChange chamado:', keys);
