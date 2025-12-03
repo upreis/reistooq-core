@@ -184,19 +184,22 @@ export const Devolucao2025Page = () => {
     enabled: shouldFetch && accountIds.length > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
-  // 🚀 COMBO 2.1: Usar dados do localStorage OU da API (prioridade: localStorage)
+  // 🚀 COMBO 2.1: Usar dados do localStorage OU da API (prioridade: API > localStorage)
   const devolucoesCompletas = useMemo(() => {
-    // Se tem dados da API, usar eles
-    if (cacheQuery.data?.devolucoes?.length > 0) {
-      return cacheQuery.data.devolucoes;
+    // Se tem dados da API, usar eles (prioridade)
+    const apiData = cacheQuery.data?.devolucoes;
+    if (apiData && apiData.length > 0) {
+      return apiData;
     }
     // Se não buscou ainda mas tem cache local, usar cache local
-    if (!shouldFetch && localCache.hasCachedData && localCache.cachedData) {
-      console.log('⚡ [COMBO 2.1] Usando dados do localStorage:', localCache.cachedData.length);
-      return localCache.cachedData;
+    const localData = localCache.cachedData;
+    if (!shouldFetch && localData && localData.length > 0) {
+      console.log('⚡ [COMBO 2.1] Usando dados do localStorage:', localData.length);
+      return localData;
     }
     return [];
-  }, [cacheQuery.data?.devolucoes, shouldFetch, localCache.hasCachedData, localCache.cachedData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheQuery.data?.devolucoes?.length, shouldFetch, localCache.hasCachedData]);
 
   const dataSource = cacheQuery.data?.source || (localCache.hasCachedData ? 'localStorage' : 'loading');
   const isLoading = shouldFetch && cacheQuery.isLoading;
@@ -209,42 +212,34 @@ export const Devolucao2025Page = () => {
   // 🚀 COMBO 2.1: Salvar no localStorage quando busca retornar dados
   useEffect(() => {
     if (cacheQuery.data?.devolucoes?.length > 0 && shouldFetch) {
+      const dateFromStr = backendDateRange.from.toISOString();
+      const dateToStr = backendDateRange.to.toISOString();
+      
       localCache.saveToCache(
         cacheQuery.data.devolucoes,
         {
           accounts: accountIds,
           periodo,
-          dateFrom: backendDateRange.from.toISOString(),
-          dateTo: backendDateRange.to.toISOString()
+          dateFrom: dateFromStr,
+          dateTo: dateToStr
         },
         cacheQuery.data.total_count
       );
     }
-  }, [cacheQuery.data?.devolucoes, shouldFetch, accountIds, periodo, backendDateRange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheQuery.data?.devolucoes?.length, shouldFetch, periodo]);
 
   // 📊 Log detalhado da fonte de dados (COMBO 2.1)
   useEffect(() => {
     console.log('🚀 [COMBO 2.1] Estado atual:', {
       shouldFetch,
       hasCachedData: localCache.hasCachedData,
-      cacheAge: localCache.cacheAge ? `${localCache.cacheAge} min` : 'N/A',
       devolucoesCount: devolucoesCompletas.length,
       dataSource,
       isLoading
     });
-    
-    if (!isLoading && devolucoesCompletas.length > 0) {
-      console.log('📊 [COMBO 2.1] Fonte de dados:', {
-        fonte: dataSource === 'localStorage' 
-          ? '⚡ LOCAL STORAGE (instantâneo)' 
-          : dataSource === 'cache' 
-            ? '✅ SUPABASE CACHE (ml_claims)' 
-            : '📡 API (get-devolucoes-direct)',
-        total: devolucoesCompletas.length,
-        performance: dataSource === 'localStorage' ? '⚡ INSTANTÂNEO' : '🔄 NORMAL'
-      });
-    }
-  }, [isLoading, devolucoesCompletas.length, dataSource, shouldFetch, localCache.hasCachedData, localCache.cacheAge]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [devolucoesCompletas.length, dataSource, shouldFetch]);
 
   // Filtrar localmente baseado nas preferências do usuário
   const devolucoes = useMemo(() => {
