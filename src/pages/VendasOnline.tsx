@@ -237,10 +237,12 @@ export default function VendasOnline() {
     // Ativar busca
     setShouldFetch(true);
     
-    // 🎯 MÉDIO 4: Aguardar query concluir antes de salvar cache
+    // 🎯 COMBO 2.1: Aguardar query concluir antes de salvar cache
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      // 🔧 CORREÇÃO: Escutar queryKey correto ('ml-orders-cache' ou 'vendas-ml-api')
+      const queryKeyBase = event?.query?.queryKey?.[0];
       if (
-        event?.query?.queryKey?.[0] === 'vendas-ml' &&
+        (queryKeyBase === 'ml-orders-cache' || queryKeyBase === 'vendas-ml-api') &&
         event.type === 'updated' &&
         event.query.state.status === 'success'
       ) {
