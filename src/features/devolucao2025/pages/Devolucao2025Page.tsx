@@ -211,23 +211,25 @@ export const Devolucao2025Page = () => {
 
   // 🚀 COMBO 2.1: Salvar no localStorage quando busca retornar dados
   useEffect(() => {
-    if (cacheQuery.data?.devolucoes?.length > 0 && shouldFetch) {
-      const dateFromStr = backendDateRange.from.toISOString();
-      const dateToStr = backendDateRange.to.toISOString();
+    const devolucoes = cacheQuery.data?.devolucoes;
+    const totalCount = cacheQuery.data?.total_count || 0;
+    
+    // Só salvar se: tem dados novos E foi uma busca explícita
+    if (devolucoes && devolucoes.length > 0 && shouldFetch) {
+      console.log('💾 [COMBO 2.1] Salvando dados no localStorage:', devolucoes.length);
       
       localCache.saveToCache(
-        cacheQuery.data.devolucoes,
+        devolucoes,
         {
           accounts: accountIds,
           periodo,
-          dateFrom: dateFromStr,
-          dateTo: dateToStr
+          dateFrom: backendDateRange.from.toISOString(),
+          dateTo: backendDateRange.to.toISOString()
         },
-        cacheQuery.data.total_count
+        totalCount
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheQuery.data?.devolucoes?.length, shouldFetch, periodo]);
+  }, [cacheQuery.data, shouldFetch, accountIds, periodo, backendDateRange, localCache]);
 
   // 📊 Log detalhado da fonte de dados (COMBO 2.1)
   useEffect(() => {
