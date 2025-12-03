@@ -241,13 +241,14 @@ export const Devolucao2025Page = () => {
   const isFetching = cacheQuery.isFetching;
   const error = cacheQuery.error;
 
-  // 🚀 COMBO 2.1: Salvar no localStorage quando busca retornar dados
+  // 🚀 COMBO 2.1 CORRIGIDO: Salvar no localStorage SEMPRE que tiver dados novos
+  // ✅ ERRO 1 CORRIGIDO: Removido condição shouldFetch - salva sempre que Supabase retorna dados
   useEffect(() => {
     const devolucoes = cacheQuery.data?.devolucoes;
     const totalCount = cacheQuery.data?.total_count || 0;
     
-    // Só salvar se: tem dados novos E foi uma busca explícita
-    if (devolucoes && devolucoes.length > 0 && shouldFetch) {
+    // ✅ Salvar SEMPRE que tiver dados novos do Supabase (não depende de shouldFetch)
+    if (devolucoes && devolucoes.length > 0) {
       console.log('💾 [COMBO 2.1] Salvando dados no localStorage:', devolucoes.length);
       
       localCache.saveToCache(
@@ -261,7 +262,7 @@ export const Devolucao2025Page = () => {
         totalCount
       );
     }
-  }, [cacheQuery.data, shouldFetch, accountIds, periodo, backendDateRange, localCache]);
+  }, [cacheQuery.data, accountIds, periodo, backendDateRange, localCache]);
 
   // 📊 Log detalhado da fonte de dados (COMBO 2.1)
   useEffect(() => {
