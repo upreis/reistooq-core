@@ -168,46 +168,53 @@ export const Devolucao2025Page = () => {
     }
   }, [selectedAccounts, appliedAccounts, accounts]);
 
-  // 🚀 COMBO 2.1 - BUSCA MANUAL OBRIGATÓRIA
-  // enabled: false inicial → só busca quando shouldFetch = true (clique no botão)
+  // 🚀 COMBO 2.1 - IGUAL /vendas-online
+  // Cache consulta SEMPRE se há contas, API só quando shouldFetch ou cache expirado
   
-  // ✅ CORREÇÃO AUDITORIA 5: Usar appliedAccounts (sincronizado) ao invés de selectedAccounts
+  // ✅ CORREÇÃO: Usar appliedAccounts (sincronizado) ao invés de selectedAccounts
   const accountIds = appliedAccounts.length > 0 
     ? appliedAccounts 
     : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
-  // 🚀 COMBO 2.1: enabled = shouldFetch (NÃO busca automaticamente)
+  // 🚀 ESTRATÉGIA HÍBRIDA (igual /vendas-online): Consultar cache SEMPRE se há contas
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
     date_from: backendDateRange.from.toISOString(),
     date_to: backendDateRange.to.toISOString(),
-    enabled: shouldFetch && accountIds.length > 0 // ✅ COMBO 2.1: Só busca após clique
+    enabled: accountIds.length > 0 // ✅ SEMPRE consultar cache se há contas
   });
 
-  // 🚀 COMBO 2.1: Usar dados do localStorage OU da API (prioridade: API > localStorage)
+  // 🔧 CORREÇÃO: Se cache retornou dados válidos E não está loading, usar cache
+  const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
+
+  // ✅ FALLBACK: Buscar de API quando:
+  // 1. Cache expirou/vazio E cache terminou loading E há contas
+  // 2. OU usuário clicou buscar manualmente (shouldFetch)
+  const cacheExpired = !cacheQuery.isLoading && (cacheQuery.data?.cache_expired || !cacheQuery.data?.devolucoes?.length);
+  const shouldFetchFromAPI = accountIds.length > 0 && 
+    !cacheQuery.isLoading && 
+    (cacheExpired || shouldFetch);
+
+  // 🚀 COMBO 2.1: Usar dados do cache Supabase OU localStorage (prioridade: Supabase > localStorage)
   const devolucoesCompletas = useMemo(() => {
-    // Se tem dados da API, usar eles (prioridade)
-    const apiData = cacheQuery.data?.devolucoes;
-    if (apiData && apiData.length > 0) {
-      return apiData;
+    // Se tem dados do cache Supabase, usar eles (prioridade)
+    const cacheData = cacheQuery.data?.devolucoes;
+    if (cacheData && cacheData.length > 0) {
+      return cacheData;
     }
-    // Se não buscou ainda mas tem cache local, usar cache local
+    // Se não tem dados do Supabase mas tem cache local, usar cache local
     const localData = localCache.cachedData;
-    if (!shouldFetch && localData && localData.length > 0) {
+    if (localData && localData.length > 0) {
       console.log('⚡ [COMBO 2.1] Usando dados do localStorage:', localData.length);
       return localData;
     }
     return [];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheQuery.data?.devolucoes?.length, shouldFetch, localCache.hasCachedData]);
+  }, [cacheQuery.data?.devolucoes, localCache.cachedData]);
 
   const dataSource = cacheQuery.data?.source || (localCache.hasCachedData ? 'localStorage' : 'loading');
-  const isLoading = shouldFetch && cacheQuery.isLoading;
+  const isLoading = cacheQuery.isLoading;
   const isFetching = cacheQuery.isFetching;
   const error = cacheQuery.error;
-  
-  // Helper para identificar se está usando cache válido
-  const useCacheData = dataSource === 'cache' && !cacheQuery.data?.cache_expired;
 
   // 🚀 COMBO 2.1: Salvar no localStorage quando busca retornar dados
   useEffect(() => {
