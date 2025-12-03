@@ -11,7 +11,7 @@ import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { useReclamacoesFiltersUnified } from '../hooks/useReclamacoesFiltersUnified';
 import { useReclamacoesColumnManager } from '../hooks/useReclamacoesColumnManager';
 import { useMLClaimsFromCache } from '@/hooks/useMLClaimsFromCache';
-import { useReclamacoesLocalCache } from '../hooks/useReclamacoesLocalCache';
+// ✅ ERRO 1+2 CORRIGIDO: Removido useReclamacoesLocalCache duplicado - usar apenas persistentCache
 import type { VisibilityState } from '@tanstack/react-table';
 
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
@@ -96,8 +96,7 @@ export function ReclamacoesPage() {
   // 🚀 COMBO 2.1: Ref para rastrear se já restaurou filtros do cache
   const hasRestoredFromCacheRef = React.useRef(false);
   
-  // 🚀 COMBO 2.1: Hook de cache local para restauração instantânea
-  const localCache = useReclamacoesLocalCache();
+  // ✅ ERRO 1+2 CORRIGIDO: Removido localCache duplicado - usando apenas persistentCache
   
   // Constantes derivadas dos filtros unificados
   const selectedAccountIds = unifiedFilters.selectedAccounts;
@@ -181,101 +180,68 @@ export function ReclamacoesPage() {
     enabled: shouldFetch && (selectedAccountIds?.length || 0) > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
-  // 🚀 COMBO 2.1: Restaurar período do cache local ao montar (APENAS UMA VEZ)
+  // ✅ ERRO 1+2 CORRIGIDO: Restauração usando persistentCache (igual /vendas-online)
   useEffect(() => {
-    // Já restaurou? Não fazer nada
     if (hasRestoredFromCacheRef.current) return;
+    if (!persistentCache.isStateLoaded) return;
     
-    // Se não houve busca ainda E temos cache válido, restaurar filtros
-    if (!shouldFetch && localCache.hasCachedData && localCache.cachedFilters) {
-      const cachedPeriodo = localCache.cachedFilters.periodo;
-      const cachedAccounts = localCache.cachedFilters.accounts;
-      
-      let didRestore = false;
-      
-      // Se o período atual é o DEFAULT (7) e o cache tem outro, restaurar do cache
-      if (cachedPeriodo && cachedPeriodo !== '7') {
-        console.log('🔄 [COMBO 2.1] Restaurando período do cache local:', cachedPeriodo);
-        updateFilter('periodo', cachedPeriodo);
-        didRestore = true;
-      }
-      
-      // Se contas não estão selecionadas mas cache tem, restaurar
-      if (cachedAccounts?.length) {
-        console.log('🔄 [COMBO 2.1] Restaurando contas do cache local:', cachedAccounts.length);
-        updateFilter('selectedAccounts', cachedAccounts);
-        didRestore = true;
-      }
-      
-      // Marcar como restaurado para não repetir
+    const cached = persistentCache.persistedState;
+    if (cached?.reclamacoes?.length > 0) {
+      console.log('📦 [RECLAMACOES] Restaurando cache:', {
+        reclamacoes: cached.reclamacoes.length,
+        contas: cached.selectedAccounts?.length,
+        periodo: cached.filters?.periodo
+      });
       hasRestoredFromCacheRef.current = true;
-      
-      if (didRestore) {
-        console.log('✅ [COMBO 2.1] Restauração de filtros do cache concluída');
-      }
     }
-  }, [localCache.hasCachedData, localCache.cachedFilters, shouldFetch, updateFilter]);
+  }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
 
-  // 🚀 COMBO 2.1: Determinar fonte dos dados (API ou cache local)
+  // ✅ ERRO 1+2 CORRIGIDO: Determinar fonte usando persistentCache (igual /vendas-online)
+  const hasCachedData = !!(persistentCache.persistedState?.reclamacoes?.length);
+  const cachedReclamacoes = persistentCache.persistedState?.reclamacoes || [];
+  
   const dataSource = useMemo<'api' | 'cache' | 'none'>(() => {
-    // Se API retornou dados, usar API
     if (cacheResponse?.devolucoes?.length) return 'api';
-    
-    // 🚀 COMBO 2.1: Se não houve busca manual ainda, usar cache local se existir
-    if (!shouldFetch && localCache.hasCachedData) {
-      console.log('⚡ [COMBO 2.1] Usando cache local (sem busca manual ainda)');
+    if (!shouldFetch && hasCachedData) {
+      console.log('⚡ [RECLAMACOES] Usando persistentCache (instantâneo)');
       return 'cache';
     }
-    
-    // Se houve busca mas cache local é válido para filtros atuais
-    if (localCache.hasCachedData) {
-      const currentFilters = {
-        accounts: selectedAccountIds || [],
-        periodo: unifiedFilters.periodo,
-        dateFrom,
-        dateTo
-      };
-      if (localCache.isCacheValidForFilters(currentFilters)) return 'cache';
-    }
-    
     return 'none';
-  }, [cacheResponse?.devolucoes, localCache.hasCachedData, selectedAccountIds, unifiedFilters.periodo, dateFrom, dateTo, shouldFetch]);
+  }, [cacheResponse?.devolucoes, hasCachedData, shouldFetch]);
 
-  // 🚀 COMBO 2.1: Usar dados do cache local OU do servidor
+  // ✅ ERRO 1+2 CORRIGIDO: Usar dados do persistentCache (igual /vendas-online)
   const allReclamacoes = useMemo(() => {
     if (dataSource === 'api') {
       return cacheResponse?.devolucoes || [];
     }
     if (dataSource === 'cache') {
-      console.log('⚡ [COMBO 2.1] Usando dados do cache local (instantâneo)');
-      return localCache.cachedData || [];
+      console.log('⚡ [RECLAMACOES] Usando dados do persistentCache (instantâneo)');
+      return cachedReclamacoes;
     }
     return [];
-  }, [dataSource, cacheResponse?.devolucoes, localCache.cachedData]);
+  }, [dataSource, cacheResponse?.devolucoes, cachedReclamacoes]);
 
-  // 🚀 COMBO 2.1: Total count (API ou cache local)
+  // ✅ ERRO 1+2 CORRIGIDO: Total count usando persistentCache
   const totalCount = useMemo(() => {
     if (dataSource === 'api') return cacheResponse?.total_count || 0;
-    if (dataSource === 'cache') return localCache.cachedTotalCount || 0;
+    if (dataSource === 'cache') return cachedReclamacoes.length;
     return 0;
-  }, [dataSource, cacheResponse?.total_count, localCache.cachedTotalCount]);
+  }, [dataSource, cacheResponse?.total_count, cachedReclamacoes.length]);
 
-  // 🚀 COMBO 2.1: Salvar dados no cache local após busca bem-sucedida
+  // ✅ ERRO 1+2+4 CORRIGIDO: Salvar usando persistentCache.saveDataCache (igual /vendas-online)
   useEffect(() => {
     if (cacheResponse?.devolucoes?.length && shouldFetch) {
-      const currentFilters = {
-        accounts: selectedAccountIds || [],
-        periodo: unifiedFilters.periodo,
-        dateFrom,
-        dateTo
-      };
-      localCache.saveToCache(
+      console.log('💾 [RECLAMACOES] Salvando em persistentCache:', cacheResponse.devolucoes.length);
+      persistentCache.saveDataCache(
         cacheResponse.devolucoes,
-        currentFilters,
-        cacheResponse.total_count || cacheResponse.devolucoes.length
+        selectedAccountIds || [],
+        { periodo: unifiedFilters.periodo, status: unifiedFilters.status },
+        currentPage,
+        itemsPerPage,
+        columnManager.visibleColumnKeys
       );
     }
-  }, [cacheResponse?.devolucoes, shouldFetch, selectedAccountIds, unifiedFilters.periodo, dateFrom, dateTo]);
+  }, [cacheResponse?.devolucoes, shouldFetch, selectedAccountIds, unifiedFilters.periodo, currentPage, itemsPerPage]);
 
   // 🚀 COMBO 2.1: Buscar reclamações (MANUAL - apenas ao clicar)
   const handleBuscarReclamacoes = async () => {
@@ -490,12 +456,10 @@ export function ReclamacoesPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
-                    {/* 🚀 COMBO 2.1: Badge de fonte de dados */}
+                    {/* ✅ ERRO 1+2 CORRIGIDO: Badge usando persistentCache */}
                     {dataSource === 'cache' && (
-                      <span className={`text-xs px-2 py-1 rounded-full ${localCache.isCacheStale ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
-                        {localCache.isCacheStale 
-                          ? `⏰ Cache (${localCache.cacheAge}min) - Pode estar desatualizado` 
-                          : `⚡ Cache (${localCache.cacheAge}min)`}
+                      <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        ⚡ Cache ({cachedReclamacoes.length} itens)
                       </span>
                     )}
                     {isFetching && (
