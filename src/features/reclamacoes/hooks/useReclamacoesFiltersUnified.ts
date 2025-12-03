@@ -50,8 +50,23 @@ export function useReclamacoesFiltersUnified() {
     const urlFilters: Partial<ReclamacoesFilters> = {};
     const hasUrlParams = searchParams.toString().length > 0;
     
-    const periodo = searchParams.get('periodo');
-    if (periodo) urlFilters.periodo = periodo;
+    // 🔧 CORREÇÃO: Verificar se período do cache é diferente do default
+    // Se sim, não capturar período da URL quando é o default (permitir cache prevalecer)
+    const cachedPeriodo = persistentCache.persistedState?.filters?.periodo;
+    const urlPeriodo = searchParams.get('periodo');
+    
+    // Só usar período da URL se:
+    // 1. Não é o default, OU
+    // 2. Cache não tem período diferente do default
+    const shouldUseUrlPeriodo = urlPeriodo && (
+      urlPeriodo !== DEFAULT_FILTERS.periodo || 
+      !cachedPeriodo || 
+      cachedPeriodo === DEFAULT_FILTERS.periodo
+    );
+    
+    if (shouldUseUrlPeriodo) {
+      urlFilters.periodo = urlPeriodo;
+    }
     
     const status = searchParams.get('status');
     if (status) urlFilters.status = status;
@@ -81,14 +96,10 @@ export function useReclamacoesFiltersUnified() {
     if (cacheAvailable) {
       console.log('📦 [CACHE] Cache disponível, restaurando campos não presentes na URL');
       
-      // 🔧 CORREÇÃO: Restaurar período do cache se for diferente do default
-      // (indica que usuário escolheu outro período na última sessão)
-      const cachedPeriodo = persistentCache.persistedState?.filters?.periodo;
-      if (cachedPeriodo && cachedPeriodo !== DEFAULT_FILTERS.periodo) {
+      // 🔧 Período do cache (se não foi capturado da URL)
+      if (!urlFilters.periodo && cachedPeriodo) {
         cachedFilters.periodo = cachedPeriodo;
         console.log('🔄 [CACHE] Restaurando período do cache:', cachedPeriodo);
-      } else if (!urlFilters.periodo && cachedPeriodo) {
-        cachedFilters.periodo = cachedPeriodo;
       }
       if (!urlFilters.status && persistentCache.persistedState?.filters?.status) {
         cachedFilters.status = persistentCache.persistedState.filters.status;
