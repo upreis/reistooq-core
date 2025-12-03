@@ -81,8 +81,14 @@ export function useReclamacoesFiltersUnified() {
     if (cacheAvailable) {
       console.log('📦 [CACHE] Cache disponível, restaurando campos não presentes na URL');
       
-      if (!urlFilters.periodo && persistentCache.persistedState?.filters?.periodo) {
-        cachedFilters.periodo = persistentCache.persistedState.filters.periodo;
+      // 🔧 CORREÇÃO: Restaurar período do cache se for diferente do default
+      // (indica que usuário escolheu outro período na última sessão)
+      const cachedPeriodo = persistentCache.persistedState?.filters?.periodo;
+      if (cachedPeriodo && cachedPeriodo !== DEFAULT_FILTERS.periodo) {
+        cachedFilters.periodo = cachedPeriodo;
+        console.log('🔄 [CACHE] Restaurando período do cache:', cachedPeriodo);
+      } else if (!urlFilters.periodo && cachedPeriodo) {
+        cachedFilters.periodo = cachedPeriodo;
       }
       if (!urlFilters.status && persistentCache.persistedState?.filters?.status) {
         cachedFilters.status = persistentCache.persistedState.filters.status;
