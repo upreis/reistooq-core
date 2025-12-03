@@ -49,15 +49,15 @@ serve(async (req) => {
 
     console.log(`🔍 Analisando comportamento para org: ${profile.organizacao_id}`);
 
-    // Buscar session replays recentes (últimas 24h)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Buscar session replays recentes (últimos 30 dias)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     
     const { data: sessions, error: sessionsError } = await supabaseAdmin
       .from('knowledge_base')
       .select('id, title, content, metadata')
       .eq('organization_id', profile.organizacao_id)
       .eq('source', 'session_replay')
-      .gte('created_at', oneDayAgo)
+      .gte('created_at', thirtyDaysAgo)
       .order('created_at', { ascending: false })
       .limit(50);
 
