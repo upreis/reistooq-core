@@ -93,10 +93,12 @@ export function ReclamacoesPage() {
   // 🚀 COMBO 2.1: Estado para controle de busca MANUAL (não automática)
   const [shouldFetch, setShouldFetch] = useState(false);
   
-  // 🚀 COMBO 2.1: Ref para rastrear se já restaurou filtros do cache
-  const hasRestoredFromCacheRef = React.useRef(false);
+  // ✅ ERRO 3 CORRIGIDO: Estado para DADOS restaurados (igual /vendas-online)
+  const [reclamacoesCached, setReclamacoesCached] = useState<any[]>([]);
+  const [totalCached, setTotalCached] = useState(0);
   
-  // ✅ ERRO 1+2 CORRIGIDO: Removido localCache duplicado - usando apenas persistentCache
+  // 🚀 COMBO 2.1: Ref para rastrear se já restaurou dados do cache
+  const hasRestoredFromCacheRef = React.useRef(false);
   
   // Constantes derivadas dos filtros unificados
   const selectedAccountIds = unifiedFilters.selectedAccounts;
@@ -180,53 +182,57 @@ export function ReclamacoesPage() {
     enabled: shouldFetch && (selectedAccountIds?.length || 0) > 0 // ✅ COMBO 2.1: Só busca após clique
   });
 
-  // ✅ ERRO 1+2 CORRIGIDO: Restauração usando persistentCache (igual /vendas-online)
+  // ✅ ERRO 3 CORRIGIDO: Restauração de DADOS no mount (igual /vendas-online linha 161)
   useEffect(() => {
     if (hasRestoredFromCacheRef.current) return;
     if (!persistentCache.isStateLoaded) return;
     
     const cached = persistentCache.persistedState;
     if (cached?.reclamacoes?.length > 0) {
-      console.log('📦 [RECLAMACOES] Restaurando cache:', {
+      console.log('📦 [RECLAMACOES] Restaurando DADOS do cache:', {
         reclamacoes: cached.reclamacoes.length,
         contas: cached.selectedAccounts?.length,
         periodo: cached.filters?.periodo
       });
+      
+      // ✅ ERRO 3: Popular estado com dados do cache (igual setOrders em /vendas-online)
+      setReclamacoesCached(cached.reclamacoes);
+      setTotalCached(cached.reclamacoes.length);
+      
       hasRestoredFromCacheRef.current = true;
     }
   }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
 
-  // ✅ ERRO 1+2 CORRIGIDO: Determinar fonte usando persistentCache (igual /vendas-online)
-  const hasCachedData = !!(persistentCache.persistedState?.reclamacoes?.length);
-  const cachedReclamacoes = persistentCache.persistedState?.reclamacoes || [];
+  // ✅ ERRO 3 CORRIGIDO: Determinar fonte usando estado local (igual /vendas-online)
+  const hasCachedData = reclamacoesCached.length > 0;
   
   const dataSource = useMemo<'api' | 'cache' | 'none'>(() => {
     if (cacheResponse?.devolucoes?.length) return 'api';
     if (!shouldFetch && hasCachedData) {
-      console.log('⚡ [RECLAMACOES] Usando persistentCache (instantâneo)');
+      console.log('⚡ [RECLAMACOES] Usando dados restaurados (instantâneo)');
       return 'cache';
     }
     return 'none';
   }, [cacheResponse?.devolucoes, hasCachedData, shouldFetch]);
 
-  // ✅ ERRO 1+2 CORRIGIDO: Usar dados do persistentCache (igual /vendas-online)
+  // ✅ ERRO 3 CORRIGIDO: Usar estado local restaurado (igual /vendas-online)
   const allReclamacoes = useMemo(() => {
     if (dataSource === 'api') {
       return cacheResponse?.devolucoes || [];
     }
     if (dataSource === 'cache') {
-      console.log('⚡ [RECLAMACOES] Usando dados do persistentCache (instantâneo)');
-      return cachedReclamacoes;
+      console.log('⚡ [RECLAMACOES] Renderizando dados do cache:', reclamacoesCached.length);
+      return reclamacoesCached;
     }
     return [];
-  }, [dataSource, cacheResponse?.devolucoes, cachedReclamacoes]);
+  }, [dataSource, cacheResponse?.devolucoes, reclamacoesCached]);
 
-  // ✅ ERRO 1+2 CORRIGIDO: Total count usando persistentCache
+  // ✅ ERRO 3 CORRIGIDO: Total count usando estado local
   const totalCount = useMemo(() => {
     if (dataSource === 'api') return cacheResponse?.total_count || 0;
-    if (dataSource === 'cache') return cachedReclamacoes.length;
+    if (dataSource === 'cache') return totalCached;
     return 0;
-  }, [dataSource, cacheResponse?.total_count, cachedReclamacoes.length]);
+  }, [dataSource, cacheResponse?.total_count, totalCached]);
 
   // ✅ ERRO 1+2+4 CORRIGIDO: Salvar usando persistentCache.saveDataCache (igual /vendas-online)
   useEffect(() => {
@@ -456,10 +462,10 @@ export function ReclamacoesPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
-                    {/* ✅ ERRO 1+2 CORRIGIDO: Badge usando persistentCache */}
+                    {/* ✅ ERRO 3 CORRIGIDO: Badge usando estado local */}
                     {dataSource === 'cache' && (
                       <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        ⚡ Cache ({cachedReclamacoes.length} itens)
+                        ⚡ Cache ({reclamacoesCached.length} itens)
                       </span>
                     )}
                     {isFetching && (
