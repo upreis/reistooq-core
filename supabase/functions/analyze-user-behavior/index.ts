@@ -17,19 +17,27 @@ serve(async (req) => {
       throw new Error('Missing authorization header');
     }
 
-    const supabase = createClient(
+    // Extrair token do header
+    const token = authHeader.replace('Bearer ', '');
+
+    // Usar SERVICE_ROLE_KEY para validar JWT e obter usuário
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Obter usuário e organização
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Unauthorized');
+    // Verificar o token JWT e obter dados do usuário
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      throw new Error('Unauthorized - Invalid token');
     }
 
-    const { data: profile } = await supabase
+    console.log(`✅ Usuário autenticado: ${user.email}`);
+
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('organizacao_id')
       .eq('id', user.id)
@@ -44,7 +52,7 @@ serve(async (req) => {
     // Buscar session replays recentes (últimas 24h)
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     
-    const { data: sessions, error: sessionsError } = await supabase
+    const { data: sessions, error: sessionsError } = await supabaseAdmin
       .from('knowledge_base')
       .select('id, title, content, metadata')
       .eq('organization_id', profile.organizacao_id)
@@ -204,7 +212,7 @@ Retorne APENAS a análise em formato JSON.`;
           if (analysis.insights && Array.isArray(analysis.insights)) {
             for (const insight of analysis.insights) {
               // Salvar no banco
-              const { data: savedInsight, error: insertError } = await supabase
+              const { data: savedInsight, error: insertError } = await supabaseAdmin
                 .from('ai_insights')
                 .insert({
                   organization_id: profile.organizacao_id,
