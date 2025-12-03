@@ -188,9 +188,11 @@ export const Devolucao2025Page = () => {
     ? appliedAccounts 
     : (accounts.length > 0 ? accounts.map(a => a.id) : []);
   
-  // 🚀 COMBO 2.1 CORRIGIDO: NÃO consultar automaticamente
-  // Igual /vendas-online: só busca quando shouldFetch=true OU quando não há cache local
-  const shouldQueryCache = shouldFetch || (!localCache.hasCachedData && !hasDevolucoes() && accountIds.length > 0);
+  // 🚀 ERRO 3 CORRIGIDO: Busca MANUAL obrigatória (padrão Combo 2.1)
+  // ANTES: shouldFetch || (!localCache.hasCachedData && !hasDevolucoes() && accountIds.length > 0)
+  // PROBLEMA: localCache.hasCachedData sempre false → query sempre dispara
+  // CORREÇÃO: Usar APENAS shouldFetch - store já tem dados via restauração do ERRO 2
+  const shouldQueryCache = shouldFetch;
   
   // ✅ ERRO 2 CORRIGIDO: Restauração DIRETA no store no mount (padrão /vendas-online)
   // ✅ AUDITORIA: Verifica se store JÁ tem dados antes de restaurar (evita sobrescrever dados mais recentes)
