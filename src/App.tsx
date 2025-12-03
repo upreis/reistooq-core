@@ -13,8 +13,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
 import { AIChatBubble } from "@/components/ai-chat/AIChatBubble";
-// Desabilitado temporariamente devido a erros de compatibilidade com rrweb
-// import { SessionRecordingProvider } from "@/components/ai-chat/SessionRecordingProvider";
+import { SessionRecordingProvider } from "@/components/ai-chat/SessionRecordingProvider";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -130,7 +129,9 @@ function App() {
                   {/* Rotas protegidas com layout */}
                   <Route path="/" element={
                     <ProtectedRoute>
-                      <FullLayout />
+                      <SessionRecordingProvider>
+                        <FullLayout />
+                      </SessionRecordingProvider>
                     </ProtectedRoute>
                   }>
                     <Route index element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
