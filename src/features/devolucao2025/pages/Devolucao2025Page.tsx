@@ -5,7 +5,7 @@
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -29,6 +29,7 @@ import { useDevolucoesColumnManager } from '../hooks/useDevolucoesColumnManager'
 import { useDevolucoesAggregator } from '../hooks/useDevolucoesAggregator';
 import { useMLClaimsFromCache } from '@/hooks/useMLClaimsFromCache';
 import { useDevolucoesLocalCache } from '../hooks/useDevolucoesLocalCache';
+import { useDevolucoesStore } from '../store/devolucoesStore';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
@@ -59,8 +60,19 @@ export const Devolucao2025Page = () => {
   // 🚀 COMBO 2.1: Cache local para restauração instantânea
   const localCache = useDevolucoesLocalCache();
   
+  // 🗄️ ERRO 2 CORRIGIDO: Store Zustand para restauração direta (padrão /vendas-online)
+  const { 
+    devolucoes: storeDevolucoes, 
+    setDevolucoes, 
+    dataSource: storeDataSource,
+    hasDevolucoes 
+  } = useDevolucoesStore();
+  
   // 🚀 COMBO 2.1: Estado de busca controlado (NÃO busca automaticamente)
   const [shouldFetch, setShouldFetch] = useState(false);
+  
+  // ✅ ERRO 2 CORRIGIDO: Flag para evitar restauração duplicada
+  const hasRestoredFromCache = useRef(false);
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -178,7 +190,21 @@ export const Devolucao2025Page = () => {
   
   // 🚀 COMBO 2.1 CORRIGIDO: NÃO consultar automaticamente
   // Igual /vendas-online: só busca quando shouldFetch=true OU quando não há cache local
-  const shouldQueryCache = shouldFetch || (!localCache.hasCachedData && accountIds.length > 0);
+  const shouldQueryCache = shouldFetch || (!localCache.hasCachedData && !hasDevolucoes() && accountIds.length > 0);
+  
+  // ✅ ERRO 2 CORRIGIDO: Restauração DIRETA no store no mount (padrão /vendas-online)
+  useEffect(() => {
+    if (hasRestoredFromCache.current) return;
+    
+    const cached = localCache.cachedData;
+    const totalCount = localCache.cachedTotalCount || 0;
+    
+    if (cached && cached.length > 0) {
+      console.log('⚡ [STORE] Restaurando localStorage DIRETO no store:', cached.length);
+      setDevolucoes(cached, totalCount, 'localStorage');
+      hasRestoredFromCache.current = true;
+    }
+  }, [localCache.cachedData, localCache.cachedTotalCount, setDevolucoes]);
   
   const cacheQuery = useMLClaimsFromCache({
     integration_account_ids: accountIds,
@@ -198,50 +224,19 @@ export const Devolucao2025Page = () => {
     !cacheQuery.isLoading && 
     (cacheExpired || shouldFetch);
 
-  // 🚀 COMBO 2.1 CORRIGIDO: Mostrar localStorage INSTANTANEAMENTE enquanto Supabase carrega
-  // Igual /vendas-online: dados aparecem imediatamente na montagem
-  const devolucoesCompletas = useMemo(() => {
-    const cacheData = cacheQuery.data?.devolucoes;
-    const localData = localCache.cachedData;
-    
-    // ✅ PRIORIDADE 1: Se Supabase carregou E tem dados, usar Supabase
-    if (!cacheQuery.isLoading && cacheData && cacheData.length > 0) {
-      console.log('✅ [COMBO 2.1] Usando dados do Supabase cache:', cacheData.length);
-      return cacheData;
-    }
-    
-    // ✅ PRIORIDADE 2: Enquanto Supabase carrega OU não tem dados, usar localStorage
-    // ISTO É A CORREÇÃO CRÍTICA - mostrar localStorage IMEDIATAMENTE
-    if (localData && localData.length > 0) {
-      console.log('⚡ [COMBO 2.1] Usando dados do localStorage (instantâneo):', localData.length);
-      return localData;
-    }
-    
-    // ✅ PRIORIDADE 3: Supabase terminou mas não tinha localStorage
-    if (!cacheQuery.isLoading && cacheData && cacheData.length > 0) {
-      return cacheData;
-    }
-    
-    return [];
-  }, [cacheQuery.isLoading, cacheQuery.data?.devolucoes, localCache.cachedData]);
+  // 🚀 ERRO 2 CORRIGIDO: Agora usa STORE como fonte principal (padrão /vendas-online)
+  // devolucoesCompletas simplesmente retorna dados do store
+  const devolucoesCompletas = storeDevolucoes;
 
   // ✅ CORREÇÃO: dataSource reflete a fonte REAL dos dados mostrados
-  const dataSource = useMemo(() => {
-    if (!cacheQuery.isLoading && cacheQuery.data?.devolucoes?.length > 0) {
-      return cacheQuery.data?.source || 'cache';
-    }
-    if (localCache.hasCachedData) {
-      return 'localStorage';
-    }
-    return cacheQuery.isLoading ? 'loading' : 'empty';
-  }, [cacheQuery.isLoading, cacheQuery.data, localCache.hasCachedData]);
+  const dataSource = storeDataSource;
   
-  // ✅ CORREÇÃO: isLoading = false se já tem dados do localStorage para mostrar
-  const isLoading = cacheQuery.isLoading && !localCache.hasCachedData;
+  // ✅ CORREÇÃO: isLoading = false se já tem dados no store para mostrar
+  const isLoading = cacheQuery.isLoading && !hasDevolucoes();
   const isFetching = cacheQuery.isFetching;
   const error = cacheQuery.error;
 
-  // 🚀 COMBO 2.1 CORRIGIDO: Salvar no localStorage SEMPRE que tiver dados novos
+  // 🚀 COMBO 2.1 CORRIGIDO: Salvar no localStorage E atualizar store quando query retornar
   // ✅ ERRO 1 CORRIGIDO: Removido condição shouldFetch - salva sempre que Supabase retorna dados
   // ✅ AUDITORIA: Usar saveToCache diretamente (memoizado) para evitar loop infinito
   const { saveToCache } = localCache;
@@ -250,10 +245,14 @@ export const Devolucao2025Page = () => {
     const devolucoes = cacheQuery.data?.devolucoes;
     const totalCount = cacheQuery.data?.total_count || 0;
     
-    // ✅ Salvar SEMPRE que tiver dados novos do Supabase (não depende de shouldFetch)
+    // ✅ Atualizar store E localStorage quando tiver dados novos do Supabase
     if (devolucoes && devolucoes.length > 0) {
-      console.log('💾 [COMBO 2.1] Salvando dados no localStorage:', devolucoes.length);
+      console.log('💾 [COMBO 2.1] Atualizando store + localStorage:', devolucoes.length);
       
+      // ✅ ERRO 2 CORRIGIDO: Atualizar STORE diretamente (padrão /vendas-online)
+      setDevolucoes(devolucoes, totalCount, 'cache');
+      
+      // Salvar no localStorage também
       saveToCache(
         devolucoes,
         {
@@ -265,7 +264,7 @@ export const Devolucao2025Page = () => {
         totalCount
       );
     }
-  }, [cacheQuery.data, accountIds, periodo, backendDateRange, saveToCache]);
+  }, [cacheQuery.data, accountIds, periodo, backendDateRange, saveToCache, setDevolucoes]);
 
   // 📊 Log detalhado da fonte de dados (COMBO 2.1)
   useEffect(() => {
@@ -322,7 +321,7 @@ export const Devolucao2025Page = () => {
     const enriched = devolucoes.map(dev => ({
       ...dev,
       status_analise_local: analiseStatus[dev.order_id] || 'pendente' as StatusAnalise
-    }));
+    })) as Array<Record<string, any> & { status_analise_local: StatusAnalise }>;
     console.log(`✨ [ENRIQUECIMENTO] ${enriched.length} devoluções enriquecidas com status de análise`);
     return enriched;
   }, [devolucoes, analiseStatus]);
