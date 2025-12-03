@@ -153,7 +153,8 @@ export function useReclamacoesFiltersUnified() {
     setTimeout(() => {
       isRestoringFromUrl.current = false;
     }, 0);
-  }, [persistentCache.isStateLoaded, searchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persistentCache.isStateLoaded]); // 🔧 CORREÇÃO: Remover searchParams para evitar re-execuções
 
   // 🔥 CORREÇÃO 1: Cleanup separado - só roda no unmount real do componente
   useEffect(() => {
