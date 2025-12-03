@@ -27,7 +27,7 @@ export const useMLOrdersFromCache = ({
   integrationAccountIds,
   dateFrom,
   dateTo,
-  enabled = true
+  enabled = false // 🎯 COMBO 2.1: Default FALSE - só busca após clique manual
 }: UseMLOrdersFromCacheParams) => {
   
   return useQuery({

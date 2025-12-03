@@ -118,7 +118,7 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
       ]
     : null;
 
-  // Fetch com SWR (NÃO automático, depende de shouldFetchFromAPI)
+  // 🎯 COMBO 2.1: Fetch com SWR (NÃO automático, depende de shouldFetchFromAPI)
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     async () => {
@@ -149,6 +149,7 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
+      revalidateOnMount: false, // 🎯 COMBO 2.1: NÃO buscar ao montar
       dedupingInterval: 30000 // Cache de 30s
     }
   );
