@@ -195,24 +195,46 @@ export const Devolucao2025Page = () => {
     !cacheQuery.isLoading && 
     (cacheExpired || shouldFetch);
 
-  // 🚀 COMBO 2.1: Usar dados do cache Supabase OU localStorage (prioridade: Supabase > localStorage)
+  // 🚀 COMBO 2.1 CORRIGIDO: Mostrar localStorage INSTANTANEAMENTE enquanto Supabase carrega
+  // Igual /vendas-online: dados aparecem imediatamente na montagem
   const devolucoesCompletas = useMemo(() => {
-    // Se tem dados do cache Supabase, usar eles (prioridade)
     const cacheData = cacheQuery.data?.devolucoes;
-    if (cacheData && cacheData.length > 0) {
+    const localData = localCache.cachedData;
+    
+    // ✅ PRIORIDADE 1: Se Supabase carregou E tem dados, usar Supabase
+    if (!cacheQuery.isLoading && cacheData && cacheData.length > 0) {
+      console.log('✅ [COMBO 2.1] Usando dados do Supabase cache:', cacheData.length);
       return cacheData;
     }
-    // Se não tem dados do Supabase mas tem cache local, usar cache local
-    const localData = localCache.cachedData;
+    
+    // ✅ PRIORIDADE 2: Enquanto Supabase carrega OU não tem dados, usar localStorage
+    // ISTO É A CORREÇÃO CRÍTICA - mostrar localStorage IMEDIATAMENTE
     if (localData && localData.length > 0) {
-      console.log('⚡ [COMBO 2.1] Usando dados do localStorage:', localData.length);
+      console.log('⚡ [COMBO 2.1] Usando dados do localStorage (instantâneo):', localData.length);
       return localData;
     }
+    
+    // ✅ PRIORIDADE 3: Supabase terminou mas não tinha localStorage
+    if (!cacheQuery.isLoading && cacheData && cacheData.length > 0) {
+      return cacheData;
+    }
+    
     return [];
-  }, [cacheQuery.data?.devolucoes, localCache.cachedData]);
+  }, [cacheQuery.isLoading, cacheQuery.data?.devolucoes, localCache.cachedData]);
 
-  const dataSource = cacheQuery.data?.source || (localCache.hasCachedData ? 'localStorage' : 'loading');
-  const isLoading = cacheQuery.isLoading;
+  // ✅ CORREÇÃO: dataSource reflete a fonte REAL dos dados mostrados
+  const dataSource = useMemo(() => {
+    if (!cacheQuery.isLoading && cacheQuery.data?.devolucoes?.length > 0) {
+      return cacheQuery.data?.source || 'cache';
+    }
+    if (localCache.hasCachedData) {
+      return 'localStorage';
+    }
+    return cacheQuery.isLoading ? 'loading' : 'empty';
+  }, [cacheQuery.isLoading, cacheQuery.data, localCache.hasCachedData]);
+  
+  // ✅ CORREÇÃO: isLoading = false se já tem dados do localStorage para mostrar
+  const isLoading = cacheQuery.isLoading && !localCache.hasCachedData;
   const isFetching = cacheQuery.isFetching;
   const error = cacheQuery.error;
 
