@@ -155,10 +155,10 @@ const ALL_PAGES: PageOption[] = [
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
   {
-    id: 'vendas-online',
-    label: 'Vendas Online',
-    route: '/vendas-online',
-    icon: <img src={vendasOnlineNewIcon} alt="Vendas Online" className="w-16 h-16 object-contain" />,
+    id: 'vendas-canceladas',
+    label: 'Vendas Canceladas',
+    route: '/vendas-canceladas',
+    icon: <img src={vendasOnlineNewIcon} alt="Vendas Canceladas" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },

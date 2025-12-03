@@ -1,5 +1,5 @@
 /**
- * 🎛️ CONFIGURAÇÃO DE COLUNAS - VENDAS ONLINE
+ * 🎛️ CONFIGURAÇÃO DE COLUNAS - VENDAS CANCELADAS
  * Define todas as colunas disponíveis para o seletor
  */
 

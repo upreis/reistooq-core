@@ -1,6 +1,6 @@
 /**
  * 🏢 ACCOUNT SELECTOR
- * Seletor de contas ML para Vendas Online
+ * Seletor de contas ML para Vendas Canceladas
  */
 
 import { useEffect, useState } from 'react';

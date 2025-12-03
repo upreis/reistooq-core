@@ -1,5 +1,5 @@
 /**
- * 🔧 TIPOS UNIFICADOS PARA SISTEMA DE COLUNAS - VENDAS ONLINE
+ * 🔧 TIPOS UNIFICADOS PARA SISTEMA DE COLUNAS - VENDAS CANCELADAS
  * Mantém compatibilidade com arquitetura /pedidos
  */
 

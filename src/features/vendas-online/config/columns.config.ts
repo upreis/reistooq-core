@@ -1,5 +1,5 @@
 /**
- * 🎯 CONFIGURAÇÃO CENTRALIZADA DE COLUNAS - VENDAS ONLINE
+ * 🎯 CONFIGURAÇÃO CENTRALIZADA DE COLUNAS - VENDAS CANCELADAS
  * Define todas as colunas disponíveis com metadados para gerenciamento avançado
  * Baseado exatamente nas colunas de VendasTable.tsx
  */

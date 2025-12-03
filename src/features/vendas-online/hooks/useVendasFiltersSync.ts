@@ -1,5 +1,5 @@
 /**
- * 🔗 SINCRONIZAÇÃO DE FILTROS COM URL - VENDAS ONLINE
+ * 🔗 SINCRONIZAÇÃO DE FILTROS COM URL - VENDAS CANCELADAS
  * 🎯 FASE 2: Tornar filtros compartilháveis via URL params
  */
 

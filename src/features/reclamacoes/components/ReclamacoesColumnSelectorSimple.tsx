@@ -1,6 +1,6 @@
 /**
  * 🎛️ SELETOR DE COLUNAS SIMPLES - RECLAMAÇÕES
- * Baseado no padrão funcionando de /vendas-online
+ * Baseado no padrão funcionando de /vendas-canceladas
  */
 
 import { useState } from 'react';

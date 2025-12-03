@@ -1,5 +1,5 @@
 /**
- * 📊 HOOK PARA AGREGAÇÃO DE MÉTRICAS - VENDAS ONLINE
+ * 📊 HOOK PARA AGREGAÇÃO DE MÉTRICAS - VENDAS CANCELADAS
  * Inspirado na arquitetura de referência /pedidos
  * 
  * Features:
