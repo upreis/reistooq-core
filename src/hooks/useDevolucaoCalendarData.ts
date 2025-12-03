@@ -36,7 +36,7 @@ export const useDevolucaoCalendarData = () => {
       // ✅ COMBO 2.1: Busca de ml_claims (fonte única de dados do CRON)
       const { data: claims, error: fetchError } = await supabase
         .from('ml_claims')
-        .select('claim_id, order_id, claim_type, status, date_created, claim_data, last_synced_at')
+        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed, claim_data, last_synced_at')
         .gte('date_created', sixtyDaysAgo)
         .order('date_created', { ascending: false });
 
@@ -79,7 +79,8 @@ export const useDevolucaoCalendarData = () => {
               order_id: claim.order_id || claimData.resource_id || claim.claim_id,
               status_devolucao: claim.status || claimData.status,
               produto_titulo: claimData.items?.[0]?.title || claimData.product_info?.title || 'Produto',
-              sku: claimData.items?.[0]?.seller_sku || ''
+              sku: claimData.items?.[0]?.seller_sku || '',
+              reason_id: claim.reason_id || claimData.reason_id
             });
           } catch (e) {
             // Ignorar data inválida
