@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,8 @@ import {
   Sparkles,
   RefreshCw,
   ArrowRight,
-  Activity
+  Activity,
+  ShieldAlert
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -44,10 +45,21 @@ interface AIInsight {
 export default function AIInsights() {
   const [activeTab, setActiveTab] = useState<InsightStatus>('pending');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [permissionError, setPermissionError] = useState(false);
   const queryClient = useQueryClient();
 
+  // Obter usuário atual
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUser();
+  }, []);
+
   // Buscar insights
-  const { data: insights, isLoading } = useQuery({
+  const { data: insights, isLoading, error } = useQuery({
     queryKey: ['ai-insights'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -55,7 +67,14 @@ export default function AIInsights() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // Verificar se é erro de permissão RLS
+        if (error.code === '42501' || error.message?.includes('permission') || error.message?.includes('policy')) {
+          setPermissionError(true);
+        }
+        throw error;
+      }
+      setPermissionError(false);
       return data as AIInsight[];
     }
   });
@@ -87,6 +106,7 @@ export default function AIInsights() {
           status,
           review_notes: notes,
           reviewed_at: new Date().toISOString(),
+          reviewed_by: userId,
         })
         .eq('id', id);
 
@@ -96,8 +116,12 @@ export default function AIInsights() {
       queryClient.invalidateQueries({ queryKey: ['ai-insights'] });
       toast.success('Status atualizado!');
     },
-    onError: () => {
-      toast.error('Erro ao atualizar status');
+    onError: (error: any) => {
+      if (error.code === '42501' || error.message?.includes('permission') || error.message?.includes('policy')) {
+        toast.error('Você não tem permissão para atualizar insights');
+      } else {
+        toast.error('Erro ao atualizar status');
+      }
     }
   });
 
@@ -222,7 +246,20 @@ export default function AIInsights() {
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4 mt-6">
-          {isLoading ? (
+          {permissionError ? (
+            <Card className="border-destructive">
+              <CardContent className="text-center py-12">
+                <ShieldAlert className="h-12 w-12 mx-auto text-destructive mb-4" />
+                <h3 className="font-semibold text-lg mb-2">Acesso Restrito</h3>
+                <p className="text-muted-foreground">
+                  Você não tem permissão para visualizar os AI Insights.
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Entre em contato com o administrador para obter acesso.
+                </p>
+              </CardContent>
+            </Card>
+          ) : isLoading ? (
             <div className="text-center py-8">
               <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
               <p className="mt-2 text-muted-foreground">Carregando insights...</p>
