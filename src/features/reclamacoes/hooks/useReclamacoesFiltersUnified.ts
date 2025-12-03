@@ -38,15 +38,17 @@ export function useReclamacoesFiltersUnified() {
   const isFirstRender = useRef(true); // 🔥 Rastrear primeira renderização
   const isRestoringFromUrl = useRef(false); // 🔥 ERRO 5: Flag para evitar loop de re-renderização
 
-  // 🔥 CORREÇÃO: Restaurar filtros com prioridade URL > Cache > Defaults
+  // 🔥 ERRO 5 CORRIGIDO: Restaurar filtros com prioridade URL > Cache > Defaults
+  // URL SEMPRE tem prioridade absoluta, mesmo quando cache falha
   useEffect(() => {
     if (!persistentCache.isStateLoaded) return;
     
-    // 🔥 ERRO 5: Marcar que estamos restaurando da URL
+    // 🔥 Marcar que estamos restaurando
     isRestoringFromUrl.current = true;
     
-    // 1. Parsear filtros da URL
+    // 1. Parsear filtros da URL PRIMEIRO (prioridade absoluta)
     const urlFilters: Partial<ReclamacoesFilters> = {};
+    const hasUrlParams = searchParams.toString().length > 0;
     
     const periodo = searchParams.get('periodo');
     if (periodo) urlFilters.periodo = periodo;
@@ -61,7 +63,7 @@ export function useReclamacoesFiltersUnified() {
     if (stage) urlFilters.stage = stage;
     
     const accounts = searchParams.get('accounts');
-    if (accounts) urlFilters.selectedAccounts = accounts.split(',');
+    if (accounts) urlFilters.selectedAccounts = accounts.split(',').filter(Boolean);
     
     const page = searchParams.get('page');
     if (page) urlFilters.currentPage = parseInt(page, 10);
@@ -69,62 +71,72 @@ export function useReclamacoesFiltersUnified() {
     const limit = searchParams.get('limit');
     if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
     
-    // 2. Carregar filtros do cache (apenas campos que NÃO estão na URL)
+    // 2. Carregar filtros do cache APENAS se:
+    //    - Não está inicializado ainda
+    //    - Cache existe e é válido
+    //    - Campo específico NÃO está na URL
     const cachedFilters: Partial<ReclamacoesFilters> = {};
+    const cacheAvailable = !isInitialized && persistentCache.persistedState;
     
-    if (!isInitialized && persistentCache.persistedState) {
-      if (!urlFilters.periodo && persistentCache.persistedState.filters?.periodo) {
+    if (cacheAvailable) {
+      console.log('📦 [CACHE] Cache disponível, restaurando campos não presentes na URL');
+      
+      if (!urlFilters.periodo && persistentCache.persistedState?.filters?.periodo) {
         cachedFilters.periodo = persistentCache.persistedState.filters.periodo;
-        console.log('📦 [CACHE] Restaurando período do cache:', cachedFilters.periodo);
       }
-      if (!urlFilters.status) {
-        cachedFilters.status = persistentCache.persistedState.filters?.status;
+      if (!urlFilters.status && persistentCache.persistedState?.filters?.status) {
+        cachedFilters.status = persistentCache.persistedState.filters.status;
       }
-      if (!urlFilters.type) {
-        cachedFilters.type = persistentCache.persistedState.filters?.type;
+      if (!urlFilters.type && persistentCache.persistedState?.filters?.type) {
+        cachedFilters.type = persistentCache.persistedState.filters.type;
       }
-      if (!urlFilters.stage) {
-        cachedFilters.stage = persistentCache.persistedState.filters?.stage;
+      if (!urlFilters.stage && persistentCache.persistedState?.filters?.stage) {
+        cachedFilters.stage = persistentCache.persistedState.filters.stage;
       }
-      if (!urlFilters.selectedAccounts && persistentCache.persistedState.selectedAccounts?.length) {
+      if (!urlFilters.selectedAccounts && persistentCache.persistedState?.selectedAccounts?.length) {
         cachedFilters.selectedAccounts = persistentCache.persistedState.selectedAccounts;
       }
-      if (!urlFilters.currentPage) {
+      if (!urlFilters.currentPage && persistentCache.persistedState?.currentPage) {
         cachedFilters.currentPage = persistentCache.persistedState.currentPage;
       }
-      if (!urlFilters.itemsPerPage) {
+      if (!urlFilters.itemsPerPage && persistentCache.persistedState?.itemsPerPage) {
         cachedFilters.itemsPerPage = persistentCache.persistedState.itemsPerPage;
       }
+    } else if (!cacheAvailable && hasUrlParams) {
+      // 🔥 ERRO 5: Cache falhou mas URL tem parâmetros - usar URL!
+      console.log('⚠️ [ERRO 5] Cache indisponível, usando filtros da URL diretamente');
     }
     
-    // ✅ FASE 1-2: Limpar cache antigo duplicado (uma única vez)
+    // Limpar cache antigo duplicado (uma única vez)
     const OLD_CACHE_KEY = 'RECLAMACOES_LOCAL_CACHE_V1';
     if (localStorage.getItem(OLD_CACHE_KEY)) {
       localStorage.removeItem(OLD_CACHE_KEY);
       console.log('🗑️ Cache antigo removido:', OLD_CACHE_KEY);
     }
     
-    // 3. Merge: Defaults → Cache (só primeira vez) → URL (sempre tem prioridade)
+    // 3. Merge: Defaults → Cache → URL (URL SEMPRE sobrescreve)
     const mergedFilters: ReclamacoesFilters = {
       ...DEFAULT_FILTERS,
       ...cachedFilters,
-      ...urlFilters
+      ...urlFilters // 🔥 URL tem prioridade ABSOLUTA
     };
     
-    console.log('🔄 Restaurando filtros:', {
-      cache: cachedFilters,
-      url: urlFilters,
+    console.log('🔄 [FILTROS] Restauração completa:', {
+      hasUrlParams,
+      cacheAvailable: !!cacheAvailable,
+      urlFilters: Object.keys(urlFilters).length > 0 ? urlFilters : 'nenhum',
+      cacheFilters: Object.keys(cachedFilters).length > 0 ? cachedFilters : 'nenhum',
       final: mergedFilters
     });
     
     setFilters(mergedFilters);
-    setIsInitialized(true); // 🔥 CORREÇÃO 3: Sempre seta após restaurar (sem condicional)
+    setIsInitialized(true);
 
-    // 🔥 ERRO 5: Resetar flag após restauração completar
+    // Resetar flag após restauração completar
     setTimeout(() => {
       isRestoringFromUrl.current = false;
     }, 0);
-  }, [persistentCache.isStateLoaded, searchParams]); // 🔥 Monitora URL mas só carrega cache se URL não tem parâmetro
+  }, [persistentCache.isStateLoaded, searchParams]);
 
   // 🔥 CORREÇÃO 1: Cleanup separado - só roda no unmount real do componente
   useEffect(() => {
