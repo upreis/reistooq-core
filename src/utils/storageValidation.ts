@@ -111,6 +111,24 @@ export class LocalStorageValidator {
       }
     }
     
+    // 🔧 CORREÇÃO: Validar reclamacoes array (usado por /reclamacoes)
+    if (data.reclamacoes !== undefined) {
+      if (Array.isArray(data.reclamacoes) && data.reclamacoes.length <= 1000) {
+        cleaned.reclamacoes = data.reclamacoes;
+      } else {
+        cleaned.reclamacoes = []; // Fallback seguro
+      }
+    }
+    
+    // 🔧 CORREÇÃO: Validar selectedAccounts array
+    if (data.selectedAccounts !== undefined) {
+      if (Array.isArray(data.selectedAccounts)) {
+        cleaned.selectedAccounts = data.selectedAccounts;
+      } else {
+        cleaned.selectedAccounts = [];
+      }
+    }
+    
     // Validar campos numéricos
     if (data.total !== undefined) {
       const total = Number(data.total);
@@ -132,6 +150,26 @@ export class LocalStorageValidator {
       }
     }
     
+    // 🔧 CORREÇÃO: Validar itemsPerPage
+    if (data.itemsPerPage !== undefined) {
+      const itemsPerPage = Number(data.itemsPerPage);
+      if (!isNaN(itemsPerPage) && itemsPerPage >= 1 && itemsPerPage <= 500) {
+        cleaned.itemsPerPage = itemsPerPage;
+      } else {
+        cleaned.itemsPerPage = 50;
+      }
+    }
+    
+    // 🔧 CORREÇÃO: Copiar version
+    if (data.version !== undefined) {
+      cleaned.version = data.version;
+    }
+    
+    // 🔧 CORREÇÃO: Copiar visibleColumns
+    if (data.visibleColumns !== undefined && Array.isArray(data.visibleColumns)) {
+      cleaned.visibleColumns = data.visibleColumns;
+    }
+    
     // Validar timestamps
     if (data.cachedAt !== undefined) {
       const cachedDate = this.validateDate(data.cachedAt);
@@ -139,7 +177,8 @@ export class LocalStorageValidator {
         // Verificar se cache não é muito antigo (>24h)
         const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         if (cachedDate > dayAgo) {
-          cleaned.cachedAt = cachedDate;
+          // 🔧 CORREÇÃO: Retornar timestamp numérico, não Date object
+          cleaned.cachedAt = typeof data.cachedAt === 'number' ? data.cachedAt : cachedDate.getTime();
         } else {
           errors.push('Cache expirado');
         }
