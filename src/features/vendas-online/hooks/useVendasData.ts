@@ -1,7 +1,7 @@
 /**
  * 🔄 USE VENDAS DATA - OPÇÃO A
- * Busca direta da API ML (como /pedidos)
- * Sem CRON job, sem cache table - paginação frontend
+ * Busca TODOS os pedidos da API ML com paginação automática
+ * Paginação frontend sobre dados completos
  */
 
 import { useEffect, useRef } from 'react';
@@ -12,53 +12,87 @@ import { MLOrder } from '../types/vendas.types';
 
 interface FetchVendasParams {
   integrationAccountId: string;
-  search?: string;
-  status?: string[];
   dateFrom?: string | null;
   dateTo?: string | null;
-  offset: number;
-  limit: number;
 }
 
-const fetchVendasFromML = async (params: FetchVendasParams) => {
-  if (!params.integrationAccountId) {
-    throw new Error('Integration Account ID é obrigatório');
-  }
+const ML_PAGE_SIZE = 50; // Limite da API ML por requisição
 
-  console.log('🌐 [useVendasData] Buscando orders da API ML:', params);
+/**
+ * Busca TODOS os pedidos de uma conta com paginação automática
+ */
+const fetchAllOrdersFromAccount = async (params: FetchVendasParams): Promise<MLOrder[]> => {
+  const allOrders: MLOrder[] = [];
+  let offset = 0;
+  let hasMore = true;
 
-  // Buscar diretamente via unified-orders (como /pedidos)
-  const { data, error } = await supabase.functions.invoke('unified-orders', {
-    body: {
-      integration_account_id: params.integrationAccountId,
-      date_from: params.dateFrom,
-      date_to: params.dateTo,
-      offset: params.offset,
-      limit: params.limit
+  console.log(`🌐 [useVendasData] Buscando TODOS orders da conta ${params.integrationAccountId}...`);
+
+  while (hasMore) {
+    const { data, error } = await supabase.functions.invoke('unified-orders', {
+      body: {
+        integration_account_id: params.integrationAccountId,
+        date_from: params.dateFrom,
+        date_to: params.dateTo,
+        offset,
+        limit: ML_PAGE_SIZE
+      }
+    });
+
+    if (error) {
+      console.error('❌ [useVendasData] Erro ao buscar orders:', error);
+      throw error;
     }
-  });
 
-  if (error) {
-    console.error('❌ [useVendasData] Erro ao buscar orders:', error);
-    throw error;
+    const orders = data?.results || [];
+    allOrders.push(...orders);
+
+    console.log(`📦 [useVendasData] Página ${Math.floor(offset / ML_PAGE_SIZE) + 1}: ${orders.length} orders (total acumulado: ${allOrders.length})`);
+
+    // Verificar se há mais páginas
+    if (orders.length < ML_PAGE_SIZE) {
+      hasMore = false;
+    } else {
+      offset += ML_PAGE_SIZE;
+    }
   }
 
-  console.log('✅ [useVendasData] Resposta unified-orders:', {
-    results: data?.results?.length || 0,
-    paging: data?.paging
-  });
+  console.log(`✅ [useVendasData] Total de orders da conta: ${allOrders.length}`);
+  return allOrders;
+};
 
-  // unified-orders retorna { results, paging }
-  // IMPORTANTE: paging.total da API ML é o total GERAL da conta, não filtrado por período
-  // Devemos usar orders.length como contagem real dos pedidos retornados no período
-  const orders = data?.results || [];
-  const total = orders.length; // Usar contagem real, não paging.total que ignora filtros de data
-  
+const fetchVendasFromML = async (
+  accountIds: string[],
+  dateFrom?: string | null,
+  dateTo?: string | null
+) => {
+  if (!accountIds.length) {
+    throw new Error('Nenhuma conta selecionada');
+  }
+
+  console.log('🌐 [useVendasData] Iniciando busca completa de todas contas:', accountIds.length);
+
+  // Buscar de TODAS as contas em paralelo
+  const results = await Promise.all(
+    accountIds.map(accountId =>
+      fetchAllOrdersFromAccount({
+        integrationAccountId: accountId,
+        dateFrom,
+        dateTo
+      })
+    )
+  );
+
+  // Combinar todos os pedidos
+  const allOrders = results.flat();
+
+  console.log(`✅ [useVendasData] Total GERAL de orders: ${allOrders.length}`);
+
   // Extrair packs e shippings dos orders
   const packs: Record<string, any> = {};
   const shippings: Record<string, any> = {};
-  
-  orders.forEach((order: any) => {
+
+  allOrders.forEach((order: any) => {
     if (order.pack_id && !packs[order.pack_id]) {
       packs[order.pack_id] = {
         id: order.pack_id,
@@ -68,15 +102,15 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
     if (order.pack_id) {
       packs[order.pack_id].orders.push(order.id);
     }
-    
+
     if (order.shipping?.id && !shippings[order.shipping.id]) {
       shippings[order.shipping.id] = order.shipping;
     }
   });
 
   return {
-    orders: orders as MLOrder[],
-    total,
+    orders: allOrders as MLOrder[],
+    total: allOrders.length,
     packs,
     shippings
   };
@@ -96,59 +130,38 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
   // 🎯 Ref para evitar múltiplas buscas
   const hasFetchedFromAPI = useRef(false);
 
-  // ✅ OPÇÃO A: Buscar diretamente da API quando usuário clica "Aplicar Filtros"
+  // ✅ Buscar quando shouldFetch=true e há contas selecionadas
   const shouldFetchFromAPI = shouldFetch && selectedAccountIds.length > 0;
 
+  // 🔑 SWR Key - inclui filtros de data para revalidar quando mudarem
   const swrKey = shouldFetchFromAPI
     ? [
-        'vendas-ml-api',
-        selectedAccountIds.join(','),
-        filters.search,
-        filters.status.join(','),
+        'vendas-ml-api-all',
+        selectedAccountIds.sort().join(','),
         filters.dateFrom,
-        filters.dateTo,
-        pagination.currentPage,
-        pagination.itemsPerPage
+        filters.dateTo
       ]
     : null;
 
-  // 🎯 Fetch com SWR
+  // 🎯 Fetch com SWR - busca TODOS os dados, paginação é frontend
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     async () => {
-      console.log('🔄 [SWR] Executando fetch de API ML...');
-      
-      // ✅ Buscar de TODAS as contas selecionadas
-      const allOrders: any[] = [];
-      let totalGlobal = 0;
-      
-      for (const accountId of selectedAccountIds) {
-        const result = await fetchVendasFromML({
-          integrationAccountId: accountId,
-          search: filters.search,
-          status: filters.status,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
-          offset: (pagination.currentPage - 1) * pagination.itemsPerPage,
-          limit: pagination.itemsPerPage
-        });
-        
-        allOrders.push(...result.orders);
-        totalGlobal += result.total;
-      }
-      
-      return {
-        orders: allOrders,
-        total: totalGlobal,
-        packs: {},
-        shippings: {}
-      };
+      console.log('🔄 [SWR] Executando fetch COMPLETO de API ML...');
+
+      const result = await fetchVendasFromML(
+        selectedAccountIds,
+        filters.dateFrom,
+        filters.dateTo
+      );
+
+      return result;
     },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateOnMount: true,
-      dedupingInterval: 30000 // Cache de 30s no SWR
+      dedupingInterval: 60000 // Cache de 60s no SWR
     }
   );
 
@@ -162,18 +175,25 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     });
   }, [shouldFetch, shouldFetchFromAPI, swrKey, selectedAccountIds.length]);
 
-  // Reset flag quando contas ou shouldFetch mudam
+  // Reset flag quando contas ou filtros de data mudam
   useEffect(() => {
     hasFetchedFromAPI.current = false;
   }, [selectedAccountIds.join(','), filters.dateFrom, filters.dateTo]);
 
-  // 🔧 Atualizar store com dados
+  // 🔧 Atualizar store com dados (paginação frontend)
   useEffect(() => {
     setLoading(isLoading);
 
     if (data) {
-      console.log('✅ Atualizando store com dados da API ML:', data.orders.length);
-      setOrders(data.orders, data.total);
+      // Paginação FRONTEND - fatiar os dados completos
+      const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+      const endIndex = startIndex + pagination.itemsPerPage;
+      const paginatedOrders = data.orders.slice(startIndex, endIndex);
+
+      console.log(`✅ Atualizando store - Página ${pagination.currentPage}: ${paginatedOrders.length} de ${data.total} orders`);
+      
+      // Passar orders da página atual, mas total COMPLETO para paginação correta
+      setOrders(paginatedOrders, data.total);
       setPacks(data.packs);
       setShippings(data.shippings);
     }
@@ -181,7 +201,7 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     if (error) {
       setError(error.message);
     }
-  }, [data, isLoading, error, setLoading, setOrders, setPacks, setShippings, setError]);
+  }, [data, isLoading, error, pagination.currentPage, pagination.itemsPerPage, setLoading, setOrders, setPacks, setShippings, setError]);
 
   return {
     data,
