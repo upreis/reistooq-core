@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Columns3 } from 'lucide-react';
+import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Columns3, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -35,6 +35,7 @@ interface PedidosFiltersUnifiedProps {
   activeFiltersCount: number;
   contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>;
   columnManager?: any;
+  onOpenConfigLocais?: () => void;
   // Status Avançado
   useAdvancedStatus?: boolean;
   onToggleAdvancedStatus?: (enabled: boolean) => void;
@@ -79,6 +80,7 @@ export function PedidosFiltersUnified({
   activeFiltersCount,
   contasML = [],
   columnManager,
+  onOpenConfigLocais,
   useAdvancedStatus = false,
   onToggleAdvancedStatus,
   advancedStatusFilters,
@@ -234,6 +236,19 @@ export function PedidosFiltersUnified({
                   </Button>
                 }
               />
+            )}
+
+            {/* Botão Locais de Estoque */}
+            {onOpenConfigLocais && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onOpenConfigLocais}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Locais de Estoque
+              </Button>
             )}
 
           </div>
