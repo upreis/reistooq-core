@@ -222,42 +222,68 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 🔧 FASE 2: Buscar pedidos de TODAS as contas e consolidar
-    // Paginação é feita sobre dataset CONSOLIDADO de todas as contas
+    // 🔧 FASE 2 FIX: Buscar TODOS os pedidos de TODAS as contas com loop interno
+    // Paginação é feita sobre dataset CONSOLIDADO completo
     const allOrders: any[] = [];
     let totalFromAPI = 0;
+    const PAGE_SIZE = 50; // Tamanho de página para busca interna
+    const MAX_PAGES_PER_ACCOUNT = 20; // Proteção contra loop infinito (máx 1000 pedidos/conta)
     
     for (const accountId of integration_account_ids) {
-      console.log(`📡 Fetching orders for account ${accountId}...`);
+      console.log(`📡 Fetching ALL orders for account ${accountId}...`);
       
-      // 🔧 FASE 2: Passar offset/limit para unified-orders
-      // unified-orders retorna paging.total da API do ML
-      const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
-        body: {
-          integration_account_id: accountId,
-          date_from,
-          date_to,
-          offset: 0,      // Buscar do início para cada conta
-          limit: 100      // Limite razoável por conta
+      let accountOffset = 0;
+      let accountTotal = 0;
+      let pageCount = 0;
+      const accountOrders: any[] = [];
+      
+      // 🔧 FASE 2 FIX: Loop interno para buscar TODOS os pedidos da conta
+      while (pageCount < MAX_PAGES_PER_ACCOUNT) {
+        const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
+          body: {
+            integration_account_id: accountId,
+            date_from,
+            date_to,
+            offset: accountOffset,
+            limit: PAGE_SIZE
+          }
+        });
+
+        if (unifiedOrdersResponse.error) {
+          console.error(`❌ Error fetching account ${accountId} page ${pageCount}:`, unifiedOrdersResponse.error);
+          break; // Sai do loop mas continua com próxima conta
         }
-      });
 
-      if (unifiedOrdersResponse.error) {
-        console.error(`❌ Error fetching account ${accountId}:`, unifiedOrdersResponse.error);
-        continue;
+        const pageOrders = unifiedOrdersResponse.data?.results || [];
+        const pagingTotal = unifiedOrdersResponse.data?.paging?.total || 
+                           unifiedOrdersResponse.data?.total || 0;
+        
+        // Na primeira página, captura o total real da API
+        if (pageCount === 0) {
+          accountTotal = pagingTotal;
+          console.log(`📊 Account ${accountId}: API reports ${accountTotal} total orders`);
+        }
+        
+        accountOrders.push(...pageOrders);
+        pageCount++;
+        
+        console.log(`   Page ${pageCount}: +${pageOrders.length} orders (total fetched: ${accountOrders.length}/${accountTotal})`);
+        
+        // Condições de saída do loop:
+        // 1. Página vazia (não há mais dados)
+        // 2. Já buscamos todos os pedidos reportados pela API
+        // 3. Atingiu limite de páginas (proteção)
+        if (pageOrders.length === 0 || accountOrders.length >= accountTotal || pageOrders.length < PAGE_SIZE) {
+          break;
+        }
+        
+        accountOffset += PAGE_SIZE;
       }
-
-      const accountOrders = unifiedOrdersResponse.data?.results || [];
       
-      // 🔧 FASE 2: Capturar paging.total da API do ML
-      const accountPagingTotal = unifiedOrdersResponse.data?.paging?.total || 
-                                  unifiedOrdersResponse.data?.total || 
-                                  accountOrders.length;
-      
-      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId} (API total: ${accountPagingTotal})`);
+      console.log(`✅ Account ${accountId}: Fetched ${accountOrders.length} of ${accountTotal} orders (${pageCount} pages)`);
       
       allOrders.push(...accountOrders);
-      totalFromAPI += accountPagingTotal; // 🔧 FASE 2: Somar total REAL de cada conta
+      totalFromAPI += Math.max(accountTotal, accountOrders.length); // Usar o maior valor como total
 
       // ETAPA 3: Write-through caching
       if (accountOrders.length > 0) {
