@@ -211,14 +211,14 @@ export default function Header() {
         {/* Breadcrumb */}
         <div className="flex items-center gap-4">
           {breadcrumb && (
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <div className="flex items-center space-x-2 text-lg text-muted-foreground">
               {breadcrumb.isImage ? (
                 <img src={breadcrumb.icon} alt="" className="w-10 h-10 object-contain" />
               ) : (
                 <span>{breadcrumb.icon}</span>
               )}
               <span>/</span>
-              <span className="text-primary">{breadcrumb.label}</span>
+              <span className="text-primary font-semibold">{breadcrumb.label}</span>
             </div>
           )}
         </div>
