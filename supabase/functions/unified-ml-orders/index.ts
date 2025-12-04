@@ -222,23 +222,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ETAPA 2: Buscar TODOS os pedidos de TODAS as contas (sem paginação por conta)
-    // 🔧 FASE 1 FIX: Paginação deve ser feita sobre dataset CONSOLIDADO, não por conta
+    // 🔧 FASE 2: Buscar pedidos de TODAS as contas e consolidar
+    // Paginação é feita sobre dataset CONSOLIDADO de todas as contas
     const allOrders: any[] = [];
     let totalFromAPI = 0;
     
     for (const accountId of integration_account_ids) {
-      // 🔧 FASE 1 FIX: Buscar TODOS os pedidos da conta (sem offset/limit)
-      // A paginação será aplicada DEPOIS de consolidar todas as contas
-      console.log(`📡 Fetching ALL orders for account ${accountId}...`);
+      console.log(`📡 Fetching orders for account ${accountId}...`);
       
+      // 🔧 FASE 2: Passar offset/limit para unified-orders
+      // unified-orders retorna paging.total da API do ML
       const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
         body: {
           integration_account_id: accountId,
           date_from,
           date_to,
-          offset: 0,      // Sempre 0 - buscar do início
-          limit: 200      // Limite alto para pegar tudo (ML máximo é ~50 por página)
+          offset: 0,      // Buscar do início para cada conta
+          limit: 100      // Limite razoável por conta
         }
       });
 
@@ -248,11 +248,18 @@ Deno.serve(async (req) => {
       }
 
       const accountOrders = unifiedOrdersResponse.data?.results || [];
-      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId}`);
+      
+      // 🔧 FASE 2: Capturar paging.total da API do ML
+      const accountPagingTotal = unifiedOrdersResponse.data?.paging?.total || 
+                                  unifiedOrdersResponse.data?.total || 
+                                  accountOrders.length;
+      
+      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId} (API total: ${accountPagingTotal})`);
       
       allOrders.push(...accountOrders);
+      totalFromAPI += accountPagingTotal; // 🔧 FASE 2: Somar total REAL de cada conta
 
-      // ETAPA 3: Write-through caching (sempre salvar todos)
+      // ETAPA 3: Write-through caching
       if (accountOrders.length > 0) {
         console.log(`💾 Saving ${accountOrders.length} orders to cache...`);
         
@@ -301,29 +308,31 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 🔧 FASE 1 FIX: Ordenar por data e aplicar paginação sobre dataset CONSOLIDADO
+    // 🔧 FASE 2: Ordenar por data e aplicar paginação sobre dataset CONSOLIDADO
     allOrders.sort((a, b) => {
       const dateA = new Date(a.date_created || a.data_criacao || 0).getTime();
       const dateB = new Date(b.date_created || b.data_criacao || 0).getTime();
       return dateB - dateA; // Mais recentes primeiro
     });
 
-    totalFromAPI = allOrders.length;
+    // 🔧 FASE 2: totalFromAPI agora contém a soma dos paging.total de cada conta
+    // Se buscamos menos orders que o total, significa que há mais páginas
+    const actualTotal = Math.max(totalFromAPI, allOrders.length);
     
-    // 🔧 FASE 1 FIX: Aplicar paginação sobre dataset consolidado
+    // 🔧 FASE 2: Aplicar paginação sobre dataset consolidado
     const paginatedOrders = allOrders.slice(offset, offset + limit);
     
-    console.log(`📊 Paginação consolidada: ${paginatedOrders.length} de ${totalFromAPI} (offset=${offset}, limit=${limit})`)
+    console.log(`📊 FASE 2 - Paginação: ${paginatedOrders.length} de ${actualTotal} (offset=${offset}, limit=${limit}, fetched=${allOrders.length})`)
 
-    console.log(`✅ Total orders: ${totalFromAPI}, returning page: ${paginatedOrders.length} items`);
+    console.log(`✅ Total orders: ${actualTotal}, returning page: ${paginatedOrders.length} items`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        orders: paginatedOrders, // 🔧 FASE 1 FIX: Retornar página do dataset consolidado
-        total: totalFromAPI,
+        orders: paginatedOrders,
+        total: actualTotal, // 🔧 FASE 2: Total REAL da API do ML (soma de todas as contas)
         paging: {
-          total: totalFromAPI,
+          total: actualTotal,
           offset: offset,
           limit: limit
         },
