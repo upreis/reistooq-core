@@ -323,12 +323,21 @@ Deno.serve(async (req) => {
 
       // ETAPA 3: Write-through caching - salvar no cache E na tabela permanente
       if (accountOrders.length > 0) {
-        console.log(`💾 Saving ${accountOrders.length} orders to cache and ml_orders...`);
+        // 🔧 DE-DUPLICAR orders antes de salvar (evita erro "cannot affect row a second time")
+        const uniqueOrdersMap = new Map<string, any>();
+        for (const order of accountOrders) {
+          const orderId = order.id?.toString() || order.order_id;
+          if (orderId && !uniqueOrdersMap.has(orderId)) {
+            uniqueOrdersMap.set(orderId, order);
+          }
+        }
+        const uniqueOrders = Array.from(uniqueOrdersMap.values());
+        console.log(`💾 Saving ${uniqueOrders.length} unique orders (de-duplicated from ${accountOrders.length})...`);
         
         // 3.1: Salvar em ml_orders_cache (TTL cache temporário) - em batches de 500
         const BATCH_SIZE = 500;
-        for (let i = 0; i < accountOrders.length; i += BATCH_SIZE) {
-          const batchOrders = accountOrders.slice(i, i + BATCH_SIZE);
+        for (let i = 0; i < uniqueOrders.length; i += BATCH_SIZE) {
+          const batchOrders = uniqueOrders.slice(i, i + BATCH_SIZE);
           
           const cacheEntries = batchOrders.map((order: any) => ({
             organization_id,
@@ -349,12 +358,12 @@ Deno.serve(async (req) => {
             console.error(`❌ Error saving cache batch ${i}-${i+BATCH_SIZE}:`, cacheError);
           }
         }
-        console.log(`✅ Cache: Saved ${accountOrders.length} orders in batches`);
+        console.log(`✅ Cache: Saved ${uniqueOrders.length} orders in batches`);
 
         // 3.2: Salvar em ml_orders (persistência permanente com campos estruturados) - em batches
         try {
-          for (let i = 0; i < accountOrders.length; i += BATCH_SIZE) {
-            const batchOrders = accountOrders.slice(i, i + BATCH_SIZE);
+          for (let i = 0; i < uniqueOrders.length; i += BATCH_SIZE) {
+            const batchOrders = uniqueOrders.slice(i, i + BATCH_SIZE);
             
             const mlOrdersEntries = batchOrders.map((order: any) => 
               extractOrderFields(order, accountId, organization_id)
