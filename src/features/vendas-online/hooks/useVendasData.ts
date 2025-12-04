@@ -164,7 +164,8 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateOnMount: true,
-      dedupingInterval: 30000
+      dedupingInterval: 5000, // 🔧 FASE 1: Reduzido para permitir paginação mais responsiva
+      keepPreviousData: true // 🔧 FASE 1: Manter dados anteriores durante loading
     }
   );
 
