@@ -17,6 +17,8 @@ interface RequestParams {
   date_from?: string;
   date_to?: string;
   force_refresh?: boolean;
+  offset?: number;
+  limit?: number;
 }
 
 const CACHE_TTL_MINUTES = 15;
@@ -129,7 +131,7 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const params: RequestParams = await req.json();
-    const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
+    const { integration_account_ids, date_from, date_to, force_refresh = false, offset = 0, limit = 50 } = params;
 
     // ✅ CORREÇÃO PROBLEMA 6: Validar array vazio
     if (!integration_account_ids || integration_account_ids.length === 0) {
@@ -147,7 +149,9 @@ Deno.serve(async (req) => {
       accounts: integration_account_ids.length,
       date_from,
       date_to,
-      force_refresh
+      force_refresh,
+      offset,
+      limit
     });
 
     // ETAPA 1: Verificar cache no Supabase (se não for force_refresh)
@@ -209,16 +213,19 @@ Deno.serve(async (req) => {
 
     // ETAPA 2: Buscar da ML API (cache miss ou force refresh)
     const allOrders: any[] = [];
+    let totalFromAPI = 0;
     
     for (const accountId of integration_account_ids) {
-      console.log(`📡 Fetching orders for account ${accountId}...`);
+      console.log(`📡 Fetching orders for account ${accountId} (offset=${offset}, limit=${limit})...`);
       
-      // Chamar unified-orders existente para buscar dados
+      // Chamar unified-orders existente para buscar dados COM offset/limit
       const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
         body: {
           integration_account_id: accountId,
           date_from,
-          date_to
+          date_to,
+          offset, // 🔧 FASE 1: Passar offset para paginação
+          limit   // 🔧 FASE 1: Passar limit para paginação
         }
       });
 
@@ -229,9 +236,12 @@ Deno.serve(async (req) => {
 
       // 🔧 CORREÇÃO CRÍTICA: unified-orders retorna .results, não .orders
       const accountOrders = unifiedOrdersResponse.data?.results || [];
-      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId}`);
+      const accountTotal = unifiedOrdersResponse.data?.paging?.total || unifiedOrdersResponse.data?.total || accountOrders.length;
+      
+      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId} (total available: ${accountTotal})`);
       
       allOrders.push(...accountOrders);
+      totalFromAPI += accountTotal; // Somar total de todas as contas
 
       // ETAPA 3: Write-through caching - salvar no cache E na tabela permanente
       if (accountOrders.length > 0) {
@@ -286,13 +296,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`✅ Total orders fetched: ${allOrders.length}`);
+    console.log(`✅ Total orders fetched: ${allOrders.length} (total available: ${totalFromAPI})`);
 
     return new Response(
       JSON.stringify({
         success: true,
         orders: allOrders,
-        total: allOrders.length,
+        total: totalFromAPI, // 🔧 FASE 1: Total REAL da API para paginação
+        paging: {
+          total: totalFromAPI,
+          offset: offset,
+          limit: limit
+        },
         source: 'ml_api',
         cached_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
