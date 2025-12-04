@@ -68,7 +68,7 @@ import dashboardEstoqueIcon from "@/assets/dashboard_estoque.png";
 import dashboardVendasIcon from "@/assets/dashboard_vendas.png";
 import deParaIcon from "@/assets/de_para.png";
 import devolucoesIcon from "@/assets/devolucoes.png";
-import devolucoesDevendaNewIcon from "@/assets/devolucoes-venda-icon-new.png";
+import devolucoesDevendaNewIcon from "@/assets/devolucoes-icon.png";
 import fornecedoresIcon from "@/assets/fornecedores.png";
 import fornecedoresNewIcon from "@/assets/fornecedores-new-icon.png";
 import historicoFerramentasIcon from "@/assets/historico_ferramentas.png";
