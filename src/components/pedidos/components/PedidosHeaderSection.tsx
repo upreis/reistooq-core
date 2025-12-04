@@ -8,6 +8,7 @@ import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Download, Search } from 'lucide-react';
+import pedidosHeaderIcon from '@/assets/pedidos-header-icon.png';
 
 interface PedidosHeaderSectionProps {
   title?: string;
@@ -43,14 +44,21 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
     <div className="space-y-4">
       {/* 🛡️ HEADER PRINCIPAL */}
       <div className="flex items-center justify-between">
-        {(title || subtitle) && (
-          <div>
-            {title && <h1 className="text-3xl font-bold">{title}</h1>}
-            {subtitle && (
-              <p className="text-muted-foreground">{subtitle}</p>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <img 
+            src={pedidosHeaderIcon} 
+            alt="Pedidos" 
+            className="w-10 h-10 object-contain"
+          />
+          {(title || subtitle) && (
+            <div>
+              {title && <h1 className="text-3xl font-bold">{title}</h1>}
+              {subtitle && (
+                <p className="text-muted-foreground">{subtitle}</p>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {children}
