@@ -27,15 +27,20 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
 
   console.log('🌐 [useVendasData] Buscando orders da API ML:', params);
 
-  // 🔧 FASE 1: Passar offset e limit para paginação server-side
+  // 🔧 FASE 1 FIX: Passar TODAS as contas como array
+  // O backend consolida e faz paginação sobre dataset unificado
+  const accountIds = params.integrationAccountId.includes(',') 
+    ? params.integrationAccountId.split(',')
+    : [params.integrationAccountId];
+
   const { data, error } = await supabase.functions.invoke('unified-ml-orders', {
     body: {
-      integration_account_ids: [params.integrationAccountId],
+      integration_account_ids: accountIds,
       date_from: params.dateFrom,
       date_to: params.dateTo,
       force_refresh: false,
-      offset: params.offset, // 🔧 FASE 1: Paginação
-      limit: params.limit    // 🔧 FASE 1: Paginação
+      offset: params.offset,
+      limit: params.limit
     }
   });
 
@@ -132,32 +137,26 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     swrKey,
     async () => {
       console.log('🔄 [SWR] Executando fetch de API ML...');
-      // ✅ Buscar de TODAS as contas selecionadas com paginação
-      const allOrders: any[] = [];
-      let totalFromAllAccounts = 0;
       
-      for (const accountId of selectedAccountIds) {
-        const result = await fetchVendasFromML({
-          integrationAccountId: accountId,
-          search: filters.search,
-          status: filters.status,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
-          offset: (pagination.currentPage - 1) * pagination.itemsPerPage,
-          limit: pagination.itemsPerPage
-        });
-        
-        allOrders.push(...result.orders);
-        totalFromAllAccounts += result.total; // 🔧 FASE 1: Somar total real de todas as contas
-      }
+      // 🔧 FASE 1 FIX: Uma única chamada para unified-ml-orders
+      // A paginação é feita no backend sobre dataset consolidado de TODAS as contas
+      const result = await fetchVendasFromML({
+        integrationAccountId: selectedAccountIds.join(','), // Passar todas as contas
+        search: filters.search,
+        status: filters.status,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+        offset: (pagination.currentPage - 1) * pagination.itemsPerPage,
+        limit: pagination.itemsPerPage
+      });
       
-      console.log('✅ [SWR] Total pedidos:', allOrders.length, '- Total disponível:', totalFromAllAccounts);
+      console.log('✅ [SWR] Total pedidos:', result.orders.length, '- Total disponível:', result.total);
       
       return {
-        orders: allOrders,
-        total: totalFromAllAccounts, // 🔧 FASE 1: Total REAL para paginação funcionar
-        packs: {},
-        shippings: {}
+        orders: result.orders,
+        total: result.total,
+        packs: result.packs,
+        shippings: result.shippings
       };
     },
     {

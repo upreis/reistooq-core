@@ -222,20 +222,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ETAPA 2: Buscar da ML API
+    // ETAPA 2: Buscar TODOS os pedidos de TODAS as contas (sem paginação por conta)
+    // 🔧 FASE 1 FIX: Paginação deve ser feita sobre dataset CONSOLIDADO, não por conta
     const allOrders: any[] = [];
     let totalFromAPI = 0;
     
     for (const accountId of integration_account_ids) {
-      console.log(`📡 Fetching orders for account ${accountId} (offset=${offset}, limit=${limit})...`);
+      // 🔧 FASE 1 FIX: Buscar TODOS os pedidos da conta (sem offset/limit)
+      // A paginação será aplicada DEPOIS de consolidar todas as contas
+      console.log(`📡 Fetching ALL orders for account ${accountId}...`);
       
       const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
         body: {
           integration_account_id: accountId,
           date_from,
           date_to,
-          offset,
-          limit
+          offset: 0,      // Sempre 0 - buscar do início
+          limit: 200      // Limite alto para pegar tudo (ML máximo é ~50 por página)
         }
       });
 
@@ -245,15 +248,12 @@ Deno.serve(async (req) => {
       }
 
       const accountOrders = unifiedOrdersResponse.data?.results || [];
-      const accountTotal = unifiedOrdersResponse.data?.paging?.total || unifiedOrdersResponse.data?.total || accountOrders.length;
-      
-      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId} (total available: ${accountTotal})`);
+      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId}`);
       
       allOrders.push(...accountOrders);
-      totalFromAPI += accountTotal;
 
-      // ETAPA 3: Write-through caching (apenas na primeira página)
-      if (accountOrders.length > 0 && offset === 0) {
+      // ETAPA 3: Write-through caching (sempre salvar todos)
+      if (accountOrders.length > 0) {
         console.log(`💾 Saving ${accountOrders.length} orders to cache...`);
         
         const cacheEntries = accountOrders.map((order: any) => ({
@@ -301,12 +301,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`✅ Total orders fetched: ${allOrders.length} (total available: ${totalFromAPI})`);
+    // 🔧 FASE 1 FIX: Ordenar por data e aplicar paginação sobre dataset CONSOLIDADO
+    allOrders.sort((a, b) => {
+      const dateA = new Date(a.date_created || a.data_criacao || 0).getTime();
+      const dateB = new Date(b.date_created || b.data_criacao || 0).getTime();
+      return dateB - dateA; // Mais recentes primeiro
+    });
+
+    totalFromAPI = allOrders.length;
+    
+    // 🔧 FASE 1 FIX: Aplicar paginação sobre dataset consolidado
+    const paginatedOrders = allOrders.slice(offset, offset + limit);
+    
+    console.log(`📊 Paginação consolidada: ${paginatedOrders.length} de ${totalFromAPI} (offset=${offset}, limit=${limit})`)
+
+    console.log(`✅ Total orders: ${totalFromAPI}, returning page: ${paginatedOrders.length} items`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        orders: allOrders,
+        orders: paginatedOrders, // 🔧 FASE 1 FIX: Retornar página do dataset consolidado
         total: totalFromAPI,
         paging: {
           total: totalFromAPI,
