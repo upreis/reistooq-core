@@ -499,7 +499,8 @@ export const Devolucao2025Page = () => {
             <MLOrdersNav />
           </div>
           
-
+          {/* Espaçamento padrão - igual /reclamacoes */}
+          <div className="py-3 mt-2"></div>
 
           {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6 mt-2">
