@@ -38,18 +38,41 @@ interface DevolucoesState {
 
 const STORAGE_KEY = 'devolucoes-store';
 
-// ✅ OTIMIZADO: Não persistir devolucoes no localStorage (causa travamento)
-// Dados são gerenciados pelo React Query cache
+// ✅ Carregar estado do localStorage (igual reclamacoesStore)
 const loadPersistedState = (): { devolucoes: DevolucaoData[], total: number, dataSource: 'localStorage' | 'empty' } => {
-  // Retorna estado vazio - dados vêm do cache do React Query
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Validar TTL (30 minutos)
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+        console.log('📦 [DEVOLUCOES-STORE] Restaurando estado do localStorage:', {
+          devolucoes: parsed.devolucoes?.length || 0
+        });
+        return {
+          devolucoes: parsed.devolucoes || [],
+          total: parsed.devolucoes?.length || 0,
+          dataSource: 'localStorage'
+        };
+      }
+    }
+  } catch (error) {
+    console.error('[DEVOLUCOES-STORE] Erro ao carregar estado:', error);
+  }
   return { devolucoes: [], total: 0, dataSource: 'empty' };
 };
 
-// ✅ OTIMIZADO: Removida persistência de devolucoes (muito pesada)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const persistState = (_devolucoes: DevolucaoData[]) => {
-  // Desabilitado - dados muito grandes causam travamento
-  // Persistência agora é feita pelo React Query cache
+// ✅ Salvar estado no localStorage
+const persistState = (devolucoes: DevolucaoData[]) => {
+  try {
+    const toSave = {
+      devolucoes,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (error) {
+    console.error('[DEVOLUCOES-STORE] Erro ao salvar estado:', error);
+  }
 };
 
 const persistedState = loadPersistedState();

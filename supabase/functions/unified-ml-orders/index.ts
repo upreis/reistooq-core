@@ -78,64 +78,58 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ✅ CRITICAL: Como verify_jwt = true, Supabase já validou o JWT
+    // Podemos criar um service client e extrair o user ID do JWT
+    const authHeader = req.headers.get('Authorization');
+    
+    if (!authHeader) {
+      console.error('❌ No authorization header provided');
+      return new Response(
+        JSON.stringify({ success: false, error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Service client para operações administrativas
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Parse request body primeiro para verificar se organization_id foi fornecido diretamente
-    const params: RequestParams & { organization_id?: string } = await req.json();
-    const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
-
-    let organization_id = params.organization_id;
-
-    // Se organization_id não foi fornecido no body, tentar extrair do JWT
-    if (!organization_id) {
-      const authHeader = req.headers.get('Authorization');
-      
-      if (!authHeader) {
-        console.error('❌ No authorization header and no organization_id provided');
-        return new Response(
-          JSON.stringify({ success: false, error: 'No authorization header or organization_id' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Extrair user do JWT
-      const jwt = authHeader.replace('Bearer ', '');
-      const [, payloadBase64] = jwt.split('.');
-      const payload = JSON.parse(atob(payloadBase64));
-      const userId = payload.sub;
-      
-      if (!userId) {
-        console.error('❌ No user ID in JWT');
-        return new Response(
-          JSON.stringify({ success: false, error: 'Invalid token' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      console.log('✅ User authenticated:', userId);
-
-      // Buscar organization_id do usuário
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('organizacao_id')
-        .eq('id', userId)
-        .single();
-
-      organization_id = profile?.organizacao_id;
-    } else {
-      console.log('✅ Using provided organization_id:', organization_id);
+    // Extrair user do JWT (já validado pelo Supabase via verify_jwt)
+    const jwt = authHeader.replace('Bearer ', '');
+    const [, payloadBase64] = jwt.split('.');
+    const payload = JSON.parse(atob(payloadBase64));
+    const userId = payload.sub;
+    
+    if (!userId) {
+      console.error('❌ No user ID in JWT');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+    
+    console.log('✅ User authenticated:', userId);
 
+    // Buscar organization_id do usuário
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('organizacao_id')
+      .eq('id', userId)
+      .single();
+
+    const organization_id = profile?.organizacao_id;
     if (!organization_id) {
       return new Response(
         JSON.stringify({ success: false, error: 'Organization not found' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Parse request body
+    const params: RequestParams = await req.json();
+    const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
 
     // ✅ CORREÇÃO PROBLEMA 6: Validar array vazio
     if (!integration_account_ids || integration_account_ids.length === 0) {
@@ -213,176 +207,81 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ETAPA 2: Buscar da ML API com PAGINAÇÃO COMPLETA (cache miss ou force refresh)
+    // ETAPA 2: Buscar da ML API (cache miss ou force refresh)
     const allOrders: any[] = [];
-    const PAGE_SIZE = 50; // Máximo permitido pelo ML
     
     for (const accountId of integration_account_ids) {
-      console.log(`📡 Fetching ALL orders for account ${accountId} with full pagination...`);
+      console.log(`📡 Fetching orders for account ${accountId}...`);
       
-      // Buscar credenciais da conta
-      const { data: accountData, error: accountError } = await supabaseAdmin
-        .from('integration_accounts')
-        .select('account_identifier')
-        .eq('id', accountId)
-        .single();
-      
-      if (accountError || !accountData?.account_identifier) {
-        console.error(`❌ Account ${accountId} not found or missing seller ID`);
+      // Chamar unified-orders existente para buscar dados
+      const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
+        body: {
+          integration_account_id: accountId,
+          date_from,
+          date_to
+        }
+      });
+
+      if (unifiedOrdersResponse.error) {
+        console.error(`❌ Error fetching account ${accountId}:`, unifiedOrdersResponse.error);
         continue;
       }
+
+      // 🔧 CORREÇÃO CRÍTICA: unified-orders retorna .results, não .orders
+      const accountOrders = unifiedOrdersResponse.data?.results || [];
+      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId}`);
       
-      // Buscar token de acesso
-      const { data: secretRow } = await supabaseAdmin
-        .from('integration_secrets')
-        .select('simple_tokens, use_simple, access_token')
-        .eq('integration_account_id', accountId)
-        .eq('provider', 'mercadolivre')
-        .maybeSingle();
-      
-      let accessToken = '';
-      
-      // Descriptografar token
-      if (secretRow?.use_simple && secretRow?.simple_tokens) {
-        const simpleTokensStr = secretRow.simple_tokens as string;
-        if (simpleTokensStr.startsWith('SALT2024::')) {
-          const base64Data = simpleTokensStr.replace('SALT2024::', '');
-          try {
-            const jsonStr = atob(base64Data);
-            const tokensData = JSON.parse(jsonStr);
-            accessToken = tokensData.access_token || '';
-          } catch (e) {
-            console.error(`❌ Token parse error for ${accountId}:`, e);
-          }
-        }
-      }
-      
-      if (!accessToken) {
-        console.error(`❌ No access token for account ${accountId}`);
-        continue;
-      }
-      
-      const seller = accountData.account_identifier;
-      let offset = 0;
-      let totalFetched = 0;
-      let hasMore = true;
-      const accountOrders: any[] = [];
-      
-      // PAGINAÇÃO COMPLETA: Buscar TODAS as páginas
-      while (hasMore) {
-        const mlUrl = new URL('https://api.mercadolibre.com/orders/search');
-        mlUrl.searchParams.set('seller', seller);
-        mlUrl.searchParams.set('sort', 'date_desc');
-        mlUrl.searchParams.set('limit', String(PAGE_SIZE));
-        mlUrl.searchParams.set('offset', String(offset));
-        
-        if (date_from) {
-          mlUrl.searchParams.set('order.date_created.from', new Date(date_from).toISOString());
-        }
-        if (date_to) {
-          mlUrl.searchParams.set('order.date_created.to', new Date(date_to).toISOString());
-        }
-        
-        console.log(`📄 Page ${Math.floor(offset/PAGE_SIZE) + 1}: offset=${offset}`);
-        
-        const mlResponse = await fetch(mlUrl.toString(), {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (!mlResponse.ok) {
-          const errorText = await mlResponse.text();
-          console.error(`❌ ML API Error ${mlResponse.status}:`, errorText);
-          hasMore = false;
-          break;
-        }
-        
-        const mlData = await mlResponse.json();
-        const pageOrders = mlData.results || [];
-        const total = mlData.paging?.total || 0;
-        
-        accountOrders.push(...pageOrders);
-        totalFetched += pageOrders.length;
-        offset += PAGE_SIZE;
-        
-        console.log(`✅ Fetched ${pageOrders.length} orders (${totalFetched}/${total})`);
-        
-        // Verificar se há mais páginas
-        hasMore = pageOrders.length === PAGE_SIZE && totalFetched < total;
-        
-        // Rate limiting: pequena pausa entre páginas
-        if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-      
-      console.log(`✅ Account ${accountId}: Total ${accountOrders.length} orders fetched`);
       allOrders.push(...accountOrders);
 
       // ETAPA 3: Write-through caching - salvar no cache E na tabela permanente
       if (accountOrders.length > 0) {
-        // 🔧 DE-DUPLICAR orders antes de salvar (evita erro "cannot affect row a second time")
-        const uniqueOrdersMap = new Map<string, any>();
-        for (const order of accountOrders) {
-          const orderId = order.id?.toString() || order.order_id;
-          if (orderId && !uniqueOrdersMap.has(orderId)) {
-            uniqueOrdersMap.set(orderId, order);
-          }
-        }
-        const uniqueOrders = Array.from(uniqueOrdersMap.values());
-        console.log(`💾 Saving ${uniqueOrders.length} unique orders (de-duplicated from ${accountOrders.length})...`);
+        console.log(`💾 Saving ${accountOrders.length} orders to cache and ml_orders...`);
         
-        // 3.1: Salvar em ml_orders_cache (TTL cache temporário) - em batches de 500
-        const BATCH_SIZE = 500;
-        for (let i = 0; i < uniqueOrders.length; i += BATCH_SIZE) {
-          const batchOrders = uniqueOrders.slice(i, i + BATCH_SIZE);
-          
-          const cacheEntries = batchOrders.map((order: any) => ({
-            organization_id,
-            integration_account_id: accountId,
-            order_id: order.id?.toString() || order.order_id,
-            order_data: order,
-            cached_at: new Date().toISOString(),
-            ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
-          }));
+        // 3.1: Salvar em ml_orders_cache (TTL cache temporário)
+        const cacheEntries = accountOrders.map((order: any) => ({
+          organization_id,
+          integration_account_id: accountId,
+          order_id: order.id?.toString() || order.order_id,
+          order_data: order,
+          cached_at: new Date().toISOString(),
+          ttl_expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
+        }));
 
-          const { error: cacheError } = await supabaseAdmin
-            .from('ml_orders_cache')
-            .upsert(cacheEntries, {
-              onConflict: 'organization_id,integration_account_id,order_id'
+        const { error: cacheError } = await supabaseAdmin
+          .from('ml_orders_cache')
+          .upsert(cacheEntries, {
+            onConflict: 'organization_id,integration_account_id,order_id'
+          });
+
+        if (cacheError) {
+          console.error('❌ Error saving to cache:', cacheError);
+        } else {
+          console.log(`✅ Cache: Saved ${cacheEntries.length} orders`);
+        }
+
+        // 3.2: Salvar em ml_orders (persistência permanente com campos estruturados)
+        try {
+          const mlOrdersEntries = accountOrders.map((order: any) => 
+            extractOrderFields(order, accountId, organization_id)
+          );
+
+          const { error: mlOrdersError, data: mlOrdersData } = await supabaseAdmin
+            .from('ml_orders')
+            .upsert(mlOrdersEntries, {
+              onConflict: 'organization_id,integration_account_id,ml_order_id',
+              ignoreDuplicates: false // Atualizar se já existir
             });
 
-          if (cacheError) {
-            console.error(`❌ Error saving cache batch ${i}-${i+BATCH_SIZE}:`, cacheError);
+          if (mlOrdersError) {
+            // Log mas não falha - cache temporário já foi salvo
+            console.error('⚠️ Error saving to ml_orders:', mlOrdersError);
+            console.error('⚠️ This is non-critical - cache is still functional');
+          } else {
+            console.log(`✅ ml_orders: Saved ${mlOrdersEntries.length} orders permanently`);
           }
-        }
-        console.log(`✅ Cache: Saved ${uniqueOrders.length} orders in batches`);
-
-        // 3.2: Salvar em ml_orders (persistência permanente com campos estruturados) - em batches
-        try {
-          for (let i = 0; i < uniqueOrders.length; i += BATCH_SIZE) {
-            const batchOrders = uniqueOrders.slice(i, i + BATCH_SIZE);
-            
-            const mlOrdersEntries = batchOrders.map((order: any) => 
-              extractOrderFields(order, accountId, organization_id)
-            );
-
-            const { error: mlOrdersError } = await supabaseAdmin
-              .from('ml_orders')
-              .upsert(mlOrdersEntries, {
-                onConflict: 'organization_id,integration_account_id,ml_order_id',
-                ignoreDuplicates: false
-              });
-
-            if (mlOrdersError) {
-              console.error(`⚠️ Error saving ml_orders batch ${i}-${i+BATCH_SIZE}:`, mlOrdersError);
-            }
-          }
-          console.log(`✅ ml_orders: Saved ${accountOrders.length} orders permanently`);
         } catch (error) {
           console.error('⚠️ Exception in ml_orders persistence:', error);
+          console.error('⚠️ This is non-critical - cache is still functional');
         }
       }
     }

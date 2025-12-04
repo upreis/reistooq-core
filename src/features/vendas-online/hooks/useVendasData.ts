@@ -98,12 +98,16 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     enabled: selectedAccountIds.length > 0 // 🔧 CORREÇÃO: Sempre consultar cache se há contas
   });
 
-  // 🔧 COMBO 2.1: Cache é fonte principal (dados sincronizados via CRON)
-  const useCacheData = !cacheQuery.isLoading && cacheQuery.data && cacheQuery.data.orders.length > 0;
+  // 🔧 CORREÇÃO: Se cache retornou dados válidos E não está loading, usar cache
+  const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
 
-  // ✅ FALLBACK: Buscar de API ML apenas quando usuário clica "Aplicar Filtros"
-  // CRON job sincroniza automaticamente a cada 1 hora
-  const shouldFetchFromAPI = shouldFetch && selectedAccountIds.length > 0;
+  // ✅ FALLBACK: Buscar de API ML quando:
+  // 1. Cache expirou/vazio E cache terminou loading E há contas
+  // 2. OU usuário clicou buscar manualmente (shouldFetch)
+  const cacheExpired = !cacheQuery.isLoading && (cacheQuery.data?.cache_expired || !cacheQuery.data);
+  const shouldFetchFromAPI = selectedAccountIds.length > 0 && 
+    !cacheQuery.isLoading && 
+    (cacheExpired || shouldFetch); // 🔧 CORREÇÃO: Buscar automaticamente se cache expirou
 
   const swrKey = shouldFetchFromAPI
     ? [
@@ -160,15 +164,23 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     console.log('🔍 [useVendasData] Estado de busca:', {
       shouldFetch,
       shouldFetchFromAPI,
+      cacheExpired,
       cacheLoading: cacheQuery.isLoading,
-      hasCacheData: useCacheData,
+      hasCacheData: !!cacheQuery.data,
       swrKeyExists: !!swrKey,
+      hasFetchedFromAPI: hasFetchedFromAPI.current,
       selectedAccountIds: selectedAccountIds.length
     });
-  }, [shouldFetch, shouldFetchFromAPI, cacheQuery.isLoading, useCacheData, swrKey, selectedAccountIds.length]);
+  }, [shouldFetch, shouldFetchFromAPI, cacheExpired, cacheQuery.isLoading, cacheQuery.data, swrKey, selectedAccountIds.length]);
 
-  // 🎯 COMBO 2.1: Busca manual controlada pelo usuário
-  // Não há mais busca automática - CRON job sincroniza em background
+  // 🎯 COMBO 2.1: Disparar busca automática quando cache expirou
+  useEffect(() => {
+    if (shouldFetchFromAPI && swrKey && !hasFetchedFromAPI.current && !isLoading) {
+      console.log('🚀 [useVendasData] Cache expirado, disparando busca da API...', { swrKey });
+      hasFetchedFromAPI.current = true;
+      mutate();
+    }
+  }, [shouldFetchFromAPI, swrKey, isLoading, mutate]);
 
   // Reset flag quando contas ou shouldFetch mudam
   useEffect(() => {

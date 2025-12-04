@@ -72,18 +72,40 @@ const initialPagination: VendasPagination = {
   total: 0
 };
 
-// ✅ OTIMIZADO: Não persistir orders no localStorage (causa travamento de 51s+)
-// Orders são gerenciados pelo React Query cache
+// ✅ Carregar estado do localStorage (igual reclamacoesStore)
 const loadPersistedState = (): { orders: MLOrder[], pagination: VendasPagination } => {
-  // Retorna estado vazio - dados vêm do cache do React Query
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Validar TTL (30 minutos)
+      if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+        console.log('📦 [VENDAS-STORE] Restaurando estado do localStorage:', {
+          orders: parsed.orders?.length || 0
+        });
+        return {
+          orders: parsed.orders || [],
+          pagination: { ...initialPagination, total: parsed.orders?.length || 0 }
+        };
+      }
+    }
+  } catch (error) {
+    console.error('[VENDAS-STORE] Erro ao carregar estado:', error);
+  }
   return { orders: [], pagination: initialPagination };
 };
 
-// ✅ OTIMIZADO: Removida persistência de orders (muito pesada)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const persistState = (_orders: MLOrder[]) => {
-  // Desabilitado - orders muito grandes causam travamento
-  // Persistência agora é feita pelo React Query cache
+// ✅ Salvar estado no localStorage
+const persistState = (orders: MLOrder[]) => {
+  try {
+    const toSave = {
+      orders,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (error) {
+    console.error('[VENDAS-STORE] Erro ao salvar estado:', error);
+  }
 };
 
 const persistedState = loadPersistedState();
