@@ -51,7 +51,7 @@ import vendasOnlineIcon from "@/assets/vendas_online.png";
 import vendasOnlineNewIcon from "@/assets/icons/vendas-online-icon.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
 import adminIcon from "@/assets/admin.png";
-import alertasIcon from "@/assets/alertas.png";
+import alertasIcon from "@/assets/alertas-icon-new.png";
 import anunciosIcon from "@/assets/anuncios.png";
 import auditoriaIcon from "@/assets/auditoria.png";
 import calendarioIcon from "@/assets/calendario.png";
