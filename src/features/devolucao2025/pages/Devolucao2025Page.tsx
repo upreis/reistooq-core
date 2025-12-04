@@ -499,10 +499,6 @@ export const Devolucao2025Page = () => {
             <MLOrdersNav />
           </div>
           
-          {/* Header */}
-          <div className="px-4 md:px-6 py-3 mt-2">
-            <h1 className="text-3xl font-bold">📋 Devoluções de Vendas</h1>
-          </div>
 
 
           {/* Tabs: Ativas vs Histórico + Filtros */}
