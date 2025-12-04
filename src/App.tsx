@@ -13,7 +13,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
 import { AIChatBubble } from "@/components/ai-chat/AIChatBubble";
-import { SessionRecordingProvider } from "@/components/ai-chat/SessionRecordingProvider";
+// 🔇 SessionRecordingProvider desabilitado temporariamente - erro rrweb node.matches
+// import { SessionRecordingProvider } from "@/components/ai-chat/SessionRecordingProvider";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
 import { useIsMobile } from "@/hooks/use-mobile";
