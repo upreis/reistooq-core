@@ -729,7 +729,6 @@ function SimplePedidosPage({ className }: Props) {
               }}
               selectedOrdersCount={selectedOrders.size}
               hasPendingChanges={filtersManager.hasPendingChanges}
-              onOpenConfigLocais={() => setConfigLocaisOpen(true)}
             />
           </div>
 
@@ -767,6 +766,7 @@ function SimplePedidosPage({ className }: Props) {
                 needsManualApplication={filtersManager.needsManualApplication}
                 isApplying={filtersManager.isApplying}
                 columnManager={columnManager}
+                onOpenConfigLocais={() => setConfigLocaisOpen(true)}
                 activeFiltersCount={filtersManager.activeFiltersCount}
                 contasML={accounts}
                 useAdvancedStatus={useAdvancedStatus}
