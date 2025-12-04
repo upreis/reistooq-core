@@ -77,7 +77,7 @@ import estoqueHistoricoNewIcon from "@/assets/historico-estoque-icon-v2.png";
 import historicoIcon from "@/assets/historico.png";
 import importacaoIcon from "@/assets/importacao-icon-new.png";
 import importarProdutosIcon from "@/assets/importar_produtos.png";
-import integracoesIcon from "@/assets/integracoes.png";
+import integracoesIcon from "@/assets/integracoes-icon-new.png";
 import listaProdutosIcon from "@/assets/lista_produtos.png";
 import lojaIcon from "@/assets/loja.png";
 import notasIcon from "@/assets/notas.png";
