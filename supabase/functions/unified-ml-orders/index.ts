@@ -78,58 +78,64 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // ✅ CRITICAL: Como verify_jwt = true, Supabase já validou o JWT
-    // Podemos criar um service client e extrair o user ID do JWT
-    const authHeader = req.headers.get('Authorization');
-    
-    if (!authHeader) {
-      console.error('❌ No authorization header provided');
-      return new Response(
-        JSON.stringify({ success: false, error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Service client para operações administrativas
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Extrair user do JWT (já validado pelo Supabase via verify_jwt)
-    const jwt = authHeader.replace('Bearer ', '');
-    const [, payloadBase64] = jwt.split('.');
-    const payload = JSON.parse(atob(payloadBase64));
-    const userId = payload.sub;
-    
-    if (!userId) {
-      console.error('❌ No user ID in JWT');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Parse request body primeiro para verificar se organization_id foi fornecido diretamente
+    const params: RequestParams & { organization_id?: string } = await req.json();
+    const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
+
+    let organization_id = params.organization_id;
+
+    // Se organization_id não foi fornecido no body, tentar extrair do JWT
+    if (!organization_id) {
+      const authHeader = req.headers.get('Authorization');
+      
+      if (!authHeader) {
+        console.error('❌ No authorization header and no organization_id provided');
+        return new Response(
+          JSON.stringify({ success: false, error: 'No authorization header or organization_id' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Extrair user do JWT
+      const jwt = authHeader.replace('Bearer ', '');
+      const [, payloadBase64] = jwt.split('.');
+      const payload = JSON.parse(atob(payloadBase64));
+      const userId = payload.sub;
+      
+      if (!userId) {
+        console.error('❌ No user ID in JWT');
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log('✅ User authenticated:', userId);
+
+      // Buscar organization_id do usuário
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', userId)
+        .single();
+
+      organization_id = profile?.organizacao_id;
+    } else {
+      console.log('✅ Using provided organization_id:', organization_id);
     }
-    
-    console.log('✅ User authenticated:', userId);
 
-    // Buscar organization_id do usuário
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('organizacao_id')
-      .eq('id', userId)
-      .single();
-
-    const organization_id = profile?.organizacao_id;
     if (!organization_id) {
       return new Response(
         JSON.stringify({ success: false, error: 'Organization not found' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Parse request body
-    const params: RequestParams = await req.json();
-    const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
 
     // ✅ CORREÇÃO PROBLEMA 6: Validar array vazio
     if (!integration_account_ids || integration_account_ids.length === 0) {
