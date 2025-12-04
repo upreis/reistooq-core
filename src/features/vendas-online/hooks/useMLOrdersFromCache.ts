@@ -1,7 +1,11 @@
 /**
- * 🚀 USE ML ORDERS FROM CACHE
- * Hook para consultar ml_orders table primeiro (cache instantâneo)
- * Fallback para API ML se cache expirado
+ * 🚀 USE ML ORDERS FROM CACHE - COMBO 2.1
+ * Hook para consultar ml_orders table (cache via CRON sync)
+ * 
+ * ✅ COMBO 2.1:
+ * - CRON job sincroniza TODOS os pedidos a cada 1 hora
+ * - Frontend lê DIRETAMENTE de ml_orders table (instantâneo)
+ * - Sem filtro de threshold - pega todos os dados sincronizados
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -20,7 +24,6 @@ interface CachedOrdersResponse {
   total: number;
   source: 'cache' | 'api';
   last_synced_at?: string;
-  cache_expired: boolean;
 }
 
 export const useMLOrdersFromCache = ({
@@ -44,21 +47,21 @@ export const useMLOrdersFromCache = ({
         dateTo
       });
 
-      // STEP 1: Consultar ml_orders table
-      const now = new Date();
-      // 🔧 CORREÇÃO FASE C.2: Aumentar threshold para 15 minutos (sincronizado com CRON de 10min + margem)
-      const cacheThresholdMinutes = 15; 
-      const cacheThreshold = new Date(now.getTime() - cacheThresholdMinutes * 60 * 1000).toISOString();
-      
+      // Validação
+      if (!integrationAccountIds || integrationAccountIds.length === 0) {
+        console.log('⚠️ [useMLOrdersFromCache] Nenhuma conta selecionada');
+        return { orders: [], total: 0, source: 'cache' };
+      }
+
+      // Query direta na ml_orders - sem filtro de threshold!
+      // CRON job já sincronizou todos os pedidos, apenas filtrar por data/conta
       let query = supabase
         .from('ml_orders')
         .select('*')
         .in('integration_account_id', integrationAccountIds)
-        .gt('last_synced_at', cacheThreshold) // Apenas registros sincronizados recentemente
-        .order('last_synced_at', { ascending: false });
+        .order('date_created', { ascending: false });
 
-      // 🔧 CORREÇÃO FASE C.1: Usar order_date ao invés de date_created (que pode ser NULL)
-      // Aplicar filtros de data se fornecidos
+      // Aplicar filtros de data
       if (dateFrom) {
         query = query.gte('order_date', dateFrom);
       }
@@ -69,18 +72,12 @@ export const useMLOrdersFromCache = ({
       const { data: cachedOrders, error } = await query;
 
       if (error) {
-        console.error('❌ Erro ao buscar ml_orders:', error);
-        return {
-          orders: [],
-          total: 0,
-          source: 'api',
-          cache_expired: true
-        };
+        console.error('❌ [useMLOrdersFromCache] Erro ao buscar ml_orders:', error);
+        return { orders: [], total: 0, source: 'cache' };
       }
 
-      // STEP 2: Se tem dados válidos no cache, retornar
       if (cachedOrders && cachedOrders.length > 0) {
-        console.log(`✅ [useMLOrdersFromCache] Cache HIT: ${cachedOrders.length} orders encontrados`);
+        console.log(`✅ [useMLOrdersFromCache] ${cachedOrders.length} pedidos encontrados`);
         
         const orders = cachedOrders.map(row => row.order_data as unknown as MLOrder);
         
@@ -88,19 +85,12 @@ export const useMLOrdersFromCache = ({
           orders,
           total: orders.length,
           source: 'cache',
-          last_synced_at: cachedOrders[0].last_synced_at || undefined,
-          cache_expired: false
+          last_synced_at: cachedOrders[0].last_synced_at || undefined
         };
       }
 
-      // STEP 3: Cache MISS ou expirado
-      console.log('⚠️ [useMLOrdersFromCache] Cache MISS ou expirado');
-      return {
-        orders: [],
-        total: 0,
-        source: 'api',
-        cache_expired: true
-      };
+      console.log('⚠️ [useMLOrdersFromCache] Nenhum pedido encontrado no período');
+      return { orders: [], total: 0, source: 'cache' };
     },
     enabled: enabled && integrationAccountIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutos
