@@ -443,26 +443,21 @@ export function ReclamacoesPage() {
               <MLOrdersNav />
             </div>
             
-            {/* Header */}
+            {/* Badges de status e Alertas */}
             <div className="px-4 md:px-6 py-3 mt-2">
               <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
-                    {/* ✅ ERRO 3 CORRIGIDO: Badge usando estado local */}
-                    {dataSource === 'cache' && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        ⚡ Cache ({reclamacoesCached.length} itens)
-                      </span>
-                    )}
-                    {isFetching && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 animate-pulse">
-                        🔄 Atualizando...
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center gap-3">
+                  {dataSource === 'cache' && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      ⚡ Cache ({reclamacoesCached.length} itens)
+                    </span>
+                  )}
+                  {isFetching && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 animate-pulse">
+                      🔄 Atualizando...
+                    </span>
+                  )}
                 </div>
-                
                 {/* Alertas de ciclo de vida - Posicionado no canto direito */}
                 <div className="w-full max-w-sm shrink-0">
                   <ReclamacoesLifecycleAlert reclamacoes={reclamacoesEnriquecidas} />

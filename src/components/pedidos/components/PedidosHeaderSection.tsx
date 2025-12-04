@@ -26,7 +26,7 @@ interface PedidosHeaderSectionProps {
 }
 
 export const PedidosHeaderSection = memo(function PedidosHeaderSection({
-  title = "Pedidos de Venda",
+  title = "",
   subtitle,
   fonte,
   totalCount,
@@ -45,12 +45,14 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
     <div className="space-y-4">
       {/* 🛡️ HEADER PRINCIPAL */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{title}</h1>
-          {subtitle && (
-            <p className="text-muted-foreground">{subtitle}</p>
-          )}
-        </div>
+        {(title || subtitle) && (
+          <div>
+            {title && <h1 className="text-3xl font-bold">{title}</h1>}
+            {subtitle && (
+              <p className="text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           {/* Botão Config Locais */}
