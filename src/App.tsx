@@ -127,11 +127,10 @@ function App() {
                   <Route path="/shopee/callback" element={<ShopeeCallbackPage />} />
 
                   {/* Rotas protegidas com layout */}
+                  {/* 🔇 SessionRecordingProvider desabilitado temporariamente - erro rrweb node.matches */}
                   <Route path="/" element={
                     <ProtectedRoute>
-                      <SessionRecordingProvider>
-                        <FullLayout />
-                      </SessionRecordingProvider>
+                      <FullLayout />
                     </ProtectedRoute>
                   }>
                     <Route index element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
