@@ -27,6 +27,7 @@ import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import reclamacoesHeaderIcon from '@/assets/reclamacoes-header-icon.png';
 import { logger } from '@/utils/logger';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -443,8 +444,16 @@ export function ReclamacoesPage() {
               <MLOrdersNav />
             </div>
             
-            {/* Badges de status e Alertas */}
+            {/* Header com ícone */}
             <div className="px-4 md:px-6 py-3 mt-2">
+              <div className="flex items-center gap-3 mb-4">
+                <img 
+                  src={reclamacoesHeaderIcon} 
+                  alt="Reclamações" 
+                  className="w-10 h-10 object-contain"
+                />
+                <h1 className="text-3xl font-bold">Reclamações</h1>
+              </div>
               <div className="flex justify-between items-start gap-4">
                 <div className="flex items-center gap-3">
                   {dataSource === 'cache' && (
