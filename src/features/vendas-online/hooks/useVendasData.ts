@@ -27,13 +27,15 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
 
   console.log('🌐 [useVendasData] Buscando orders da API ML:', params);
 
-  // 🔧 CORREÇÃO CRÍTICA: Usar unified-ml-orders com write-through caching
+  // 🔧 FASE 1: Passar offset e limit para paginação server-side
   const { data, error } = await supabase.functions.invoke('unified-ml-orders', {
     body: {
-      integration_account_ids: [params.integrationAccountId], // Array de contas
+      integration_account_ids: [params.integrationAccountId],
       date_from: params.dateFrom,
       date_to: params.dateTo,
-      force_refresh: false // Usar cache se disponível
+      force_refresh: false,
+      offset: params.offset, // 🔧 FASE 1: Paginação
+      limit: params.limit    // 🔧 FASE 1: Paginação
     }
   });
 
@@ -42,11 +44,14 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
     throw error;
   }
 
-  console.log('✅ [useVendasData] Resposta unified-ml-orders:', data?.orders?.length || 0);
+  console.log('✅ [useVendasData] Resposta unified-ml-orders:', {
+    count: data?.orders?.length || 0,
+    total: data?.total || data?.paging?.total || 0
+  });
 
   // ✅ unified-ml-orders retorna orders diretamente
   const orders = data?.orders || [];
-  const total = data?.total || 0;
+  const total = data?.total || data?.paging?.total || 0; // 🔧 FASE 1: Total real para paginação
   
   // Extrair packs e shippings dos orders
   const packs: Record<string, any> = {};
@@ -127,8 +132,9 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     swrKey,
     async () => {
       console.log('🔄 [SWR] Executando fetch de API ML...');
-      // ✅ Buscar de TODAS as contas selecionadas (similar a /reclamacoes)
+      // ✅ Buscar de TODAS as contas selecionadas com paginação
       const allOrders: any[] = [];
+      let totalFromAllAccounts = 0;
       
       for (const accountId of selectedAccountIds) {
         const result = await fetchVendasFromML({
@@ -142,11 +148,14 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
         });
         
         allOrders.push(...result.orders);
+        totalFromAllAccounts += result.total; // 🔧 FASE 1: Somar total real de todas as contas
       }
+      
+      console.log('✅ [SWR] Total pedidos:', allOrders.length, '- Total disponível:', totalFromAllAccounts);
       
       return {
         orders: allOrders,
-        total: allOrders.length,
+        total: totalFromAllAccounts, // 🔧 FASE 1: Total REAL para paginação funcionar
         packs: {},
         shippings: {}
       };
@@ -154,8 +163,8 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateOnMount: true, // 🎯 CORREÇÃO: Permitir busca quando key muda
-      dedupingInterval: 30000 // Cache de 30s
+      revalidateOnMount: true,
+      dedupingInterval: 30000
     }
   );
 
