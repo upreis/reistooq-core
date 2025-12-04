@@ -49,6 +49,7 @@ import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
 import vendasOnlineIcon from "@/assets/vendas_online.png";
 import vendasOnlineNewIcon from "@/assets/icons/vendas-online-icon.png";
+import vendasCanceladasIcon from "@/assets/vendas-canceladas-icon-new.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
 import adminIcon from "@/assets/admin.png";
 import alertasIcon from "@/assets/alertas-icon-new.png";
@@ -158,7 +159,7 @@ const ALL_PAGES: PageOption[] = [
     id: 'vendas-canceladas',
     label: 'Vendas Canceladas',
     route: '/vendas-canceladas',
-    icon: <img src={vendasOnlineNewIcon} alt="Vendas Canceladas" className="w-16 h-16 object-contain" />,
+    icon: <img src={vendasCanceladasIcon} alt="Vendas Canceladas" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
