@@ -111,7 +111,7 @@ export const MagneticTabs = React.forwardRef<HTMLDivElement, MagneticTabsProps>(
                 }}
               >
                 {tab.icon && <span className="text-lg">{tab.icon}</span>}
-                <div className="text-sm font-medium leading-5 whitespace-nowrap">
+                <div className="text-base font-semibold leading-5 whitespace-nowrap">
                   {tab.label}
                 </div>
               </div>
