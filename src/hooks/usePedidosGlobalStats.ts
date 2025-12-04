@@ -100,67 +100,104 @@ export function usePedidosGlobalStats(options: UsePedidosGlobalStatsOptions = {}
       const seteDiasAtras = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
       const trintaDiasAtras = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      // Query 1: Totais globais
-      const { data: totals, error: totalsError } = await supabase
-        .from('ml_orders')
-        .select('id, status, total_amount, paid_amount, date_created, last_synced_at')
-        .in('integration_account_id', accountIds);
+      try {
+        // Query otimizada: buscar apenas campos essenciais com limite de 60 dias
+        const sessantaDiasAtras = new Date(hoje.getTime() - 60 * 24 * 60 * 60 * 1000);
+        
+        const { data: orders, error: totalsError } = await supabase
+          .from('ml_orders')
+          .select('status, total_amount, paid_amount, date_created, last_synced_at')
+          .in('integration_account_id', accountIds)
+          .gte('date_created', sessantaDiasAtras.toISOString())
+          .order('date_created', { ascending: false });
 
-      if (totalsError) {
-        console.error('❌ [PedidosGlobalStats] Erro ao buscar totais:', totalsError);
-        throw totalsError;
+        if (totalsError) {
+          console.error('❌ [PedidosGlobalStats] Erro ao buscar totais:', totalsError);
+          throw totalsError;
+        }
+
+        const data = orders || [];
+        
+        // Calcular estatísticas de forma eficiente (single pass)
+        let totalPedidos = 0;
+        let totalValor = 0;
+        let totalPago = 0;
+        let pending = 0;
+        let paid = 0;
+        let cancelled = 0;
+        let hoje_count = 0;
+        let ultimos7Dias = 0;
+        let ultimos30Dias = 0;
+        let valorHoje = 0;
+        let valorUltimos7Dias = 0;
+        let valorUltimos30Dias = 0;
+        let ultimaSincronizacao: string | null = null;
+
+        for (const o of data) {
+          totalPedidos++;
+          const amount = Number(o.total_amount) || 0;
+          const paidAmount = Number(o.paid_amount) || 0;
+          totalValor += amount;
+          totalPago += paidAmount;
+
+          // Status
+          if (o.status === 'pending') pending++;
+          else if (o.status === 'paid') paid++;
+          else if (o.status === 'cancelled') cancelled++;
+
+          // Períodos
+          if (o.date_created) {
+            const orderDate = new Date(o.date_created);
+            if (orderDate >= hoje) {
+              hoje_count++;
+              valorHoje += amount;
+            }
+            if (orderDate >= seteDiasAtras) {
+              ultimos7Dias++;
+              valorUltimos7Dias += amount;
+            }
+            if (orderDate >= trintaDiasAtras) {
+              ultimos30Dias++;
+              valorUltimos30Dias += amount;
+            }
+          }
+
+          // Última sincronização
+          if (o.last_synced_at) {
+            if (!ultimaSincronizacao || new Date(o.last_synced_at) > new Date(ultimaSincronizacao)) {
+              ultimaSincronizacao = o.last_synced_at;
+            }
+          }
+        }
+
+        const stats: PedidosGlobalStats = {
+          totalPedidos,
+          totalValor,
+          totalPago,
+          pending,
+          paid,
+          cancelled,
+          hoje: hoje_count,
+          ultimos7Dias,
+          ultimos30Dias,
+          valorHoje,
+          valorUltimos7Dias,
+          valorUltimos30Dias,
+          ultimaSincronizacao,
+          contasSincronizadas: data.length > 0 ? accountIds.length : 0
+        };
+
+        console.log('📊 [PedidosGlobalStats] Estatísticas calculadas:', {
+          total: stats.totalPedidos,
+          valor: stats.totalValor,
+          ultimos7Dias: stats.ultimos7Dias
+        });
+
+        return stats;
+      } catch (err) {
+        console.error('❌ [PedidosGlobalStats] Erro na query:', err);
+        throw err;
       }
-
-      const orders = totals || [];
-      
-      // Calcular estatísticas
-      const stats: PedidosGlobalStats = {
-        totalPedidos: orders.length,
-        totalValor: orders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
-        totalPago: orders.reduce((sum, o) => sum + (Number(o.paid_amount) || 0), 0),
-        
-        // Por status
-        pending: orders.filter(o => o.status === 'pending').length,
-        paid: orders.filter(o => o.status === 'paid').length,
-        cancelled: orders.filter(o => o.status === 'cancelled').length,
-        
-        // Por período
-        hoje: orders.filter(o => o.date_created && new Date(o.date_created) >= hoje).length,
-        ultimos7Dias: orders.filter(o => o.date_created && new Date(o.date_created) >= seteDiasAtras).length,
-        ultimos30Dias: orders.filter(o => o.date_created && new Date(o.date_created) >= trintaDiasAtras).length,
-        
-        // Valores por período
-        valorHoje: orders
-          .filter(o => o.date_created && new Date(o.date_created) >= hoje)
-          .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
-        valorUltimos7Dias: orders
-          .filter(o => o.date_created && new Date(o.date_created) >= seteDiasAtras)
-          .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
-        valorUltimos30Dias: orders
-          .filter(o => o.date_created && new Date(o.date_created) >= trintaDiasAtras)
-          .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
-        
-        // Meta dados
-        ultimaSincronizacao: orders.length > 0 
-          ? orders.reduce((latest, o) => {
-              if (!o.last_synced_at) return latest;
-              return !latest || new Date(o.last_synced_at) > new Date(latest) 
-                ? o.last_synced_at 
-                : latest;
-            }, null as string | null)
-          : null,
-        contasSincronizadas: new Set(orders.map(o => o.id)).size > 0 
-          ? accountIds.length 
-          : 0
-      };
-
-      console.log('📊 [PedidosGlobalStats] Estatísticas calculadas:', {
-        total: stats.totalPedidos,
-        valor: stats.totalValor,
-        ultimos7Dias: stats.ultimos7Dias
-      });
-
-      return stats;
     },
     enabled: enabled && !loadingAccounts && accountIds.length > 0,
     staleTime,
