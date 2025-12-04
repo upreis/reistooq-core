@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Row } from '@/services/orders';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 interface MapeamentoLocal {
   id: string;
   empresa: string;
@@ -43,7 +45,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
           .eq('ativo', true);
 
         if (error) throw error;
-        console.log('📦 [LocalEstoque] Mapeamentos carregados:', data);
+        if (isDev) console.log('📦 [LocalEstoque] Mapeamentos carregados:', data);
         setMapeamentos((data || []) as MapeamentoLocal[]);
       } catch (error) {
         console.error('❌ Erro ao carregar mapeamentos de locais:', error);
@@ -59,20 +61,22 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
   useEffect(() => {
     // ✅ Se não há pedidos, retorna array vazio
     if (!rows || rows.length === 0) {
-      console.log('📦 [LocalEstoque] Nenhum pedido para enriquecer');
+      if (isDev) console.log('📦 [LocalEstoque] Nenhum pedido para enriquecer');
       setRowsEnriquecidos([]);
       return;
     }
     
     // ⏳ Se ainda está carregando mapeamentos, retorna pedidos sem enriquecimento
     if (loading) {
-      console.log('📦 [LocalEstoque] Aguardando mapeamentos... Processando', rows.length, 'pedidos sem enriquecimento');
+      if (isDev) console.log('📦 [LocalEstoque] Aguardando mapeamentos... Processando', rows.length, 'pedidos sem enriquecimento');
       setRowsEnriquecidos(rows);
       return;
     }
 
-    console.log('📦 [LocalEstoque] Iniciando enriquecimento de', rows.length, 'pedidos');
-    console.log('📦 [LocalEstoque] Mapeamentos disponíveis:', mapeamentos);
+    if (isDev) {
+      console.log('📦 [LocalEstoque] Iniciando enriquecimento de', rows.length, 'pedidos');
+      console.log('📦 [LocalEstoque] Mapeamentos disponíveis:', mapeamentos);
+    }
 
     const enriquecidos = rows.map((row, index) => {
       // ✅ CORREÇÃO CRÍTICA: Campos estão no NÍVEL SUPERIOR do row, não dentro de unified
@@ -96,7 +100,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
 
       const tipoLogisticoNormalizado = normalizarTipoLogistico(tipoLogistico);
 
-      if (index < 3) {
+      if (isDev && index < 3) {
         console.log(`📦 [LocalEstoque] ========== Pedido #${index} ==========`);
         console.log(`📦 [LocalEstoque] Número: ${rowAny.numero || row.unified?.numero}`);
         console.log(`📦 [LocalEstoque] ESPERADO: empresa, marketplace, tipo_logistico`);
@@ -119,7 +123,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
           m.marketplace === marketplace &&
           tipoMapeamentoNormalizado === tipoLogisticoNormalizado;
         
-        if (index < 3) {
+        if (isDev && index < 3) {
           console.log(`📦 [LocalEstoque] --- Testando mapeamento ---`);
           console.log(`📦 [LocalEstoque] Mapeamento DB:`, {
             empresa: m.empresa,
@@ -141,7 +145,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
       });
 
       if (mapeamento && mapeamento.locais_estoque) {
-        if (index < 3) {
+        if (isDev && index < 3) {
           console.log(`✅ [LocalEstoque] MAPEAMENTO ENCONTRADO!`, {
             local_estoque_id: mapeamento.local_estoque_id,
             local_estoque_nome: mapeamento.locais_estoque.nome
@@ -160,7 +164,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
           }
         };
       } else {
-        if (index < 3) {
+        if (isDev && index < 3) {
           console.log(`❌ [LocalEstoque] NENHUM MAPEAMENTO ENCONTRADO`);
           console.log(`❌ [LocalEstoque] Total de mapeamentos disponíveis: ${mapeamentos.length}`);
         }
@@ -169,7 +173,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
       return row;
     });
 
-    console.log('📦 [LocalEstoque] Enriquecimento concluído');
+    if (isDev) console.log('📦 [LocalEstoque] Enriquecimento concluído');
     setRowsEnriquecidos(enriquecidos as any);
   }, [rows, mapeamentos, loading]);
 

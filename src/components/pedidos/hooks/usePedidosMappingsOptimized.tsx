@@ -8,6 +8,8 @@ import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoS
 import { useDebounce } from '@/hooks/useDebounce';
 import { extrairSkusDoPedido } from '@/utils/idUnico';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 interface UsePedidosMappingsOptimizedOptions {
   enabled?: boolean;
   autoProcess?: boolean;
@@ -75,7 +77,7 @@ export function usePedidosMappingsOptimized({
     // ✅ OTIMIZAÇÃO 1: Verificar se já foi processado
     const ordersHash = generateOrdersHash(orders);
     if (!force && ordersHash === lastProcessedHash.current) {
-      console.log('🚀 [MappingsOptimized] Cache hit - pulando reprocessamento');
+      if (isDev) console.log('🚀 [MappingsOptimized] Cache hit - pulando reprocessamento');
       return;
     }
 
@@ -107,7 +109,7 @@ export function usePedidosMappingsOptimized({
       for (let i = 0; i < orders.length; i += batchSize) {
         // Verificar se foi cancelado
         if (signal.aborted) {
-          console.log('🚀 [MappingsOptimized] Processamento cancelado');
+          if (isDev) console.log('🚀 [MappingsOptimized] Processamento cancelado');
           return;
         }
 
@@ -175,16 +177,18 @@ export function usePedidosMappingsOptimized({
               );
               mapping = mappings[0];
               
-              // 🔍 DEBUG: Log do statusBaixa calculado
-              console.log(`📊 [Mapping] Pedido ${idUnico} | SKU: ${skuNormalizado} | Local: ${localEstoqueId} | Status: ${mapping?.statusBaixa}`, {
-                temMapeamento: mapping?.temMapeamento,
-                skuEstoque: mapping?.skuEstoque,
-                skuCadastradoNoEstoque: mapping?.skuCadastradoNoEstoque,
-                localEstoqueNome: mapping?.localEstoqueNome
-              });
+              // 🔍 DEBUG: Log do statusBaixa calculado (apenas em dev)
+              if (isDev) {
+                console.log(`📊 [Mapping] Pedido ${idUnico} | SKU: ${skuNormalizado} | Local: ${localEstoqueId} | Status: ${mapping?.statusBaixa}`, {
+                  temMapeamento: mapping?.temMapeamento,
+                  skuEstoque: mapping?.skuEstoque,
+                  skuCadastradoNoEstoque: mapping?.skuCadastradoNoEstoque,
+                  localEstoqueNome: mapping?.localEstoqueNome
+                });
+              }
             } else {
               mapping = { skuPedido: '', temMapeamento: false, statusBaixa: 'sem_mapear' };
-              console.warn(`⚠️ [Mapping] Pedido ${idUnico} sem SKU válido`);
+              if (isDev) console.warn(`⚠️ [Mapping] Pedido ${idUnico} sem SKU válido`);
             }
             
             if (mapping) {
@@ -227,12 +231,11 @@ export function usePedidosMappingsOptimized({
           duration
         }));
 
-        // Callback de atualização
         if (onMappingUpdate) {
           onMappingUpdate(newMappings);
         }
 
-        console.log(`🚀 [MappingsOptimized] Processamento concluído: ${processedCount} processados, ${failedCount} falhas em ${duration}ms`);
+        if (isDev) console.log(`🚀 [MappingsOptimized] Processamento concluído: ${processedCount} processados, ${failedCount} falhas em ${duration}ms`);
       }
 
     } catch (error) {
@@ -273,7 +276,7 @@ export function usePedidosMappingsOptimized({
   // ✅ AÇÃO: Disparar processamento manual (processamento direto)
   const triggerProcessing = useCallback((orders: any[]) => {
     if (orders && orders.length > 0) {
-      console.log('🚀 [MappingsOptimized] Iniciando processamento para', orders.length, 'pedidos');
+      if (isDev) console.log('🚀 [MappingsOptimized] Iniciando processamento para', orders.length, 'pedidos');
       processOrdersMappings(orders);
     }
   }, [processOrdersMappings]);

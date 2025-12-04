@@ -16,6 +16,8 @@ import { usePedidosCache } from '@/hooks/usePedidosCache';
 import { toast } from 'react-hot-toast';
 import { fetchShopeeOrders } from '@/services/orders';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 export interface PedidosFilters {
   search?: string;
   statusPedido?: string | string[];   // ✅ NOVO: Status do pedido (order.status)
@@ -952,8 +954,8 @@ export function usePedidosManager(initialAccountId?: string) {
 
       const cpfCnpjValue = extractCpfCnpjLocal(o) || extractCpfCnpjLocal(rawData);
       
-      // 🔍 DEBUG: Log para TODOS os pedidos
-      console.log(`[CPF/CNPJ] Pedido ${o.id || rawData.id}: ${cpfCnpjValue || 'VAZIO'} (length: ${cpfCnpjValue?.length || 0})`);
+      // 🔍 DEBUG: Log para TODOS os pedidos (apenas em dev)
+      if (isDev) console.log(`[CPF/CNPJ] Pedido ${o.id || rawData.id}: ${cpfCnpjValue || 'VAZIO'} (length: ${cpfCnpjValue?.length || 0})`);
 
       return {
         ...o,

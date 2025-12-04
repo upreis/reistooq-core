@@ -10,6 +10,7 @@ import { ColumnState, ColumnActions, UseColumnManagerReturn, ColumnProfile } fro
 import { COLUMN_DEFINITIONS, DEFAULT_PROFILES, getDefaultVisibleColumns } from '../config/columns.config';
 
 const STORAGE_KEY = 'pedidos-column-preferences-v5'; // ← Incrementado: remoção de 5 colunas
+const isDev = process.env.NODE_ENV === 'development';
 
 // Estado inicial baseado nas configurações padrão
 const getInitialState = (): ColumnState => {
@@ -18,11 +19,13 @@ const getInitialState = (): ColumnState => {
   // 🔧 CORREÇÃO: Garantir que columnOrder segue a ordem do COLUMN_DEFINITIONS
   const columnOrder = COLUMN_DEFINITIONS.map(col => col.key);
   
-  console.log('🔧 [INITIAL STATE] Configurando estado inicial das colunas:', {
-    defaultColumns: defaultColumns.map(col => col.key),
-    totalDefinitions: COLUMN_DEFINITIONS.length,
-    columnOrder: columnOrder
-  });
+  if (isDev) {
+    console.log('🔧 [INITIAL STATE] Configurando estado inicial das colunas:', {
+      defaultColumns: defaultColumns.map(col => col.key),
+      totalDefinitions: COLUMN_DEFINITIONS.length,
+      columnOrder: columnOrder
+    });
+  }
   
   return {
     visibleColumns: new Set(defaultColumns.map(col => col.key)),
@@ -49,11 +52,13 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
     const lastSearch = localStorage.getItem('pedidos:lastSearch');
       if (lastSearch) {
         const parsed = JSON.parse(lastSearch);
-        if (parsed.visibleColumns && Object.keys(parsed.visibleColumns).length > 0) {
-          console.log('💾 [COLUMNS DEBUG] Restaurando colunas da última consulta:', {
-            saved: parsed.visibleColumns,
-            availableDefinitions: COLUMN_DEFINITIONS.map(col => col.key)
-          });
+      if (parsed.visibleColumns && Object.keys(parsed.visibleColumns).length > 0) {
+          if (isDev) {
+            console.log('💾 [COLUMNS DEBUG] Restaurando colunas da última consulta:', {
+              saved: parsed.visibleColumns,
+              availableDefinitions: COLUMN_DEFINITIONS.map(col => col.key)
+            });
+          }
         // Converter objeto para Set se necessário
         const visibleSet = typeof parsed.visibleColumns === 'object' && parsed.visibleColumns.constructor === Object
           ? new Set(Object.keys(parsed.visibleColumns).filter(key => parsed.visibleColumns[key]) as string[])
@@ -161,10 +166,10 @@ const savePreferences = (state: ColumnState) => {
       
       parsed.visibleColumns = visibleObject;
       localStorage.setItem('pedidos:lastSearch', JSON.stringify(parsed));
-      console.log('💾 Colunas atualizadas na última consulta também');
+      if (isDev) console.log('💾 Colunas atualizadas na última consulta também');
     }
     
-    console.log('✅ Preferências de colunas salvas:', toSave);
+    if (isDev) console.log('✅ Preferências de colunas salvas:', toSave);
   } catch (error) {
     console.warn('❌ Erro ao salvar preferências de colunas:', error);
   }
@@ -175,7 +180,7 @@ export const resetColumnCache = () => {
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('pedidos:lastSearch'); // Limpar também o cache da última pesquisa
-    console.log('🔄 Cache de colunas limpo completamente');
+    if (isDev) console.log('🔄 Cache de colunas limpo completamente');
     
     // NÃO recarregar a página automaticamente - deixar o React atualizar
     // window.location.reload();
@@ -193,12 +198,14 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     const initial = getInitialState();
     const stored = loadStoredPreferences();
     
-    console.log('🔧 [COLUMNS INIT] Inicializando sistema de colunas:', {
-      initial: Array.from(initial.visibleColumns),
-      stored: stored.visibleColumns ? Array.from(stored.visibleColumns) : 'none',
-      totalDefinitions: COLUMN_DEFINITIONS.length,
-      definitionKeys: COLUMN_DEFINITIONS.map(d => d.key)
-    });
+    if (isDev) {
+      console.log('🔧 [COLUMNS INIT] Inicializando sistema de colunas:', {
+        initial: Array.from(initial.visibleColumns),
+        stored: stored.visibleColumns ? Array.from(stored.visibleColumns) : 'none',
+        totalDefinitions: COLUMN_DEFINITIONS.length,
+        definitionKeys: COLUMN_DEFINITIONS.map(d => d.key)
+      });
+    }
     
     // 🔧 Se tem preferências salvas, usar elas (priorizar escolha do usuário)
     if (stored.visibleColumns && stored.visibleColumns.size > 0) {
@@ -213,19 +220,23 @@ export const useColumnManager = (): UseColumnManagerReturn => {
           : new Set<string>(Array.from(stored.visibleColumns as any).filter((k: any): k is string => typeof k === 'string'))
       };
       
-      console.log('✅ Usando preferências do usuário:', {
-        visible: Array.from(finalState.visibleColumns),
-        total: finalState.visibleColumns.size,
-        definitions: COLUMN_DEFINITIONS.length
-      });
+      if (isDev) {
+        console.log('✅ Usando preferências do usuário:', {
+          visible: Array.from(finalState.visibleColumns),
+          total: finalState.visibleColumns.size,
+          definitions: COLUMN_DEFINITIONS.length
+        });
+      }
       
       return finalState;
     }
     
     // Se não tem preferências salvas, usar padrão
-    console.log('✅ Usando configuração padrão (primeira vez):', {
-      definitions: COLUMN_DEFINITIONS.length
-    });
+    if (isDev) {
+      console.log('✅ Usando configuração padrão (primeira vez):', {
+        definitions: COLUMN_DEFINITIONS.length
+      });
+    }
     return initial;
   });
  
