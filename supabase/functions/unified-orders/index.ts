@@ -1019,18 +1019,27 @@ Deno.serve(async (req) => {
     }
 
     // Filtros de data - ML exige formato ISO completo
+    // Frontend pode enviar YYYY-MM-DD ou ISO completo - detectar e converter
     if (date_from) {
       try {
-        const dateFromISO = new Date(date_from + 'T00:00:00.000Z').toISOString();
+        // Se já é ISO completo (contém T), usar direto. Senão, adicionar horário
+        const dateFromISO = date_from.includes('T') 
+          ? new Date(date_from).toISOString()
+          : new Date(date_from + 'T00:00:00.000Z').toISOString();
         mlUrl.searchParams.set('order.date_created.from', dateFromISO);
+        console.log(`[unified-orders:${cid}] Filtro date_from aplicado:`, dateFromISO);
       } catch (e) {
         console.warn(`[unified-orders:${cid}] Data from inválida: ${date_from}`, e);
       }
     }
     if (date_to) {
       try {
-        const dateToISO = new Date(date_to + 'T23:59:59.999Z').toISOString();
+        // Se já é ISO completo (contém T), usar direto. Senão, adicionar horário fim do dia
+        const dateToISO = date_to.includes('T')
+          ? new Date(date_to).toISOString()
+          : new Date(date_to + 'T23:59:59.999Z').toISOString();
         mlUrl.searchParams.set('order.date_created.to', dateToISO);
+        console.log(`[unified-orders:${cid}] Filtro date_to aplicado:`, dateToISO);
       } catch (e) {
         console.warn(`[unified-orders:${cid}] Data to inválida: ${date_to}`, e);
       }

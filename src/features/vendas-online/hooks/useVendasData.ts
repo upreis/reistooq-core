@@ -49,8 +49,10 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
   });
 
   // unified-orders retorna { results, paging }
+  // IMPORTANTE: paging.total da API ML é o total GERAL da conta, não filtrado por período
+  // Devemos usar orders.length como contagem real dos pedidos retornados no período
   const orders = data?.results || [];
-  const total = data?.paging?.total || orders.length;
+  const total = orders.length; // Usar contagem real, não paging.total que ignora filtros de data
   
   // Extrair packs e shippings dos orders
   const packs: Record<string, any> = {};
