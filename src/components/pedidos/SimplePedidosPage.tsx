@@ -69,7 +69,6 @@ import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSectio
 import { PedidosModalsSection } from './components/PedidosModalsSection';
 import { PedidosStatusBar } from './components/PedidosStatusBar';
 import { PedidosResumo } from './components/PedidosResumo';
-import { PedidosGlobalStats } from './components/PedidosGlobalStats';
 import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
 import { PedidosPaginationFooter } from './components/PedidosPaginationFooter';
@@ -779,16 +778,8 @@ function SimplePedidosPage({ className }: Props) {
             </ErrorBoundary>
           </div>
 
-          {/* 📊 NOVO: Estatísticas Globais (60 dias - de ml_orders cache) */}
-          <div className="mt-4 px-4 md:px-6">
-            <PedidosGlobalStats 
-              selectedAccountIds={filtersManager.appliedFilters?.contasML || []}
-              compact={true}
-            />
-          </div>
-
-          {/* 📊 Resumo de Métricas - após as abas (da página atual) */}
-          <div className="mt-4 px-4 md:px-6">
+          {/* 📊 Resumo de Métricas - após as abas */}
+          <div className="mt-12 px-4 md:px-6">
             <PedidosResumo
               pedidos={displayedOrders || orders}
               onFiltroClick={(filtro) => handlers.handleQuickFilterChange(filtro)}
