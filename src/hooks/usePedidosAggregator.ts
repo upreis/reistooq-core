@@ -6,6 +6,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import debounce from 'lodash.debounce';
 import { supabase } from '@/integrations/supabase/client';
+
+const isDev = process.env.NODE_ENV === 'development';
+
 // Tipo temporário compatível com ambos os sistemas
 interface CompatibleFiltersState {
   search?: string;
@@ -62,7 +65,7 @@ export function usePedidosAggregator(
 
   const fetchCounts = useCallback(async () => {
     if (!enabled) {
-      console.log('🔢 [Aggregator] Hook desabilitado, pulando busca');
+      if (isDev) console.log('🔢 [Aggregator] Hook desabilitado, pulando busca');
       return;
     }
 
@@ -70,13 +73,13 @@ export function usePedidosAggregator(
     if (cacheRef.current && cacheTime > 0) {
       const cacheAge = Date.now() - cacheRef.current.timestamp;
       if (cacheAge < cacheTime) {
-        console.log('📦 [Aggregator] Usando dados do cache local', { cacheAge });
+        if (isDev) console.log('📦 [Aggregator] Usando dados do cache local', { cacheAge });
         setCounts(cacheRef.current.data);
         return;
       }
     }
 
-    console.log('🔢 [Aggregator] Iniciando busca com filtros:', appliedFilters);
+    if (isDev) console.log('🔢 [Aggregator] Iniciando busca com filtros:', appliedFilters);
     
     const accountIds = (appliedFilters?.contasML && appliedFilters.contasML.length > 0)
       ? appliedFilters.contasML
@@ -96,7 +99,7 @@ export function usePedidosAggregator(
       
       if (appliedFilters.search) {
         apiFilters.search = appliedFilters.search;
-        console.log('🔍 [Aggregator] Search aplicado:', appliedFilters.search);
+        if (isDev) console.log('🔍 [Aggregator] Search aplicado:', appliedFilters.search);
       }
       
       // ✅ CORREÇÃO: Normalizar datas corretamente
@@ -108,7 +111,7 @@ export function usePedidosAggregator(
         if (!isNaN(d.getTime())) {
           d.setHours(0, 0, 0, 0); // Início do dia
           apiFilters.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-          console.log('📅 [Aggregator] Data início:', appliedFilters.dataInicio, '=>', apiFilters.date_from);
+          if (isDev) console.log('📅 [Aggregator] Data início:', appliedFilters.dataInicio, '=>', apiFilters.date_from);
         }
       }
 
@@ -120,28 +123,28 @@ export function usePedidosAggregator(
         if (!isNaN(d.getTime())) {
           d.setHours(23, 59, 59, 999); // Fim do dia
           apiFilters.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-          console.log('📅 [Aggregator] Data fim:', appliedFilters.dataFim, '=>', apiFilters.date_to);
+          if (isDev) console.log('📅 [Aggregator] Data fim:', appliedFilters.dataFim, '=>', apiFilters.date_to);
         }
       }
 
       if (appliedFilters.cidade) {
         apiFilters.cidade = appliedFilters.cidade;
-        console.log('🏙️ [Aggregator] Cidade:', appliedFilters.cidade);
+        if (isDev) console.log('🏙️ [Aggregator] Cidade:', appliedFilters.cidade);
       }
 
       if (appliedFilters.uf) {
         apiFilters.uf = appliedFilters.uf;
-        console.log('🗺️ [Aggregator] UF:', appliedFilters.uf);
+        if (isDev) console.log('🗺️ [Aggregator] UF:', appliedFilters.uf);
       }
 
       if (appliedFilters.valorMin !== undefined) {
         apiFilters.valorMin = appliedFilters.valorMin;
-        console.log('💰 [Aggregator] Valor mín:', appliedFilters.valorMin);
+        if (isDev) console.log('💰 [Aggregator] Valor mín:', appliedFilters.valorMin);
       }
 
       if (appliedFilters.valorMax !== undefined) {
         apiFilters.valorMax = appliedFilters.valorMax;
-        console.log('💰 [Aggregator] Valor máx:', appliedFilters.valorMax);
+        if (isDev) console.log('💰 [Aggregator] Valor máx:', appliedFilters.valorMax);
       }
 
       // ✅ CORREÇÃO: Mapear statusEnvio corretamente
@@ -165,7 +168,7 @@ export function usePedidosAggregator(
           
         if (mapped.length === 1) {
           apiFilters.shipping_status = mapped[0];
-          console.log('📊 [Aggregator] Status envio:', mapped[0]);
+          if (isDev) console.log('📊 [Aggregator] Status envio:', mapped[0]);
         }
       }
 
@@ -176,13 +179,13 @@ export function usePedidosAggregator(
       
       if (accountIds.length > 1) {
         requestBody.integration_account_ids = accountIds;
-        console.log('🔗 [Aggregator] Múltiplas contas:', accountIds.length);
+        if (isDev) console.log('🔗 [Aggregator] Múltiplas contas:', accountIds.length);
       } else {
         requestBody.integration_account_id = accountIds[0];
-        console.log('🔗 [Aggregator] Conta única:', accountIds[0]);
+        if (isDev) console.log('🔗 [Aggregator] Conta única:', accountIds[0]);
       }
       
-      console.log('🔢 [Aggregator] Request body completo:', requestBody);
+      if (isDev) console.log('🔢 [Aggregator] Request body completo:', requestBody);
 
       const { data, error } = await supabase.functions.invoke('pedidos-aggregator', {
         body: requestBody
@@ -203,7 +206,7 @@ export function usePedidosAggregator(
         baixados: data.baixados || 0
       };
 
-      console.log('📊 [Aggregator] Contadores recebidos:', aggregatedCounts);
+      if (isDev) console.log('📊 [Aggregator] Contadores recebidos:', aggregatedCounts);
       setCounts(aggregatedCounts);
       
       // Atualizar cache local
@@ -212,7 +215,7 @@ export function usePedidosAggregator(
           data: aggregatedCounts,
           timestamp: Date.now()
         };
-        console.log('📦 [Aggregator] Dados salvos no cache local');
+        if (isDev) console.log('📦 [Aggregator] Dados salvos no cache local');
       }
 
     } catch (err: any) {
@@ -246,7 +249,7 @@ export function usePedidosAggregator(
   useEffect(() => {
     if (refetchInterval && enabled) {
       intervalRef.current = setInterval(() => {
-        console.log('⏰ [Aggregator] Refetch automático por intervalo');
+        if (isDev) console.log('⏰ [Aggregator] Refetch automático por intervalo');
         fetchCounts();
       }, refetchInterval);
       
