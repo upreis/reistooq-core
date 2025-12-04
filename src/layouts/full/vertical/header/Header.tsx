@@ -32,7 +32,7 @@ import scannerIcon from "@/assets/icons/scanner-icon.png";
 import deParaIcon from "@/assets/de-para-icon.png";
 import alertasIcon from "@/assets/alertas-icon.png";
 import historicoIcon from "@/assets/historico-icon.png";
-import devolucoesdevendaIcon from "@/assets/icons/devolucoes-venda-icon.png";
+import devolucoesdevendaIcon from "@/assets/devolucoes-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
 import configuracoesOmsIcon from "@/assets/configuracoes-oms-icon.png";
