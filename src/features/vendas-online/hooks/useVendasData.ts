@@ -3,7 +3,7 @@
  * Hook HÍBRIDO: consulta ml_orders cache primeiro, fallback para API ML
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import useSWR from 'swr';
 import { useVendasStore } from '../store/vendasStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -97,21 +97,45 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     setError
   } = useVendasStore();
 
-  // 🚀 COMBO 2.1: Cache query só ativo durante busca manual OU para restaurar dados na montagem
-  // NÃO consultar cache toda vez que filtros mudam - apenas quando shouldFetch é true
+  // 🔧 CORREÇÃO CRÍTICA: Track se precisamos buscar da API após cache miss
+  const [needsApiFetch, setNeedsApiFetch] = useState(false);
+  const lastFetchRef = useRef<string | null>(null);
+
+  // 🚀 COMBO 2.1: Cache query só ativo durante busca manual
   const cacheQuery = useMLOrdersFromCache({
     integrationAccountIds: selectedAccountIds,
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
-    enabled: shouldFetch && selectedAccountIds.length > 0 // 🔧 CORREÇÃO: Controlado por shouldFetch
+    enabled: shouldFetch && selectedAccountIds.length > 0
   });
 
-  // 🔧 CORREÇÃO: Se cache retornou dados válidos E não está loading, usar cache
-  const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
+  // 🔧 CORREÇÃO: Detectar cache miss e marcar que precisa buscar da API
+  useEffect(() => {
+    if (shouldFetch && !cacheQuery.isLoading && cacheQuery.data) {
+      const cacheKey = `${selectedAccountIds.join(',')}-${filters.dateFrom}-${filters.dateTo}`;
+      
+      // Se cache expirou OU não tem dados, precisamos buscar da API
+      if (cacheQuery.data.cache_expired || cacheQuery.data.orders.length === 0) {
+        if (lastFetchRef.current !== cacheKey) {
+          setNeedsApiFetch(true);
+          lastFetchRef.current = cacheKey;
+        }
+      } else {
+        // Cache válido com dados - não precisa API
+        setNeedsApiFetch(false);
+      }
+    }
+  }, [shouldFetch, cacheQuery.isLoading, cacheQuery.data, selectedAccountIds, filters.dateFrom, filters.dateTo]);
 
-  // ✅ COMBO 2.1: Buscar de API ML APENAS quando usuário clica "Aplicar Filtros" (shouldFetch=true)
-  // NÃO buscar automaticamente - busca é MANUAL OBRIGATÓRIA
-  const shouldFetchFromAPI = shouldFetch && selectedAccountIds.length > 0 && !cacheQuery.isLoading;
+  // 🔧 Reset needsApiFetch quando shouldFetch volta a false (nova busca iniciará)
+  useEffect(() => {
+    if (!shouldFetch) {
+      lastFetchRef.current = null;
+    }
+  }, [shouldFetch]);
+
+  // ✅ COMBO 2.1: Buscar de API ML quando cache miss detectado
+  const shouldFetchFromAPI = needsApiFetch && selectedAccountIds.length > 0;
 
   const swrKey = shouldFetchFromAPI
     ? [
@@ -160,17 +184,15 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     }
   );
 
-  // 🔍 DEBUG: Log do estado de busca
+  // 🔧 Se cache retornou dados válidos E não está loading, usar cache
+  const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired && cacheQuery.data.orders.length > 0;
+
+  // 🔧 Reset needsApiFetch após SWR completar busca com sucesso
   useEffect(() => {
-    console.log('🔍 [useVendasData] Estado de busca:', {
-      shouldFetch,
-      shouldFetchFromAPI,
-      cacheLoading: cacheQuery.isLoading,
-      hasCacheData: !!cacheQuery.data,
-      swrKeyExists: !!swrKey,
-      selectedAccountIds: selectedAccountIds.length
-    });
-  }, [shouldFetch, shouldFetchFromAPI, cacheQuery.isLoading, cacheQuery.data, swrKey, selectedAccountIds.length]);
+    if (data && data.orders && data.orders.length > 0) {
+      setNeedsApiFetch(false);
+    }
+  }, [data]);
 
   // 🔧 Consolidar updates em único useEffect para evitar flicker
   useEffect(() => {
@@ -179,12 +201,10 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
 
     // Atualizar dados: priorizar cache válido, fallback para API
     if (useCacheData && cacheQuery.data) {
-      console.log('✅ Usando dados do CACHE ml_orders');
       setOrders(cacheQuery.data.orders, cacheQuery.data.total);
       setPacks({});
       setShippings({});
     } else if (data && !cacheQuery.isLoading) {
-      console.log('✅ Usando dados da API ML (cache expirado)');
       setOrders(data.orders, data.total);
       setPacks(data.packs);
       setShippings(data.shippings);
@@ -200,6 +220,6 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     data,
     isLoading,
     error,
-    refetch: mutate // Usar refetch para busca manual
+    refetch: mutate
   };
 };
