@@ -212,16 +212,18 @@ export default function VendasOnline() {
     // ✅ Ativar busca - o useEffect acima cuida de salvar o cache quando dados chegarem
     setShouldFetch(true);
     
-    // 🔧 CORREÇÃO: QueryKey CONSISTENTE (igual /reclamacoes)
-    const queryKey = ['ml-orders-cache', filters.selectedAccounts.slice().sort().join(',')];
+    // 🔧 CORREÇÃO: QueryKey CONSISTENTE com fallback para array vazio
+    const accountsKey = (filters.selectedAccounts || []).slice().sort().join(',');
+    const queryKey = ['ml-orders-cache', accountsKey];
     
     // Invalidar cache para forçar nova busca
     await queryClient.invalidateQueries({ queryKey });
   };
   
-  // ✅ CANCELAR BUSCA - 🔧 CORREÇÃO: Usar MESMO queryKey
+  // ✅ CANCELAR BUSCA - 🔧 CORREÇÃO: Usar MESMO queryKey com fallback
   const handleCancelarBusca = () => {
-    const queryKey = ['ml-orders-cache', filters.selectedAccounts.slice().sort().join(',')];
+    const accountsKey = (filters.selectedAccounts || []).slice().sort().join(',');
+    const queryKey = ['ml-orders-cache', accountsKey];
     queryClient.cancelQueries({ queryKey });
     setIsManualSearching(false);
     setShouldFetch(false);
