@@ -10,7 +10,7 @@
  * Gerenciamento completo de vendas canceladas do Mercado Livre
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { VendasFilterBar } from '@/features/vendas-online/components/VendasFilterBar';
@@ -93,6 +93,9 @@ export default function VendasOnline() {
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
   
+  // ✅ CORREÇÃO PROBLEMA 3: Ref para trackear filtros anteriores (igual /reclamacoes)
+  const previousFiltersRef = useRef<string>('');
+  
   // Estado de abas
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
@@ -160,6 +163,22 @@ export default function VendasOnline() {
       }
     }
   }, [persistentCache.isStateLoaded, accounts, persistentCache.persistedState, filters.selectedAccounts.length]);
+  
+  // ✅ CORREÇÃO PROBLEMA 3: Resetar shouldFetch quando filtros mudam (força busca manual)
+  useEffect(() => {
+    const currentFiltersKey = JSON.stringify({
+      accounts: filters.selectedAccounts,
+      periodo: filters.periodo
+    });
+    
+    // Se filtros mudaram E já houve busca anterior, resetar shouldFetch
+    if (previousFiltersRef.current && previousFiltersRef.current !== currentFiltersKey) {
+      console.log('🔄 [VENDAS] Filtros mudaram - resetando shouldFetch para aguardar clique');
+      setShouldFetch(false);
+    }
+    
+    previousFiltersRef.current = currentFiltersKey;
+  }, [filters.selectedAccounts, filters.periodo]);
   
   // ✅ Disparar refetch quando shouldFetch muda
   useEffect(() => {
