@@ -477,15 +477,8 @@ export default function VendasOnline() {
                 totalItems={pagination.total}
                 currentPage={pagination.currentPage}
                 itemsPerPage={pagination.itemsPerPage}
-                onPageChange={(page) => {
-                  setPage(page);
-                  setShouldFetch(true); // 🔧 FASE 2: Disparar busca server-side
-                }}
-                onItemsPerPageChange={(items) => {
-                  setItemsPerPage(items);
-                  setPage(1); // Voltar para página 1
-                  setShouldFetch(true); // 🔧 FASE 2: Disparar busca server-side
-                }}
+                onPageChange={setPage}
+                onItemsPerPageChange={setItemsPerPage}
               />
             </div>
           )}

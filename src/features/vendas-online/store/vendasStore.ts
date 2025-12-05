@@ -72,9 +72,8 @@ const initialPagination: VendasPagination = {
   total: 0
 };
 
-// ✅ Carregar estado do localStorage (apenas metadados para restauração rápida)
-// NOTA: Dados restaurados são MÍNIMOS, a página deve re-buscar dados completos da API
-const loadPersistedState = (): { orders: MLOrder[], pagination: VendasPagination, isMinimalData: boolean } => {
+// ✅ Carregar estado do localStorage (igual reclamacoesStore)
+const loadPersistedState = (): { orders: MLOrder[], pagination: VendasPagination } => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -82,76 +81,30 @@ const loadPersistedState = (): { orders: MLOrder[], pagination: VendasPagination
       // Validar TTL (30 minutos)
       if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
         console.log('📦 [VENDAS-STORE] Restaurando estado do localStorage:', {
-          orders: parsed.orders?.length || 0,
-          isMinimal: true
+          orders: parsed.orders?.length || 0
         });
-        // Retorna orders com flag indicando que são dados mínimos
         return {
           orders: parsed.orders || [],
-          pagination: { ...initialPagination, total: parsed.orders?.length || 0 },
-          isMinimalData: true
+          pagination: { ...initialPagination, total: parsed.orders?.length || 0 }
         };
       }
     }
   } catch (error) {
     console.error('[VENDAS-STORE] Erro ao carregar estado:', error);
   }
-  return { orders: [], pagination: initialPagination, isMinimalData: false };
+  return { orders: [], pagination: initialPagination };
 };
 
-// ✅ Salvar estado no localStorage (apenas metadados essenciais para evitar QuotaExceededError)
+// ✅ Salvar estado no localStorage
 const persistState = (orders: MLOrder[]) => {
-  // Salvar apenas campos essenciais para restauração rápida (sem order_data JSONB gigante)
-  const ordersMinimal = orders.slice(0, 100).map(order => ({
-    id: order.id,
-    status: order.status,
-    date_created: order.date_created,
-    total_amount: order.total_amount,
-    buyer: order.buyer ? { id: order.buyer.id, nickname: order.buyer.nickname } : null,
-    pack_id: order.pack_id,
-    shipping_id: order.shipping?.id
-  }));
-  
-  const toSave = {
-    orders: ordersMinimal,
-    timestamp: Date.now()
-  };
-  
   try {
-    const serialized = JSON.stringify(toSave);
-    
-    // Verificar tamanho antes de salvar (limite ~5MB, usar 500KB como safe limit para este cache específico)
-    if (serialized.length > 500 * 1024) {
-      console.warn('[VENDAS-STORE] Dados muito grandes, salvando apenas 30 pedidos');
-      toSave.orders = ordersMinimal.slice(0, 30);
-    }
-    
+    const toSave = {
+      orders,
+      timestamp: Date.now()
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-    console.log('💾 [VENDAS-STORE] Estado salvo:', toSave.orders.length, 'pedidos');
   } catch (error) {
-    // QuotaExceededError - limpar cache antigo e tentar novamente
-    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      console.warn('[VENDAS-STORE] QuotaExceededError - limpando cache e tentando novamente');
-      try {
-        // Limpar caches relacionados
-        const keysToClean = Object.keys(localStorage).filter(k => 
-          k.startsWith('vendas-') || k.startsWith('ml-orders')
-        );
-        keysToClean.forEach(k => localStorage.removeItem(k));
-        
-        // Tentar salvar novamente com menos dados
-        const minimalSave = {
-          orders: ordersMinimal.slice(0, 20),
-          timestamp: Date.now()
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalSave));
-        console.log('💾 [VENDAS-STORE] Estado salvo após limpeza:', minimalSave.orders.length, 'pedidos');
-      } catch (cleanError) {
-        console.error('[VENDAS-STORE] Falha ao salvar após limpeza:', cleanError);
-      }
-    } else {
-      console.error('[VENDAS-STORE] Erro ao salvar estado:', error);
-    }
+    console.error('[VENDAS-STORE] Erro ao salvar estado:', error);
   }
 };
 
