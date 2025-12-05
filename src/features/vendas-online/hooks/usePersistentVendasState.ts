@@ -53,17 +53,12 @@ export const usePersistentVendasState = () => {
   // 🎯 FASE 1: Carregar estado com validação robusta
   useEffect(() => {
     try {
-      console.log('🔍 [VENDAS CACHE] Iniciando validação de cache...');
-      
       // Health check do localStorage
       const health = LocalStorageValidator.checkStorageHealth();
       if (!health.healthy) {
-        console.warn('⚠️ [VENDAS CACHE] Problemas de storage detectados:', health.issues);
-        
         // ✅ CORREÇÃO: Se localStorage está quase cheio, fazer limpeza automática
         if (health.issues.includes('localStorage está quase cheio')) {
-          console.log('🧹 [VENDAS CACHE] Iniciando limpeza automática de caches antigos...');
-          const oldCachesCleaned = LocalStorageValidator.cleanupOldCaches();
+          LocalStorageValidator.cleanupOldCaches();
           
           // Se ainda está cheio após limpeza de expirados, fazer limpeza emergencial
           const healthAfter = LocalStorageValidator.checkStorageHealth();
@@ -74,14 +69,10 @@ export const usePersistentVendasState = () => {
       }
       
       // Limpar entradas corrompidas
-      const cleaned = LocalStorageValidator.cleanCorruptedStorage([STORAGE_KEY]);
-      if (cleaned > 0) {
-        console.log(`🧹 [VENDAS CACHE] ${cleaned} entradas corrompidas removidas`);
-      }
+      LocalStorageValidator.cleanCorruptedStorage([STORAGE_KEY]);
       
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) {
-        console.log('📭 [VENDAS CACHE] Nenhum cache encontrado');
         setIsStateLoaded(true);
         return;
       }
@@ -90,7 +81,6 @@ export const usePersistentVendasState = () => {
       
       // 🎯 FASE 1: Validação de versão
       if (parsed.version !== STORAGE_VERSION) {
-        console.log(`🔄 [VENDAS CACHE] Versão desatualizada (${parsed.version} → ${STORAGE_VERSION}), limpando...`);
         localStorage.removeItem(STORAGE_KEY);
         setIsStateLoaded(true);
         return;
@@ -98,7 +88,6 @@ export const usePersistentVendasState = () => {
       
       // 🎯 FASE 1: Validação de estrutura
       if (!validatePersistedState(parsed)) {
-        console.warn('❌ [VENDAS CACHE] Estrutura inválida, limpando...');
         localStorage.removeItem(STORAGE_KEY);
         setIsStateLoaded(true);
         return;
@@ -109,18 +98,10 @@ export const usePersistentVendasState = () => {
       const cacheAge = now - parsed.cachedAt;
       
       if (cacheAge >= CACHE_DURATION) {
-        console.log('⏰ [VENDAS CACHE] Cache expirado, limpando...');
         localStorage.removeItem(STORAGE_KEY);
         setIsStateLoaded(true);
         return;
       }
-      
-      console.log('✅ [VENDAS CACHE] Cache válido restaurado:', {
-        vendas: parsed.vendas.length,
-        contas: parsed.selectedAccounts.length,
-        idade: Math.round(cacheAge / 1000) + 's',
-        version: parsed.version
-      });
       
       setPersistedState(parsed);
     } catch (error) {
@@ -158,12 +139,6 @@ export const usePersistentVendasState = () => {
         }
         
         localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
-        console.log('💾 [VENDAS CACHE] Estado salvo:', {
-          vendas: state.vendas.length,
-          contas: state.selectedAccounts.length,
-          size: sizeKB.toFixed(1) + 'KB',
-          version: STORAGE_VERSION
-        });
       } catch (quotaError: any) {
         if (quotaError.name === 'QuotaExceededError') {
           console.error('💥 [VENDAS CACHE] Quota excedida, limpando cache antigo...');
@@ -216,7 +191,6 @@ export const usePersistentVendasState = () => {
     }
     localStorage.removeItem(STORAGE_KEY);
     setPersistedState(null);
-    console.log('🗑️ [VENDAS CACHE] Cache limpo');
   }, []);
   
   // 🎯 FASE 1: Health check do storage

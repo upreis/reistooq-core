@@ -52,20 +52,12 @@ export const useMLOrdersFromCache = ({
         throw new Error('Usuário deve estar logado para buscar vendas');
       }
 
-      console.log('🔍 [useMLOrdersFromCache] Iniciando busca...', {
-        accounts: integrationAccountIds.length,
-        dateFrom,
-        dateTo
-      });
-
       // ✅ VALIDAÇÃO: Verificar contas
       if (!integrationAccountIds || integrationAccountIds.length === 0) {
         throw new Error('Nenhuma conta selecionada');
       }
 
       // ========== STEP 1: CONSULTAR CACHE ml_orders_cache (tem dados enriquecidos) ==========
-      // ✅ CORREÇÃO: Usar ml_orders_cache que tem dados de shipping completos
-      console.log('📦 [CACHE] Buscando de ml_orders_cache...');
       
       // Primeiro tentar ml_orders_cache (dados mais recentes e enriquecidos)
       let query = supabase
@@ -79,8 +71,6 @@ export const useMLOrdersFromCache = ({
 
       // ✅ CACHE HIT: Se tem dados válidos no cache enriquecido, retornar
       if (!cacheError && cachedOrders && cachedOrders.length > 0) {
-        console.log(`✅ [CACHE HIT] ${cachedOrders.length} orders do ml_orders_cache`);
-        
         // Filtrar por data se necessário
         let orders = cachedOrders.map(row => row.order_data as unknown as MLOrder);
         
@@ -91,7 +81,6 @@ export const useMLOrdersFromCache = ({
             if (dateTo && orderDate > new Date(dateTo)) return false;
             return true;
           });
-          console.log(`📅 [CACHE] Filtrado para ${orders.length} orders no período`);
         }
         
         // Construir packs e shippings
@@ -122,8 +111,6 @@ export const useMLOrdersFromCache = ({
       }
 
       // ========== STEP 2: CACHE MISS - FALLBACK PARA API ==========
-      console.log('⚠️ [CACHE MISS] Cache vazio ou expirado, chamando API...');
-      console.log('📡 [API] Chamando unified-ml-orders...');
       
       const { data: apiData, error: apiError } = await supabase.functions.invoke(
         'unified-ml-orders',
@@ -151,8 +138,6 @@ export const useMLOrdersFromCache = ({
 
       const orders = apiData.orders || [];
       const total = apiData.total || apiData.paging?.total || orders.length;
-      
-      console.log(`✅ [API] ${orders.length} orders retornados da API`);
       
       // Construir packs e shippings
       const packs: Record<string, any> = {};

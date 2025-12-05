@@ -36,10 +36,6 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
     });
     
     if (stored?.visibleColumns && stored.columnOrder) {
-      console.log('🔄 [ColumnManager] Restaurando do cache:', {
-        visibleCount: stored.visibleColumns.size,
-        profile: stored.activeProfile
-      });
       return {
         visibleColumns: stored.visibleColumns,
         columnOrder: stored.columnOrder,
@@ -52,11 +48,6 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
     const defaultColumns = RECLAMACOES_COLUMN_DEFINITIONS
       .filter(col => col.default)
       .map(col => col.key);
-
-    console.log('✨ [ColumnManager] Estado inicial padrão:', {
-      defaultCount: defaultColumns.length,
-      total: RECLAMACOES_COLUMN_DEFINITIONS.length
-    });
 
     return {
       visibleColumns: new Set(defaultColumns),
