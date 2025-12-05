@@ -59,6 +59,18 @@ export const usePersistentVendasState = () => {
       const health = LocalStorageValidator.checkStorageHealth();
       if (!health.healthy) {
         console.warn('⚠️ [VENDAS CACHE] Problemas de storage detectados:', health.issues);
+        
+        // ✅ CORREÇÃO: Se localStorage está quase cheio, fazer limpeza automática
+        if (health.issues.includes('localStorage está quase cheio')) {
+          console.log('🧹 [VENDAS CACHE] Iniciando limpeza automática de caches antigos...');
+          const oldCachesCleaned = LocalStorageValidator.cleanupOldCaches();
+          
+          // Se ainda está cheio após limpeza de expirados, fazer limpeza emergencial
+          const healthAfter = LocalStorageValidator.checkStorageHealth();
+          if (!healthAfter.healthy && healthAfter.issues.includes('localStorage está quase cheio')) {
+            LocalStorageValidator.emergencyCleanup();
+          }
+        }
       }
       
       // Limpar entradas corrompidas
