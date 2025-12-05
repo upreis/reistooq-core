@@ -3,7 +3,7 @@
  * Hook HÍBRIDO: consulta ml_orders cache primeiro, fallback para API ML
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import useSWR from 'swr';
 import { useVendasStore } from '../store/vendasStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -97,27 +97,21 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     setError
   } = useVendasStore();
 
-  // 🎯 Ref para evitar múltiplas buscas
-  const hasFetchedFromAPI = useRef(false);
-
-  // 🚀 ESTRATÉGIA HÍBRIDA: Consultar cache primeiro (sempre ativo se há contas)
+  // 🚀 COMBO 2.1: Cache query só ativo durante busca manual OU para restaurar dados na montagem
+  // NÃO consultar cache toda vez que filtros mudam - apenas quando shouldFetch é true
   const cacheQuery = useMLOrdersFromCache({
     integrationAccountIds: selectedAccountIds,
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
-    enabled: selectedAccountIds.length > 0 // 🔧 CORREÇÃO: Sempre consultar cache se há contas
+    enabled: shouldFetch && selectedAccountIds.length > 0 // 🔧 CORREÇÃO: Controlado por shouldFetch
   });
 
   // 🔧 CORREÇÃO: Se cache retornou dados válidos E não está loading, usar cache
   const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
 
-  // ✅ FALLBACK: Buscar de API ML quando:
-  // 1. Cache expirou/vazio E cache terminou loading E há contas
-  // 2. OU usuário clicou buscar manualmente (shouldFetch)
-  const cacheExpired = !cacheQuery.isLoading && (cacheQuery.data?.cache_expired || !cacheQuery.data);
-  const shouldFetchFromAPI = selectedAccountIds.length > 0 && 
-    !cacheQuery.isLoading && 
-    (cacheExpired || shouldFetch); // 🔧 CORREÇÃO: Buscar automaticamente se cache expirou
+  // ✅ COMBO 2.1: Buscar de API ML APENAS quando usuário clica "Aplicar Filtros" (shouldFetch=true)
+  // NÃO buscar automaticamente - busca é MANUAL OBRIGATÓRIA
+  const shouldFetchFromAPI = shouldFetch && selectedAccountIds.length > 0 && !cacheQuery.isLoading;
 
   const swrKey = shouldFetchFromAPI
     ? [
@@ -132,16 +126,14 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
       ]
     : null;
 
-  // 🎯 COMBO 2.1: Fetch com SWR
+  // 🎯 COMBO 2.1: Fetch com SWR - APENAS quando shouldFetch é true
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     async () => {
-      console.log('🔄 [SWR] Executando fetch de API ML...');
+      console.log('🔄 [SWR] Executando fetch de API ML (busca manual)...');
       
-      // 🔧 FASE 1 FIX: Uma única chamada para unified-ml-orders
-      // A paginação é feita no backend sobre dataset consolidado de TODAS as contas
       const result = await fetchVendasFromML({
-        integrationAccountId: selectedAccountIds.join(','), // Passar todas as contas
+        integrationAccountId: selectedAccountIds.join(','),
         search: filters.search,
         status: filters.status,
         dateFrom: filters.dateFrom,
@@ -162,9 +154,9 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateOnMount: true,
-      dedupingInterval: 5000, // 🔧 FASE 1: Reduzido para permitir paginação mais responsiva
-      keepPreviousData: true // 🔧 FASE 1: Manter dados anteriores durante loading
+      revalidateOnMount: false, // 🔧 COMBO 2.1: NÃO buscar automaticamente no mount
+      dedupingInterval: 5000,
+      keepPreviousData: true
     }
   );
 
@@ -173,28 +165,12 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     console.log('🔍 [useVendasData] Estado de busca:', {
       shouldFetch,
       shouldFetchFromAPI,
-      cacheExpired,
       cacheLoading: cacheQuery.isLoading,
       hasCacheData: !!cacheQuery.data,
       swrKeyExists: !!swrKey,
-      hasFetchedFromAPI: hasFetchedFromAPI.current,
       selectedAccountIds: selectedAccountIds.length
     });
-  }, [shouldFetch, shouldFetchFromAPI, cacheExpired, cacheQuery.isLoading, cacheQuery.data, swrKey, selectedAccountIds.length]);
-
-  // 🎯 COMBO 2.1: Disparar busca automática quando cache expirou
-  useEffect(() => {
-    if (shouldFetchFromAPI && swrKey && !hasFetchedFromAPI.current && !isLoading) {
-      console.log('🚀 [useVendasData] Cache expirado, disparando busca da API...', { swrKey });
-      hasFetchedFromAPI.current = true;
-      mutate();
-    }
-  }, [shouldFetchFromAPI, swrKey, isLoading, mutate]);
-
-  // Reset flag quando contas ou shouldFetch mudam
-  useEffect(() => {
-    hasFetchedFromAPI.current = false;
-  }, [selectedAccountIds.join(','), filters.dateFrom, filters.dateTo]);
+  }, [shouldFetch, shouldFetchFromAPI, cacheQuery.isLoading, cacheQuery.data, swrKey, selectedAccountIds.length]);
 
   // 🔧 Consolidar updates em único useEffect para evitar flicker
   useEffect(() => {
