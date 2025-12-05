@@ -2,6 +2,7 @@
  * 🔄 UNIFIED ML ORDERS - SINGLE SOURCE OF TRUTH
  * Edge Function unificada para busca de pedidos do Mercado Livre
  * Implementa write-through caching com fallback para ML API
+ * 🔧 FASE 1: Suporte a paginação server-side com offset/limit
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
@@ -17,6 +18,8 @@ interface RequestParams {
   date_from?: string;
   date_to?: string;
   force_refresh?: boolean;
+  offset?: number;
+  limit?: number;
 }
 
 const CACHE_TTL_MINUTES = 15;
@@ -57,7 +60,7 @@ function extractOrderFields(order: any, accountId: string, organizationId: strin
     date_created: order.date_created || null,
     date_closed: order.date_closed || null,
     last_updated: order.last_updated || null,
-    order_date: order.date_created || null, // 🔧 Adicionar order_date (igual a date_created)
+    order_date: order.date_created || null,
     total_amount: order.total_amount || 0,
     paid_amount: order.paid_amount || 0,
     currency_id: order.currency_id || 'BRL',
@@ -78,8 +81,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // ✅ CRITICAL: Como verify_jwt = true, Supabase já validou o JWT
-    // Podemos criar um service client e extrair o user ID do JWT
     const authHeader = req.headers.get('Authorization');
     
     if (!authHeader) {
@@ -90,13 +91,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Service client para operações administrativas
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Extrair user do JWT (já validado pelo Supabase via verify_jwt)
     const jwt = authHeader.replace('Bearer ', '');
     const [, payloadBase64] = jwt.split('.');
     const payload = JSON.parse(atob(payloadBase64));
@@ -112,7 +111,6 @@ Deno.serve(async (req) => {
     
     console.log('✅ User authenticated:', userId);
 
-    // Buscar organization_id do usuário
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('organizacao_id')
@@ -127,11 +125,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse request body
     const params: RequestParams = await req.json();
-    const { integration_account_ids, date_from, date_to, force_refresh = false } = params;
+    const { integration_account_ids, date_from, date_to, force_refresh = false, offset = 0, limit = 50 } = params;
 
-    // ✅ CORREÇÃO PROBLEMA 6: Validar array vazio
     if (!integration_account_ids || integration_account_ids.length === 0) {
       return new Response(
         JSON.stringify({ 
@@ -147,12 +143,15 @@ Deno.serve(async (req) => {
       accounts: integration_account_ids.length,
       date_from,
       date_to,
-      force_refresh
+      force_refresh,
+      offset,
+      limit
     });
 
-    // ETAPA 1: Verificar cache no Supabase (se não for force_refresh)
-    if (!force_refresh) {
-      console.log('🔍 Checking cache...');
+    // 🔧 FASE 1: Cache APENAS para primeira página (offset === 0)
+    // Paginação sempre vai para API porque cache não tem paging info
+    if (!force_refresh && offset === 0) {
+      console.log('🔍 Checking cache (first page only)...');
       
       const { data: cachedOrders, error: cacheError } = await supabaseAdmin
         .from('ml_orders_cache')
@@ -164,7 +163,6 @@ Deno.serve(async (req) => {
       if (!cacheError && cachedOrders && cachedOrders.length > 0) {
         console.log(`✅ Cache HIT - ${cachedOrders.length} orders from cache`);
         
-        // Filtrar por data range se especificado
         let filteredOrders = cachedOrders.map(entry => entry.order_data);
         
         if (date_from || date_to) {
@@ -176,11 +174,27 @@ Deno.serve(async (req) => {
           });
         }
         
+        // 🔧 FASE 1: Contar total REAL no cache para paginação
+        const { count: totalInCache } = await supabaseAdmin
+          .from('ml_orders_cache')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', organization_id)
+          .in('integration_account_id', integration_account_ids)
+          .gt('ttl_expires_at', new Date().toISOString());
+        
+        const totalReal = totalInCache || filteredOrders.length;
+        console.log(`📊 Cache total: ${totalReal} orders`);
+        
         return new Response(
           JSON.stringify({
             success: true,
             orders: filteredOrders,
-            total: filteredOrders.length,
+            total: totalReal,
+            paging: {
+              total: totalReal,
+              offset: 0,
+              limit: filteredOrders.length
+            },
             source: 'cache',
             cached_at: cachedOrders[0]?.cached_at,
             expires_at: cachedOrders[0]?.ttl_expires_at
@@ -190,10 +204,11 @@ Deno.serve(async (req) => {
       }
       
       console.log('❌ Cache MISS - fetching from ML API');
-    } else {
+    } else if (offset > 0) {
+      console.log(`🔄 Paginação (offset=${offset}) - bypassing cache, fetching from ML API`);
+    } else if (force_refresh) {
       console.log('🔄 Force refresh - bypassing cache and invalidating old cache');
       
-      // Invalidar cache antigo das contas especificadas antes de buscar novos dados
       const { error: deleteError } = await supabaseAdmin
         .from('ml_orders_cache')
         .delete()
@@ -207,18 +222,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ETAPA 2: Buscar da ML API (cache miss ou force refresh)
+    // ETAPA 2: Buscar TODOS os pedidos de TODAS as contas (sem paginação por conta)
+    // 🔧 FASE 1 FIX: Paginação deve ser feita sobre dataset CONSOLIDADO, não por conta
     const allOrders: any[] = [];
+    let totalFromAPI = 0;
     
     for (const accountId of integration_account_ids) {
-      console.log(`📡 Fetching orders for account ${accountId}...`);
+      // 🔧 FASE 1 FIX: Buscar TODOS os pedidos da conta (sem offset/limit)
+      // A paginação será aplicada DEPOIS de consolidar todas as contas
+      console.log(`📡 Fetching ALL orders for account ${accountId}...`);
       
-      // Chamar unified-orders existente para buscar dados
       const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
         body: {
           integration_account_id: accountId,
           date_from,
-          date_to
+          date_to,
+          offset: 0,      // Sempre 0 - buscar do início
+          limit: 200      // Limite alto para pegar tudo (ML máximo é ~50 por página)
         }
       });
 
@@ -227,17 +247,15 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // 🔧 CORREÇÃO CRÍTICA: unified-orders retorna .results, não .orders
       const accountOrders = unifiedOrdersResponse.data?.results || [];
       console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId}`);
       
       allOrders.push(...accountOrders);
 
-      // ETAPA 3: Write-through caching - salvar no cache E na tabela permanente
+      // ETAPA 3: Write-through caching (sempre salvar todos)
       if (accountOrders.length > 0) {
-        console.log(`💾 Saving ${accountOrders.length} orders to cache and ml_orders...`);
+        console.log(`💾 Saving ${accountOrders.length} orders to cache...`);
         
-        // 3.1: Salvar em ml_orders_cache (TTL cache temporário)
         const cacheEntries = accountOrders.map((order: any) => ({
           organization_id,
           integration_account_id: accountId,
@@ -259,40 +277,56 @@ Deno.serve(async (req) => {
           console.log(`✅ Cache: Saved ${cacheEntries.length} orders`);
         }
 
-        // 3.2: Salvar em ml_orders (persistência permanente com campos estruturados)
+        // Salvar em ml_orders permanente
         try {
           const mlOrdersEntries = accountOrders.map((order: any) => 
             extractOrderFields(order, accountId, organization_id)
           );
 
-          const { error: mlOrdersError, data: mlOrdersData } = await supabaseAdmin
+          const { error: mlOrdersError } = await supabaseAdmin
             .from('ml_orders')
             .upsert(mlOrdersEntries, {
               onConflict: 'organization_id,integration_account_id,ml_order_id',
-              ignoreDuplicates: false // Atualizar se já existir
+              ignoreDuplicates: false
             });
 
           if (mlOrdersError) {
-            // Log mas não falha - cache temporário já foi salvo
             console.error('⚠️ Error saving to ml_orders:', mlOrdersError);
-            console.error('⚠️ This is non-critical - cache is still functional');
           } else {
-            console.log(`✅ ml_orders: Saved ${mlOrdersEntries.length} orders permanently`);
+            console.log(`✅ ml_orders: Saved ${mlOrdersEntries.length} orders`);
           }
         } catch (error) {
           console.error('⚠️ Exception in ml_orders persistence:', error);
-          console.error('⚠️ This is non-critical - cache is still functional');
         }
       }
     }
 
-    console.log(`✅ Total orders fetched: ${allOrders.length}`);
+    // 🔧 FASE 1 FIX: Ordenar por data e aplicar paginação sobre dataset CONSOLIDADO
+    allOrders.sort((a, b) => {
+      const dateA = new Date(a.date_created || a.data_criacao || 0).getTime();
+      const dateB = new Date(b.date_created || b.data_criacao || 0).getTime();
+      return dateB - dateA; // Mais recentes primeiro
+    });
+
+    totalFromAPI = allOrders.length;
+    
+    // 🔧 FASE 1 FIX: Aplicar paginação sobre dataset consolidado
+    const paginatedOrders = allOrders.slice(offset, offset + limit);
+    
+    console.log(`📊 Paginação consolidada: ${paginatedOrders.length} de ${totalFromAPI} (offset=${offset}, limit=${limit})`)
+
+    console.log(`✅ Total orders: ${totalFromAPI}, returning page: ${paginatedOrders.length} items`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        orders: allOrders,
-        total: allOrders.length,
+        orders: paginatedOrders, // 🔧 FASE 1 FIX: Retornar página do dataset consolidado
+        total: totalFromAPI,
+        paging: {
+          total: totalFromAPI,
+          offset: offset,
+          limit: limit
+        },
         source: 'ml_api',
         cached_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000).toISOString()
