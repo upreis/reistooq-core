@@ -113,11 +113,13 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
 
   // ✅ FALLBACK: Buscar de API ML quando:
   // 1. Cache expirou/vazio E cache terminou loading E há contas
-  // 2. OU usuário clicou buscar manualmente (shouldFetch)
+  // 2. OU usuário clicou buscar manualmente (shouldFetch) - PRIORIDADE MÁXIMA
   const cacheExpired = !cacheQuery.isLoading && (cacheQuery.data?.cache_expired || !cacheQuery.data);
+  
+  // 🔧 FASE 2 FIX: Se shouldFetch=true (clicou Aplicar), SEMPRE buscar da API
+  // Não bloquear por cacheQuery.isLoading quando é busca manual explícita
   const shouldFetchFromAPI = selectedAccountIds.length > 0 && 
-    !cacheQuery.isLoading && 
-    (cacheExpired || shouldFetch); // 🔧 CORREÇÃO: Buscar automaticamente se cache expirou
+    (shouldFetch || (!cacheQuery.isLoading && cacheExpired));
 
   const swrKey = shouldFetchFromAPI
     ? [
