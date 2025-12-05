@@ -268,94 +268,123 @@ export default function VendasOnline() {
     setShouldFetch(false);
   };
 
-  // Enriquecer vendas com status_analise_local E account_name
-  const vendasEnriquecidas = useMemo(() => {
-    return orders.map(venda => ({
-      ...venda,
-      status_analise_local: analiseStatus[venda.id.toString()] || 'pendente' as StatusAnalise,
-      // ✅ CORREÇÃO: Priorizar account_name já existente nos dados (cache)
-      // Só fazer lookup no accountsMap se não existir
-      account_name: (venda as any).account_name || accountsMap.get((venda as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
-    }));
-  }, [orders, analiseStatus, accountsMap, filters.selectedAccounts]);
-  
-  // 🎯 FASE 4: MÉTRICAS AGREGADAS
-  const metrics = useVendasAggregator(vendasEnriquecidas, analiseStatus);
-  
-  // Filtrar vendas por aba ativa (Ativas vs Histórico)
-  const vendasFiltradasPorAba = useMemo(() => {
-    let resultado = vendasEnriquecidas;
-    
-    // Filtro por aba
-    if (activeTab === 'ativas') {
-      resultado = resultado.filter(v => 
-        STATUS_ATIVOS.includes(v.status_analise_local)
-      );
-    } else {
-      resultado = resultado.filter(v => 
-        STATUS_HISTORICO.includes(v.status_analise_local)
-      );
+  // 🚀 OTIMIZAÇÃO: Sets para lookup O(1) ao invés de O(n)
+  const STATUS_ATIVOS_SET = useMemo(() => new Set(STATUS_ATIVOS), []);
+  const STATUS_HISTORICO_SET = useMemo(() => new Set(STATUS_HISTORICO), []);
+
+  // 🚀 OTIMIZAÇÃO: Single-pass enrichment + filtering + counting
+  const { vendasEnriquecidas, vendasFiltradasPorAba, countAtivas, countHistorico, stats } = useMemo(() => {
+    // Early return para array vazio
+    if (!orders || orders.length === 0) {
+      return {
+        vendasEnriquecidas: [],
+        vendasFiltradasPorAba: [],
+        countAtivas: 0,
+        countHistorico: 0,
+        stats: { total: 0, pending: 0, completed: 0, revenue: 0 }
+      };
     }
+
+    const hoje = new Date();
+    const enriched: any[] = [];
+    const filteredByTab: any[] = [];
+    let ativasCount = 0;
+    let historicoCount = 0;
     
-    // Aplicar filtro do resumo (badges clicáveis)
-    if (filtroResumoAtivo) {
-      const hoje = new Date();
+    // Stats para vendasFiltradasPorAba
+    let statsTotal = 0;
+    let statsPending = 0;
+    let statsCompleted = 0;
+    let statsRevenue = 0;
+
+    // 🚀 SINGLE LOOP: enrich + filter + count tudo de uma vez
+    for (let i = 0; i < orders.length; i++) {
+      const venda = orders[i];
+      const statusAnalise = analiseStatus[venda.id.toString()] || 'pendente' as StatusAnalise;
+      const accountName = (venda as any).account_name || 
+        accountsMap.get((venda as any).integration_account_id || filters.selectedAccounts[0])?.name || '-';
       
-      switch (filtroResumoAtivo.tipo) {
-        case 'prazo':
-          resultado = resultado.filter(v => {
-            if (!v.date_created) return false;
-            const dataCriacao = parseISO(v.date_created);
-            const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
-            
-            if (filtroResumoAtivo.valor === 'vencido') {
-              return diasUteis > 3;
-            } else if (filtroResumoAtivo.valor === 'a_vencer') {
-              return diasUteis >= 0 && diasUteis <= 3;
-            }
-            return false;
-          });
-          break;
-          
-        case 'mediacao':
-          resultado = resultado.filter(v => 
-            v.tags?.includes('mediacao') || v.status === 'mediation'
-          );
-          break;
-          
-        case 'tipo':
-          if (filtroResumoAtivo.valor === 'venda') {
-            resultado = resultado.filter(v => 
-              v.status === 'paid' || v.status === 'confirmed'
-            );
-          } else if (filtroResumoAtivo.valor === 'cancel') {
-            resultado = resultado.filter(v => 
-              v.status === 'cancelled'
-            );
+      // Enriquecer
+      const vendaEnriquecida = {
+        ...venda,
+        status_analise_local: statusAnalise,
+        account_name: accountName
+      };
+      enriched.push(vendaEnriquecida);
+      
+      // Contar ativas/histórico
+      const isAtiva = STATUS_ATIVOS_SET.has(statusAnalise);
+      const isHistorico = STATUS_HISTORICO_SET.has(statusAnalise);
+      
+      if (isAtiva) ativasCount++;
+      if (isHistorico) historicoCount++;
+      
+      // Verificar se passa no filtro de aba
+      const passaFiltroAba = activeTab === 'ativas' ? isAtiva : isHistorico;
+      
+      if (passaFiltroAba) {
+        // Verificar filtro do resumo
+        let passaFiltroResumo = true;
+        
+        if (filtroResumoAtivo) {
+          switch (filtroResumoAtivo.tipo) {
+            case 'prazo':
+              if (!venda.date_created) {
+                passaFiltroResumo = false;
+              } else {
+                const dataCriacao = parseISO(venda.date_created);
+                const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
+                
+                if (filtroResumoAtivo.valor === 'vencido') {
+                  passaFiltroResumo = diasUteis > 3;
+                } else if (filtroResumoAtivo.valor === 'a_vencer') {
+                  passaFiltroResumo = diasUteis >= 0 && diasUteis <= 3;
+                }
+              }
+              break;
+              
+            case 'mediacao':
+              passaFiltroResumo = venda.tags?.includes('mediacao') || venda.status === 'mediation';
+              break;
+              
+            case 'tipo':
+              if (filtroResumoAtivo.valor === 'venda') {
+                passaFiltroResumo = venda.status === 'paid' || venda.status === 'confirmed';
+              } else if (filtroResumoAtivo.valor === 'cancel') {
+                passaFiltroResumo = venda.status === 'cancelled';
+              }
+              break;
           }
-          break;
+        }
+        
+        if (passaFiltroResumo) {
+          filteredByTab.push(vendaEnriquecida);
+          
+          // Calcular stats inline
+          statsTotal++;
+          if (venda.status === 'payment_in_process') statsPending++;
+          if (venda.status === 'paid') statsCompleted++;
+          statsRevenue += venda.total_amount || 0;
+        }
       }
     }
-    
-    return resultado;
-  }, [vendasEnriquecidas, activeTab, filtroResumoAtivo]);
+
+    return {
+      vendasEnriquecidas: enriched,
+      vendasFiltradasPorAba: filteredByTab,
+      countAtivas: ativasCount,
+      countHistorico: historicoCount,
+      stats: {
+        total: statsTotal,
+        pending: statsPending,
+        completed: statsCompleted,
+        revenue: statsRevenue
+      }
+    };
+  }, [orders, analiseStatus, accountsMap, filters.selectedAccounts, activeTab, filtroResumoAtivo, STATUS_ATIVOS_SET, STATUS_HISTORICO_SET]);
   
-  // Contadores de abas
-  const countAtivas = vendasEnriquecidas.filter(v => 
-    STATUS_ATIVOS.includes(v.status_analise_local)
-  ).length;
-  
-  const countHistorico = vendasEnriquecidas.filter(v => 
-    STATUS_HISTORICO.includes(v.status_analise_local)
-  ).length;
-  
-  // Calcular estatísticas (baseado em vendas filtradas por aba)
-  const stats = {
-    total: vendasFiltradasPorAba.length,
-    pending: vendasFiltradasPorAba.filter(o => o.status === 'payment_in_process').length,
-    completed: vendasFiltradasPorAba.filter(o => o.status === 'paid').length,
-    revenue: vendasFiltradasPorAba.reduce((sum, o) => sum + o.total_amount, 0)
-  };
+  // 🎯 FASE 4: MÉTRICAS AGREGADAS (já otimizado com single-pass)
+  const metrics = useVendasAggregator(vendasEnriquecidas, analiseStatus);
 
   return (
     <div className="w-full">

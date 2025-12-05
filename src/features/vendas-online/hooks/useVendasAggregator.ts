@@ -3,13 +3,15 @@
  * Inspirado na arquitetura de referência /pedidos
  * 
  * Features:
- * - Cálculo de métricas agregadas
+ * - Cálculo de métricas agregadas (OTIMIZADO - single pass)
  * - Estatísticas financeiras
  * - Contadores por status
  * - Performance tracking
+ * 
+ * 🚀 OTIMIZAÇÃO: Single-pass aggregation para evitar múltiplas iterações
  */
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { MLOrder } from '../types/vendas.types';
 import type { StatusAnalise } from '../types/venda-analise.types';
 
@@ -45,52 +47,76 @@ interface VendasMetrics {
   taxaCancelado: number;
 }
 
+// 🎯 Status constants outside component to avoid recreation
+const STATUS_ATIVOS: StatusAnalise[] = ['pendente', 'em_analise', 'aguardando_ml'];
+const STATUS_HISTORICO: StatusAnalise[] = ['resolvido_sem_dinheiro', 'resolvido_com_dinheiro', 'cancelado'];
+const STATUS_ATIVOS_SET = new Set(STATUS_ATIVOS);
+const STATUS_HISTORICO_SET = new Set(STATUS_HISTORICO);
+
+// 🎯 Empty metrics for fast return
+const EMPTY_METRICS: VendasMetrics = {
+  total: 0,
+  totalAtivas: 0,
+  totalHistorico: 0,
+  valorTotal: 0,
+  valorMedio: 0,
+  valorMaximo: 0,
+  valorMinimo: 0,
+  porStatus: {},
+  porAnalise: {
+    pendente: 0,
+    em_analise: 0,
+    aguardando_ml: 0,
+    resolvido_sem_dinheiro: 0,
+    resolvido_com_dinheiro: 0,
+    cancelado: 0,
+    foi_para_devolucao: 0
+  },
+  porTipoLogistico: {},
+  pedidosUltimas24h: 0,
+  pedidosUltimos7dias: 0,
+  pedidosUltimos30dias: 0,
+  taxaPendente: 0,
+  taxaPago: 0,
+  taxaCancelado: 0
+};
+
 export const useVendasAggregator = (
   vendas: MLOrder[],
   analiseStatus: Record<string, StatusAnalise>
 ): VendasMetrics => {
+  // 🚀 Cache previous result to avoid recalculation
+  const cacheRef = useRef<{ key: string; result: VendasMetrics } | null>(null);
+  
   return useMemo(() => {
-    const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    // Enriquecer vendas com status de análise
-    const vendasEnriquecidas = vendas.map(v => ({
-      ...v,
-      status_analise_local: analiseStatus[v.id.toString()] || 'pendente' as StatusAnalise
-    }));
-
-    // Calcular métricas
-    const total = vendasEnriquecidas.length;
+    // 🚀 EARLY RETURN for empty data
+    if (!vendas || vendas.length === 0) {
+      return EMPTY_METRICS;
+    }
     
-    // Dividir entre ativas e histórico
-    const STATUS_ATIVOS: StatusAnalise[] = ['pendente', 'em_analise', 'aguardando_ml'];
-    const STATUS_HISTORICO: StatusAnalise[] = ['resolvido_sem_dinheiro', 'resolvido_com_dinheiro', 'cancelado'];
-    
-    const totalAtivas = vendasEnriquecidas.filter(v => 
-      STATUS_ATIVOS.includes(v.status_analise_local)
-    ).length;
-    
-    const totalHistorico = vendasEnriquecidas.filter(v => 
-      STATUS_HISTORICO.includes(v.status_analise_local)
-    ).length;
+    // 🚀 Cache key based on data length + sample IDs (cheaper than full comparison)
+    const cacheKey = `${vendas.length}-${vendas[0]?.id}-${vendas[vendas.length - 1]?.id}`;
+    if (cacheRef.current?.key === cacheKey) {
+      return cacheRef.current.result;
+    }
 
-    // Métricas financeiras
-    const valores = vendasEnriquecidas.map(v => v.total_amount);
-    const valorTotal = valores.reduce((sum, val) => sum + val, 0);
-    const valorMedio = total > 0 ? valorTotal / total : 0;
-    const valorMaximo = valores.length > 0 ? Math.max(...valores) : 0;
-    const valorMinimo = valores.length > 0 ? Math.min(...valores) : 0;
+    // 🎯 Pre-calculate timestamps ONCE
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
-    // Agrupamento por status de pedido
+    // 🚀 SINGLE-PASS AGGREGATION - All metrics in one loop
+    let totalAtivas = 0;
+    let totalHistorico = 0;
+    let valorTotal = 0;
+    let valorMaximo = -Infinity;
+    let valorMinimo = Infinity;
+    let pedidosUltimas24h = 0;
+    let pedidosUltimos7dias = 0;
+    let pedidosUltimos30dias = 0;
+    
     const porStatus: Record<string, number> = {};
-    vendasEnriquecidas.forEach(v => {
-      const status = v.status || 'unknown';
-      porStatus[status] = (porStatus[status] || 0) + 1;
-    });
-
-    // Agrupamento por status de análise
     const porAnalise: Record<StatusAnalise, number> = {
       pendente: 0,
       em_analise: 0,
@@ -100,52 +126,62 @@ export const useVendasAggregator = (
       cancelado: 0,
       foi_para_devolucao: 0
     };
-    vendasEnriquecidas.forEach(v => {
-      porAnalise[v.status_analise_local] = (porAnalise[v.status_analise_local] || 0) + 1;
-    });
-
-    // Agrupamento por tipo logístico
     const porTipoLogistico: Record<string, number> = {};
-    vendasEnriquecidas.forEach(v => {
-      const tipo = v.shipping?.logistic?.type || 'unknown';
-      porTipoLogistico[tipo] = (porTipoLogistico[tipo] || 0) + 1;
-    });
 
-    // Performance temporal
-    const pedidosUltimas24h = vendasEnriquecidas.filter(v => 
-      v.date_created && new Date(v.date_created) > oneDayAgo
-    ).length;
-    
-    const pedidosUltimos7dias = vendasEnriquecidas.filter(v => 
-      v.date_created && new Date(v.date_created) > sevenDaysAgo
-    ).length;
-    
-    const pedidosUltimos30dias = vendasEnriquecidas.filter(v => 
-      v.date_created && new Date(v.date_created) > thirtyDaysAgo
-    ).length;
+    // 🚀 SINGLE LOOP - process all metrics at once
+    const total = vendas.length;
+    for (let i = 0; i < total; i++) {
+      const v = vendas[i];
+      const statusAnalise = analiseStatus[v.id.toString()] || 'pendente';
+      const valor = v.total_amount || 0;
+      
+      // Status ativas/histórico
+      if (STATUS_ATIVOS_SET.has(statusAnalise)) {
+        totalAtivas++;
+      } else if (STATUS_HISTORICO_SET.has(statusAnalise)) {
+        totalHistorico++;
+      }
+      
+      // Financeiro
+      valorTotal += valor;
+      if (valor > valorMaximo) valorMaximo = valor;
+      if (valor < valorMinimo) valorMinimo = valor;
+      
+      // Por status de pedido
+      const status = v.status || 'unknown';
+      porStatus[status] = (porStatus[status] || 0) + 1;
+      
+      // Por análise
+      porAnalise[statusAnalise] = (porAnalise[statusAnalise] || 0) + 1;
+      
+      // Por tipo logístico
+      const tipoLogistico = v.shipping?.logistic?.type || 'unknown';
+      porTipoLogistico[tipoLogistico] = (porTipoLogistico[tipoLogistico] || 0) + 1;
+      
+      // Performance temporal (só se tem data)
+      if (v.date_created) {
+        const dataCreated = new Date(v.date_created).getTime();
+        if (dataCreated > oneDayAgo) pedidosUltimas24h++;
+        if (dataCreated > sevenDaysAgo) pedidosUltimos7dias++;
+        if (dataCreated > thirtyDaysAgo) pedidosUltimos30dias++;
+      }
+    }
+
+    // Fix edge cases
+    if (valorMaximo === -Infinity) valorMaximo = 0;
+    if (valorMinimo === Infinity) valorMinimo = 0;
 
     // Taxas de conversão
-    const totalValidos = total > 0 ? total : 1; // Evitar divisão por zero
-    const taxaPendente = (porStatus['payment_in_process'] || 0) / totalValidos * 100;
-    const taxaPago = (porStatus['paid'] || 0) / totalValidos * 100;
-    const taxaCancelado = (porStatus['cancelled'] || 0) / totalValidos * 100;
+    const taxaPendente = (porStatus['payment_in_process'] || 0) / total * 100;
+    const taxaPago = (porStatus['paid'] || 0) / total * 100;
+    const taxaCancelado = (porStatus['cancelled'] || 0) / total * 100;
 
-    console.log('📊 [VENDAS METRICS] Métricas calculadas:', {
-      total,
-      totalAtivas,
-      totalHistorico,
-      valorTotal: valorTotal.toFixed(2),
-      valorMedio: valorMedio.toFixed(2),
-      pedidosUltimas24h,
-      taxaPago: taxaPago.toFixed(1) + '%'
-    });
-
-    return {
+    const result: VendasMetrics = {
       total,
       totalAtivas,
       totalHistorico,
       valorTotal,
-      valorMedio,
+      valorMedio: total > 0 ? valorTotal / total : 0,
       valorMaximo,
       valorMinimo,
       porStatus,
@@ -158,5 +194,10 @@ export const useVendasAggregator = (
       taxaPago,
       taxaCancelado
     };
+
+    // 🚀 Cache result
+    cacheRef.current = { key: cacheKey, result };
+    
+    return result;
   }, [vendas, analiseStatus]);
 };
