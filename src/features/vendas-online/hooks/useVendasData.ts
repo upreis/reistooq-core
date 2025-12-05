@@ -196,22 +196,33 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     hasFetchedFromAPI.current = false;
   }, [selectedAccountIds.join(','), filters.dateFrom, filters.dateTo]);
 
-  // 🔧 Consolidar updates em único useEffect para evitar flicker
+  // 🔧 FASE 2 FIX: Consolidar updates - PRIORIZAR dados da API quando disponíveis
   useEffect(() => {
-    // Atualizar loading state
-    setLoading(cacheQuery.isLoading || isLoading);
+    // Atualizar loading state - só loading se ambos estão carregando
+    const isDataLoading = isLoading && !data; // SWR carregando sem dados
+    const isCacheLoading = cacheQuery.isLoading && !cacheQuery.data; // Cache carregando sem dados
+    setLoading(isDataLoading && isCacheLoading);
 
-    // Atualizar dados: priorizar cache válido, fallback para API
-    if (useCacheData && cacheQuery.data) {
-      console.log('✅ Usando dados do CACHE ml_orders');
+    // 🔧 FASE 2 FIX: Priorizar dados da API (mais completos com paginação)
+    // Se API retornou dados, SEMPRE usar (independente do cache)
+    if (data && data.orders && data.orders.length > 0) {
+      console.log('✅ [useVendasData] Usando dados da API ML:', {
+        orders: data.orders.length,
+        total: data.total
+      });
+      setOrders(data.orders, data.total);
+      setPacks(data.packs || {});
+      setShippings(data.shippings || {});
+    } 
+    // Fallback: usar cache se API não retornou dados ainda
+    else if (useCacheData && cacheQuery.data && cacheQuery.data.orders.length > 0) {
+      console.log('✅ [useVendasData] Usando dados do CACHE ml_orders:', {
+        orders: cacheQuery.data.orders.length,
+        total: cacheQuery.data.total
+      });
       setOrders(cacheQuery.data.orders, cacheQuery.data.total);
       setPacks({});
       setShippings({});
-    } else if (data && !cacheQuery.isLoading) {
-      console.log('✅ Usando dados da API ML (cache expirado)');
-      setOrders(data.orders, data.total);
-      setPacks(data.packs);
-      setShippings(data.shippings);
     }
 
     // Atualizar error state
