@@ -37,14 +37,17 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
   });
 
   // Sincronizar estado com store
+  // ✅ CORREÇÃO: Só atualizar store se tem dados válidos (evita zerar store com API vazia)
   useEffect(() => {
     setLoading(isLoading || isFetching);
 
-    if (data) {
+    if (data && data.orders && data.orders.length > 0) {
       console.log(`📊 [useVendasData] Dados recebidos: ${data.orders.length} orders (fonte: ${data.source})`);
       setOrders(data.orders, data.total);
       setPacks(data.packs || {});
       setShippings(data.shippings || {});
+    } else if (data && data.orders?.length === 0) {
+      console.log('⚠️ [useVendasData] API retornou 0 orders, mantendo dados existentes no store');
     }
 
     if (error) {
