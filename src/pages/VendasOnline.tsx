@@ -38,25 +38,26 @@ interface MLAccount {
   account_identifier: string;
 }
 
-// Mock de contas ML (substituir por hook real depois)
+// 🔧 CORREÇÃO: Hook com React Query (igual /reclamacoes)
+import { useQuery } from '@tanstack/react-query';
+
 const useMLAccounts = () => {
-  const [accounts, setAccounts] = useState<MLAccount[]>([]);
-  
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      const { data } = await supabase
+  const { data: accounts = [], isLoading } = useQuery({
+    queryKey: ['ml-accounts-vendas'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('integration_accounts')
         .select('id, name, account_identifier')
         .eq('provider', 'mercadolivre')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('updated_at', { ascending: false });
       
-      if (data) setAccounts(data);
-    };
-    
-    fetchAccounts();
-  }, []);
+      if (error) throw error;
+      return data as MLAccount[];
+    },
+  });
   
-  return { accounts };
+  return { accounts, isLoading };
 };
 
 export default function VendasOnline() {
@@ -211,15 +212,17 @@ export default function VendasOnline() {
     // ✅ Ativar busca - o useEffect acima cuida de salvar o cache quando dados chegarem
     setShouldFetch(true);
     
+    // 🔧 CORREÇÃO: QueryKey CONSISTENTE (igual /reclamacoes)
+    const queryKey = ['ml-orders-cache', filters.selectedAccounts.slice().sort().join(',')];
+    
     // Invalidar cache para forçar nova busca
-    await queryClient.invalidateQueries({ 
-      queryKey: ['ml-orders-cache', filters.selectedAccounts.slice().sort().join(',')]
-    });
+    await queryClient.invalidateQueries({ queryKey });
   };
   
-  // ✅ CANCELAR BUSCA
+  // ✅ CANCELAR BUSCA - 🔧 CORREÇÃO: Usar MESMO queryKey
   const handleCancelarBusca = () => {
-    queryClient.cancelQueries({ queryKey: ['vendas-ml'] });
+    const queryKey = ['ml-orders-cache', filters.selectedAccounts.slice().sort().join(',')];
+    queryClient.cancelQueries({ queryKey });
     setIsManualSearching(false);
     setShouldFetch(false);
   };
