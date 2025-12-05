@@ -64,18 +64,15 @@ export const useMLOrdersFromCache = ({
       }
 
       // ========== STEP 1: CONSULTAR CACHE ml_orders ==========
-      const now = new Date();
-      const cacheThresholdMinutes = 15;
-      const cacheThreshold = new Date(now.getTime() - cacheThresholdMinutes * 60 * 1000).toISOString();
-      
+      // ✅ CORREÇÃO PROBLEMA 4: Removido filtro gt('last_synced_at') que era muito restritivo
+      // React Query gerencia staleness via staleTime, não precisamos filtrar por timestamp
       console.log('📦 [CACHE] Buscando de ml_orders...');
       
       let query = supabase
         .from('ml_orders')
         .select('*')
         .in('integration_account_id', integrationAccountIds)
-        .gt('last_synced_at', cacheThreshold)
-        .order('last_synced_at', { ascending: false });
+        .order('order_date', { ascending: false });
 
       if (dateFrom) {
         query = query.gte('order_date', dateFrom);
