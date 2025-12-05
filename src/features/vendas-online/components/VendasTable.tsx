@@ -112,17 +112,7 @@ export const VendasTable = ({
       .filter(Boolean);
     
     // Filtrar apenas colunas visíveis
-    const filtered = allColumns.filter(col => mappedIds.includes(col.id as string));
-    
-    console.log('🔍 [VendasTable] Filtrando colunas:', {
-      total: allColumns.length,
-      visibleKeys: visibleColumnKeys.length,
-      mappedIds: mappedIds.length,
-      filtered: filtered.length,
-      ids: filtered.map(c => c.id)
-    });
-    
-    return filtered;
+    return allColumns.filter(col => mappedIds.includes(col.id as string));
   }, [allColumns, visibleColumnKeys]);
 
   // Configurar TanStack Table com columns PRÉ-FILTRADAS
