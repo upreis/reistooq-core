@@ -96,6 +96,9 @@ export default function VendasOnline() {
   // ✅ CORREÇÃO PROBLEMA 3: Ref para trackear filtros anteriores (igual /reclamacoes)
   const previousFiltersRef = useRef<string>('');
   
+  // ✅ CORREÇÃO PROBLEMA 6: Ref para impedir restauração de cache após dados da API chegarem
+  const hasFetchedFromAPIRef = useRef(false);
+  
   // Estado de abas
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
@@ -131,8 +134,14 @@ export default function VendasOnline() {
   }, [loadingVendas]);
   
   // 🎯 FASE 2: RESTAURAR CACHE + APLICAR FILTROS DA URL na montagem
-  // ✅ CORREÇÃO PROBLEMA 2: Validar cache antes de restaurar (evita race condition com 0 vendas)
+  // ✅ CORREÇÃO PROBLEMA 2 + 6: Validar cache E não sobrescrever dados da API
   useEffect(() => {
+    // ✅ PROBLEMA 6: Se já buscou da API, NÃO restaurar cache antigo
+    if (hasFetchedFromAPIRef.current) {
+      console.log('⚠️ [VENDAS] Ignorando restauração de cache - já tem dados da API');
+      return;
+    }
+    
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
       
@@ -192,6 +201,9 @@ export default function VendasOnline() {
   useEffect(() => {
     if (data?.orders?.length && shouldFetch) {
       console.log('💾 [VENDAS] Salvando no cache via useEffect:', data.orders.length);
+      
+      // ✅ CORREÇÃO PROBLEMA 6: Marcar que já buscou da API (impede restauração de cache antigo)
+      hasFetchedFromAPIRef.current = true;
       
       // ✅ ENRIQUECER COM account_name antes de salvar cache
       const ordersEnriquecidos = data.orders.map((order: any) => ({
