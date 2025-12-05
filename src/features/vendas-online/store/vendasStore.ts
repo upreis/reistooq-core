@@ -81,10 +81,6 @@ const loadPersistedState = (): { orders: MLOrder[], pagination: VendasPagination
       const parsed = JSON.parse(stored);
       // Validar TTL (30 minutos)
       if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
-        console.log('📦 [VENDAS-STORE] Restaurando estado do localStorage:', {
-          orders: parsed.orders?.length || 0,
-          isMinimal: true
-        });
         // Retorna orders com flag indicando que são dados mínimos
         return {
           orders: parsed.orders || [],
@@ -127,7 +123,6 @@ const persistState = (orders: MLOrder[]) => {
     }
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-    console.log('💾 [VENDAS-STORE] Estado salvo:', toSave.orders.length, 'pedidos');
   } catch (error) {
     // QuotaExceededError - limpar cache antigo e tentar novamente
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
@@ -145,7 +140,6 @@ const persistState = (orders: MLOrder[]) => {
           timestamp: Date.now()
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalSave));
-        console.log('💾 [VENDAS-STORE] Estado salvo após limpeza:', minimalSave.orders.length, 'pedidos');
       } catch (cleanError) {
         console.error('[VENDAS-STORE] Falha ao salvar após limpeza:', cleanError);
       }
@@ -185,8 +179,6 @@ export const useVendasStore = create<VendasState>((set, get) => ({
     // ✅ CORREÇÃO PROBLEMA 2: Só persistir se tem dados válidos (evita salvar 0 pedidos)
     if (orders && orders.length > 0) {
       persistState(orders);
-    } else {
-      console.log('⚠️ [VENDAS-STORE] Ignorando persistência de 0 pedidos');
     }
   },
   

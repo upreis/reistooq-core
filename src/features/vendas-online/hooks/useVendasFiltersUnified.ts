@@ -75,12 +75,25 @@ export function useVendasFiltersUnified() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persistentCache.isStateLoaded]); // Executar apenas quando cache terminar de carregar
 
-  // Sincronizar com URL
+  // 🔧 CORREÇÃO: Flag para indicar que inicialização está completa
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Marcar como inicializado após primeiro render com cache carregado
+  useEffect(() => {
+    if (persistentCache.isStateLoaded && !isInitialized) {
+      // Aguardar um tick para garantir que estado foi restaurado
+      const timer = setTimeout(() => setIsInitialized(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [persistentCache.isStateLoaded, isInitialized]);
+
+  // Sincronizar com URL - APENAS após inicialização
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useVendasFiltersSync(
     filters,
     (urlFilters) => {
       setFilters(prev => ({ ...prev, ...urlFilters }));
-    }
+    },
+    isInitialized // 🔧 CORREÇÃO: Só sincronizar após inicialização
   );
 
   // 🔧 Helper para identificar keys de paginação
