@@ -108,15 +108,16 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     enabled: selectedAccountIds.length > 0 // 🔧 CORREÇÃO: Sempre consultar cache se há contas
   });
 
-  // 🔧 FASE 3 FIX: Cache tem dados? (mesmo expirado, usar como fallback visual)
-  const cacheHasData = !cacheQuery.isLoading && cacheQuery.data && cacheQuery.data.orders && cacheQuery.data.orders.length > 0;
-  const cacheExpired = !cacheQuery.isLoading && (cacheQuery.data?.cache_expired || !cacheQuery.data);
+  // 🔧 CORREÇÃO: Se cache retornou dados válidos E não está loading, usar cache
+  const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
 
   // ✅ FALLBACK: Buscar de API ML quando:
   // 1. Cache expirou/vazio E cache terminou loading E há contas
-  // 2. OU usuário clicou buscar manualmente (shouldFetch) - PRIORIDADE MÁXIMA
+  // 2. OU usuário clicou buscar manualmente (shouldFetch)
+  const cacheExpired = !cacheQuery.isLoading && (cacheQuery.data?.cache_expired || !cacheQuery.data);
   const shouldFetchFromAPI = selectedAccountIds.length > 0 && 
-    (shouldFetch || (!cacheQuery.isLoading && cacheExpired));
+    !cacheQuery.isLoading && 
+    (cacheExpired || shouldFetch); // 🔧 CORREÇÃO: Buscar automaticamente se cache expirou
 
   const swrKey = shouldFetchFromAPI
     ? [
@@ -173,15 +174,13 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
       shouldFetch,
       shouldFetchFromAPI,
       cacheExpired,
-      cacheHasData,
       cacheLoading: cacheQuery.isLoading,
-      cacheOrdersCount: cacheQuery.data?.orders?.length || 0,
+      hasCacheData: !!cacheQuery.data,
       swrKeyExists: !!swrKey,
-      swrLoading: isLoading,
-      swrDataCount: data?.orders?.length || 0,
+      hasFetchedFromAPI: hasFetchedFromAPI.current,
       selectedAccountIds: selectedAccountIds.length
     });
-  }, [shouldFetch, shouldFetchFromAPI, cacheExpired, cacheHasData, cacheQuery.isLoading, cacheQuery.data, swrKey, isLoading, data, selectedAccountIds.length]);
+  }, [shouldFetch, shouldFetchFromAPI, cacheExpired, cacheQuery.isLoading, cacheQuery.data, swrKey, selectedAccountIds.length]);
 
   // 🎯 COMBO 2.1: Disparar busca automática quando cache expirou
   useEffect(() => {
@@ -197,43 +196,29 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     hasFetchedFromAPI.current = false;
   }, [selectedAccountIds.join(','), filters.dateFrom, filters.dateTo]);
 
-  // 🔧 FASE 3 FIX: Consolidar updates - PRIORIZAR dados da API, FALLBACK para cache (mesmo expirado)
+  // 🔧 Consolidar updates em único useEffect para evitar flicker
   useEffect(() => {
-    // Atualizar loading state - loading apenas se não temos dados de nenhuma fonte
-    const hasAnyData = (data?.orders?.length > 0) || cacheHasData;
-    const isStillLoading = isLoading || cacheQuery.isLoading;
-    setLoading(isStillLoading && !hasAnyData);
+    // Atualizar loading state
+    setLoading(cacheQuery.isLoading || isLoading);
 
-    // 🔧 FASE 3 FIX: Prioridade de dados:
-    // 1. API retornou dados → SEMPRE usar
-    // 2. Cache tem dados (mesmo expirado) → usar como fallback visual enquanto API carrega
-    if (data && data.orders && data.orders.length > 0) {
-      console.log('✅ [useVendasData] Usando dados da API ML:', {
-        orders: data.orders.length,
-        total: data.total
-      });
-      setOrders(data.orders, data.total);
-      setPacks(data.packs || {});
-      setShippings(data.shippings || {});
-    } 
-    // 🔧 FASE 3 FIX: Fallback para cache MESMO EXPIRADO (melhor UX - mostrar dados antigos enquanto atualiza)
-    else if (cacheHasData && cacheQuery.data) {
-      console.log('✅ [useVendasData] Usando dados do CACHE ml_orders (fallback):', {
-        orders: cacheQuery.data.orders.length,
-        total: cacheQuery.data.total,
-        expired: cacheQuery.data.cache_expired
-      });
+    // Atualizar dados: priorizar cache válido, fallback para API
+    if (useCacheData && cacheQuery.data) {
+      console.log('✅ Usando dados do CACHE ml_orders');
       setOrders(cacheQuery.data.orders, cacheQuery.data.total);
       setPacks({});
       setShippings({});
+    } else if (data && !cacheQuery.isLoading) {
+      console.log('✅ Usando dados da API ML (cache expirado)');
+      setOrders(data.orders, data.total);
+      setPacks(data.packs);
+      setShippings(data.shippings);
     }
 
     // Atualizar error state
     if (error) {
-      console.error('❌ [useVendasData] Erro:', error);
       setError(error.message);
     }
-  }, [cacheHasData, cacheQuery.data, cacheQuery.isLoading, data, isLoading, error, setLoading, setOrders, setPacks, setShippings, setError]);
+  }, [useCacheData, cacheQuery.data, cacheQuery.isLoading, data, isLoading, error, setLoading, setOrders, setPacks, setShippings, setError]);
 
   return {
     data,

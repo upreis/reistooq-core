@@ -222,70 +222,37 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 🔧 FASE 2 FIX: Buscar TODOS os pedidos de TODAS as contas com loop interno
-    // Paginação é feita sobre dataset CONSOLIDADO completo
+    // ETAPA 2: Buscar TODOS os pedidos de TODAS as contas (sem paginação por conta)
+    // 🔧 FASE 1 FIX: Paginação deve ser feita sobre dataset CONSOLIDADO, não por conta
     const allOrders: any[] = [];
     let totalFromAPI = 0;
-    const PAGE_SIZE = 50; // Tamanho de página para busca interna
-    const MAX_PAGES_PER_ACCOUNT = 20; // Proteção contra loop infinito (máx 1000 pedidos/conta)
     
     for (const accountId of integration_account_ids) {
+      // 🔧 FASE 1 FIX: Buscar TODOS os pedidos da conta (sem offset/limit)
+      // A paginação será aplicada DEPOIS de consolidar todas as contas
       console.log(`📡 Fetching ALL orders for account ${accountId}...`);
       
-      let accountOffset = 0;
-      let accountTotal = 0;
-      let pageCount = 0;
-      const accountOrders: any[] = [];
-      
-      // 🔧 FASE 2 FIX: Loop interno para buscar TODOS os pedidos da conta
-      while (pageCount < MAX_PAGES_PER_ACCOUNT) {
-        const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
-          body: {
-            integration_account_id: accountId,
-            date_from,
-            date_to,
-            offset: accountOffset,
-            limit: PAGE_SIZE
-          }
-        });
+      const unifiedOrdersResponse = await supabaseAdmin.functions.invoke('unified-orders', {
+        body: {
+          integration_account_id: accountId,
+          date_from,
+          date_to,
+          offset: 0,      // Sempre 0 - buscar do início
+          limit: 200      // Limite alto para pegar tudo (ML máximo é ~50 por página)
+        }
+      });
 
-        if (unifiedOrdersResponse.error) {
-          console.error(`❌ Error fetching account ${accountId} page ${pageCount}:`, unifiedOrdersResponse.error);
-          break; // Sai do loop mas continua com próxima conta
-        }
-
-        const pageOrders = unifiedOrdersResponse.data?.results || [];
-        const pagingTotal = unifiedOrdersResponse.data?.paging?.total || 
-                           unifiedOrdersResponse.data?.total || 0;
-        
-        // Na primeira página, captura o total real da API
-        if (pageCount === 0) {
-          accountTotal = pagingTotal;
-          console.log(`📊 Account ${accountId}: API reports ${accountTotal} total orders`);
-        }
-        
-        accountOrders.push(...pageOrders);
-        pageCount++;
-        
-        console.log(`   Page ${pageCount}: +${pageOrders.length} orders (total fetched: ${accountOrders.length}/${accountTotal})`);
-        
-        // Condições de saída do loop:
-        // 1. Página vazia (não há mais dados)
-        // 2. Já buscamos todos os pedidos reportados pela API
-        // 3. Atingiu limite de páginas (proteção)
-        if (pageOrders.length === 0 || accountOrders.length >= accountTotal || pageOrders.length < PAGE_SIZE) {
-          break;
-        }
-        
-        accountOffset += PAGE_SIZE;
+      if (unifiedOrdersResponse.error) {
+        console.error(`❌ Error fetching account ${accountId}:`, unifiedOrdersResponse.error);
+        continue;
       }
-      
-      console.log(`✅ Account ${accountId}: Fetched ${accountOrders.length} of ${accountTotal} orders (${pageCount} pages)`);
+
+      const accountOrders = unifiedOrdersResponse.data?.results || [];
+      console.log(`✅ Fetched ${accountOrders.length} orders for account ${accountId}`);
       
       allOrders.push(...accountOrders);
-      totalFromAPI += Math.max(accountTotal, accountOrders.length); // Usar o maior valor como total
 
-      // ETAPA 3: Write-through caching
+      // ETAPA 3: Write-through caching (sempre salvar todos)
       if (accountOrders.length > 0) {
         console.log(`💾 Saving ${accountOrders.length} orders to cache...`);
         
@@ -334,31 +301,29 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 🔧 FASE 2: Ordenar por data e aplicar paginação sobre dataset CONSOLIDADO
+    // 🔧 FASE 1 FIX: Ordenar por data e aplicar paginação sobre dataset CONSOLIDADO
     allOrders.sort((a, b) => {
       const dateA = new Date(a.date_created || a.data_criacao || 0).getTime();
       const dateB = new Date(b.date_created || b.data_criacao || 0).getTime();
       return dateB - dateA; // Mais recentes primeiro
     });
 
-    // 🔧 FASE 2: totalFromAPI agora contém a soma dos paging.total de cada conta
-    // Se buscamos menos orders que o total, significa que há mais páginas
-    const actualTotal = Math.max(totalFromAPI, allOrders.length);
+    totalFromAPI = allOrders.length;
     
-    // 🔧 FASE 2: Aplicar paginação sobre dataset consolidado
+    // 🔧 FASE 1 FIX: Aplicar paginação sobre dataset consolidado
     const paginatedOrders = allOrders.slice(offset, offset + limit);
     
-    console.log(`📊 FASE 2 - Paginação: ${paginatedOrders.length} de ${actualTotal} (offset=${offset}, limit=${limit}, fetched=${allOrders.length})`)
+    console.log(`📊 Paginação consolidada: ${paginatedOrders.length} de ${totalFromAPI} (offset=${offset}, limit=${limit})`)
 
-    console.log(`✅ Total orders: ${actualTotal}, returning page: ${paginatedOrders.length} items`);
+    console.log(`✅ Total orders: ${totalFromAPI}, returning page: ${paginatedOrders.length} items`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        orders: paginatedOrders,
-        total: actualTotal, // 🔧 FASE 2: Total REAL da API do ML (soma de todas as contas)
+        orders: paginatedOrders, // 🔧 FASE 1 FIX: Retornar página do dataset consolidado
+        total: totalFromAPI,
         paging: {
-          total: actualTotal,
+          total: totalFromAPI,
           offset: offset,
           limit: limit
         },
