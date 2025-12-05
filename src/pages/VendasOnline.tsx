@@ -128,14 +128,20 @@ export default function VendasOnline() {
   }, [loadingVendas]);
   
   // 🎯 FASE 2: RESTAURAR CACHE + APLICAR FILTROS DA URL na montagem
+  // ✅ CORREÇÃO PROBLEMA 2: Validar cache antes de restaurar (evita race condition com 0 vendas)
   useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
       
-      // Restaurar dados da última busca
-      setOrders(cached.vendas, cached.vendas.length);
-      setPage(cached.currentPage);
-      setItemsPerPage(cached.itemsPerPage);
+      // ✅ SÓ restaurar se cache tem dados válidos (evita zerar store)
+      if (cached.vendas && cached.vendas.length > 0) {
+        console.log('📦 [VENDAS] Restaurando cache válido:', cached.vendas.length, 'vendas');
+        setOrders(cached.vendas, cached.vendas.length);
+        setPage(cached.currentPage);
+        setItemsPerPage(cached.itemsPerPage);
+      } else {
+        console.log('⚠️ [VENDAS] Cache vazio ignorado, aguardando busca manual');
+      }
     }
   }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
   

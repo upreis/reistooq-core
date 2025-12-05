@@ -182,8 +182,12 @@ export const useVendasStore = create<VendasState>((set, get) => ({
       orders, 
       pagination: { ...get().pagination, total } 
     });
-    // ✅ Persistir automaticamente
-    persistState(orders);
+    // ✅ CORREÇÃO PROBLEMA 2: Só persistir se tem dados válidos (evita salvar 0 pedidos)
+    if (orders && orders.length > 0) {
+      persistState(orders);
+    } else {
+      console.log('⚠️ [VENDAS-STORE] Ignorando persistência de 0 pedidos');
+    }
   },
   
   setPacks: (packs) => set({ packs }),
