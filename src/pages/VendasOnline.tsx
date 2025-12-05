@@ -110,6 +110,13 @@ export default function VendasOnline() {
     setAnotacoesModalOpen(true);
   };
   
+  // ✅ Criar mapa de contas para lookup rápido (DEVE VIR ANTES dos useEffects que usam)
+  const accountsMap = useMemo(() => {
+    const map = new Map();
+    accounts.forEach(acc => map.set(acc.id, acc));
+    return map;
+  }, [accounts]);
+  
   // ✅ Hook de dados com controle manual (passar contas selecionadas)
   const { data, isLoading: loadingVendas, error, refetch } = useVendasData(shouldFetch, filters.selectedAccounts);
   
@@ -155,7 +162,34 @@ export default function VendasOnline() {
     }
   }, [shouldFetch, filters.selectedAccounts.length]);
   
-  // 🔥 FUNÇÃO DE BUSCA MANUAL
+  // ✅ CORREÇÃO PROBLEMA 1: Salvar cache via useEffect (igual /reclamacoes)
+  // Reage ao 'data' do hook quando tem dados novos, não usa closure stale
+  useEffect(() => {
+    if (data?.orders?.length && shouldFetch) {
+      console.log('💾 [VENDAS] Salvando no cache via useEffect:', data.orders.length);
+      
+      // ✅ ENRIQUECER COM account_name antes de salvar cache
+      const ordersEnriquecidos = data.orders.map((order: any) => ({
+        ...order,
+        account_name: accountsMap.get(order.integration_account_id || filters.selectedAccounts[0])?.name || '-'
+      }));
+      
+      persistentCache.saveDataCache(
+        ordersEnriquecidos,
+        filters.selectedAccounts,
+        { search: filters.searchTerm, periodo: filters.periodo },
+        pagination.currentPage,
+        pagination.itemsPerPage,
+        Array.from(columnManager.state.visibleColumns)
+      );
+      
+      // ✅ Resetar estados após salvar
+      setIsManualSearching(false);
+      setShouldFetch(false);
+    }
+  }, [data?.orders, shouldFetch, accountsMap, filters.selectedAccounts, filters.searchTerm, filters.periodo, pagination.currentPage, pagination.itemsPerPage, columnManager.state.visibleColumns, persistentCache]);
+  
+  // 🔥 FUNÇÃO DE BUSCA MANUAL (simplificada - sem subscribe)
   const handleBuscar = async () => {
     if (filters.selectedAccounts.length === 0) {
       return;
@@ -181,36 +215,12 @@ export default function VendasOnline() {
       dateTo
     });
     
-    // Ativar busca
+    // ✅ Ativar busca - o useEffect acima cuida de salvar o cache quando dados chegarem
     setShouldFetch(true);
     
-    // 🎯 COMBO 2.1: Aguardar query concluir antes de salvar cache
-    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
-      // 🔧 CORREÇÃO: Escutar queryKey correto ('ml-orders-cache' ou 'vendas-ml-api')
-      const queryKeyBase = event?.query?.queryKey?.[0];
-      if (
-        (queryKeyBase === 'ml-orders-cache' || queryKeyBase === 'vendas-ml-api') &&
-        event.type === 'updated' &&
-        event.query.state.status === 'success'
-      ) {
-        // ✅ ENRIQUECER COM account_name antes de salvar cache
-        const ordersEnriquecidos = orders.map(order => ({
-          ...order,
-          account_name: accountsMap.get((order as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
-        }));
-        
-        persistentCache.saveDataCache(
-          ordersEnriquecidos,
-          filters.selectedAccounts,
-          { search: filters.searchTerm, periodo: filters.periodo },
-          pagination.currentPage,
-          pagination.itemsPerPage,
-          Array.from(columnManager.state.visibleColumns)
-        );
-        setIsManualSearching(false);
-        setShouldFetch(false);
-        unsubscribe();
-      }
+    // Invalidar cache para forçar nova busca
+    await queryClient.invalidateQueries({ 
+      queryKey: ['ml-orders-cache', filters.selectedAccounts.slice().sort().join(',')]
     });
   };
   
@@ -220,13 +230,6 @@ export default function VendasOnline() {
     setIsManualSearching(false);
     setShouldFetch(false);
   };
-  
-  // ✅ Criar mapa de contas para lookup rápido
-  const accountsMap = useMemo(() => {
-    const map = new Map();
-    accounts.forEach(acc => map.set(acc.id, acc));
-    return map;
-  }, [accounts]);
 
   // Enriquecer vendas com status_analise_local E account_name
   const vendasEnriquecidas = useMemo(() => {
