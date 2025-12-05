@@ -88,6 +88,31 @@ function MobileRedirect() {
   return null;
 }
 
+/**
+ * 🔧 Componente para corrigir URLs malformadas
+ * Detecta quando %3F (? codificado) está no path e redireciona para URL correta
+ */
+function MalformedUrlFixer() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Detectar %3F no pathname (query string codificada incorretamente no path)
+    if (location.pathname.includes('%3F') || location.pathname.includes('%3f')) {
+      const decodedPath = decodeURIComponent(location.pathname);
+      const [basePath, queryPart] = decodedPath.split('?');
+      
+      console.log('🔧 [URL FIX] Detectada URL malformada:', location.pathname);
+      console.log('🔧 [URL FIX] Redirecionando para:', basePath, 'com query:', queryPart);
+      
+      // Redirecionar para a URL correta
+      navigate(`${basePath}${queryPart ? `?${queryPart}` : ''}`, { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  return null;
+}
+
 function App() {
   useEffect(() => {
     const validation = validateConfig();
@@ -110,6 +135,7 @@ function App() {
               <SidebarUIProvider>
                 <BrowserRouter>
                   <MobileRedirect />
+                  <MalformedUrlFixer />
                   <InactivityTracker />
                   <AIChatBubble />
                   <Toaster />
