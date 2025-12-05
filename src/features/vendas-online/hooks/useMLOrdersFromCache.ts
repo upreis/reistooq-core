@@ -1,7 +1,11 @@
 /**
  * 🚀 USE ML ORDERS FROM CACHE
- * Hook para consultar ml_orders table primeiro (cache instantâneo)
- * Fallback para API ML se cache expirado
+ * Hook unificado para consultar ml_orders table (cache) com fallback para API
+ * 
+ * PADRÃO COMBO 2.1 (igual useMLClaimsFromCache):
+ * - Consulta cache primeiro
+ * - Se cache MISS/expirado, chama Edge Function unified-ml-orders
+ * - enabled: boolean para controle manual de busca
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -21,44 +25,58 @@ interface CachedOrdersResponse {
   source: 'cache' | 'api';
   last_synced_at?: string;
   cache_expired: boolean;
+  packs?: Record<string, any>;
+  shippings?: Record<string, any>;
 }
 
 export const useMLOrdersFromCache = ({
   integrationAccountIds,
   dateFrom,
   dateTo,
-  enabled = false // 🎯 COMBO 2.1: Default FALSE - só busca após clique manual
+  enabled = false
 }: UseMLOrdersFromCacheParams) => {
   
   return useQuery({
     queryKey: [
       'ml-orders-cache',
-      integrationAccountIds.sort().join(','),
+      integrationAccountIds.slice().sort().join(','),
       dateFrom || '',
       dateTo || ''
     ],
     queryFn: async (): Promise<CachedOrdersResponse> => {
-      console.log('🔍 [useMLOrdersFromCache] Buscando de ml_orders table...', {
+      // ✅ VALIDAÇÃO: Verificar sessão
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('❌ [useMLOrdersFromCache] Usuário não autenticado');
+        throw new Error('Usuário deve estar logado para buscar vendas');
+      }
+
+      console.log('🔍 [useMLOrdersFromCache] Iniciando busca...', {
         accounts: integrationAccountIds.length,
         dateFrom,
         dateTo
       });
 
-      // STEP 1: Consultar ml_orders table
+      // ✅ VALIDAÇÃO: Verificar contas
+      if (!integrationAccountIds || integrationAccountIds.length === 0) {
+        throw new Error('Nenhuma conta selecionada');
+      }
+
+      // ========== STEP 1: CONSULTAR CACHE ml_orders ==========
       const now = new Date();
-      // 🔧 CORREÇÃO FASE C.2: Aumentar threshold para 15 minutos (sincronizado com CRON de 10min + margem)
-      const cacheThresholdMinutes = 15; 
+      const cacheThresholdMinutes = 15;
       const cacheThreshold = new Date(now.getTime() - cacheThresholdMinutes * 60 * 1000).toISOString();
+      
+      console.log('📦 [CACHE] Buscando de ml_orders...');
       
       let query = supabase
         .from('ml_orders')
         .select('*')
         .in('integration_account_id', integrationAccountIds)
-        .gt('last_synced_at', cacheThreshold) // Apenas registros sincronizados recentemente
+        .gt('last_synced_at', cacheThreshold)
         .order('last_synced_at', { ascending: false });
 
-      // 🔧 CORREÇÃO FASE C.1: Usar order_date ao invés de date_created (que pode ser NULL)
-      // Aplicar filtros de data se fornecidos
       if (dateFrom) {
         query = query.gte('order_date', dateFrom);
       }
@@ -66,46 +84,103 @@ export const useMLOrdersFromCache = ({
         query = query.lte('order_date', dateTo);
       }
 
-      const { data: cachedOrders, error } = await query;
+      const { data: cachedOrders, error: cacheError } = await query;
 
-      if (error) {
-        console.error('❌ Erro ao buscar ml_orders:', error);
-        return {
-          orders: [],
-          total: 0,
-          source: 'api',
-          cache_expired: true
-        };
-      }
-
-      // STEP 2: Se tem dados válidos no cache, retornar
-      if (cachedOrders && cachedOrders.length > 0) {
-        console.log(`✅ [useMLOrdersFromCache] Cache HIT: ${cachedOrders.length} orders encontrados`);
+      // ✅ CACHE HIT: Se tem dados válidos no cache, retornar
+      if (!cacheError && cachedOrders && cachedOrders.length > 0) {
+        console.log(`✅ [CACHE HIT] ${cachedOrders.length} orders do cache`);
         
         const orders = cachedOrders.map(row => row.order_data as unknown as MLOrder);
+        
+        // Construir packs e shippings
+        const packs: Record<string, any> = {};
+        const shippings: Record<string, any> = {};
+        
+        orders.forEach((order: any) => {
+          if (order.pack_id && !packs[order.pack_id]) {
+            packs[order.pack_id] = { id: order.pack_id, orders: [] };
+          }
+          if (order.pack_id) {
+            packs[order.pack_id].orders.push(order.id);
+          }
+          if (order.shipping?.id && !shippings[order.shipping.id]) {
+            shippings[order.shipping.id] = order.shipping;
+          }
+        });
         
         return {
           orders,
           total: orders.length,
           source: 'cache',
           last_synced_at: cachedOrders[0].last_synced_at || undefined,
-          cache_expired: false
+          cache_expired: false,
+          packs,
+          shippings
         };
       }
 
-      // STEP 3: Cache MISS ou expirado
-      console.log('⚠️ [useMLOrdersFromCache] Cache MISS ou expirado');
+      // ========== STEP 2: CACHE MISS - FALLBACK PARA API ==========
+      console.log('⚠️ [CACHE MISS] Cache vazio ou expirado, chamando API...');
+      console.log('📡 [API] Chamando unified-ml-orders...');
+      
+      const { data: apiData, error: apiError } = await supabase.functions.invoke(
+        'unified-ml-orders',
+        {
+          body: {
+            integration_account_ids: integrationAccountIds,
+            date_from: dateFrom,
+            date_to: dateTo,
+            force_refresh: false,
+            offset: 0,
+            limit: 500
+          }
+        }
+      );
+
+      if (apiError) {
+        console.error('❌ [API ERROR]', apiError);
+        throw new Error(`Erro ao buscar vendas: ${apiError.message}`);
+      }
+
+      if (!apiData) {
+        console.error('❌ [API] Resposta vazia');
+        throw new Error('Resposta vazia da API');
+      }
+
+      const orders = apiData.orders || [];
+      const total = apiData.total || apiData.paging?.total || orders.length;
+      
+      console.log(`✅ [API] ${orders.length} orders retornados da API`);
+      
+      // Construir packs e shippings
+      const packs: Record<string, any> = {};
+      const shippings: Record<string, any> = {};
+      
+      orders.forEach((order: any) => {
+        if (order.pack_id && !packs[order.pack_id]) {
+          packs[order.pack_id] = { id: order.pack_id, orders: [] };
+        }
+        if (order.pack_id) {
+          packs[order.pack_id].orders.push(order.id);
+        }
+        if (order.shipping?.id && !shippings[order.shipping.id]) {
+          shippings[order.shipping.id] = order.shipping;
+        }
+      });
+
       return {
-        orders: [],
-        total: 0,
+        orders: orders as MLOrder[],
+        total,
         source: 'api',
-        cache_expired: true
+        cache_expired: true,
+        packs,
+        shippings
       };
     },
     enabled: enabled && integrationAccountIds.length > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 60 * 1000, // 1 minuto
     gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: false,
-    retry: 1
+    retry: 2
   });
 };
