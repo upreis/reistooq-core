@@ -51,15 +51,12 @@ export function useVendasFiltersUnified() {
   });
 
   // 🔧 CORREÇÃO: Sincronizar filtros quando cache é carregado (após mount)
-  // Problema: useState inicializa ANTES do cache carregar (async), então sempre usa default
-  // Solução: Quando cache carrega, verificar se tem dados salvos e restaurar
   useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
       
       // Verificar se cache tem período diferente do atual (indica última busca do usuário)
       if (cached.filters?.periodo && cached.filters.periodo !== filters.periodo) {
-        console.log('🔄 [VENDAS FILTERS] Restaurando período do cache:', cached.filters.periodo);
         setFilters(prev => ({
           ...prev,
           periodo: cached.filters.periodo,
@@ -69,7 +66,6 @@ export function useVendasFiltersUnified() {
       
       // Restaurar contas se cache tem contas e estado atual está vazio
       if (cached.selectedAccounts?.length > 0 && filters.selectedAccounts.length === 0) {
-        console.log('🔄 [VENDAS FILTERS] Restaurando contas do cache:', cached.selectedAccounts.length);
         setFilters(prev => ({
           ...prev,
           selectedAccounts: cached.selectedAccounts,
@@ -100,7 +96,6 @@ export function useVendasFiltersUnified() {
     setFilters(prev => 
       updateSingleFilter(prev, key, value, isPaginationKey)
     );
-    console.log(`🎯 [VENDAS FILTERS] Filtro atualizado: ${key} =`, value);
   }, [isPaginationKey]);
 
   // Atualizar múltiplos filtros de uma vez usando utility compartilhada
@@ -108,18 +103,15 @@ export function useVendasFiltersUnified() {
     setFilters(prev => 
       updateMultipleFilters(prev, newFilters, isPaginationKey)
     );
-    console.log('🎯 [VENDAS FILTERS] Múltiplos filtros atualizados:', newFilters);
   }, [isPaginationKey]);
 
   // Resetar todos os filtros
   const resetFilters = useCallback(() => {
-    console.log('🔄 [VENDAS FILTERS] Resetando todos os filtros');
     setFilters(DEFAULT_FILTERS);
   }, []);
 
   // Resetar apenas filtros de busca usando utility compartilhada
   const resetSearchFilters = useCallback(() => {
-    console.log('🔄 [VENDAS FILTERS] Resetando filtros de busca');
     const searchKeys: (keyof VendasFilters)[] = ['periodo', 'searchTerm'];
     setFilters(prev => ({
       ...prev,

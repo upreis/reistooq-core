@@ -35,10 +35,6 @@ const getInitialState = (): ColumnState => {
   });
   
   if (stored?.visibleColumns && stored.columnOrder) {
-    console.log('🔄 [VENDAS COLUMNS] Restaurando do cache:', {
-      visibleCount: stored.visibleColumns.size,
-      profile: stored.activeProfile
-    });
     return {
       visibleColumns: stored.visibleColumns,
       columnOrder: stored.columnOrder,
@@ -63,10 +59,8 @@ const getInitialState = (): ColumnState => {
 export const resetVendasColumnCache = () => {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    console.log('🔄 [VENDAS COLUMNS] Cache cleared');
     return true;
   } catch (error) {
-    console.warn('❌ Error clearing column cache:', error);
     return false;
   }
 };

@@ -20,20 +20,16 @@ import { VendasResumo, type FiltroResumo } from '@/features/vendas-online/compon
 import { VendasAnotacoesModal } from '@/features/vendas-online/components/modals/VendasAnotacoesModal';
 import { useVendasData } from '@/features/vendas-online/hooks/useVendasData';
 import { useVendasStore } from '@/features/vendas-online/store/vendasStore';
-import { useVendasFiltersUnified } from '@/features/vendas-online/hooks/useVendasFiltersUnified'; // 🎯 FASE 2
+import { useVendasFiltersUnified } from '@/features/vendas-online/hooks/useVendasFiltersUnified';
 import { useSidebarUI } from '@/context/SidebarUIContext';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Package, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useVendaStorage } from '@/features/vendas-online/hooks/useVendaStorage';
 import type { StatusAnalise } from '@/features/vendas-online/types/venda-analise.types';
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/venda-analise.types';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
-import { VENDAS_ALL_COLUMNS, VENDAS_DEFAULT_VISIBLE_COLUMNS } from '@/features/vendas-online/config/vendas-columns-config';
-import { useVendasColumnManager } from '@/features/vendas-online/hooks/useVendasColumnManager'; // 🎯 FASE 3
-import { useVendasAggregator } from '@/features/vendas-online/hooks/useVendasAggregator'; // 🎯 FASE 4
+import { useVendasColumnManager } from '@/features/vendas-online/hooks/useVendasColumnManager';
+import { useVendasAggregator } from '@/features/vendas-online/hooks/useVendasAggregator';
 import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
 
 interface MLAccount {
@@ -86,20 +82,11 @@ export default function VendasOnline() {
   // 🎯 FASE 3: COLUMN MANAGER AVANÇADO
   const columnManager = useVendasColumnManager();
   
-  // 🎯 FASE 3: FILTRAR COLUNAS VISÍVEIS (Padrão /reclamacoes)
+  // 🎯 FASE 3: FILTRAR COLUNAS VISÍVEIS - CORREÇÃO: usar referência estável
+  const visibleColumnsSet = columnManager.state.visibleColumns;
   const visibleColumnKeys = useMemo(() => {
-    const keysArray = Array.from(columnManager.state.visibleColumns);
-    console.log('🔄 [VendasOnline] visibleColumnKeys recalculado:', {
-      count: keysArray.length,
-      keys: keysArray
-    });
-    return keysArray;
-  }, [columnManager.state.visibleColumns.size, Array.from(columnManager.state.visibleColumns).join(',')]);
-
-  console.log('🎯 [VendasOnline] Colunas visíveis:', {
-    count: visibleColumnKeys.length,
-    keys: visibleColumnKeys
-  });
+    return Array.from(visibleColumnsSet);
+  }, [visibleColumnsSet]);
   
   
   // ✅ CONTROLE MANUAL DE BUSCA
@@ -138,22 +125,10 @@ export default function VendasOnline() {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
       
-      console.log('📦 [VENDAS] Restaurando cache:', {
-        vendas: cached.vendas.length,
-        contas: cached.selectedAccounts.length,
-        periodo: cached.filters.periodo
-      });
-      
       // Restaurar dados da última busca
       setOrders(cached.vendas, cached.vendas.length);
       setPage(cached.currentPage);
       setItemsPerPage(cached.itemsPerPage);
-      
-      // 🎯 FASE 3: Colunas gerenciadas pelo columnManager (persistência automática)
-      // Não precisa restaurar manualmente - columnManager já faz isso
-      
-      // 🎯 FASE 2: Filtros já foram restaurados pelo useVendasFiltersUnified
-      console.log('🔗 [VENDAS] Filtros ativos:', filters);
     }
   }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
   
@@ -169,7 +144,6 @@ export default function VendasOnline() {
       if (filters.selectedAccounts.length === 0) {
         const accountIds = accounts.map(acc => acc.id);
         updateFilter('selectedAccounts', accountIds);
-        console.log('✨ [VENDAS] Contas auto-selecionadas (primeira visita):', accountIds.length);
       }
     }
   }, [persistentCache.isStateLoaded, accounts, persistentCache.persistedState, filters.selectedAccounts.length]);
@@ -177,21 +151,13 @@ export default function VendasOnline() {
   // ✅ Disparar refetch quando shouldFetch muda
   useEffect(() => {
     if (shouldFetch && filters.selectedAccounts.length > 0) {
-      console.log('🔄 [VENDAS] Disparando refetch manual...');
       refetch();
     }
   }, [shouldFetch, filters.selectedAccounts.length]);
   
   // 🔥 FUNÇÃO DE BUSCA MANUAL
   const handleBuscar = async () => {
-    console.log('🔍 [VENDAS] Iniciando busca manual:', {
-      selectedAccounts: filters.selectedAccounts,
-      periodo: filters.periodo,
-      searchTerm: filters.searchTerm
-    });
-    
     if (filters.selectedAccounts.length === 0) {
-      console.warn('⚠️ [VENDAS] Nenhuma conta selecionada');
       return;
     }
     
@@ -207,12 +173,6 @@ export default function VendasOnline() {
     
     const dateFrom = calcularDataInicio(filters.periodo);
     const dateTo = new Date().toISOString();
-    
-    console.log('📅 [VENDAS] Período calculado:', {
-      periodo: filters.periodo,
-      dateFrom,
-      dateTo
-    });
     
     // ✅ Atualizar filtros no store com datas calculadas
     updateStoreFilters({
@@ -256,7 +216,6 @@ export default function VendasOnline() {
   
   // ✅ CANCELAR BUSCA
   const handleCancelarBusca = () => {
-    console.log('🛑 Cancelando busca...');
     queryClient.cancelQueries({ queryKey: ['vendas-ml'] });
     setIsManualSearching(false);
     setShouldFetch(false);
@@ -358,19 +317,6 @@ export default function VendasOnline() {
     revenue: vendasFiltradasPorAba.reduce((sum, o) => sum + o.total_amount, 0)
   };
 
-  // Console de métricas para debug
-  useEffect(() => {
-    if (metrics.total > 0) {
-      console.log('📊 [VENDAS ANALYTICS]', {
-        total: metrics.total,
-        ativas: metrics.totalAtivas,
-        historico: metrics.totalHistorico,
-        valorTotal: `R$ ${metrics.valorTotal.toFixed(2)}`,
-        valorMedio: `R$ ${metrics.valorMedio.toFixed(2)}`
-      });
-    }
-  }, [metrics]);
-
   return (
     <div className="w-full">
       <div className="pb-20">
@@ -385,7 +331,6 @@ export default function VendasOnline() {
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6 mt-2">
             <Tabs value={activeTab} onValueChange={(v) => {
-              console.log('🔄 Mudando aba para:', v);
               setActiveTab(v as 'ativas' | 'historico');
             }}>
               <div className="flex items-center gap-3 flex-nowrap">
