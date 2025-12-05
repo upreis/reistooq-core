@@ -89,36 +89,35 @@ function MobileRedirect() {
 }
 
 /**
- * 🔧 Componente para corrigir URLs malformadas
- * Detecta quando %3F (? codificado) está no path e redireciona para URL correta
- * Usa navigate() do React Router para evitar reload completo
+ * 🔧 Função para corrigir URLs malformadas ANTES do React Router processar
+ * Detecta quando %3F (? codificado) está no path e corrige a URL
+ * DEVE ser chamada antes do BrowserRouter montar
  */
-function MalformedUrlFixer() {
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Detectar %3F no pathname (query string codificada incorretamente no path)
-    if (location.pathname.includes('%3F') || location.pathname.includes('%3f')) {
-      const decodedPath = decodeURIComponent(location.pathname);
-      const [basePath, queryPart] = decodedPath.split('?');
-      
-      const correctPath = basePath;
-      const correctSearch = queryPart ? `?${queryPart}` : '';
-      
-      console.log('🔧 [URL FIX] Detectada URL malformada:', location.pathname);
-      console.log('🔧 [URL FIX] Redirecionando para:', correctPath + correctSearch);
-      
-      // Usar navigate com replace para não adicionar ao histórico
-      // Adicionar pequeno delay para garantir que Router está pronto
-      setTimeout(() => {
-        navigate(correctPath + correctSearch, { replace: true });
-      }, 0);
-    }
-  }, [location.pathname, navigate]);
-
-  return null;
+function fixMalformedUrlOnLoad(): boolean {
+  const currentPath = window.location.pathname;
+  
+  // Detectar %3F no pathname (query string codificada incorretamente no path)
+  if (currentPath.includes('%3F') || currentPath.includes('%3f')) {
+    const decodedPath = decodeURIComponent(currentPath);
+    const [basePath, queryPart] = decodedPath.split('?');
+    
+    const correctPath = basePath;
+    const correctSearch = queryPart ? `?${queryPart}` : '';
+    const fullCorrectUrl = correctPath + correctSearch;
+    
+    console.log('🔧 [URL FIX] Detectada URL malformada:', currentPath);
+    console.log('🔧 [URL FIX] Corrigindo para:', fullCorrectUrl);
+    
+    // Usar history.replaceState para corrigir URL sem reload
+    window.history.replaceState(null, '', fullCorrectUrl);
+    return true; // Indica que URL foi corrigida
+  }
+  
+  return false;
 }
+
+// Executar correção imediatamente ao carregar o módulo
+fixMalformedUrlOnLoad();
 
 function App() {
   useEffect(() => {
@@ -142,7 +141,6 @@ function App() {
               <SidebarUIProvider>
                 <BrowserRouter>
                   <MobileRedirect />
-                  <MalformedUrlFixer />
                   <InactivityTracker />
                   <AIChatBubble />
                   <Toaster />
