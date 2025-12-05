@@ -95,16 +95,52 @@ const loadPersistedState = (): { orders: MLOrder[], pagination: VendasPagination
   return { orders: [], pagination: initialPagination };
 };
 
-// ✅ Salvar estado no localStorage
+// ✅ Salvar estado no localStorage (apenas metadados essenciais para evitar QuotaExceededError)
 const persistState = (orders: MLOrder[]) => {
   try {
+    // Salvar apenas campos essenciais para restauração rápida (sem order_data JSONB gigante)
+    const ordersMinimal = orders.map(order => ({
+      id: order.id,
+      status: order.status,
+      date_created: order.date_created,
+      total_amount: order.total_amount,
+      buyer: order.buyer ? { id: order.buyer.id, nickname: order.buyer.nickname } : null,
+      pack_id: order.pack_id,
+      shipping_id: order.shipping?.id
+    }));
+    
     const toSave = {
-      orders,
+      orders: ordersMinimal,
       timestamp: Date.now()
     };
+    
+    const serialized = JSON.stringify(toSave);
+    
+    // Verificar tamanho antes de salvar (limite ~5MB, usar 2MB como safe limit)
+    if (serialized.length > 2 * 1024 * 1024) {
+      console.warn('[VENDAS-STORE] Dados muito grandes para localStorage, salvando apenas últimos 50 pedidos');
+      toSave.orders = ordersMinimal.slice(0, 50);
+    }
+    
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (error) {
-    console.error('[VENDAS-STORE] Erro ao salvar estado:', error);
+    // QuotaExceededError - limpar cache antigo e tentar novamente
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('[VENDAS-STORE] QuotaExceededError - limpando cache antigo');
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('vendas-anotacoes');
+        // Limpar outros caches relacionados se existirem
+        const keysToClean = Object.keys(localStorage).filter(k => 
+          k.startsWith('vendas-') || k.startsWith('ml-orders')
+        );
+        keysToClean.forEach(k => localStorage.removeItem(k));
+      } catch (cleanError) {
+        console.error('[VENDAS-STORE] Falha ao limpar localStorage:', cleanError);
+      }
+    } else {
+      console.error('[VENDAS-STORE] Erro ao salvar estado:', error);
+    }
   }
 };
 

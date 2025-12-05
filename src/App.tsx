@@ -91,10 +91,10 @@ function MobileRedirect() {
 /**
  * 🔧 Componente para corrigir URLs malformadas
  * Detecta quando %3F (? codificado) está no path e redireciona para URL correta
+ * Usa window.location.replace() para evitar problemas com React Router
  */
 function MalformedUrlFixer() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Detectar %3F no pathname (query string codificada incorretamente no path)
@@ -102,13 +102,15 @@ function MalformedUrlFixer() {
       const decodedPath = decodeURIComponent(location.pathname);
       const [basePath, queryPart] = decodedPath.split('?');
       
+      const correctUrl = `${basePath}${queryPart ? `?${queryPart}` : ''}`;
       console.log('🔧 [URL FIX] Detectada URL malformada:', location.pathname);
-      console.log('🔧 [URL FIX] Redirecionando para:', basePath, 'com query:', queryPart);
+      console.log('🔧 [URL FIX] Redirecionando para:', correctUrl);
       
-      // Redirecionar para a URL correta
-      navigate(`${basePath}${queryPart ? `?${queryPart}` : ''}`, { replace: true });
+      // Usar window.location.replace() para navegação real (não virtual do React Router)
+      // Isso garante que a URL seja corrigida no browser antes do React Router processar
+      window.location.replace(correctUrl);
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname]);
 
   return null;
 }
