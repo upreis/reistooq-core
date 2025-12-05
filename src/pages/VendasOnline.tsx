@@ -196,35 +196,56 @@ export default function VendasOnline() {
     }
   }, [shouldFetch, filters.selectedAccounts.length]);
   
+  // 🚀 OTIMIZAÇÃO: Refs para valores que não devem causar re-execução
+  const filtersRef = useRef(filters);
+  const paginationRef = useRef(pagination);
+  const columnManagerRef = useRef(columnManager);
+  const persistentCacheRef = useRef(persistentCache);
+  const accountsMapRef = useRef(accountsMap);
+  
+  // Manter refs atualizadas (sem causar re-render)
+  useEffect(() => {
+    filtersRef.current = filters;
+    paginationRef.current = pagination;
+    columnManagerRef.current = columnManager;
+    persistentCacheRef.current = persistentCache;
+    accountsMapRef.current = accountsMap;
+  });
+  
   // ✅ CORREÇÃO PROBLEMA 1: Salvar cache via useEffect (igual /reclamacoes)
-  // Reage ao 'data' do hook quando tem dados novos, não usa closure stale
+  // 🚀 OTIMIZAÇÃO: Apenas 2 dependências críticas (data + shouldFetch)
   useEffect(() => {
     if (data?.orders?.length && shouldFetch) {
-      console.log('💾 [VENDAS] Salvando no cache via useEffect:', data.orders.length);
-      
-      // ✅ CORREÇÃO PROBLEMA 6: Marcar que já buscou da API (impede restauração de cache antigo)
+      // ✅ CORREÇÃO PROBLEMA 6: Marcar que já buscou da API
       hasFetchedFromAPIRef.current = true;
+      
+      // Usar refs para evitar re-execuções desnecessárias
+      const currentFilters = filtersRef.current;
+      const currentPagination = paginationRef.current;
+      const currentColumnManager = columnManagerRef.current;
+      const currentPersistentCache = persistentCacheRef.current;
+      const currentAccountsMap = accountsMapRef.current;
       
       // ✅ ENRIQUECER COM account_name antes de salvar cache
       const ordersEnriquecidos = data.orders.map((order: any) => ({
         ...order,
-        account_name: accountsMap.get(order.integration_account_id || filters.selectedAccounts[0])?.name || '-'
+        account_name: currentAccountsMap.get(order.integration_account_id || currentFilters.selectedAccounts[0])?.name || '-'
       }));
       
-      persistentCache.saveDataCache(
+      currentPersistentCache.saveDataCache(
         ordersEnriquecidos,
-        filters.selectedAccounts,
-        { search: filters.searchTerm, periodo: filters.periodo },
-        pagination.currentPage,
-        pagination.itemsPerPage,
-        Array.from(columnManager.state.visibleColumns)
+        currentFilters.selectedAccounts,
+        { search: currentFilters.searchTerm, periodo: currentFilters.periodo },
+        currentPagination.currentPage,
+        currentPagination.itemsPerPage,
+        Array.from(currentColumnManager.state.visibleColumns)
       );
       
       // ✅ Resetar estados após salvar
       setIsManualSearching(false);
       setShouldFetch(false);
     }
-  }, [data?.orders, shouldFetch, accountsMap, filters.selectedAccounts, filters.searchTerm, filters.periodo, pagination.currentPage, pagination.itemsPerPage, columnManager.state.visibleColumns, persistentCache]);
+  }, [data?.orders, shouldFetch]);
   
   // 🔥 FUNÇÃO DE BUSCA MANUAL (simplificada - sem subscribe)
   const handleBuscar = async () => {
