@@ -117,6 +117,7 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     async () => {
+      console.log('🔥 [useVendasData] Buscando dados da API ML...');
       const result = await fetchVendasFromML({
         integrationAccountId: selectedAccountIds.join(','),
         search: filters.search,
@@ -127,6 +128,7 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
         limit: pagination.itemsPerPage
       });
       
+      console.log('✅ [useVendasData] API retornou:', result.orders.length, 'pedidos');
       return {
         orders: result.orders,
         total: result.total,
@@ -137,7 +139,6 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateOnMount: false,
       dedupingInterval: 5000,
       keepPreviousData: true
     }
