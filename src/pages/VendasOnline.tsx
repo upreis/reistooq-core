@@ -158,30 +158,31 @@ export default function VendasOnline() {
     previousFiltersRef.current = currentFiltersKey;
   }, [filters.selectedAccounts, filters.periodo]);
   
-  // ✅ Disparar refetch quando shouldFetch muda
-  useEffect(() => {
-    if (shouldFetch && filters.selectedAccounts.length > 0) {
-      refetch();
-    }
-  }, [shouldFetch, filters.selectedAccounts.length]);
+  // 🔧 CORREÇÃO #2: REMOVIDO useEffect redundante que chamava refetch()
+  // useVendasData já usa `enabled: shouldFetch` - React Query dispara automaticamente
   
-  // ✅ SIMPLIFICADO (igual /reclamacoes): Salvar no store quando dados chegam
+  // 🔧 CORREÇÃO #6: useEffect SEPARADO - apenas salvar no store (igual /reclamacoes)
   useEffect(() => {
     if (data?.orders?.length && shouldFetch) {
       // ✅ ENRIQUECER COM account_name antes de salvar
       const ordersEnriquecidos = data.orders.map((order: any) => ({
         ...order,
-        account_name: accountsMap.get(order.integration_account_id || filters.selectedAccounts[0])?.name || '-'
+        account_name: accountsMap.get(order.integration_account_id || (filters.selectedAccounts || [])[0])?.name || '-'
       }));
       
       // ✅ Salvar no store (que persiste automaticamente)
       setOrders(ordersEnriquecidos, data.total);
       
-      // ✅ Resetar estados após salvar
-      setIsManualSearching(false);
-      setShouldFetch(false);
+      console.log('💾 [VENDAS] Salvando no Store:', ordersEnriquecidos.length);
     }
   }, [data?.orders, shouldFetch, accountsMap, filters.selectedAccounts, setOrders]);
+  
+  // 🔧 CORREÇÃO #6: useEffect SEPARADO - resetar shouldFetch após dados carregarem
+  useEffect(() => {
+    if (data?.orders?.length && shouldFetch && !loadingVendas) {
+      setShouldFetch(false);
+    }
+  }, [data?.orders, shouldFetch, loadingVendas]);
   
   // 🔥 FUNÇÃO DE BUSCA MANUAL (simplificada - sem subscribe)
   const handleBuscar = async () => {
