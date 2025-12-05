@@ -65,9 +65,9 @@ export default function VendasOnline() {
   const { isSidebarCollapsed } = useSidebarUI();
   const { accounts } = useMLAccounts();
 
-  // 🎯 FASE 2: SISTEMA UNIFICADO DE FILTROS (URL + Cache)
+  // 🎯 FASE 2: SISTEMA UNIFICADO DE FILTROS (URL Sync)
   const filtersManager = useVendasFiltersUnified();
-  const { filters, updateFilter, updateFilters, persistentCache } = filtersManager;
+  const { filters, updateFilter, updateFilters } = filtersManager;
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -95,9 +95,6 @@ export default function VendasOnline() {
   
   // ✅ CORREÇÃO PROBLEMA 3: Ref para trackear filtros anteriores (igual /reclamacoes)
   const previousFiltersRef = useRef<string>('');
-  
-  // ✅ CORREÇÃO PROBLEMA 6: Ref para impedir restauração de cache após dados da API chegarem
-  const hasFetchedFromAPIRef = useRef(false);
   
   // Estado de abas
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
@@ -133,45 +130,17 @@ export default function VendasOnline() {
     }
   }, [loadingVendas]);
   
-  // 🎯 FASE 2: RESTAURAR CACHE + APLICAR FILTROS DA URL na montagem
-  // ✅ CORREÇÃO PROBLEMA 2 + 6: Validar cache E não sobrescrever dados da API
-  useEffect(() => {
-    // ✅ PROBLEMA 6: Se já buscou da API, NÃO restaurar cache antigo
-    if (hasFetchedFromAPIRef.current) {
-      console.log('⚠️ [VENDAS] Ignorando restauração de cache - já tem dados da API');
-      return;
-    }
-    
-    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
-      const cached = persistentCache.persistedState;
-      
-      // ✅ SÓ restaurar se cache tem dados válidos (evita zerar store)
-      if (cached.vendas && cached.vendas.length > 0) {
-        console.log('📦 [VENDAS] Restaurando cache válido:', cached.vendas.length, 'vendas');
-        setOrders(cached.vendas, cached.vendas.length);
-        setPage(cached.currentPage);
-        setItemsPerPage(cached.itemsPerPage);
-      } else {
-        console.log('⚠️ [VENDAS] Cache vazio ignorado, aguardando busca manual');
-      }
-    }
-  }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
+  // ✅ SIMPLIFICADO (igual /reclamacoes): Store Zustand já restaura automaticamente
+  // Não há necessidade de useEffect adicional para restaurar cache
+  // vendasStore.loadPersistedState() já faz isso na inicialização
   
-  // ✅ AUTO-SELECIONAR CONTAS na primeira visita
+  // ✅ AUTO-SELECIONAR CONTAS na primeira visita (igual /reclamacoes)
   useEffect(() => {
-    if (persistentCache.isStateLoaded && accounts && accounts.length > 0) {
-      // Se há cache OU filtros na URL, não auto-selecionar
-      if (persistentCache.persistedState || filters.selectedAccounts.length > 0) {
-        return;
-      }
-      
-      // Se não há cache E não há seleção, auto-selecionar todas (primeira visita)
-      if (filters.selectedAccounts.length === 0) {
-        const accountIds = accounts.map(acc => acc.id);
-        updateFilter('selectedAccounts', accountIds);
-      }
+    if (accounts && accounts.length > 0 && filters.selectedAccounts.length === 0) {
+      const accountIds = accounts.map(acc => acc.id);
+      updateFilter('selectedAccounts', accountIds);
     }
-  }, [persistentCache.isStateLoaded, accounts, persistentCache.persistedState, filters.selectedAccounts.length]);
+  }, [accounts, filters.selectedAccounts.length, updateFilter]);
   
   // ✅ CORREÇÃO PROBLEMA 3: Resetar shouldFetch quando filtros mudam (força busca manual)
   useEffect(() => {
@@ -182,7 +151,6 @@ export default function VendasOnline() {
     
     // Se filtros mudaram E já houve busca anterior, resetar shouldFetch
     if (previousFiltersRef.current && previousFiltersRef.current !== currentFiltersKey) {
-      console.log('🔄 [VENDAS] Filtros mudaram - resetando shouldFetch para aguardar clique');
       setShouldFetch(false);
     }
     
@@ -199,11 +167,6 @@ export default function VendasOnline() {
   // ✅ SIMPLIFICADO (igual /reclamacoes): Salvar no store quando dados chegam
   useEffect(() => {
     if (data?.orders?.length && shouldFetch) {
-      console.log('💾 [VENDAS] Salvando no Store:', data.orders.length);
-      
-      // ✅ CORREÇÃO PROBLEMA 6: Marcar que já buscou da API
-      hasFetchedFromAPIRef.current = true;
-      
       // ✅ ENRIQUECER COM account_name antes de salvar
       const ordersEnriquecidos = data.orders.map((order: any) => ({
         ...order,

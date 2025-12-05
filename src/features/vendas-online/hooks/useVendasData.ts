@@ -5,7 +5,7 @@
  * PADRÃO COMBO 2.1 (igual /reclamacoes):
  * - Single hook with enabled parameter
  * - Cache-first com API fallback automático
- * - Sem mistura de React Query + SWR
+ * - NÃO sincroniza com store (a página faz isso)
  */
 
 import { useEffect } from 'react';
@@ -15,9 +15,6 @@ import { useMLOrdersFromCache } from './useMLOrdersFromCache';
 export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: string[] = []) => {
   const {
     filters,
-    setOrders,
-    setPacks,
-    setShippings,
     setLoading,
     setError
   } = useVendasStore();
@@ -36,25 +33,15 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     enabled: shouldFetch && selectedAccountIds.length > 0
   });
 
-  // Sincronizar estado com store
-  // ✅ CORREÇÃO: Só atualizar store se tem dados válidos (evita zerar store com API vazia)
+  // ✅ SIMPLIFICADO (igual /reclamacoes): Apenas sincronizar loading/error
+  // A PÁGINA é responsável por chamar setOrders (com enriquecimento de account_name)
   useEffect(() => {
     setLoading(isLoading || isFetching);
 
-    if (data && data.orders && data.orders.length > 0) {
-      console.log(`📊 [useVendasData] Dados recebidos: ${data.orders.length} orders (fonte: ${data.source})`);
-      setOrders(data.orders, data.total);
-      setPacks(data.packs || {});
-      setShippings(data.shippings || {});
-    } else if (data && data.orders?.length === 0) {
-      console.log('⚠️ [useVendasData] API retornou 0 orders, mantendo dados existentes no store');
-    }
-
     if (error) {
-      console.error('❌ [useVendasData] Erro:', error);
       setError(error.message);
     }
-  }, [data, isLoading, isFetching, error, setLoading, setOrders, setPacks, setShippings, setError]);
+  }, [isLoading, isFetching, error, setLoading, setError]);
 
   return {
     data,
