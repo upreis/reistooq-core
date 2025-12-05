@@ -63,31 +63,36 @@ export const useMLOrdersFromCache = ({
         throw new Error('Nenhuma conta selecionada');
       }
 
-      // ========== STEP 1: CONSULTAR CACHE ml_orders ==========
-      // ✅ CORREÇÃO PROBLEMA 4: Removido filtro gt('last_synced_at') que era muito restritivo
-      // React Query gerencia staleness via staleTime, não precisamos filtrar por timestamp
-      console.log('📦 [CACHE] Buscando de ml_orders...');
+      // ========== STEP 1: CONSULTAR CACHE ml_orders_cache (tem dados enriquecidos) ==========
+      // ✅ CORREÇÃO: Usar ml_orders_cache que tem dados de shipping completos
+      console.log('📦 [CACHE] Buscando de ml_orders_cache...');
       
+      // Primeiro tentar ml_orders_cache (dados mais recentes e enriquecidos)
       let query = supabase
-        .from('ml_orders')
+        .from('ml_orders_cache')
         .select('*')
         .in('integration_account_id', integrationAccountIds)
-        .order('order_date', { ascending: false });
-
-      if (dateFrom) {
-        query = query.gte('order_date', dateFrom);
-      }
-      if (dateTo) {
-        query = query.lte('order_date', dateTo);
-      }
+        .gt('ttl_expires_at', new Date().toISOString())
+        .order('cached_at', { ascending: false });
 
       const { data: cachedOrders, error: cacheError } = await query;
 
-      // ✅ CACHE HIT: Se tem dados válidos no cache, retornar
+      // ✅ CACHE HIT: Se tem dados válidos no cache enriquecido, retornar
       if (!cacheError && cachedOrders && cachedOrders.length > 0) {
-        console.log(`✅ [CACHE HIT] ${cachedOrders.length} orders do cache`);
+        console.log(`✅ [CACHE HIT] ${cachedOrders.length} orders do ml_orders_cache`);
         
-        const orders = cachedOrders.map(row => row.order_data as unknown as MLOrder);
+        // Filtrar por data se necessário
+        let orders = cachedOrders.map(row => row.order_data as unknown as MLOrder);
+        
+        if (dateFrom || dateTo) {
+          orders = orders.filter((order: any) => {
+            const orderDate = new Date(order.date_created || order.data_criacao);
+            if (dateFrom && orderDate < new Date(dateFrom)) return false;
+            if (dateTo && orderDate > new Date(dateTo)) return false;
+            return true;
+          });
+          console.log(`📅 [CACHE] Filtrado para ${orders.length} orders no período`);
+        }
         
         // Construir packs e shippings
         const packs: Record<string, any> = {};
@@ -109,7 +114,7 @@ export const useMLOrdersFromCache = ({
           orders,
           total: orders.length,
           source: 'cache',
-          last_synced_at: cachedOrders[0].last_synced_at || undefined,
+          last_synced_at: cachedOrders[0].cached_at || undefined,
           cache_expired: false,
           packs,
           shippings
