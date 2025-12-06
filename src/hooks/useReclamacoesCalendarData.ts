@@ -20,39 +20,28 @@ interface ReclamacaoCalendarDay {
 
 /**
  * Hook para buscar dados de reclamações do calendário
- * ✅ OTIMIZADO: Seleciona apenas colunas necessárias, sem claim_data pesado
+ * ✅ COMBO 2.1: Lê de ml_claims (mesma fonte que /reclamacoes)
  */
 export const useReclamacoesCalendarData = () => {
   const [data, setData] = useState<ReclamacaoCalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const lastFetchRef = useRef<number>(0);
 
   const fetchData = useCallback(async () => {
-    // 🔧 Debounce: evitar múltiplos fetches em sequência
-    const now = Date.now();
-    if (now - lastFetchRef.current < 5000) {
-      console.log('⏳ [Calendário Reclamações] Debounce - aguardando 5s entre fetches');
-      return;
-    }
-    lastFetchRef.current = now;
-    
     setLoading(true);
     setError(null);
     
     try {
-      // Buscar últimos 60 dias de ml_claims
+      // Buscar últimos 60 dias de ml_claims (reclamações)
       const sixtyDaysAgo = subDays(new Date(), 60).toISOString();
       
-      // ✅ OTIMIZAÇÃO: Selecionar APENAS colunas necessárias (sem claim_data pesado)
+      // ✅ COMBO 2.1: Busca de ml_claims (fonte única de dados do CRON)
       const { data: claims, error: fetchError } = await supabase
         .from('ml_claims')
-        .select('claim_id, order_id, status, stage, reason_id, date_created, buyer_nickname')
+        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed, claim_data, last_synced_at')
         .gte('date_created', sixtyDaysAgo)
-        .order('date_created', { ascending: false })
-        .limit(500); // ✅ LIMITE para evitar sobrecarga
+        .order('date_created', { ascending: false });
 
       if (fetchError) {
         throw fetchError;
@@ -65,13 +54,15 @@ export const useReclamacoesCalendarData = () => {
         return;
       }
 
-      console.log('📊 Carregando dados de reclamações do ml_claims para calendário (COMBO 2.1):', {
+      console.log('📊 🔄 Carregando dados de reclamações do ml_claims para calendário (COMBO 2.1):', {
         totalClaims: claims.length,
         periodo: '60 dias'
       });
 
-      // Agrupar reclamações por data (processamento simplificado)
-      const groupedByDate = claims.reduce((acc: Record<string, ReclamacaoCalendarDay>, claim) => {
+      // Agrupar reclamações por data (criação e prazo de análise)
+      const groupedByDate = claims.reduce((acc: Record<string, ReclamacaoCalendarDay>, claim: any) => {
+        const claimData = claim.claim_data || {};
+        
         // Processar data de criação
         if (claim.date_created) {
           try {
@@ -89,13 +80,13 @@ export const useReclamacoesCalendarData = () => {
             acc[dateStr].claims!.push({
               dateType: 'created',
               claim_id: claim.claim_id,
-              type: claim.stage,
-              status: claim.status,
-              resource_id: claim.order_id,
-              buyer_nickname: claim.buyer_nickname || '',
-              reason_id: claim.reason_id
+              type: claim.stage || claimData.type,
+              status: claim.status || claimData.status,
+              resource_id: claim.order_id || claimData.resource_id,
+              buyer_nickname: claim.buyer_nickname || claimData.players?.complainant?.nickname || '',
+              reason_id: claim.reason_id || claimData.reason_id
             });
-          } catch {
+          } catch (e) {
             // Ignorar data inválida
           }
         }
@@ -120,13 +111,13 @@ export const useReclamacoesCalendarData = () => {
               acc[dateStr].claims!.push({
                 dateType: 'deadline',
                 claim_id: claim.claim_id,
-                type: claim.stage,
-                status: claim.status,
-                resource_id: claim.order_id,
-                buyer_nickname: claim.buyer_nickname || '',
-                reason_id: claim.reason_id
+                type: claim.stage || claimData.type,
+                status: claim.status || claimData.status,
+                resource_id: claim.order_id || claimData.resource_id,
+                buyer_nickname: claim.buyer_nickname || claimData.players?.complainant?.nickname || '',
+                reason_id: claim.reason_id || claimData.reason_id
               });
-            } catch {
+            } catch (e) {
               // Ignorar data inválida
             }
           }
@@ -151,16 +142,6 @@ export const useReclamacoesCalendarData = () => {
     }
   }, []);
 
-  // 🔧 Fetch com debounce para realtime
-  const debouncedFetch = useCallback(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    debounceRef.current = setTimeout(() => {
-      fetchData();
-    }, 3000); // 3s debounce para realtime
-  }, [fetchData]);
-
   useEffect(() => {
     // Buscar dados iniciais
     fetchData();
@@ -173,13 +154,13 @@ export const useReclamacoesCalendarData = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: '*', // INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'ml_claims'
         },
         (payload) => {
           console.log('🔄 Mudança detectada em ml_claims (reclamações):', payload.eventType);
-          debouncedFetch(); // ✅ Com debounce
+          fetchData(); // Recarregar dados automaticamente
         }
       )
       .subscribe((status) => {
@@ -196,14 +177,10 @@ export const useReclamacoesCalendarData = () => {
         supabase.removeChannel(channelRef.current);
         console.log('🔴 Realtime desconectado para calendário de reclamações');
       }
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
     };
-  }, [fetchData, debouncedFetch]);
+  }, [fetchData]);
 
   const refresh = useCallback(() => {
-    lastFetchRef.current = 0; // Reset debounce para refresh manual
     fetchData();
   }, [fetchData]);
 

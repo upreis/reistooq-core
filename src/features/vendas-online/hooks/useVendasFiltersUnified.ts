@@ -1,10 +1,9 @@
 /**
  * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS - VENDAS CANCELADAS
  * FASE 2.2: Usando utilities compartilhadas de @/core/filters
- * 🔧 CORRIGIDO: Alinhado com padrão de /reclamacoes
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useVendasFiltersSync, VendasFilters } from './useVendasFiltersSync';
 import { usePersistentVendasState } from './usePersistentVendasState';
@@ -17,7 +16,7 @@ import {
 } from '@/core/filters';
 
 const DEFAULT_FILTERS: VendasFilters = {
-  periodo: '7',
+  periodo: '7', // 🔥 CORREÇÃO: Alterado de '60' para '7' (padrão: Últimos 7 dias)
   selectedAccounts: [],
   searchTerm: '',
   currentPage: 1,
@@ -26,162 +25,74 @@ const DEFAULT_FILTERS: VendasFilters = {
 
 /**
  * Hook unificado para gestão de filtros com sincronização URL + cache
- * 🔧 CORRIGIDO: Seguindo padrão de /reclamacoes
  */
 export function useVendasFiltersUnified() {
+  const [searchParams] = useSearchParams(); // 🎯 CRÍTICO 2: Ler URL primeiro
   const persistentCache = usePersistentVendasState();
-  const [searchParams] = useSearchParams();
   
-  // Estado dos filtros - iniciar com defaults
-  const [filters, setFilters] = useState<VendasFilters>(DEFAULT_FILTERS);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const isFirstRender = useRef(true); // 🔧 CORREÇÃO: Rastrear primeira renderização
-  const isRestoringFromUrl = useRef(false); // 🔧 CORREÇÃO: Flag para evitar loop
-
-  // 🔧 CORREÇÃO: Restaurar filtros com prioridade URL > Cache > Defaults (igual /reclamacoes)
-  useEffect(() => {
-    if (!persistentCache.isStateLoaded) return;
-    
-    isRestoringFromUrl.current = true;
-    
-    // 1. Parsear filtros da URL PRIMEIRO
-    const urlFilters: Partial<VendasFilters> = {};
-    
-    // 🔧 CORREÇÃO CRÍTICA: Verificar se cache tem período diferente do default
-    const cachedPeriodo = persistentCache.persistedState?.filters?.periodo;
+  // Estado dos filtros
+  const [filters, setFilters] = useState<VendasFilters>(() => {
+    // 🎯 CRÍTICO 2: Prioridade corrigida: URL > Cache > Default
     const urlPeriodo = searchParams.get('periodo');
+    const urlAccounts = searchParams.get('contas');
+    const urlSearch = searchParams.get('busca');
+    const urlPage = searchParams.get('pagina');
+    const urlItemsPerPage = searchParams.get('itensPorPagina');
     
-    const cacheHasCustomPeriodo = cachedPeriodo && cachedPeriodo !== DEFAULT_FILTERS.periodo;
-    const urlHasDefaultPeriodo = urlPeriodo === DEFAULT_FILTERS.periodo || !urlPeriodo;
+    const cached = persistentCache.persistedState;
     
-    const shouldUseUrlPeriodo = urlPeriodo && !urlHasDefaultPeriodo;
-    
-    if (shouldUseUrlPeriodo) {
-      urlFilters.periodo = urlPeriodo;
-      console.log('🔗 [URL] Usando período da URL (não-default):', urlPeriodo);
-    } else if (cacheHasCustomPeriodo) {
-      console.log('📦 [CACHE] Ignorando período default da URL, cache tem:', cachedPeriodo);
-    }
-    
-    const accounts = searchParams.get('contas');
-    if (accounts) urlFilters.selectedAccounts = accounts.split(',').filter(Boolean);
-    
-    const search = searchParams.get('busca');
-    if (search) urlFilters.searchTerm = search;
-    
-    const page = searchParams.get('pagina');
-    if (page) urlFilters.currentPage = parseInt(page, 10);
-    
-    const limit = searchParams.get('itensPorPagina');
-    if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
-    
-    // 2. Carregar filtros do cache
-    const cachedFilters: Partial<VendasFilters> = {};
-    const cacheAvailable = !isInitialized && persistentCache.persistedState;
-    
-    if (cacheAvailable) {
-      console.log('📦 [CACHE] Cache disponível, restaurando campos não presentes na URL');
-      
-      if (!urlFilters.periodo && cachedPeriodo) {
-        cachedFilters.periodo = cachedPeriodo;
-        console.log('🔄 [CACHE] Restaurando período do cache:', cachedPeriodo);
-      }
-      if (!urlFilters.searchTerm && persistentCache.persistedState?.filters?.search) {
-        cachedFilters.searchTerm = persistentCache.persistedState.filters.search;
-      }
-      if (!urlFilters.selectedAccounts && persistentCache.persistedState?.selectedAccounts?.length) {
-        cachedFilters.selectedAccounts = persistentCache.persistedState.selectedAccounts;
-      }
-      if (!urlFilters.currentPage && persistentCache.persistedState?.currentPage) {
-        cachedFilters.currentPage = persistentCache.persistedState.currentPage;
-      }
-      if (!urlFilters.itemsPerPage && persistentCache.persistedState?.itemsPerPage) {
-        cachedFilters.itemsPerPage = persistentCache.persistedState.itemsPerPage;
-      }
-    }
-    
-    // 3. Merge: Defaults → Cache → URL
-    const mergedFilters: VendasFilters = {
-      ...DEFAULT_FILTERS,
-      ...cachedFilters,
-      ...urlFilters
+    return {
+      periodo: urlPeriodo || cached?.filters.periodo || DEFAULT_FILTERS.periodo,
+      selectedAccounts: urlAccounts ? urlAccounts.split(',') : (cached?.selectedAccounts || DEFAULT_FILTERS.selectedAccounts),
+      searchTerm: urlSearch || cached?.filters.search || DEFAULT_FILTERS.searchTerm,
+      currentPage: urlPage ? parseInt(urlPage) : (cached?.currentPage || DEFAULT_FILTERS.currentPage),
+      itemsPerPage: urlItemsPerPage ? parseInt(urlItemsPerPage) : (cached?.itemsPerPage || DEFAULT_FILTERS.itemsPerPage),
     };
-    
-    console.log('🔄 [FILTROS VENDAS] Restauração completa:', {
-      cacheAvailable: !!cacheAvailable,
-      urlFilters: Object.keys(urlFilters).length > 0 ? urlFilters : 'nenhum',
-      cacheFilters: Object.keys(cachedFilters).length > 0 ? cachedFilters : 'nenhum',
-      final: mergedFilters
-    });
-    
-    setFilters(mergedFilters);
-    setIsInitialized(true);
+  });
 
-    setTimeout(() => {
-      isRestoringFromUrl.current = false;
-    }, 0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persistentCache.isStateLoaded]);
-
-  // 🔧 CORREÇÃO: Cleanup separado
+  // 🔧 CORREÇÃO: Sincronizar filtros quando cache é carregado (após mount)
+  // Problema: useState inicializa ANTES do cache carregar (async), então sempre usa default
+  // Solução: Quando cache carrega, verificar se tem dados salvos e restaurar
   useEffect(() => {
-    return () => {
-      setIsInitialized(false);
-      console.log('🧹 [VENDAS FILTERS] Limpando estado ao desmontar');
-    };
-  }, []);
+    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
+      const cached = persistentCache.persistedState;
+      
+      // Verificar se cache tem período diferente do atual (indica última busca do usuário)
+      if (cached.filters?.periodo && cached.filters.periodo !== filters.periodo) {
+        console.log('🔄 [VENDAS FILTERS] Restaurando período do cache:', cached.filters.periodo);
+        setFilters(prev => ({
+          ...prev,
+          periodo: cached.filters.periodo,
+          searchTerm: cached.filters.search || prev.searchTerm,
+        }));
+      }
+      
+      // Restaurar contas se cache tem contas e estado atual está vazio
+      if (cached.selectedAccounts?.length > 0 && filters.selectedAccounts.length === 0) {
+        console.log('🔄 [VENDAS FILTERS] Restaurando contas do cache:', cached.selectedAccounts.length);
+        setFilters(prev => ({
+          ...prev,
+          selectedAccounts: cached.selectedAccounts,
+        }));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persistentCache.isStateLoaded]); // Executar apenas quando cache terminar de carregar
 
-  // Sincronizar com URL APENAS após inicialização
+  // Sincronizar com URL
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useVendasFiltersSync(
     filters,
-    () => {},
-    isInitialized
+    (urlFilters) => {
+      setFilters(prev => ({ ...prev, ...urlFilters }));
+    }
   );
-
-  // 🔧 CORREÇÃO: Salvar filtros automaticamente no cache quando mudarem
-  useEffect(() => {
-    if (!isInitialized || isFirstRender.current) {
-      if (isInitialized && isFirstRender.current) {
-        isFirstRender.current = false;
-      }
-      return;
-    }
-
-    if (isRestoringFromUrl.current) {
-      console.log('⏭️ [VENDAS FILTERS] Ignorando salvamento durante restauração da URL');
-      return;
-    }
-    
-    const timer = setTimeout(() => {
-      // 🔧 CORREÇÃO: Usar saveDataCache (API correta do hook)
-      persistentCache.saveDataCache(
-        persistentCache.persistedState?.vendas || [], // Manter vendas existentes
-        filters.selectedAccounts,
-        {
-          periodo: filters.periodo,
-          search: filters.searchTerm
-        },
-        filters.currentPage,
-        filters.itemsPerPage
-      );
-      
-      console.log('💾 [VENDAS] Filtros salvos automaticamente:', {
-        periodo: filters.periodo,
-        search: filters.searchTerm,
-        accounts: filters.selectedAccounts.length,
-        page: filters.currentPage
-      });
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [filters, isInitialized]);
 
   // 🔧 Helper para identificar keys de paginação
   const isPaginationKey = useCallback((key: keyof VendasFilters) => {
     return key === 'currentPage' || key === 'itemsPerPage';
   }, []);
 
-  // Atualizar um filtro específico
+  // Atualizar um filtro específico usando utility compartilhada
   const updateFilter = useCallback(<K extends keyof VendasFilters>(
     key: K,
     value: VendasFilters[K]
@@ -189,26 +100,26 @@ export function useVendasFiltersUnified() {
     setFilters(prev => 
       updateSingleFilter(prev, key, value, isPaginationKey)
     );
-    console.log(`🎯 [VENDAS] Filtro atualizado: ${key} =`, value);
+    console.log(`🎯 [VENDAS FILTERS] Filtro atualizado: ${key} =`, value);
   }, [isPaginationKey]);
 
-  // Atualizar múltiplos filtros
+  // Atualizar múltiplos filtros de uma vez usando utility compartilhada
   const updateFilters = useCallback((newFilters: Partial<VendasFilters>) => {
     setFilters(prev => 
       updateMultipleFilters(prev, newFilters, isPaginationKey)
     );
-    console.log('🎯 [VENDAS] Múltiplos filtros atualizados:', newFilters);
+    console.log('🎯 [VENDAS FILTERS] Múltiplos filtros atualizados:', newFilters);
   }, [isPaginationKey]);
 
   // Resetar todos os filtros
   const resetFilters = useCallback(() => {
-    console.log('🔄 [VENDAS] Resetando todos os filtros');
+    console.log('🔄 [VENDAS FILTERS] Resetando todos os filtros');
     setFilters(DEFAULT_FILTERS);
   }, []);
 
-  // Resetar apenas filtros de busca
+  // Resetar apenas filtros de busca usando utility compartilhada
   const resetSearchFilters = useCallback(() => {
-    console.log('🔄 [VENDAS] Resetando filtros de busca');
+    console.log('🔄 [VENDAS FILTERS] Resetando filtros de busca');
     const searchKeys: (keyof VendasFilters)[] = ['periodo', 'searchTerm'];
     setFilters(prev => ({
       ...prev,
@@ -216,28 +127,37 @@ export function useVendasFiltersUnified() {
     }));
   }, []);
 
-  // Verificar se há filtros ativos
+  // Verificar se há filtros ativos usando utility compartilhada
   const hasActiveFilters = useMemo(() => {
     const excludeKeys: (keyof VendasFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage'];
     return hasActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
   }, [filters]);
 
-  // Contar filtros ativos
+  // Contar quantos filtros estão ativos usando utility compartilhada
   const activeFilterCount = useMemo(() => {
     const excludeKeys: (keyof VendasFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage'];
     return countActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
   }, [filters]);
 
   return {
+    // Estado
     filters,
+    
+    // Ações
     updateFilter,
     updateFilters,
     resetFilters,
     resetSearchFilters,
+    
+    // Computados
     hasActiveFilters,
     activeFilterCount,
+    
+    // Helpers
     parseFiltersFromUrl,
     encodeFiltersToUrl,
+    
+    // Cache management
     persistentCache
   };
 }

@@ -1,7 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export interface VendasPaginationFooterProps {
@@ -26,8 +25,6 @@ export const VendasPaginationFooter: React.FC<VendasPaginationFooterProps> = ({
   pageButtonLimit = 5,
 }) => {
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-
-  // Garantir que página atual está dentro dos limites válidos
   const validatedCurrentPage = Math.max(1, Math.min(currentPage, totalPages));
 
   const handlePageChange = (page: number) => {
@@ -44,7 +41,6 @@ export const VendasPaginationFooter: React.FC<VendasPaginationFooterProps> = ({
     let startPage = Math.max(1, validatedCurrentPage - halfLimit);
     let endPage = Math.min(totalPages, validatedCurrentPage + halfLimit);
 
-    // Ajustar start/end para garantir maxButtons mostrados quando possível
     if (endPage - startPage + 1 < maxButtons) {
       if (startPage === 1) {
         endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -53,7 +49,6 @@ export const VendasPaginationFooter: React.FC<VendasPaginationFooterProps> = ({
       }
     }
 
-    // Sempre mostrar primeira página se não estiver no range
     if (startPage > 1) {
       pages.push(1);
       if (startPage > 2) {
@@ -65,7 +60,6 @@ export const VendasPaginationFooter: React.FC<VendasPaginationFooterProps> = ({
       pages.push(i);
     }
 
-    // Sempre mostrar última página se não estiver no range
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         pages.push('ellipsis');
@@ -105,105 +99,93 @@ export const VendasPaginationFooter: React.FC<VendasPaginationFooterProps> = ({
   return (
     <div
       className={cn(
-        "grid grid-cols-3 items-center py-4 px-2 sm:px-6 text-muted-foreground text-sm",
+        "flex items-center justify-between py-4 px-2 sm:px-6 text-muted-foreground text-sm",
         className
       )}
       role="navigation"
       aria-label="Paginação"
     >
       {/* Informações à esquerda */}
-      <div className="flex items-center gap-4 justify-self-start">
+      <div className="flex items-center gap-4">
         <div className="text-sm text-muted-foreground whitespace-nowrap">
-          Mostrando <span className="font-semibold text-foreground">{startItem}</span> a{' '}
-          <span className="font-semibold text-foreground">{endItem}</span> de{' '}
-          <span className="font-semibold text-foreground">{totalItems}</span> vendas
+          Mostrando {startItem} a {endItem} de {totalItems} vendas
         </div>
         
-        {/* Select de itens por página */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">Itens por página:</span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={(value) => {
-              onItemsPerPageChange(Number(value));
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              onItemsPerPageChange(Number(e.target.value));
               onPageChange(1);
             }}
+            className="text-sm border border-input bg-background px-3 py-1 rounded-md hover:bg-accent transition-colors"
           >
-            <SelectTrigger className="h-8 w-[70px]" aria-label="Selecionar itens por página">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-              <SelectItem value="200">200</SelectItem>
-            </SelectContent>
-          </Select>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={200}>200</option>
+          </select>
         </div>
       </div>
-
-      {/* Navegação centralizada */}
-      <div className="flex items-center gap-1 justify-self-center">
-        {/* Botão Primeira Página */}
+      
+      {/* Controles de navegação centralizados */}
+      <div className="flex items-center space-x-2 absolute left-1/2 transform -translate-x-1/2">
         {showFirstLastButtons && (
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
             onClick={() => handlePageChange(1)}
             disabled={isFirstPage}
             aria-label="Ir para primeira página"
           >
-            <ChevronsLeft className="h-4 w-4" />
+            <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Primeira página</span>
           </Button>
         )}
-
-        {/* Botão Anterior */}
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
           onClick={() => handlePageChange(validatedCurrentPage - 1)}
           disabled={isFirstPage}
-          aria-label="Página anterior"
+          aria-label="Ir para página anterior"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only">Página anterior</span>
         </Button>
 
-        {/* Números de páginas */}
-        <div className="flex items-center gap-1">
-          {renderPageNumbers()}
-        </div>
+        {renderPageNumbers()}
 
-        {/* Botão Próxima */}
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
           onClick={() => handlePageChange(validatedCurrentPage + 1)}
           disabled={isLastPage}
-          aria-label="Próxima página"
+          aria-label="Ir para próxima página"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only">Próxima página</span>
         </Button>
-
-        {/* Botão Última Página */}
         {showFirstLastButtons && (
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
             onClick={() => handlePageChange(totalPages)}
             disabled={isLastPage}
             aria-label="Ir para última página"
           >
-            <ChevronsRight className="h-4 w-4" />
+            <ChevronsRight className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Última página</span>
           </Button>
         )}
       </div>
-
-      {/* Coluna vazia à direita para balancear o grid */}
-      <div></div>
+      
+      {/* Espaçador para manter layout balanceado */}
+      <div className="w-[300px]"></div>
     </div>
   );
 };

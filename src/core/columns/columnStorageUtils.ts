@@ -61,9 +61,15 @@ export function loadColumnPreferences(
 
     const parsed = JSON.parse(stored);
     if (!validateColumnCache(parsed, options.version, options.maxAgeInDays)) {
+      console.warn('🗑️ Cache inválido ou expirado, limpando...', options.storageKey);
       localStorage.removeItem(options.storageKey);
       return null;
     }
+
+    console.log('💾 Preferências carregadas:', options.storageKey, {
+      visibleCount: parsed.visibleColumns.length,
+      profile: parsed.activeProfile
+    });
 
     return {
       visibleColumns: new Set(parsed.visibleColumns),

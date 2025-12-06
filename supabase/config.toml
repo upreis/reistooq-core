@@ -31,7 +31,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.unified-orders]
-verify_jwt = true
+verify_jwt = false
 
 [functions.ml-token-refresh-cron]
 verify_jwt = false

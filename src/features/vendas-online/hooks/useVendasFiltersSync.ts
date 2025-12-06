@@ -95,26 +95,25 @@ export const encodeFiltersToUrl = (filters: VendasFilters): URLSearchParams => {
 
 /**
  * Hook para sincronizar filtros com URL
- * 🔧 CORREÇÃO: Adicionar isInitialized igual /reclamacoes para evitar sync prematuro
  */
 export function useVendasFiltersSync(
   filters: VendasFilters,
-  onFiltersChange: (newFilters: Partial<VendasFilters>) => void,
-  isInitialized: boolean = false // 🔧 CORREÇÃO: Só sincronizar após inicialização
+  onFiltersChange: (newFilters: Partial<VendasFilters>) => void
 ) {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // 🔥 REMOVIDO: Carregar filtros da URL na montagem
-  // Agora isso é feito no useVendasFiltersUnified com merge correto Cache + URL
-
-  // Atualizar URL quando filtros mudarem (debounced)
-  // 🔧 CORREÇÃO CRÍTICA: Só sincronizar APÓS cache ser restaurado
+  // Ler filtros da URL na montagem
   useEffect(() => {
-    // 🔧 CORREÇÃO: Não atualizar URL até inicialização completa
-    if (!isInitialized) {
-      return;
+    const urlFilters = parseFiltersFromUrl(searchParams);
+    
+    if (Object.keys(urlFilters).length > 0) {
+      console.log('🔗 [VENDAS SYNC] Filtros restaurados da URL:', urlFilters);
+      onFiltersChange(urlFilters);
     }
+  }, []); // Executar apenas na montagem
 
+  // Atualizar URL quando filtros mudarem (com debounce)
+  useEffect(() => {
     const timer = setTimeout(() => {
       const newParams = encodeFiltersToUrl(filters);
       const currentParams = searchParams.toString();
@@ -122,12 +121,13 @@ export function useVendasFiltersSync(
 
       // Só atualizar se mudou
       if (currentParams !== newParamsStr) {
+        console.log('🔗 [VENDAS SYNC] URL atualizada:', newParamsStr);
         setSearchParams(newParams, { replace: true });
       }
-    }, 300); // 🔧 CORREÇÃO: Aumentado para 300ms igual /reclamacoes
+    }, 500); // Debounce de 500ms
 
     return () => clearTimeout(timer);
-  }, [filters, setSearchParams, isInitialized]);
+  }, [filters, setSearchParams]);
 
   return {
     parseFiltersFromUrl: useCallback(() => parseFiltersFromUrl(searchParams), [searchParams]),

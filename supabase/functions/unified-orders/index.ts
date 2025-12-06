@@ -1038,69 +1038,23 @@ Deno.serve(async (req) => {
 
     console.log(`[unified-orders:${cid}] ML API URL:`, mlUrl.toString());
 
-    // 🔧 PAGINAÇÃO COMPLETA: Buscar TODAS as páginas da API ML
-    let allOrders: any[] = [];
-    let currentOffset = offset || 0;
-    let totalFromAPI = 0;
-    let hasMorePages = true;
-    const MAX_ITERATIONS = 20; // Limite de segurança (20 páginas * 50 = 1000 pedidos max)
-    let iterations = 0;
-
-    while (hasMorePages && iterations < MAX_ITERATIONS) {
-      iterations++;
-      
-      // Atualizar offset na URL
-      mlUrl.searchParams.set('offset', String(currentOffset));
-      
-      console.log(`[unified-orders:${cid}] 📡 Buscando página ${iterations} (offset=${currentOffset})...`);
-
-      const mlResponse = await fetch(mlUrl.toString(), {
-        headers: {
-          'Authorization': `Bearer ${finalAccessToken}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!mlResponse.ok) {
-        const errorText = await mlResponse.text();
-        console.error(`[unified-orders:${cid}] ML API Error ${mlResponse.status}:`, errorText);
-        
-        // Se já temos alguns pedidos, retornar o que temos
-        if (allOrders.length > 0) {
-          console.warn(`[unified-orders:${cid}] ⚠️ Erro na página ${iterations}, retornando ${allOrders.length} pedidos obtidos`);
-          break;
-        }
-        return fail(`ML API Error: ${mlResponse.status}`, mlResponse.status);
+    const mlResponse = await fetch(mlUrl.toString(), {
+      headers: {
+        'Authorization': `Bearer ${finalAccessToken}`,
+        'Accept': 'application/json'
       }
+    });
 
-      const mlData = await mlResponse.json();
-      const pageOrders = mlData.results || [];
-      
-      // Primeira iteração: capturar total
-      if (iterations === 1) {
-        totalFromAPI = mlData.paging?.total || pageOrders.length;
-        console.log(`[unified-orders:${cid}] 📊 Total de pedidos na API: ${totalFromAPI}`);
-      }
-
-      allOrders.push(...pageOrders);
-      console.log(`[unified-orders:${cid}] ✅ Página ${iterations}: ${pageOrders.length} pedidos (acumulado: ${allOrders.length}/${totalFromAPI})`);
-
-      // Verificar se há mais páginas
-      const fetchedSoFar = currentOffset + pageOrders.length;
-      if (pageOrders.length < safeLimit || fetchedSoFar >= totalFromAPI) {
-        hasMorePages = false;
-        console.log(`[unified-orders:${cid}] ✅ Todas as páginas buscadas: ${allOrders.length} pedidos total`);
-      } else {
-        currentOffset += safeLimit;
-      }
+    if (!mlResponse.ok) {
+      const errorText = await mlResponse.text();
+      console.error(`[unified-orders:${cid}] ML API Error ${mlResponse.status}:`, errorText);
+      return fail(`ML API Error: ${mlResponse.status}`, mlResponse.status);
     }
 
-    if (iterations >= MAX_ITERATIONS) {
-      console.warn(`[unified-orders:${cid}] ⚠️ Limite de iterações atingido (${MAX_ITERATIONS} páginas)`);
-    }
+    const mlData = await mlResponse.json();
+    const orders = mlData.results || [];
 
-    const orders = allOrders;
-    console.log(`[unified-orders:${cid}] ML retornou ${orders.length} pedidos (total na API: ${totalFromAPI})`);
+    console.log(`[unified-orders:${cid}] ML retornou ${orders.length} pedidos`);
 
     // Enriquecer com dados de shipping se necessário
     const enrichedOrders = await enrichOrdersWithShipping(orders, finalAccessToken, cid);
@@ -1227,8 +1181,8 @@ Deno.serve(async (req) => {
       // Compatibilidade: retornar tanto 'results' (raw ML enriquecido) quanto 'pedidos' (formato unificado)
       results: enrichedOrders,
       pedidos: transformedOrders,
-      paging: { total: totalFromAPI || transformedOrders.length, limit: safeLimit, offset: offset || 0 },
-      total: totalFromAPI || transformedOrders.length,
+      paging: mlData?.paging ?? { total: transformedOrders.length, limit: safeLimit, offset: offset || 0 },
+      total: (mlData?.paging?.total ?? transformedOrders.length),
       url: mlUrl.toString(),
       provider: 'mercadolivre',
       account_id: integration_account_id,

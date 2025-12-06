@@ -10,7 +10,7 @@
  * Gerenciamento completo de vendas canceladas do Mercado Livre
  */
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { VendasFilterBar } from '@/features/vendas-online/components/VendasFilterBar';
@@ -20,16 +20,20 @@ import { VendasResumo, type FiltroResumo } from '@/features/vendas-online/compon
 import { VendasAnotacoesModal } from '@/features/vendas-online/components/modals/VendasAnotacoesModal';
 import { useVendasData } from '@/features/vendas-online/hooks/useVendasData';
 import { useVendasStore } from '@/features/vendas-online/store/vendasStore';
-import { useVendasFiltersUnified } from '@/features/vendas-online/hooks/useVendasFiltersUnified';
+import { useVendasFiltersUnified } from '@/features/vendas-online/hooks/useVendasFiltersUnified'; // 🎯 FASE 2
 import { useSidebarUI } from '@/context/SidebarUIContext';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Package, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useVendaStorage } from '@/features/vendas-online/hooks/useVendaStorage';
 import type { StatusAnalise } from '@/features/vendas-online/types/venda-analise.types';
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/venda-analise.types';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
-import { useVendasColumnManager } from '@/features/vendas-online/hooks/useVendasColumnManager';
-import { useVendasAggregator } from '@/features/vendas-online/hooks/useVendasAggregator';
+import { VENDAS_ALL_COLUMNS, VENDAS_DEFAULT_VISIBLE_COLUMNS } from '@/features/vendas-online/config/vendas-columns-config';
+import { useVendasColumnManager } from '@/features/vendas-online/hooks/useVendasColumnManager'; // 🎯 FASE 3
+import { useVendasAggregator } from '@/features/vendas-online/hooks/useVendasAggregator'; // 🎯 FASE 4
 import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
 
 interface MLAccount {
@@ -38,26 +42,25 @@ interface MLAccount {
   account_identifier: string;
 }
 
-// 🔧 CORREÇÃO: Hook com React Query (igual /reclamacoes)
-import { useQuery } from '@tanstack/react-query';
-
+// Mock de contas ML (substituir por hook real depois)
 const useMLAccounts = () => {
-  const { data: accounts = [], isLoading } = useQuery({
-    queryKey: ['ml-accounts-vendas'],
-    queryFn: async () => {
-      const { data, error } = await supabase
+  const [accounts, setAccounts] = useState<MLAccount[]>([]);
+  
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      const { data } = await supabase
         .from('integration_accounts')
         .select('id, name, account_identifier')
         .eq('provider', 'mercadolivre')
-        .eq('is_active', true)
-        .order('updated_at', { ascending: false });
+        .eq('is_active', true);
       
-      if (error) throw error;
-      return data as MLAccount[];
-    },
-  });
+      if (data) setAccounts(data);
+    };
+    
+    fetchAccounts();
+  }, []);
   
-  return { accounts, isLoading };
+  return { accounts };
 };
 
 export default function VendasOnline() {
@@ -66,9 +69,9 @@ export default function VendasOnline() {
   const { isSidebarCollapsed } = useSidebarUI();
   const { accounts } = useMLAccounts();
 
-  // 🎯 FASE 2: SISTEMA UNIFICADO DE FILTROS (URL Sync)
+  // 🎯 FASE 2: SISTEMA UNIFICADO DE FILTROS (URL + Cache)
   const filtersManager = useVendasFiltersUnified();
-  const { filters, updateFilter, updateFilters } = filtersManager;
+  const { filters, updateFilter, updateFilters, persistentCache } = filtersManager;
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -83,19 +86,25 @@ export default function VendasOnline() {
   // 🎯 FASE 3: COLUMN MANAGER AVANÇADO
   const columnManager = useVendasColumnManager();
   
-  // 🎯 FASE 3: FILTRAR COLUNAS VISÍVEIS - CORREÇÃO: usar referência estável
-  const visibleColumnsSet = columnManager.state.visibleColumns;
+  // 🎯 FASE 3: FILTRAR COLUNAS VISÍVEIS (Padrão /reclamacoes)
   const visibleColumnKeys = useMemo(() => {
-    return Array.from(visibleColumnsSet);
-  }, [visibleColumnsSet]);
+    const keysArray = Array.from(columnManager.state.visibleColumns);
+    console.log('🔄 [VendasOnline] visibleColumnKeys recalculado:', {
+      count: keysArray.length,
+      keys: keysArray
+    });
+    return keysArray;
+  }, [columnManager.state.visibleColumns.size, Array.from(columnManager.state.visibleColumns).join(',')]);
+
+  console.log('🎯 [VendasOnline] Colunas visíveis:', {
+    count: visibleColumnKeys.length,
+    keys: visibleColumnKeys
+  });
   
   
   // ✅ CONTROLE MANUAL DE BUSCA
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
-  
-  // ✅ CORREÇÃO PROBLEMA 3: Ref para trackear filtros anteriores (igual /reclamacoes)
-  const previousFiltersRef = useRef<string>('');
   
   // Estado de abas
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
@@ -114,13 +123,6 @@ export default function VendasOnline() {
     setAnotacoesModalOpen(true);
   };
   
-  // ✅ Criar mapa de contas para lookup rápido (DEVE VIR ANTES dos useEffects que usam)
-  const accountsMap = useMemo(() => {
-    const map = new Map();
-    accounts.forEach(acc => map.set(acc.id, acc));
-    return map;
-  }, [accounts]);
-  
   // ✅ Hook de dados com controle manual (passar contas selecionadas)
   const { data, isLoading: loadingVendas, error, refetch } = useVendasData(shouldFetch, filters.selectedAccounts);
   
@@ -131,62 +133,65 @@ export default function VendasOnline() {
     }
   }, [loadingVendas]);
   
-  // ✅ SIMPLIFICADO (igual /reclamacoes): Store Zustand já restaura automaticamente
-  // Não há necessidade de useEffect adicional para restaurar cache
-  // vendasStore.loadPersistedState() já faz isso na inicialização
-  
-  // ✅ AUTO-SELECIONAR CONTAS na primeira visita (igual /reclamacoes)
+  // 🎯 FASE 2: RESTAURAR CACHE + APLICAR FILTROS DA URL na montagem
   useEffect(() => {
-    if (accounts && accounts.length > 0 && filters.selectedAccounts.length === 0) {
-      const accountIds = accounts.map(acc => acc.id);
-      updateFilter('selectedAccounts', accountIds);
+    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
+      const cached = persistentCache.persistedState;
+      
+      console.log('📦 [VENDAS] Restaurando cache:', {
+        vendas: cached.vendas.length,
+        contas: cached.selectedAccounts.length,
+        periodo: cached.filters.periodo
+      });
+      
+      // Restaurar dados da última busca
+      setOrders(cached.vendas, cached.vendas.length);
+      setPage(cached.currentPage);
+      setItemsPerPage(cached.itemsPerPage);
+      
+      // 🎯 FASE 3: Colunas gerenciadas pelo columnManager (persistência automática)
+      // Não precisa restaurar manualmente - columnManager já faz isso
+      
+      // 🎯 FASE 2: Filtros já foram restaurados pelo useVendasFiltersUnified
+      console.log('🔗 [VENDAS] Filtros ativos:', filters);
     }
-  }, [accounts, filters.selectedAccounts.length, updateFilter]);
+  }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
   
-  // ✅ CORREÇÃO PROBLEMA 3: Resetar shouldFetch quando filtros mudam (força busca manual)
+  // ✅ AUTO-SELECIONAR CONTAS na primeira visita
   useEffect(() => {
-    const currentFiltersKey = JSON.stringify({
-      accounts: filters.selectedAccounts,
-      periodo: filters.periodo
+    if (persistentCache.isStateLoaded && accounts && accounts.length > 0) {
+      // Se há cache OU filtros na URL, não auto-selecionar
+      if (persistentCache.persistedState || filters.selectedAccounts.length > 0) {
+        return;
+      }
+      
+      // Se não há cache E não há seleção, auto-selecionar todas (primeira visita)
+      if (filters.selectedAccounts.length === 0) {
+        const accountIds = accounts.map(acc => acc.id);
+        updateFilter('selectedAccounts', accountIds);
+        console.log('✨ [VENDAS] Contas auto-selecionadas (primeira visita):', accountIds.length);
+      }
+    }
+  }, [persistentCache.isStateLoaded, accounts, persistentCache.persistedState, filters.selectedAccounts.length]);
+  
+  // ✅ Disparar refetch quando shouldFetch muda
+  useEffect(() => {
+    if (shouldFetch && filters.selectedAccounts.length > 0) {
+      console.log('🔄 [VENDAS] Disparando refetch manual...');
+      refetch();
+    }
+  }, [shouldFetch, filters.selectedAccounts.length]);
+  
+  // 🔥 FUNÇÃO DE BUSCA MANUAL
+  const handleBuscar = async () => {
+    console.log('🔍 [VENDAS] Iniciando busca manual:', {
+      selectedAccounts: filters.selectedAccounts,
+      periodo: filters.periodo,
+      searchTerm: filters.searchTerm
     });
     
-    // Se filtros mudaram E já houve busca anterior, resetar shouldFetch
-    if (previousFiltersRef.current && previousFiltersRef.current !== currentFiltersKey) {
-      setShouldFetch(false);
-    }
-    
-    previousFiltersRef.current = currentFiltersKey;
-  }, [filters.selectedAccounts, filters.periodo]);
-  
-  // 🔧 CORREÇÃO #2: REMOVIDO useEffect redundante que chamava refetch()
-  // useVendasData já usa `enabled: shouldFetch` - React Query dispara automaticamente
-  
-  // 🔧 CORREÇÃO #6: useEffect SEPARADO - apenas salvar no store (igual /reclamacoes)
-  useEffect(() => {
-    if (data?.orders?.length && shouldFetch) {
-      // ✅ ENRIQUECER COM account_name antes de salvar
-      const ordersEnriquecidos = data.orders.map((order: any) => ({
-        ...order,
-        account_name: accountsMap.get(order.integration_account_id || (filters.selectedAccounts || [])[0])?.name || '-'
-      }));
-      
-      // ✅ Salvar no store (que persiste automaticamente)
-      setOrders(ordersEnriquecidos, data.total);
-      
-      console.log('💾 [VENDAS] Salvando no Store:', ordersEnriquecidos.length);
-    }
-  }, [data?.orders, shouldFetch, accountsMap, filters.selectedAccounts, setOrders]);
-  
-  // 🔧 CORREÇÃO #6: useEffect SEPARADO - resetar shouldFetch após dados carregarem
-  useEffect(() => {
-    if (data?.orders?.length && shouldFetch && !loadingVendas) {
-      setShouldFetch(false);
-    }
-  }, [data?.orders, shouldFetch, loadingVendas]);
-  
-  // 🔥 FUNÇÃO DE BUSCA MANUAL (simplificada - sem subscribe)
-  const handleBuscar = async () => {
     if (filters.selectedAccounts.length === 0) {
+      console.warn('⚠️ [VENDAS] Nenhuma conta selecionada');
       return;
     }
     
@@ -203,6 +208,12 @@ export default function VendasOnline() {
     const dateFrom = calcularDataInicio(filters.periodo);
     const dateTo = new Date().toISOString();
     
+    console.log('📅 [VENDAS] Período calculado:', {
+      periodo: filters.periodo,
+      dateFrom,
+      dateTo
+    });
+    
     // ✅ Atualizar filtros no store com datas calculadas
     updateStoreFilters({
       search: filters.searchTerm,
@@ -210,143 +221,155 @@ export default function VendasOnline() {
       dateTo
     });
     
-    // ✅ Ativar busca - o useEffect acima cuida de salvar o cache quando dados chegarem
+    // Ativar busca
     setShouldFetch(true);
     
-    // 🔧 CORREÇÃO: QueryKey CONSISTENTE com fallback para array vazio
-    const accountsKey = (filters.selectedAccounts || []).slice().sort().join(',');
-    const queryKey = ['ml-orders-cache', accountsKey];
-    
-    // Invalidar cache para forçar nova busca
-    await queryClient.invalidateQueries({ queryKey });
+    // 🎯 COMBO 2.1: Aguardar query concluir antes de salvar cache
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      // 🔧 CORREÇÃO: Escutar queryKey correto ('ml-orders-cache' ou 'vendas-ml-api')
+      const queryKeyBase = event?.query?.queryKey?.[0];
+      if (
+        (queryKeyBase === 'ml-orders-cache' || queryKeyBase === 'vendas-ml-api') &&
+        event.type === 'updated' &&
+        event.query.state.status === 'success'
+      ) {
+        // ✅ ENRIQUECER COM account_name antes de salvar cache
+        const ordersEnriquecidos = orders.map(order => ({
+          ...order,
+          account_name: accountsMap.get((order as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
+        }));
+        
+        persistentCache.saveDataCache(
+          ordersEnriquecidos,
+          filters.selectedAccounts,
+          { search: filters.searchTerm, periodo: filters.periodo },
+          pagination.currentPage,
+          pagination.itemsPerPage,
+          Array.from(columnManager.state.visibleColumns)
+        );
+        setIsManualSearching(false);
+        setShouldFetch(false);
+        unsubscribe();
+      }
+    });
   };
   
-  // ✅ CANCELAR BUSCA - 🔧 CORREÇÃO: Usar MESMO queryKey com fallback
+  // ✅ CANCELAR BUSCA
   const handleCancelarBusca = () => {
-    const accountsKey = (filters.selectedAccounts || []).slice().sort().join(',');
-    const queryKey = ['ml-orders-cache', accountsKey];
-    queryClient.cancelQueries({ queryKey });
+    console.log('🛑 Cancelando busca...');
+    queryClient.cancelQueries({ queryKey: ['vendas-ml'] });
     setIsManualSearching(false);
     setShouldFetch(false);
   };
-
-  // 🚀 OTIMIZAÇÃO: Sets para lookup O(1) ao invés de O(n)
-  const STATUS_ATIVOS_SET = useMemo(() => new Set(STATUS_ATIVOS), []);
-  const STATUS_HISTORICO_SET = useMemo(() => new Set(STATUS_HISTORICO), []);
-
-  // 🚀 OTIMIZAÇÃO: Single-pass enrichment + filtering + counting
-  const { vendasEnriquecidas, vendasFiltradasPorAba, countAtivas, countHistorico, stats } = useMemo(() => {
-    // Early return para array vazio
-    if (!orders || orders.length === 0) {
-      return {
-        vendasEnriquecidas: [],
-        vendasFiltradasPorAba: [],
-        countAtivas: 0,
-        countHistorico: 0,
-        stats: { total: 0, pending: 0, completed: 0, revenue: 0 }
-      };
-    }
-
-    const hoje = new Date();
-    const enriched: any[] = [];
-    const filteredByTab: any[] = [];
-    let ativasCount = 0;
-    let historicoCount = 0;
-    
-    // Stats para vendasFiltradasPorAba
-    let statsTotal = 0;
-    let statsPending = 0;
-    let statsCompleted = 0;
-    let statsRevenue = 0;
-
-    // 🚀 SINGLE LOOP: enrich + filter + count tudo de uma vez
-    for (let i = 0; i < orders.length; i++) {
-      const venda = orders[i];
-      const statusAnalise = analiseStatus[venda.id.toString()] || 'pendente' as StatusAnalise;
-      const accountName = (venda as any).account_name || 
-        accountsMap.get((venda as any).integration_account_id || filters.selectedAccounts[0])?.name || '-';
-      
-      // Enriquecer
-      const vendaEnriquecida = {
-        ...venda,
-        status_analise_local: statusAnalise,
-        account_name: accountName
-      };
-      enriched.push(vendaEnriquecida);
-      
-      // Contar ativas/histórico
-      const isAtiva = STATUS_ATIVOS_SET.has(statusAnalise);
-      const isHistorico = STATUS_HISTORICO_SET.has(statusAnalise);
-      
-      if (isAtiva) ativasCount++;
-      if (isHistorico) historicoCount++;
-      
-      // Verificar se passa no filtro de aba
-      const passaFiltroAba = activeTab === 'ativas' ? isAtiva : isHistorico;
-      
-      if (passaFiltroAba) {
-        // Verificar filtro do resumo
-        let passaFiltroResumo = true;
-        
-        if (filtroResumoAtivo) {
-          switch (filtroResumoAtivo.tipo) {
-            case 'prazo':
-              if (!venda.date_created) {
-                passaFiltroResumo = false;
-              } else {
-                const dataCriacao = parseISO(venda.date_created);
-                const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
-                
-                if (filtroResumoAtivo.valor === 'vencido') {
-                  passaFiltroResumo = diasUteis > 3;
-                } else if (filtroResumoAtivo.valor === 'a_vencer') {
-                  passaFiltroResumo = diasUteis >= 0 && diasUteis <= 3;
-                }
-              }
-              break;
-              
-            case 'mediacao':
-              passaFiltroResumo = venda.tags?.includes('mediacao') || venda.status === 'mediation';
-              break;
-              
-            case 'tipo':
-              if (filtroResumoAtivo.valor === 'venda') {
-                passaFiltroResumo = venda.status === 'paid' || venda.status === 'confirmed';
-              } else if (filtroResumoAtivo.valor === 'cancel') {
-                passaFiltroResumo = venda.status === 'cancelled';
-              }
-              break;
-          }
-        }
-        
-        if (passaFiltroResumo) {
-          filteredByTab.push(vendaEnriquecida);
-          
-          // Calcular stats inline
-          statsTotal++;
-          if (venda.status === 'payment_in_process') statsPending++;
-          if (venda.status === 'paid') statsCompleted++;
-          statsRevenue += venda.total_amount || 0;
-        }
-      }
-    }
-
-    return {
-      vendasEnriquecidas: enriched,
-      vendasFiltradasPorAba: filteredByTab,
-      countAtivas: ativasCount,
-      countHistorico: historicoCount,
-      stats: {
-        total: statsTotal,
-        pending: statsPending,
-        completed: statsCompleted,
-        revenue: statsRevenue
-      }
-    };
-  }, [orders, analiseStatus, accountsMap, filters.selectedAccounts, activeTab, filtroResumoAtivo, STATUS_ATIVOS_SET, STATUS_HISTORICO_SET]);
   
-  // 🎯 FASE 4: MÉTRICAS AGREGADAS (já otimizado com single-pass)
+  // ✅ Criar mapa de contas para lookup rápido
+  const accountsMap = useMemo(() => {
+    const map = new Map();
+    accounts.forEach(acc => map.set(acc.id, acc));
+    return map;
+  }, [accounts]);
+
+  // Enriquecer vendas com status_analise_local E account_name
+  const vendasEnriquecidas = useMemo(() => {
+    return orders.map(venda => ({
+      ...venda,
+      status_analise_local: analiseStatus[venda.id.toString()] || 'pendente' as StatusAnalise,
+      // ✅ CORREÇÃO: Priorizar account_name já existente nos dados (cache)
+      // Só fazer lookup no accountsMap se não existir
+      account_name: (venda as any).account_name || accountsMap.get((venda as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
+    }));
+  }, [orders, analiseStatus, accountsMap, filters.selectedAccounts]);
+  
+  // 🎯 FASE 4: MÉTRICAS AGREGADAS
   const metrics = useVendasAggregator(vendasEnriquecidas, analiseStatus);
+  
+  // Filtrar vendas por aba ativa (Ativas vs Histórico)
+  const vendasFiltradasPorAba = useMemo(() => {
+    let resultado = vendasEnriquecidas;
+    
+    // Filtro por aba
+    if (activeTab === 'ativas') {
+      resultado = resultado.filter(v => 
+        STATUS_ATIVOS.includes(v.status_analise_local)
+      );
+    } else {
+      resultado = resultado.filter(v => 
+        STATUS_HISTORICO.includes(v.status_analise_local)
+      );
+    }
+    
+    // Aplicar filtro do resumo (badges clicáveis)
+    if (filtroResumoAtivo) {
+      const hoje = new Date();
+      
+      switch (filtroResumoAtivo.tipo) {
+        case 'prazo':
+          resultado = resultado.filter(v => {
+            if (!v.date_created) return false;
+            const dataCriacao = parseISO(v.date_created);
+            const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
+            
+            if (filtroResumoAtivo.valor === 'vencido') {
+              return diasUteis > 3;
+            } else if (filtroResumoAtivo.valor === 'a_vencer') {
+              return diasUteis >= 0 && diasUteis <= 3;
+            }
+            return false;
+          });
+          break;
+          
+        case 'mediacao':
+          resultado = resultado.filter(v => 
+            v.tags?.includes('mediacao') || v.status === 'mediation'
+          );
+          break;
+          
+        case 'tipo':
+          if (filtroResumoAtivo.valor === 'venda') {
+            resultado = resultado.filter(v => 
+              v.status === 'paid' || v.status === 'confirmed'
+            );
+          } else if (filtroResumoAtivo.valor === 'cancel') {
+            resultado = resultado.filter(v => 
+              v.status === 'cancelled'
+            );
+          }
+          break;
+      }
+    }
+    
+    return resultado;
+  }, [vendasEnriquecidas, activeTab, filtroResumoAtivo]);
+  
+  // Contadores de abas
+  const countAtivas = vendasEnriquecidas.filter(v => 
+    STATUS_ATIVOS.includes(v.status_analise_local)
+  ).length;
+  
+  const countHistorico = vendasEnriquecidas.filter(v => 
+    STATUS_HISTORICO.includes(v.status_analise_local)
+  ).length;
+  
+  // Calcular estatísticas (baseado em vendas filtradas por aba)
+  const stats = {
+    total: vendasFiltradasPorAba.length,
+    pending: vendasFiltradasPorAba.filter(o => o.status === 'payment_in_process').length,
+    completed: vendasFiltradasPorAba.filter(o => o.status === 'paid').length,
+    revenue: vendasFiltradasPorAba.reduce((sum, o) => sum + o.total_amount, 0)
+  };
+
+  // Console de métricas para debug
+  useEffect(() => {
+    if (metrics.total > 0) {
+      console.log('📊 [VENDAS ANALYTICS]', {
+        total: metrics.total,
+        ativas: metrics.totalAtivas,
+        historico: metrics.totalHistorico,
+        valorTotal: `R$ ${metrics.valorTotal.toFixed(2)}`,
+        valorMedio: `R$ ${metrics.valorMedio.toFixed(2)}`
+      });
+    }
+  }, [metrics]);
 
   return (
     <div className="w-full">
@@ -362,6 +385,7 @@ export default function VendasOnline() {
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6 mt-2">
             <Tabs value={activeTab} onValueChange={(v) => {
+              console.log('🔄 Mudando aba para:', v);
               setActiveTab(v as 'ativas' | 'historico');
             }}>
               <div className="flex items-center gap-3 flex-nowrap">
@@ -453,15 +477,8 @@ export default function VendasOnline() {
                 totalItems={pagination.total}
                 currentPage={pagination.currentPage}
                 itemsPerPage={pagination.itemsPerPage}
-                onPageChange={(page) => {
-                  setPage(page);
-                  setShouldFetch(true); // 🔧 FASE 2: Disparar busca server-side
-                }}
-                onItemsPerPageChange={(items) => {
-                  setItemsPerPage(items);
-                  setPage(1); // Voltar para página 1
-                  setShouldFetch(true); // 🔧 FASE 2: Disparar busca server-side
-                }}
+                onPageChange={setPage}
+                onItemsPerPageChange={setItemsPerPage}
               />
             </div>
           )}

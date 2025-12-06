@@ -325,7 +325,7 @@ export class LocalStorageValidator {
   }
   
   // Verificar integridade geral do localStorage
-  static checkStorageHealth(): { healthy: boolean; issues: string[]; totalSizeKB: number } {
+  static checkStorageHealth(): { healthy: boolean; issues: string[] } {
     const issues: string[] = [];
     
     try {
@@ -335,7 +335,7 @@ export class LocalStorageValidator {
       localStorage.removeItem(testKey);
     } catch (error) {
       issues.push('localStorage não disponível');
-      return { healthy: false, issues, totalSizeKB: 0 };
+      return { healthy: false, issues };
     }
     
     // Verificar tamanho aproximado do localStorage
@@ -345,8 +345,6 @@ export class LocalStorageValidator {
         totalSize += localStorage[key].length + key.length;
       }
     }
-    
-    const totalSizeKB = totalSize / 1024;
     
     // Alertar se localStorage está muito cheio (>4MB)
     if (totalSize > 4 * 1024 * 1024) {
@@ -366,132 +364,14 @@ export class LocalStorageValidator {
     
     return {
       healthy: issues.length === 0,
-      issues,
-      totalSizeKB
+      issues
     };
-  }
-  
-  // ✅ NOVO: Limpeza agressiva de caches antigos quando storage está cheio
-  static cleanupOldCaches(): number {
-    let cleaned = 0;
-    const now = Date.now();
-    const MAX_CACHE_AGE = 30 * 60 * 1000; // 30 minutos
-    
-    // Lista de prefixos de cache a verificar
-    const cacheKeyPatterns = [
-      'vendas_online_persistent_state',
-      'vendas-canceladas-store',
-      'vendas-anotacoes',
-      'vendas-column-preferences',
-      'reclamacoes_persistent_state',
-      'reclamacoes-column-preferences',
-      'devolucoes_persistent_state',
-      'devolucoes-column-preferences',
-      'pedidos_persistent_state',
-      'pedidos-column-preferences',
-      'ml_claims_cache',
-      'ml_orders_cache'
-    ];
-    
-    cacheKeyPatterns.forEach(keyPattern => {
-      try {
-        const keys = Object.keys(localStorage).filter(k => k.includes(keyPattern));
-        keys.forEach(key => {
-          try {
-            const stored = localStorage.getItem(key);
-            if (!stored) return;
-            
-            const parsed = JSON.parse(stored);
-            
-            // Verificar idade do cache
-            const cachedAt = parsed.cachedAt || parsed.timestamp || parsed.savedAt;
-            if (cachedAt && (now - cachedAt > MAX_CACHE_AGE)) {
-              localStorage.removeItem(key);
-              cleaned++;
-              console.log(`🧹 [Storage] Cache expirado removido: ${key}`);
-            }
-          } catch {
-            // JSON inválido - remover
-            localStorage.removeItem(key);
-            cleaned++;
-          }
-        });
-      } catch (e) {
-        // Ignorar erros
-      }
-    });
-    
-    // Remover chaves suspeitas
-    const suspiciousKeys = Object.keys(localStorage).filter(key => 
-      key.includes('undefined') || key.includes('null') || key.length > 200
-    );
-    suspiciousKeys.forEach(key => {
-      localStorage.removeItem(key);
-      cleaned++;
-    });
-    
-    if (cleaned > 0) {
-      console.log(`🧹 [Storage] ${cleaned} cache(s) antigo(s) removido(s)`);
-    }
-    
-    return cleaned;
-  }
-  
-  // ✅ NOVO: Limpeza emergencial quando quota está próxima do limite
-  static emergencyCleanup(): number {
-    let cleaned = 0;
-    
-    console.log('🚨 [Storage] Iniciando limpeza emergencial...');
-    
-    // Calcular tamanho de cada chave
-    const keySizes: { key: string; size: number }[] = [];
-    for (let key in localStorage) {
-      if (localStorage.hasOwnProperty(key)) {
-        const size = localStorage[key].length + key.length;
-        keySizes.push({ key, size });
-      }
-    }
-    
-    // Ordenar por tamanho (maiores primeiro)
-    keySizes.sort((a, b) => b.size - a.size);
-    
-    // Chaves críticas que NÃO devem ser removidas
-    const criticalKeys = ['theme', 'user', 'session', 'auth'];
-    
-    // Remover até liberar 2MB ou não ter mais o que remover
-    let freedBytes = 0;
-    const targetFree = 2 * 1024 * 1024; // 2MB
-    
-    for (const { key, size } of keySizes) {
-      // Pular chaves críticas
-      if (criticalKeys.some(c => key.toLowerCase().includes(c))) continue;
-      
-      // Priorizar remoção de caches de dados (vendas, pedidos, etc)
-      if (key.includes('_state') || key.includes('_cache') || key.includes('anotacoes')) {
-        try {
-          localStorage.removeItem(key);
-          freedBytes += size;
-          cleaned++;
-          console.log(`🗑️ [Storage] Removido na limpeza emergencial: ${key} (${(size/1024).toFixed(1)}KB)`);
-          
-          if (freedBytes >= targetFree) break;
-        } catch {
-          // Ignorar
-        }
-      }
-    }
-    
-    console.log(`🧹 [Storage] Limpeza emergencial: ${cleaned} item(s), ${(freedBytes/1024).toFixed(1)}KB liberado`);
-    
-    return cleaned;
   }
 }
 
 // F4.1: Hook para usar validação automática
 export function useStorageValidation() {
   const cleanStorage = () => LocalStorageValidator.cleanCorruptedStorage();
-  const cleanupOldCaches = () => LocalStorageValidator.cleanupOldCaches();
-  const emergencyCleanup = () => LocalStorageValidator.emergencyCleanup();
   
   const validateAndGet = <T>(key: string, fallback: T): T => {
     try {
@@ -521,25 +401,13 @@ export function useStorageValidation() {
       return true;
     } catch (error) {
       console.error(`[Storage] Erro ao salvar ${key}:`, error);
-      
-      // ✅ CORREÇÃO: Tentar limpeza emergencial e re-tentar
-      console.log('🚨 [Storage] Tentando limpeza emergencial...');
-      LocalStorageValidator.emergencyCleanup();
-      
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
-      } catch {
-        toast.error('Erro ao salvar dados. localStorage pode estar cheio.');
-        return false;
-      }
+      toast.error('Erro ao salvar dados. localStorage pode estar cheio.');
+      return false;
     }
   };
   
   return {
     cleanStorage,
-    cleanupOldCaches,
-    emergencyCleanup,
     validateAndGet,
     setValidated,
     checkHealth: LocalStorageValidator.checkStorageHealth
