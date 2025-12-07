@@ -44,18 +44,12 @@ export const useMLOrdersFromCache = ({
         dateTo
       });
 
-      // STEP 1: Consultar ml_orders table
-      const now = new Date();
-      // 🔧 CORREÇÃO FASE C.2: Aumentar threshold para 15 minutos (sincronizado com CRON de 10min + margem)
-      const cacheThresholdMinutes = 15; 
-      const cacheThreshold = new Date(now.getTime() - cacheThresholdMinutes * 60 * 1000).toISOString();
-      
+      // STEP 1: Consultar ml_orders table (sem filtro de last_synced_at - React Query gerencia staleness)
       let query = supabase
         .from('ml_orders')
         .select('*')
         .in('integration_account_id', integrationAccountIds)
-        .gt('last_synced_at', cacheThreshold) // Apenas registros sincronizados recentemente
-        .order('last_synced_at', { ascending: false });
+        .order('order_date', { ascending: false });
 
       // 🔧 CORREÇÃO FASE C.1: Usar order_date ao invés de date_created (que pode ser NULL)
       // Aplicar filtros de data se fornecidos
