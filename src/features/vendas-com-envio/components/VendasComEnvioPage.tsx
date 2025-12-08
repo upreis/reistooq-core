@@ -261,6 +261,7 @@ export function VendasComEnvioPage() {
             currentPage={appliedFilters.currentPage}
             itemsPerPage={appliedFilters.itemsPerPage}
             onPageChange={changePage}
+            onItemsPerPageChange={changeItemsPerPage}
             visibleColumnKeys={visibleColumnKeys}
             statusAnalise={statusAnalise}
             onStatusAnaliseChange={handleStatusAnaliseChange}
