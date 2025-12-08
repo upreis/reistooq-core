@@ -198,7 +198,7 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   // ========== DATAS ==========
   columnHelper.accessor('date_created', {
     id: 'date_created',
-    header: 'Data Criação',
+    header: 'Data do Pedido',
     cell: ({ getValue }) => (
       <span className="text-xs">{getValue() ? formatDateTime(getValue()) : '-'}</span>
     ),
