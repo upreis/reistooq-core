@@ -12,6 +12,8 @@ import { ExternalLink, History, FileText, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { VendaComEnvio } from '../types';
+import { StatusAnaliseSelect } from './StatusAnaliseSelect';
+import { StatusAnalise } from '../types/venda-analise.types';
 
 const columnHelper = createColumnHelper<VendaComEnvio>();
 
@@ -114,6 +116,8 @@ interface ColumnContext {
   onStatusChange?: (orderId: string, newStatus: string) => void;
   onOpenAnotacoes?: (order: VendaComEnvio) => void;
   anotacoes?: Record<string, string>;
+  statusAnalise?: Record<string, StatusAnalise>;
+  onStatusAnaliseChange?: (orderId: string, newStatus: StatusAnalise) => void;
 }
 
 export const createVendasComEnvioColumns = (context: ColumnContext) => [
@@ -121,11 +125,16 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   columnHelper.accessor('id', {
     id: 'status_analise',
     header: 'Análise',
-    cell: () => (
-      <Badge variant="outline" className="text-xs">
-        Pendente
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const statusAnalise = (context.statusAnalise?.[row.original.id] || 'pendente') as StatusAnalise;
+      return (
+        <StatusAnaliseSelect
+          value={statusAnalise}
+          onChange={(newStatus) => context.onStatusAnaliseChange?.(row.original.id, newStatus)}
+          disabled={false}
+        />
+      );
+    },
     meta: { headerClassName: 'min-w-[180px]' }
   }),
 

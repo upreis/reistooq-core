@@ -24,6 +24,8 @@ import {
 import type { VendaComEnvio } from '../types';
 import { createVendasComEnvioColumns } from './VendasComEnvioTableColumns';
 
+import { StatusAnalise } from '../types/venda-analise.types';
+
 interface VendasComEnvioTableNewProps {
   orders: VendaComEnvio[];
   total: number;
@@ -35,6 +37,8 @@ interface VendasComEnvioTableNewProps {
   onOpenAnotacoes?: (order: VendaComEnvio) => void;
   anotacoes?: Record<string, string>;
   visibleColumnKeys?: string[];
+  statusAnalise?: Record<string, StatusAnalise>;
+  onStatusAnaliseChange?: (orderId: string, newStatus: StatusAnalise) => void;
 }
 
 export const VendasComEnvioTableNew = ({
@@ -47,7 +51,9 @@ export const VendasComEnvioTableNew = ({
   onStatusChange,
   onOpenAnotacoes,
   anotacoes,
-  visibleColumnKeys = []
+  visibleColumnKeys = [],
+  statusAnalise,
+  onStatusAnaliseChange
 }: VendasComEnvioTableNewProps) => {
   const totalPages = Math.ceil(total / itemsPerPage);
 
@@ -59,9 +65,11 @@ export const VendasComEnvioTableNew = ({
     return createVendasComEnvioColumns({
       onStatusChange,
       onOpenAnotacoes,
-      anotacoes
+      anotacoes,
+      statusAnalise,
+      onStatusAnaliseChange
     });
-  }, [onStatusChange, onOpenAnotacoes, anotacoes]);
+  }, [onStatusChange, onOpenAnotacoes, anotacoes, statusAnalise, onStatusAnaliseChange]);
 
   // 🎯 FILTRAR colunas baseado em visibleColumnKeys
   // Keys do config são iguais aos IDs das colunas - pass-through direto
