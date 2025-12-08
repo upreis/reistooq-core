@@ -1,6 +1,7 @@
 /**
  * 📊 DEFINIÇÕES DE COLUNAS - VENDAS COM ENVIO
- * CÓPIA EXATA de VendasTableColumns.tsx de /vendas-canceladas
+ * Mapeamento IDÊNTICO a VendasTableColumns.tsx de /vendas-canceladas
+ * Acessa order_data para obter dados completos do ML
  */
 
 import { createColumnHelper } from '@tanstack/react-table';
@@ -26,7 +27,7 @@ const formatDateTime = (dateString: string) => {
   try {
     return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
   } catch {
-    return dateString;
+    return dateString || '-';
   }
 };
 
@@ -34,8 +35,10 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
   switch (status?.toLowerCase()) {
     case 'paid':
     case 'delivered':
+    case 'approved':
       return 'default';
     case 'cancelled':
+    case 'rejected':
       return 'destructive';
     default:
       return 'secondary';
@@ -52,7 +55,7 @@ const getOrderStatusLabel = (status: string): string => {
     'payment_in_process': 'Processando',
     'invalid': 'Inválido',
   };
-  return labels[status] || status;
+  return labels[status] || status || '-';
 };
 
 const getShippingStatusLabel = (status: string): string => {
@@ -65,7 +68,7 @@ const getShippingStatusLabel = (status: string): string => {
     'not_delivered': 'Não Entregue',
     'cancelled': 'Cancelado',
   };
-  return labels[status] || status;
+  return labels[status] || status || '-';
 };
 
 const formatLogisticType = (type: string): string => {
@@ -76,7 +79,21 @@ const formatLogisticType = (type: string): string => {
     'drop_off': 'Drop Off',
     'cross_docking': 'Cross Docking',
   };
-  return labels[type] || type;
+  return labels[type] || type || '-';
+};
+
+const formatSubstatus = (substatus: string): string => {
+  const labels: Record<string, string> = {
+    'ready_to_print': 'Pronto para Imprimir',
+    'printed': 'Etiqueta Impressa',
+    'stale': 'Atrasado',
+    'in_hub': 'No Hub',
+    'waiting_for_withdrawal': 'Aguardando Retirada',
+    'in_transit': 'Em Trânsito',
+    'out_for_delivery': 'Saiu para Entrega',
+    'soon_deliver': 'Em Breve',
+  };
+  return labels[substatus] || substatus || '-';
 };
 
 const getPaymentStatusLabel = (status: string): string => {
@@ -89,7 +106,7 @@ const getPaymentStatusLabel = (status: string): string => {
     'in_mediation': 'Em Mediação',
     'charged_back': 'Estornado',
   };
-  return labels[status] || status;
+  return labels[status] || status || '-';
 };
 
 // Props compartilhadas
@@ -104,13 +121,11 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   columnHelper.accessor('id', {
     id: 'status_analise',
     header: 'Análise',
-    cell: ({ row }) => {
-      return (
-        <Badge variant="outline" className="text-xs">
-          Pendente
-        </Badge>
-      );
-    },
+    cell: () => (
+      <Badge variant="outline" className="text-xs">
+        Pendente
+      </Badge>
+    ),
     meta: { headerClassName: 'min-w-[180px]' }
   }),
 
@@ -198,7 +213,7 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     id: 'date_created',
     header: 'Data Criação',
     cell: ({ getValue }) => (
-      <span className="text-xs">{formatDateTime(getValue())}</span>
+      <span className="text-xs">{getValue() ? formatDateTime(getValue()) : '-'}</span>
     ),
     meta: { headerClassName: 'min-w-[150px]' }
   }),
@@ -268,7 +283,7 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'Desconto',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      const couponAmount = orderData?.coupon?.amount || 0;
+      const couponAmount = orderData?.coupon?.amount || orderData?.coupon_amount || 0;
       return formatCurrency(couponAmount);
     },
     meta: { headerClassName: 'min-w-[120px]' }
@@ -318,16 +333,23 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   columnHelper.display({
     id: 'buyer_id',
     header: 'ID Comprador',
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{row.original.buyer_id || '-'}</span>
-    ),
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      return (
+        <span className="font-mono text-xs">{orderData?.buyer?.id || row.original.buyer_id || '-'}</span>
+      );
+    },
     meta: { headerClassName: 'min-w-[100px]' }
   }),
 
   columnHelper.display({
     id: 'buyer_name',
     header: 'Nome Comprador',
-    cell: ({ row }) => row.original.buyer_nickname || row.original.buyer_name || '-',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const buyer = orderData?.buyer;
+      return buyer?.nickname || buyer?.first_name || row.original.buyer_nickname || row.original.buyer_name || '-';
+    },
     meta: { headerClassName: 'min-w-[150px]' }
   }),
 
@@ -336,8 +358,8 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     id: 'item_id',
     header: 'ID Item',
     cell: ({ row }) => {
-      const items = row.original.items as any[];
-      const firstItem = items?.[0];
+      const orderData = row.original.order_data as any;
+      const firstItem = orderData?.order_items?.[0];
       return (
         <span className="font-mono text-xs">{firstItem?.item?.id || '-'}</span>
       );
@@ -349,11 +371,12 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     id: 'item_title',
     header: 'Título Produto',
     cell: ({ row }) => {
-      const items = row.original.items as any[];
-      const firstItem = items?.[0];
+      const orderData = row.original.order_data as any;
+      const firstItem = orderData?.order_items?.[0];
+      const items = row.original.items;
       return (
         <div className="max-w-[250px] whitespace-normal break-words">
-          {firstItem?.title || firstItem?.item?.title || '-'}
+          {firstItem?.item?.title || items?.[0]?.title || '-'}
         </div>
       );
     },
@@ -363,9 +386,11 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   columnHelper.display({
     id: 'quantity',
     header: 'Quantidade',
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.items_quantity || '-'}</div>
-    ),
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const firstItem = orderData?.order_items?.[0];
+      return <div className="text-center">{firstItem?.quantity || row.original.items_quantity || '-'}</div>;
+    },
     meta: { headerClassName: 'min-w-[80px]' }
   }),
 
@@ -373,9 +398,10 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     id: 'seller_sku',
     header: 'SKU',
     cell: ({ row }) => {
-      const items = row.original.items as any[];
-      const firstItem = items?.[0];
-      return <span className="font-mono text-xs">{firstItem?.sku || firstItem?.item?.seller_sku || '-'}</span>;
+      const orderData = row.original.order_data as any;
+      const firstItem = orderData?.order_items?.[0];
+      const items = row.original.items;
+      return <span className="font-mono text-xs">{firstItem?.item?.seller_sku || items?.[0]?.sku || '-'}</span>;
     },
     meta: { headerClassName: 'min-w-[200px]' }
   }),
@@ -384,8 +410,8 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     id: 'category_id',
     header: 'Categoria',
     cell: ({ row }) => {
-      const items = row.original.items as any[];
-      const firstItem = items?.[0];
+      const orderData = row.original.order_data as any;
+      const firstItem = orderData?.order_items?.[0];
       return <span className="text-xs">{firstItem?.item?.category_id || '-'}</span>;
     },
     meta: { headerClassName: 'min-w-[120px]' }
@@ -395,17 +421,21 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   columnHelper.display({
     id: 'shipping_id',
     header: 'ID Envio',
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{row.original.shipment_id || '-'}</span>
-    ),
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      return (
+        <span className="font-mono text-xs">{orderData?.shipping?.id || row.original.shipment_id || '-'}</span>
+      );
+    },
     meta: { headerClassName: 'min-w-[120px]' }
   }),
 
   columnHelper.accessor('shipping_status', {
     id: 'shipping_status',
     header: 'Status Envio',
-    cell: ({ getValue }) => {
-      const status = getValue();
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const status = orderData?.shipping?.status || row.original.shipping_status;
       if (!status) return '-';
       return (
         <Badge variant={getStatusVariant(status)}>
@@ -419,11 +449,15 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   columnHelper.accessor('logistic_type', {
     id: 'logistic_type',
     header: 'Tipo Logístico',
-    cell: ({ getValue }) => (
-      <span className="text-xs">
-        {formatLogisticType(getValue() || '-')}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const type = orderData?.shipping?.logistic_type || orderData?.shipping?.logistic?.type || row.original.logistic_type;
+      return (
+        <span className="text-xs">
+          {formatLogisticType(type || '-')}
+        </span>
+      );
+    },
     meta: { headerClassName: 'min-w-[120px]' }
   }),
 
@@ -432,7 +466,7 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'Substatus',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      return <span className="text-xs">{orderData?.shipping?.substatus || '-'}</span>;
+      return <span className="text-xs">{formatSubstatus(orderData?.shipping?.substatus || '-')}</span>;
     },
     meta: { headerClassName: 'min-w-[120px]' }
   }),
@@ -442,7 +476,7 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'Método Envio',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      return <span className="text-xs">{orderData?.shipping?.shipping_method?.name || '-'}</span>;
+      return <span className="text-xs">{orderData?.shipping?.lead_time?.shipping_method?.name || '-'}</span>;
     },
     meta: { headerClassName: 'min-w-[150px]' }
   }),
@@ -450,18 +484,24 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   columnHelper.display({
     id: 'tracking_number',
     header: 'Código Rastreio',
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{row.original.tracking_number || '-'}</span>
-    ),
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      return (
+        <span className="font-mono text-xs">{orderData?.shipping?.tracking_number || row.original.tracking_number || '-'}</span>
+      );
+    },
     meta: { headerClassName: 'min-w-[200px]' }
   }),
 
   columnHelper.display({
     id: 'tracking_method',
     header: 'Transportadora',
-    cell: ({ row }) => (
-      <span className="text-xs">{row.original.carrier || '-'}</span>
-    ),
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      return (
+        <span className="text-xs">{orderData?.shipping?.tracking_method || row.original.carrier || '-'}</span>
+      );
+    },
     meta: { headerClassName: 'min-w-[150px]' }
   }),
 
@@ -469,9 +509,10 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     id: 'estimated_delivery',
     header: 'Previsão Entrega',
     cell: ({ row }) => {
-      const deadline = row.original.shipping_deadline;
+      const orderData = row.original.order_data as any;
+      const deliveryDate = orderData?.shipping?.lead_time?.estimated_delivery_time?.date || row.original.shipping_deadline;
       return (
-        <span className="text-xs">{deadline ? formatDateTime(deadline) : '-'}</span>
+        <span className="text-xs">{deliveryDate ? formatDateTime(deliveryDate) : '-'}</span>
       );
     },
     meta: { headerClassName: 'min-w-[150px]' }
@@ -487,23 +528,31 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
       return (
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <History className="h-4 w-4" />
+            <Button variant="ghost" size="sm">
+              <History className="h-4 w-4 mr-1" />
+              {history.length} eventos
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="space-y-2">
+          <PopoverContent className="w-96" align="start">
+            <div className="space-y-3">
               <h4 className="font-semibold text-sm">Histórico de Status</h4>
-              {history.slice(0, 5).map((item: any, idx: number) => (
-                <div key={idx} className="text-xs border-b pb-1">
-                  <span className="font-medium">{item.status}</span>
-                  {item.date_created && (
-                    <span className="text-muted-foreground ml-2">
-                      {formatDateTime(item.date_created)}
-                    </span>
-                  )}
-                </div>
-              ))}
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {history.map((item: any, idx: number) => (
+                  <div key={idx} className="border-l-2 border-primary pl-3 pb-2">
+                    <div className="text-xs font-medium">
+                      {getShippingStatusLabel(item.status)}
+                    </div>
+                    {item.description && (
+                      <div className="text-xs text-muted-foreground">
+                        {item.description}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {formatDateTime(item.date_time || item.date)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </PopoverContent>
         </Popover>
@@ -552,12 +601,11 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'Endereço',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      const addr = orderData?.shipping?.destination?.shipping_address;
-      if (!addr) return '-';
+      const address = orderData?.shipping?.destination?.shipping_address?.address_line;
       return (
-        <span className="text-xs max-w-[250px] truncate block">
-          {addr.address_line || `${addr.street_name || ''} ${addr.street_number || ''}`}
-        </span>
+        <div className="max-w-[250px] truncate" title={address}>
+          {address || '-'}
+        </div>
       );
     },
     meta: { headerClassName: 'min-w-[250px]' }
@@ -569,19 +617,11 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'Fulfillment',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      const isFulfilled = orderData?.fulfilled || row.original.logistic_type === 'fulfillment';
-      return (
-        <div className="text-center">
-          {isFulfilled ? (
-            <Badge variant="default" className="text-xs">
-              <Check className="h-3 w-3 mr-1" /> Sim
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-xs">
-              <X className="h-3 w-3 mr-1" /> Não
-            </Badge>
-          )}
-        </div>
+      const isFulfilled = orderData?.fulfilled || orderData?.shipping?.logistic_type === 'fulfillment' || row.original.logistic_type === 'fulfillment';
+      return isFulfilled ? (
+        <Badge variant="default" className="text-xs">Sim</Badge>
+      ) : (
+        <Badge variant="outline" className="text-xs">Não</Badge>
       );
     },
     meta: { headerClassName: 'min-w-[120px]' }
@@ -592,13 +632,11 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'Mediações',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      const mediations = orderData?.mediations || [];
+      const mediations = orderData?.mediations;
       return (
-        <div className="text-center">
-          <Badge variant={mediations.length > 0 ? 'destructive' : 'outline'} className="text-xs">
-            {mediations.length}
-          </Badge>
-        </div>
+        <span className="text-xs">
+          {mediations && mediations.length > 0 ? `${mediations.length} mediação(ões)` : '-'}
+        </span>
       );
     },
     meta: { headerClassName: 'min-w-[120px]' }
@@ -613,7 +651,7 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
       if (!dim) return '-';
       return (
         <span className="text-xs">
-          {dim.length}x{dim.width}x{dim.height}cm ({dim.weight}kg)
+          {dim.length || 0}x{dim.width || 0}x{dim.height || 0}cm ({dim.weight || 0}kg)
         </span>
       );
     },
