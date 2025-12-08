@@ -4,7 +4,7 @@
  * @version 1.1
  */
 
-import type { ColumnDefinition, ColumnProfile } from '@/features/vendas-online/types/columns.types';
+import type { ColumnDefinition, ColumnProfile } from '@/core/columns';
 
 // Mapa de categorias para labels
 export const CATEGORY_LABELS: Record<string, string> = {

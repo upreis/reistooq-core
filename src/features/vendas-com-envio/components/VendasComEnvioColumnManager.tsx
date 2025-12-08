@@ -16,7 +16,7 @@ import {
 import { Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { VENDAS_COMENVIO_COLUMN_DEFINITIONS, CATEGORY_LABELS } from '../config/vendas-comenvio-columns-config';
-import type { UseColumnManagerReturn } from '@/features/vendas-online/types/columns.types';
+import type { UseColumnManagerReturn } from '@/core/columns';
 
 interface VendasComEnvioColumnManagerProps {
   manager: UseColumnManagerReturn & { visibleColumnKeys?: string[] };

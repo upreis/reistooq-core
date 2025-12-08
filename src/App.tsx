@@ -24,7 +24,6 @@ import NotFound from "./pages/NotFound";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import PedidosV2 from "./pages/PedidosV2";
-import VendasOnline from "./pages/VendasOnline";
 import VendasComEnvio from "./pages/VendasComEnvio";
 import DevolucoesDeVenda from "./pages/DevolucoesDeVenda";
 // DadosEnriquecidosQualidade removido temporariamente
@@ -146,9 +145,6 @@ function App() {
                     <Route path="pedidos-v2" element={<PedidosV2 />} />
                     <Route path="scanner" element={<Scanner />} />
                     <Route path="historico" element={<Historico />} />
-                    
-                    {/* Vendas Canceladas */}
-                    <Route path="vendas-canceladas" element={<VendasOnline />} />
                     
                     {/* Vendas com Envio */}
                     <Route path="vendas-com-envio" element={<VendasComEnvio />} />

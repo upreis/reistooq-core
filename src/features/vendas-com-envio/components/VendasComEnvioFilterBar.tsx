@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FlipButton } from '@/components/ui/flip-button';
-import type { UseColumnManagerReturn } from '@/features/vendas-online/types/columns.types';
+import type { UseColumnManagerReturn } from '@/core/columns';
 import { VendasComEnvioColumnManager } from './VendasComEnvioColumnManager';
 
 interface MLAccount {
