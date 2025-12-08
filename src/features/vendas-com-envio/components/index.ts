@@ -1,0 +1,10 @@
+/**
+ * 📦 VENDAS COM ENVIO - Components Index
+ * Exportação centralizada dos componentes
+ */
+
+export { VendasComEnvioPage } from './VendasComEnvioPage';
+export { VendasComEnvioStats } from './VendasComEnvioStats';
+export { VendasComEnvioFilters } from './VendasComEnvioFilters';
+export { VendasComEnvioTable } from './VendasComEnvioTable';
+export { VendasComEnvioPagination } from './VendasComEnvioPagination';

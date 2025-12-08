@@ -25,6 +25,7 @@ import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import PedidosV2 from "./pages/PedidosV2";
 import VendasOnline from "./pages/VendasOnline";
+import VendasComEnvio from "./pages/VendasComEnvio";
 import DevolucoesDeVenda from "./pages/DevolucoesDeVenda";
 // DadosEnriquecidosQualidade removido temporariamente
 import Scanner from "./pages/Scanner";
@@ -148,6 +149,9 @@ function App() {
                     
                     {/* Vendas Canceladas */}
                     <Route path="vendas-canceladas" element={<VendasOnline />} />
+                    
+                    {/* Vendas com Envio */}
+                    <Route path="vendas-com-envio" element={<VendasComEnvio />} />
                     
                     {/* Devoluções */}
                     <Route path="devolucoesdevenda" element={<DevolucoesDeVenda />} />
