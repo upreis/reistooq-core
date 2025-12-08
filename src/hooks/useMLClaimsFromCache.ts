@@ -351,6 +351,12 @@ export function useMLClaimsFromCache({
           });
         }
 
+        // ✅ FILTRO: Apenas itens COM código de rastreio preenchido
+        filteredDevolucoes = filteredDevolucoes.filter(dev => {
+          const trackingNumber = dev.tracking_number || dev.codigo_rastreamento || '';
+          return trackingNumber.trim().length > 0;
+        });
+
         return {
           success: true,
           source: 'cache',
@@ -389,12 +395,18 @@ export function useMLClaimsFromCache({
 
       console.log(`✅ [API SUCCESS] ${apiData.data?.length || 0} claims da API`);
 
+      // ✅ FILTRO: Apenas itens COM código de rastreio preenchido
+      const apiDevolucoes = (apiData.data || []).filter((dev: any) => {
+        const trackingNumber = dev.tracking_number || dev.codigo_rastreamento || '';
+        return trackingNumber.trim().length > 0;
+      });
+
       // Retornar dados frescos da API
       return {
         success: true,
         source: 'api',
-        devolucoes: apiData.data || [],
-        total_count: apiData.total || apiData.data?.length || 0,
+        devolucoes: apiDevolucoes,
+        total_count: apiDevolucoes.length,
         cache_expired: true
       };
     },
