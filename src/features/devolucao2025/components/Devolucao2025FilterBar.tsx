@@ -57,6 +57,11 @@ export function Devolucao2025FilterBar({
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
   const handleToggleAccount = (accountId: string) => {
+    // Mínimo 1 conta selecionada
+    if (selectedAccountIds.includes(accountId) && selectedAccountIds.length === 1) {
+      return;
+    }
+    
     if (selectedAccountIds.includes(accountId)) {
       onAccountsChange(selectedAccountIds.filter(id => id !== accountId));
     } else {
@@ -66,7 +71,8 @@ export function Devolucao2025FilterBar({
 
   const handleSelectAllAccounts = () => {
     if (selectedAccountIds.length === accounts.length) {
-      onAccountsChange([]);
+      // Manter pelo menos a primeira
+      onAccountsChange([accounts[0]?.id].filter(Boolean));
     } else {
       onAccountsChange(accounts.map(acc => acc.id));
     }
@@ -108,7 +114,9 @@ export function Devolucao2025FilterBar({
                 <span className="truncate">
                   {selectedAccountIds.length === 0 
                     ? 'Selecione a Empresa' 
-                    : `${selectedAccountIds.length} Empresa${selectedAccountIds.length > 1 ? 's' : ''}`
+                    : selectedAccountIds.length === accounts.length
+                      ? 'Todas as contas'
+                      : `${selectedAccountIds.length} Empresa${selectedAccountIds.length > 1 ? 's' : ''}`
                   }
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
@@ -116,37 +124,40 @@ export function Devolucao2025FilterBar({
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="start">
               <div className="p-4 space-y-4">
-                {/* Header */}
-                <div className="flex items-center justify-between pb-2 border-b">
-                  <h4 className="font-medium text-sm">Contas Mercado Livre</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Contas do Mercado Livre</h4>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleSelectAllAccounts}
                     className="h-8 text-xs"
                   >
-                    {selectedAccountIds.length === accounts.length ? 'Desmarcar Todas' : 'Selecionar Todas'}
+                    {selectedAccountIds.length === accounts.length ? 'Manter 1' : 'Selecionar Todas'}
                   </Button>
                 </div>
 
-                {/* Lista de Contas */}
                 <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                  {accounts.map((account) => (
-                    <div key={account.id} className="flex items-start space-x-3">
-                      <Checkbox
-                        id={`account-${account.id}`}
-                        checked={selectedAccountIds.includes(account.id)}
-                        onCheckedChange={() => handleToggleAccount(account.id)}
-                      />
-                      <label
-                        htmlFor={`account-${account.id}`}
-                        className="flex-1 text-sm cursor-pointer leading-tight"
-                      >
-                        <div className="font-medium">{account.name}</div>
-                        <div className="text-xs text-muted-foreground">{account.account_identifier}</div>
-                      </label>
-                    </div>
-                  ))}
+                  {accounts.map((account) => {
+                    const isSelected = selectedAccountIds.includes(account.id);
+                    const isOnlyOne = isSelected && selectedAccountIds.length === 1;
+                    
+                    return (
+                      <div key={account.id} className="flex items-start space-x-3">
+                        <Checkbox
+                          id={`account-dev-${account.id}`}
+                          checked={isSelected}
+                          onCheckedChange={() => handleToggleAccount(account.id)}
+                          disabled={isOnlyOne}
+                        />
+                        <label
+                          htmlFor={`account-dev-${account.id}`}
+                          className={`text-sm leading-none cursor-pointer flex-1 ${isOnlyOne ? 'text-muted-foreground' : ''}`}
+                        >
+                          <div className="font-medium">{account.name}</div>
+                        </label>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </PopoverContent>
