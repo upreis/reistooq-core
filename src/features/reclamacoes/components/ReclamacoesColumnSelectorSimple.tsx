@@ -1,9 +1,9 @@
 /**
  * 🎛️ SELETOR DE COLUNAS SIMPLES - RECLAMAÇÕES
- * Baseado no padrão funcionando de /vendas-canceladas
+ * Com estado pendente e botões Cancelar/Aplicar
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings2 } from 'lucide-react';
+import { Settings2, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 export interface ColumnConfig {
@@ -35,6 +35,21 @@ export function ReclamacoesColumnSelectorSimple({
 }: ColumnSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [pendingColumns, setPendingColumns] = useState<string[]>(visibleColumns);
+
+  // Sincronizar pendingColumns quando visibleColumns mudar externamente
+  useEffect(() => {
+    if (!open) {
+      setPendingColumns(visibleColumns);
+    }
+  }, [visibleColumns, open]);
+
+  // Resetar pendingColumns ao abrir dropdown
+  useEffect(() => {
+    if (open) {
+      setPendingColumns(visibleColumns);
+    }
+  }, [open]);
 
   // Agrupar colunas por grupo
   const groupedColumns = columns.reduce((acc, col) => {
@@ -57,46 +72,51 @@ export function ReclamacoesColumnSelectorSimple({
   }, {} as Record<string, ColumnConfig[]>);
 
   const toggleColumn = (columnId: string) => {
-    const newVisible = visibleColumns.includes(columnId)
-      ? visibleColumns.filter(id => id !== columnId)
-      : [...visibleColumns, columnId];
-    
-    console.log('🎛️ [ColumnSelector] Toggle:', {
-      columnId,
-      wasVisible: visibleColumns.includes(columnId),
-      newCount: newVisible.length,
-      newVisible
-    });
-    
-    onVisibleColumnsChange(newVisible);
+    setPendingColumns(prev => 
+      prev.includes(columnId)
+        ? prev.filter(id => id !== columnId)
+        : [...prev, columnId]
+    );
   };
 
   const toggleGroup = (group: string) => {
     const groupColumns = groupedColumns[group].map(col => col.id);
-    const allVisible = groupColumns.every(id => visibleColumns.includes(id));
+    const allVisible = groupColumns.every(id => pendingColumns.includes(id));
     
-    let newVisible: string[];
     if (allVisible) {
-      // Remover todas do grupo
-      newVisible = visibleColumns.filter(id => !groupColumns.includes(id));
+      setPendingColumns(prev => prev.filter(id => !groupColumns.includes(id)));
     } else {
-      // Adicionar todas do grupo
-      newVisible = [...new Set([...visibleColumns, ...groupColumns])];
+      setPendingColumns(prev => [...new Set([...prev, ...groupColumns])]);
     }
-    
-    onVisibleColumnsChange(newVisible);
   };
 
   const selectAll = () => {
-    onVisibleColumnsChange(columns.map(col => col.id));
+    setPendingColumns(columns.map(col => col.id));
   };
 
   const deselectAll = () => {
-    onVisibleColumnsChange([]);
+    setPendingColumns([]);
   };
 
-  // Contar apenas colunas visíveis que existem nas definições
+  const handleApply = () => {
+    onVisibleColumnsChange(pendingColumns);
+    setOpen(false);
+  };
+
+  const handleCancel = () => {
+    setPendingColumns(visibleColumns);
+    setOpen(false);
+  };
+
+  // Verificar se há mudanças pendentes
+  const hasChanges = JSON.stringify([...pendingColumns].sort()) !== JSON.stringify([...visibleColumns].sort());
+
+  // Contar colunas
   const validVisibleCount = visibleColumns.filter(id => 
+    columns.some(col => col.id === id)
+  ).length;
+
+  const pendingCount = pendingColumns.filter(id => 
     columns.some(col => col.id === id)
   ).length;
 
@@ -108,9 +128,9 @@ export function ReclamacoesColumnSelectorSimple({
           Colunas ({validVisibleCount}/{columns.length})
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-h-[600px] overflow-y-auto">
+      <DropdownMenuContent align="end" className="w-80 max-h-[600px] flex flex-col">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Selecionar Colunas</span>
+          <span>Selecionar Colunas ({pendingCount}/{columns.length})</span>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={selectAll} className="h-6 text-xs">
               Todas
@@ -132,31 +152,56 @@ export function ReclamacoesColumnSelectorSimple({
         
         <DropdownMenuSeparator />
 
-        {Object.entries(filteredGroups).map(([group, cols]) => (
-          <div key={group}>
-            <DropdownMenuLabel className="flex items-center justify-between">
-              <span className="text-xs font-semibold">{group}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toggleGroup(group)}
-                className="h-5 text-xs"
-              >
-                {cols.every(col => visibleColumns.includes(col.id)) ? 'Ocultar' : 'Mostrar'}
-              </Button>
-            </DropdownMenuLabel>
-            {cols.map(col => (
-              <DropdownMenuCheckboxItem
-                key={col.id}
-                checked={visibleColumns.includes(col.id)}
-                onCheckedChange={() => toggleColumn(col.id)}
-              >
-                {col.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-            <DropdownMenuSeparator />
-          </div>
-        ))}
+        <div className="overflow-y-auto flex-1 max-h-[400px]">
+          {Object.entries(filteredGroups).map(([group, cols]) => (
+            <div key={group}>
+              <DropdownMenuLabel className="flex items-center justify-between">
+                <span className="text-xs font-semibold">{group}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleGroup(group)}
+                  className="h-5 text-xs"
+                >
+                  {cols.every(col => pendingColumns.includes(col.id)) ? 'Ocultar' : 'Mostrar'}
+                </Button>
+              </DropdownMenuLabel>
+              {cols.map(col => (
+                <DropdownMenuCheckboxItem
+                  key={col.id}
+                  checked={pendingColumns.includes(col.id)}
+                  onCheckedChange={() => toggleColumn(col.id)}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {col.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+            </div>
+          ))}
+        </div>
+
+        {/* Botões Cancelar/Aplicar */}
+        <div className="p-2 border-t flex gap-2 justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCancel}
+            className="h-8"
+          >
+            <X className="h-3 w-3 mr-1" />
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleApply}
+            disabled={!hasChanges}
+            className="h-8"
+          >
+            <Check className="h-3 w-3 mr-1" />
+            Aplicar
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
