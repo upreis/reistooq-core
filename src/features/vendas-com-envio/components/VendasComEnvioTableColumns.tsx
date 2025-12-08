@@ -498,6 +498,71 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     meta: { headerClassName: 'min-w-[200px]' }
   }),
 
+  // ========== ENDEREÇO ==========
+  columnHelper.display({
+    id: 'city',
+    header: 'Cidade',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const city = orderData?.shipping?.receiver_address?.city?.name;
+      return <span className="text-xs">{city || '-'}</span>;
+    },
+    meta: { headerClassName: 'min-w-[150px]' }
+  }),
+
+  columnHelper.display({
+    id: 'state',
+    header: 'Estado',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const state = orderData?.shipping?.receiver_address?.state?.id || orderData?.shipping?.receiver_address?.state?.name;
+      return <span className="text-xs">{state || '-'}</span>;
+    },
+    meta: { headerClassName: 'min-w-[80px]' }
+  }),
+
+  columnHelper.display({
+    id: 'zip_code',
+    header: 'CEP',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const zipCode = orderData?.shipping?.receiver_address?.zip_code;
+      return <span className="font-mono text-xs">{zipCode || '-'}</span>;
+    },
+    meta: { headerClassName: 'min-w-[100px]' }
+  }),
+
+  columnHelper.display({
+    id: 'address_line',
+    header: 'Endereço',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const address = orderData?.shipping?.receiver_address;
+      if (!address) return '-';
+      const line = [address.street_name, address.street_number].filter(Boolean).join(', ');
+      return <span className="text-xs max-w-[250px] truncate" title={line}>{line || '-'}</span>;
+    },
+    meta: { headerClassName: 'min-w-[250px]' }
+  }),
+
+  // ========== METADADOS ==========
+  columnHelper.display({
+    id: 'fulfilled',
+    header: 'Fulfillment',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const isFulfillment = orderData?.shipping?.logistic_type === 'fulfillment' || 
+                           orderData?.shipping?.logistic?.type === 'fulfillment' ||
+                           orderData?.fulfilled === true;
+      return (
+        <Badge variant={isFulfillment ? 'default' : 'secondary'}>
+          {isFulfillment ? 'Sim' : 'Não'}
+        </Badge>
+      );
+    },
+    meta: { headerClassName: 'min-w-[120px]' }
+  }),
+
   // ========== AÇÕES ==========
   columnHelper.display({
     id: 'actions',
