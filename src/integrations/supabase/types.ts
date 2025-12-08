@@ -3750,6 +3750,98 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_vendas_comenvio: {
+        Row: {
+          buyer_first_name: string | null
+          buyer_id: string | null
+          buyer_last_name: string | null
+          buyer_nickname: string | null
+          created_at: string | null
+          currency_id: string | null
+          date_closed: string | null
+          date_created: string | null
+          id: string
+          integration_account_id: string
+          item_id: string | null
+          item_quantity: number | null
+          item_sku: string | null
+          item_title: string | null
+          last_synced_at: string | null
+          logistic_type: string | null
+          order_data: Json | null
+          order_id: string
+          organization_id: string
+          paid_amount: number | null
+          shipping_id: string | null
+          shipping_status: string | null
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_first_name?: string | null
+          buyer_id?: string | null
+          buyer_last_name?: string | null
+          buyer_nickname?: string | null
+          created_at?: string | null
+          currency_id?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          id?: string
+          integration_account_id: string
+          item_id?: string | null
+          item_quantity?: number | null
+          item_sku?: string | null
+          item_title?: string | null
+          last_synced_at?: string | null
+          logistic_type?: string | null
+          order_data?: Json | null
+          order_id: string
+          organization_id: string
+          paid_amount?: number | null
+          shipping_id?: string | null
+          shipping_status?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_first_name?: string | null
+          buyer_id?: string | null
+          buyer_last_name?: string | null
+          buyer_nickname?: string | null
+          created_at?: string | null
+          currency_id?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          id?: string
+          integration_account_id?: string
+          item_id?: string | null
+          item_quantity?: number | null
+          item_sku?: string | null
+          item_title?: string | null
+          last_synced_at?: string | null
+          logistic_type?: string | null
+          order_data?: Json | null
+          order_id?: string
+          organization_id?: string
+          paid_amount?: number | null
+          shipping_id?: string | null
+          shipping_status?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_vendas_comenvio_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentacoes_estoque: {
         Row: {
           created_at: string
