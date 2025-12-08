@@ -70,7 +70,6 @@ export const AVAILABLE_COLUMNS = [
   { id: 'shipping_deadline', label: 'Prazo', defaultVisible: true },
   { id: 'logistic_type', label: 'Logística', defaultVisible: true },
   { id: 'tracking_number', label: 'Rastreio', defaultVisible: false },
-  { id: 'carrier', label: 'Transportadora', defaultVisible: false },
 ] as const;
 
 // Perfis de colunas pré-definidos
@@ -78,5 +77,5 @@ export const COLUMN_PROFILES = {
   padrao: AVAILABLE_COLUMNS.filter(c => c.defaultVisible).map(c => c.id),
   essencial: ['order_id', 'date_created', 'buyer_nickname', 'total_amount', 'shipping_status'],
   completo: AVAILABLE_COLUMNS.map(c => c.id),
-  logistica: ['order_id', 'shipping_status', 'shipping_deadline', 'logistic_type', 'tracking_number', 'carrier'],
+  logistica: ['order_id', 'shipping_status', 'shipping_deadline', 'logistic_type', 'tracking_number'],
 } as const;
