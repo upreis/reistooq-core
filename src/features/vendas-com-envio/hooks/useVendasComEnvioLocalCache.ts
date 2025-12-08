@@ -21,7 +21,7 @@ interface CacheEntry {
   totalCount: number;
 }
 
-const CACHE_KEY = 'vendas_com_envio_local_cache_v2'; // v2: inclui dados de shipping
+const CACHE_KEY = 'vendas_com_envio_local_cache_v3'; // v3: inclui receiver_name para nome completo
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 
 /**
@@ -117,11 +117,17 @@ export function useVendasComEnvioLocalCache() {
           type: orderData.shipping.logistic.type,
         } : null,
         receiver_address: orderData.shipping.receiver_address ? {
+          receiver_name: orderData.shipping.receiver_address.receiver_name, // Nome completo
+          name: orderData.shipping.receiver_address.name,
           city: orderData.shipping.receiver_address.city,
           state: orderData.shipping.receiver_address.state,
           zip_code: orderData.shipping.receiver_address.zip_code,
           street_name: orderData.shipping.receiver_address.street_name,
           street_number: orderData.shipping.receiver_address.street_number,
+        } : null,
+        // Fallback: destination para nome completo
+        destination: orderData.shipping.destination ? {
+          receiver_name: orderData.shipping.destination.receiver_name,
         } : null,
       } : null;
       
@@ -310,7 +316,8 @@ export function useVendasComEnvioLocalCache() {
 function cleanupOldCaches() {
   try {
     const keysToCheck = [
-      'vendas_com_envio_local_cache_v2',
+      'vendas_com_envio_local_cache_v3',
+      'vendas_com_envio_local_cache_v2', // Versão antiga - limpar
       'vendas_com_envio_local_cache_v1', // Versão antiga - limpar
       'vendas_canceladas_local_cache',
       'reclamacoes_local_cache',
@@ -345,7 +352,8 @@ function emergencyCleanup() {
     
     // Coletar todos os caches do sistema
     const cacheKeys = [
-      'vendas_com_envio_local_cache_v2',
+      'vendas_com_envio_local_cache_v3',
+      'vendas_com_envio_local_cache_v2', // Versão antiga - limpar
       'vendas_com_envio_local_cache_v1', // Versão antiga - limpar
       'vendas_canceladas_local_cache',
       'reclamacoes_local_cache',
