@@ -51,41 +51,8 @@ export const VendasComEnvioTableNew = ({
 }: VendasComEnvioTableNewProps) => {
   const totalPages = Math.ceil(total / itemsPerPage);
 
-  // 🗺️ MAPEAMENTO: keys do ColumnManager → IDs reais das colunas
-  const KEY_TO_COLUMN_ID_MAP: Record<string, string> = {
-    // Básico
-    'order_id': 'order_id',
-    'empresa': 'account_name',
-    'marketplace': 'marketplace',
-    'data_compra': 'date_created',
-    'status': 'status',
-    'analise': 'status_analise',
-    
-    // Comprador
-    'comprador': 'buyer_name',
-    'cpf_cnpj': 'buyer_id',
-    
-    // Produtos
-    'produto': 'item_title',
-    'quantidade': 'quantity',
-    
-    // Financeiro
-    'valor_total': 'total_amount',
-    'valor_produto': 'paid_amount',
-    'frete': 'shipping_cost',
-    'taxas_ml': 'sale_fee',
-    'lucro': 'profit',
-    
-    // Envio
-    'tipo_logistico': 'logistic_type',
-    'status_envio': 'shipping_status',
-    'prazo_envio': 'estimated_delivery',
-    'transportadora': 'tracking_method',
-    
-    // Mapeamento
-    'sku_mapeado': 'seller_sku',
-    'status_mapeamento': 'mapping_status',
-  };
+  // 🗺️ MAPEAMENTO COMPLETO: keys do config são iguais aos IDs das colunas
+  // Apenas pass-through direto - nenhuma tradução necessária pois config usa mesmas keys
 
   // Criar TODAS as colunas com contexto
   const allColumns = useMemo(() => {
@@ -97,19 +64,15 @@ export const VendasComEnvioTableNew = ({
   }, [onStatusChange, onOpenAnotacoes, anotacoes]);
 
   // 🎯 FILTRAR colunas baseado em visibleColumnKeys
+  // Keys do config são iguais aos IDs das colunas - pass-through direto
   const columns = useMemo(() => {
     // Se não há keys definidas, mostrar todas
     if (visibleColumnKeys.length === 0) {
       return allColumns;
     }
     
-    // Converter keys para column IDs reais usando mapeamento
-    const mappedIds = visibleColumnKeys
-      .map(key => KEY_TO_COLUMN_ID_MAP[key] || key)
-      .filter(Boolean);
-    
-    // Filtrar apenas colunas visíveis
-    const filtered = allColumns.filter(col => mappedIds.includes(col.id as string));
+    // Filtrar apenas colunas visíveis (keys = column IDs)
+    const filtered = allColumns.filter(col => visibleColumnKeys.includes(col.id as string));
     
     return filtered;
   }, [allColumns, visibleColumnKeys]);

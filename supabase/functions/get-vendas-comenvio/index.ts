@@ -18,6 +18,85 @@ const corsHeaders = {
 const CACHE_TTL_MINUTES = 5;
 const ORDERS_PER_PAGE = 50;
 const MAX_PAGES = 10;
+const ENRICHMENT_BATCH_SIZE = 10; // Processar 10 shipments por vez
+
+// 🚚 Função de enriquecimento de shipping detalhado
+async function enrichWithShippingDetails(
+  orders: any[], 
+  accessToken: string, 
+  cid: string
+): Promise<any[]> {
+  const ordersWithShipping = orders.filter(o => o.shipping_id);
+  
+  if (ordersWithShipping.length === 0) {
+    console.log(`[get-vendas-comenvio:${cid}] ℹ️ No orders with shipping to enrich`);
+    return orders;
+  }
+
+  console.log(`[get-vendas-comenvio:${cid}] 🚚 Enriching ${ordersWithShipping.length} orders with shipping details...`);
+
+  // Processar em batches para evitar rate limiting
+  const enrichedMap = new Map<string, any>();
+  
+  for (let i = 0; i < ordersWithShipping.length; i += ENRICHMENT_BATCH_SIZE) {
+    const batch = ordersWithShipping.slice(i, i + ENRICHMENT_BATCH_SIZE);
+    
+    const batchResults = await Promise.all(
+      batch.map(async (order) => {
+        try {
+          const shipmentId = order.shipping_id;
+          const response = await fetch(
+            `https://api.mercadolibre.com/shipments/${shipmentId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+
+          if (response.ok) {
+            const shippingData = await response.json();
+            return { orderId: order.order_id, shippingData };
+          }
+        } catch (error) {
+          console.warn(`[get-vendas-comenvio:${cid}] ⚠️ Failed to enrich shipping ${order.shipping_id}`);
+        }
+        return { orderId: order.order_id, shippingData: null };
+      })
+    );
+
+    batchResults.forEach(result => {
+      if (result.shippingData) {
+        enrichedMap.set(result.orderId, result.shippingData);
+      }
+    });
+  }
+
+  console.log(`[get-vendas-comenvio:${cid}] ✅ Enriched ${enrichedMap.size} shipments`);
+
+  // Merge shipping data into orders
+  return orders.map(order => {
+    const shippingDetails = enrichedMap.get(order.order_id);
+    if (!shippingDetails) return order;
+
+    // Atualizar order_data com shipping completo
+    const updatedOrderData = {
+      ...order.order_data,
+      shipping: shippingDetails
+    };
+
+    return {
+      ...order,
+      order_data: updatedOrderData,
+      // Atualizar campos diretos também
+      shipping_status: shippingDetails.status || order.shipping_status,
+      logistic_type: shippingDetails.logistic_type || order.logistic_type,
+      tracking_number: shippingDetails.tracking_number || order.tracking_number,
+      carrier: shippingDetails.tracking_method || shippingDetails.carrier?.name || order.carrier,
+    };
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -328,13 +407,59 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 💾 ETAPA 3: Salvar no cache (write-through)
-    if (allOrders.length > 0) {
-      console.log(`[get-vendas-comenvio:${cid}] 💾 Saving ${allOrders.length} orders to cache...`);
+    // 🚚 ETAPA 2.5: Enriquecer com dados detalhados de shipping
+    // Precisamos do token de cada conta - vamos processar por conta
+    let enrichedOrders = allOrders;
+    
+    // Obter tokens únicos por account_id
+    const accountTokens = new Map<string, string>();
+    for (const accountId of accountIds) {
+      try {
+        const { data: secretRow } = await supabaseAdmin
+          .from('integration_secrets')
+          .select('simple_tokens, use_simple')
+          .eq('integration_account_id', accountId)
+          .eq('provider', 'mercadolivre')
+          .maybeSingle();
+        
+        if (secretRow?.use_simple && secretRow?.simple_tokens) {
+          const simpleTokensStr = secretRow.simple_tokens as string;
+          if (simpleTokensStr.startsWith('SALT2024::')) {
+            const base64Data = simpleTokensStr.replace('SALT2024::', '');
+            const jsonStr = atob(base64Data);
+            const tokensData = JSON.parse(jsonStr);
+            accountTokens.set(accountId, tokensData.access_token || '');
+          }
+        }
+      } catch (e) {
+        console.warn(`[get-vendas-comenvio:${cid}] ⚠️ Failed to get token for enrichment: ${accountId}`);
+      }
+    }
+
+    // Enriquecer pedidos por conta
+    for (const [accountId, token] of accountTokens.entries()) {
+      if (!token) continue;
+      
+      const ordersForAccount = enrichedOrders.filter(o => o.integration_account_id === accountId);
+      if (ordersForAccount.length === 0) continue;
+      
+      const enriched = await enrichWithShippingDetails(ordersForAccount, token, cid);
+      
+      // Substituir no array
+      enrichedOrders = enrichedOrders.map(order => {
+        if (order.integration_account_id !== accountId) return order;
+        const enrichedOrder = enriched.find(e => e.order_id === order.order_id);
+        return enrichedOrder || order;
+      });
+    }
+
+    // 💾 ETAPA 3: Salvar no cache (write-through) - com dados enriquecidos
+    if (enrichedOrders.length > 0) {
+      console.log(`[get-vendas-comenvio:${cid}] 💾 Saving ${enrichedOrders.length} enriched orders to cache...`);
 
       const { error: upsertError } = await supabaseAdmin
         .from('ml_vendas_comenvio')
-        .upsert(allOrders, {
+        .upsert(enrichedOrders, {
           onConflict: 'order_id,integration_account_id',
           ignoreDuplicates: false
         });
@@ -342,12 +467,12 @@ Deno.serve(async (req) => {
       if (upsertError) {
         console.error(`[get-vendas-comenvio:${cid}] ⚠️ Cache save error:`, upsertError);
       } else {
-        console.log(`[get-vendas-comenvio:${cid}] ✅ Cache updated`);
+        console.log(`[get-vendas-comenvio:${cid}] ✅ Cache updated with enriched data`);
       }
     }
 
     // 📤 Aplicar filtros finais
-    let filteredOrders = allOrders;
+    let filteredOrders = enrichedOrders;
 
     if (shipping_status && shipping_status !== 'all') {
       const statusArray = Array.isArray(shipping_status) ? shipping_status : [shipping_status];
