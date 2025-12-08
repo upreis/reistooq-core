@@ -41,7 +41,7 @@ export function useVendasComEnvioFilters() {
       setPendingFilters(urlFilters);
       setAppliedFilters(urlFilters);
     }
-  }, []);
+  }, [searchParams, appliedFilters, setAppliedFilters]);
 
   // Atualizar URL quando filtros aplicados mudam (com debounce)
   useEffect(() => {
