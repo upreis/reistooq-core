@@ -47,6 +47,7 @@ export function VendasComEnvioPage() {
     isFetching,
     appliedFilters,
     setAppliedFilters,
+    setShouldFetch,
   } = useVendasComEnvioStore();
 
   const {
@@ -169,10 +170,10 @@ export function VendasComEnvioPage() {
     applyFilters();
   }, [applyFilters]);
 
-  // Handler para cancelar busca
+  // Handler para cancelar busca - reseta shouldFetch para parar polling
   const handleCancelarBusca = useCallback(() => {
-    // Apenas para feedback visual, não faz nada real
-  }, []);
+    setShouldFetch(false);
+  }, [setShouldFetch]);
 
   if (isLoadingAccounts) {
     return (
@@ -248,9 +249,13 @@ export function VendasComEnvioPage() {
         
         {/* Tabela */}
         <div className="px-4 md:px-6 mt-4 relative">
-          {isFetching && vendas.length === 0 && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          {/* Overlay de loading - aparece SEMPRE que está buscando */}
+          {isFetching && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md min-h-[200px]">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">Buscando vendas...</span>
+              </div>
             </div>
           )}
           
