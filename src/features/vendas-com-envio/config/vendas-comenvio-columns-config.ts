@@ -342,56 +342,7 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Substatus do envio',
     width: 120
   },
-  {
-    key: 'shipping_method',
-    label: 'Método Envio',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Método de envio',
-    width: 150
-  },
-  {
-    key: 'tracking_number',
-    label: 'Código Rastreio',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Código de rastreamento',
-    width: 200
-  },
-  {
-    key: 'tracking_method',
-    label: 'Transportadora',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Transportadora responsável',
-    width: 150
-  },
-  {
-    key: 'estimated_delivery',
-    label: 'Previsão Entrega',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data prevista de entrega',
-    width: 150
-  },
-  {
-    key: 'status_history',
-    label: 'Histórico Status',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Histórico de status do envio',
-    width: 120
-  },
+  // Colunas removidas: shipping_method, estimated_delivery, status_history
 
   // ====== ENDEREÇO ======
   {
@@ -446,26 +397,7 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Indica se é fulfillment',
     width: 120
   },
-  {
-    key: 'mediations',
-    label: 'Mediações',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Número de mediações',
-    width: 120
-  },
-  {
-    key: 'dimensions',
-    label: 'Dimensões Pacote',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Dimensões do pacote',
-    width: 150
-  },
+  // Colunas removidas: mediations, dimensions
 
   // ====== AÇÕES ======
   {
