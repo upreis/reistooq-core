@@ -4,12 +4,15 @@ import { VENDAS_COMENVIO_COLUMN_DEFINITIONS, VENDAS_COMENVIO_DEFAULT_PROFILES, V
 import { loadColumnPreferences, createDebouncedSave } from '@/core/columns';
 
 const STORAGE_KEY = 'vendas-com-envio-column-preferences';
-const STORAGE_VERSION = 3; // v3: nomes colunas atualizados
+const STORAGE_VERSION = 4; // v4: removidas 11 colunas
 
 const savePreferences = createDebouncedSave({
   storageKey: STORAGE_KEY,
   version: STORAGE_VERSION,
 }, 500);
+
+// Set de keys válidas para filtrar colunas antigas
+const VALID_COLUMN_KEYS = new Set(VENDAS_COMENVIO_COLUMN_DEFINITIONS.map(col => col.key));
 
 const getInitialState = (): ColumnState => {
   const stored = loadColumnPreferences({
@@ -18,9 +21,15 @@ const getInitialState = (): ColumnState => {
   });
   
   if (stored?.visibleColumns && stored.columnOrder) {
+    // Filtra apenas colunas que ainda existem
+    const filteredVisible = new Set(
+      [...stored.visibleColumns].filter(key => VALID_COLUMN_KEYS.has(key))
+    );
+    const filteredOrder = stored.columnOrder.filter(key => VALID_COLUMN_KEYS.has(key));
+    
     return {
-      visibleColumns: stored.visibleColumns,
-      columnOrder: stored.columnOrder,
+      visibleColumns: filteredVisible,
+      columnOrder: filteredOrder,
       activeProfile: stored.activeProfile || 'standard',
       customProfiles: stored.customProfiles || [],
     };
