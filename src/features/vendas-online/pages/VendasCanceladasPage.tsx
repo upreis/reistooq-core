@@ -140,7 +140,7 @@ export function VendasCanceladasPage() {
   // 🚀 COMBO 2.1: RESTAURAR CACHE LOCAL na montagem (INSTANTÂNEO)
   useEffect(() => {
     // Prioridade 1: Cache local (instantâneo)
-    if (localCache.hasCachedData && localCache.cachedData) {
+    if (localCache.hasCachedData && localCache.cachedData && localCache.cachedData.length > 0) {
       console.log('⚡ [VENDAS] Restaurando dados do cache LOCAL (instantâneo):', {
         vendas: localCache.cachedData.length,
         idade: localCache.cacheAge + ' min'
@@ -164,7 +164,7 @@ export function VendasCanceladasPage() {
         setItemsPerPage(cached.itemsPerPage);
       }
     }
-  }, [localCache.hasCachedData, persistentCache.isStateLoaded]);
+  }, [localCache.hasCachedData, localCache.cachedData, persistentCache.isStateLoaded]);
   
   // ✅ AUTO-SELECIONAR CONTAS na primeira visita
   useEffect(() => {
@@ -241,11 +241,25 @@ export function VendasCanceladasPage() {
         event.type === 'updated' &&
         event.query.state.status === 'success'
       ) {
-        // ✅ ENRIQUECER COM account_name antes de salvar cache
-        const ordersEnriquecidos = orders.map(order => ({
+        // 🔧 BUG FIX: Capturar dados DIRETAMENTE da query (não do store que pode estar desatualizado)
+        const queryData = event.query.state.data as any;
+        const freshOrders = queryData?.orders || [];
+        
+        if (freshOrders.length === 0) {
+          console.warn('⚠️ [VENDAS] Query completou mas sem dados para salvar');
+          setIsManualSearching(false);
+          setShouldFetch(false);
+          unsubscribe();
+          return;
+        }
+        
+        // ✅ ENRIQUECER COM account_name usando dados FRESCOS da query
+        const ordersEnriquecidos = freshOrders.map((order: any) => ({
           ...order,
-          account_name: accountsMap.get((order as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
+          account_name: accountsMap.get(order.integration_account_id || filters.selectedAccounts[0])?.name || '-'
         }));
+        
+        console.log('💾 [VENDAS] Salvando', ordersEnriquecidos.length, 'vendas no cache local');
         
         // 🚀 COMBO 2.1: Salvar no cache LOCAL (novo hook)
         localCache.saveToCache(
