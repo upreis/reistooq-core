@@ -1,7 +1,6 @@
 /**
  * 📦 VENDAS COM ENVIO - Hook de Dados
- * 🚀 COMBO 2.1: Usa mesma infraestrutura de /vendas-canceladas (ml_orders + unified-ml-orders)
- * Filtra por shipping_status: ready_to_ship, pending, handling
+ * 🚀 COMBO 2.1: Usa tabela dedicada ml_vendas_comenvio + unified-ml-orders Edge Function
  */
 
 import { useCallback, useEffect, useRef } from 'react';
@@ -71,12 +70,12 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
     const dateFromISO = dateFrom.toISOString().split('T')[0];
     const dateToISO = now.toISOString().split('T')[0];
 
-    console.log('[useVendasComEnvioData] Buscando vendas de ml_orders:', {
+    console.log('[useVendasComEnvioData] Buscando vendas de ml_vendas_comenvio:', {
       accounts: accountsToUse.length,
       periodo: appliedFilters.periodo,
       dateFrom: dateFromISO,
       dateTo: dateToISO,
-      shippingStatus: SHIPPING_STATUS_WITH_PENDING,
+      shippingStatus: appliedFilters.shippingStatus,
     });
 
     // Paginação
@@ -87,16 +86,15 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
       ? [appliedFilters.shippingStatus] 
       : SHIPPING_STATUS_WITH_PENDING;
 
-    // 🔧 BUSCAR DE ml_orders (mesma tabela de /vendas-canceladas)
-    // Usando fetch direto para evitar erro TypeScript de type instantiation
+    // 🔧 BUSCAR DE ml_vendas_comenvio (tabela dedicada)
     const { data, error: queryError, count } = await (supabase
-      .from('ml_orders')
+      .from('ml_vendas_comenvio')
       .select('*', { count: 'exact' }) as any)
       .in('integration_account_id', accountsToUse)
-      .gte('order_date', dateFromISO)
-      .lte('order_date', dateToISO)
+      .gte('date_created', dateFromISO)
+      .lte('date_created', dateToISO)
       .in('shipping_status', statusToFilter)
-      .order('order_date', { ascending: false })
+      .order('date_created', { ascending: false })
       .range(offset, offset + appliedFilters.itemsPerPage - 1);
 
     if (queryError) {
@@ -106,9 +104,9 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
 
     console.log('[useVendasComEnvioData] Dados brutos:', data?.length, 'registros');
 
-    // Mapear dados de ml_orders para VendaComEnvio
+    // Mapear dados de ml_vendas_comenvio para VendaComEnvio
     const orders: VendaComEnvio[] = (data || []).map((row: any) => {
-      // ml_orders armazena order_data como JSONB com dados completos do ML
+      // Dados completos do pedido estão em order_data JSONB
       const orderData = row.order_data || {};
       const shipping = orderData.shipping || {};
       const buyer = orderData.buyer || {};
@@ -116,51 +114,65 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
 
       return {
         id: row.id,
-        order_id: row.order_id?.toString() || orderData.id?.toString() || '',
+        order_id: row.order_id || '',
         integration_account_id: row.integration_account_id,
         organization_id: row.organization_id,
-        account_name: row.account_name || null,
+        account_name: null, // Enriquecido depois se necessário
         
-        // Status
-        order_status: row.order_status || orderData.status || 'unknown',
+        // Status (do row ou order_data)
+        order_status: row.status || orderData.status || 'unknown',
         shipping_status: row.shipping_status || shipping.status || 'unknown',
         payment_status: orderData.payments?.[0]?.status || 'unknown',
         
         // Datas
-        date_created: row.order_date || orderData.date_created || '',
-        date_closed: orderData.date_closed || null,
+        date_created: row.date_created || '',
+        date_closed: row.date_closed || null,
         shipping_deadline: shipping.lead_time?.shipping_deadline || null,
         
-        // Comprador
-        buyer_id: buyer.id || null,
-        buyer_nickname: buyer.nickname || null,
-        buyer_name: [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || null,
+        // Comprador (do row ou order_data)
+        buyer_id: row.buyer_id || buyer.id || null,
+        buyer_nickname: row.buyer_nickname || buyer.nickname || null,
+        buyer_name: row.buyer_first_name && row.buyer_last_name
+          ? `${row.buyer_first_name} ${row.buyer_last_name}`
+          : [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || null,
         
         // Valores
-        total_amount: row.total_amount || orderData.total_amount || 0,
-        currency_id: orderData.currency_id || 'BRL',
+        total_amount: Number(row.total_amount) || orderData.total_amount || 0,
+        currency_id: row.currency_id || 'BRL',
         
         // Envio
-        shipment_id: shipping.id?.toString() || null,
-        logistic_type: shipping.logistic_type || null,
+        shipment_id: row.shipping_id || null,
+        logistic_type: row.logistic_type || shipping.logistic_type || null,
         tracking_number: shipping.tracking_number || null,
         carrier: shipping.carrier_info?.name || null,
         
-        // Itens
-        items: items.map((item: any) => ({
-          id: item.item?.id || '',
-          title: item.item?.title || '',
-          quantity: item.quantity || 0,
-          unit_price: item.unit_price || 0,
-          sku: item.item?.seller_sku || null,
-          variation_id: item.item?.variation_id?.toString() || null,
-          variation_attributes: (item.item?.variation_attributes || []).map((attr: any) => ({
-            name: attr.name,
-            value: attr.value_name
-          }))
-        })),
-        items_count: items.length,
-        items_quantity: items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0),
+        // Itens (do order_data ou row)
+        items: items.length > 0 
+          ? items.map((item: any) => ({
+              id: item.item?.id || '',
+              title: item.item?.title || '',
+              quantity: item.quantity || 0,
+              unit_price: item.unit_price || 0,
+              sku: item.item?.seller_sku || null,
+              variation_id: item.item?.variation_id?.toString() || null,
+              variation_attributes: (item.item?.variation_attributes || []).map((attr: any) => ({
+                name: attr.name,
+                value: attr.value_name
+              }))
+            }))
+          : [{
+              id: row.item_id || '',
+              title: row.item_title || '',
+              quantity: row.item_quantity || 0,
+              unit_price: 0,
+              sku: row.item_sku || null,
+              variation_id: null,
+              variation_attributes: []
+            }],
+        items_count: items.length || 1,
+        items_quantity: items.length > 0 
+          ? items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+          : (row.item_quantity || 0),
         
         // Dados completos
         order_data: orderData,
