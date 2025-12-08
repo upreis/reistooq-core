@@ -335,7 +335,11 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
       const buyer = orderData?.buyer;
-      return buyer?.nickname || buyer?.first_name || row.original.buyer_nickname || row.original.buyer_name || '-';
+      // Priorizar nome completo (first_name + last_name) igual /devolucoesdevenda
+      const fullName = buyer?.first_name && buyer?.last_name 
+        ? `${buyer.first_name} ${buyer.last_name}`.trim()
+        : buyer?.first_name || null;
+      return fullName || row.original.buyer_name || buyer?.nickname || row.original.buyer_nickname || '-';
     },
     meta: { headerClassName: 'min-w-[150px]' }
   }),
