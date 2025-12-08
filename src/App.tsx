@@ -155,8 +155,8 @@ function App() {
                     {/* Reclamações */}
                     <Route path="reclamacoes" element={<Reclamacoes />} />
                     
-                    {/* De-Para e Alertas */}
-                    <Route path="de-para" element={<DePara />} />
+                    {/* De-Para redirect e Alertas */}
+                    <Route path="de-para" element={<Navigate to="/estoque/de-para" replace />} />
                     <Route path="alertas" element={<Alertas />} />
                     
                     {/* Compras */}

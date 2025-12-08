@@ -5,6 +5,7 @@ import { Routes, Route } from "react-router-dom";
 import ControleEstoquePage from "./estoque/ControleEstoquePage";
 import ComposicoesUnificadasPage from "./estoque/ComposicoesUnificadasPage";
 import HistoricoMovimentacoesPage from "./estoque/HistoricoMovimentacoesPage";
+import DePara from "./DePara";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 
 const EstoqueContent = () => {
@@ -23,6 +24,7 @@ const EstoqueContent = () => {
     >
       <Routes>
         <Route index element={<ControleEstoquePage />} />
+        <Route path="de-para" element={<DePara />} />
         <Route path="composicoes" element={<ComposicoesUnificadasPage />} />
         <Route path="insumos" element={<ComposicoesUnificadasPage />} />
         <Route path="historico" element={<HistoricoMovimentacoesPage />} />
