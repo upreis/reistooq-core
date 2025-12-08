@@ -7,7 +7,7 @@ export { SimpleSidebarItems } from './components/SimpleSidebarItems';
 export { useActiveRoute } from './hooks/useActiveRoute';
 
 // Utils
-export { getIconComponent, isRouteActive } from './utils/sidebar-utils';
+export { getIconComponent, isRouteActive, hasActiveChildRoute } from './utils/sidebar-utils';
 
 // Types
 export type {

@@ -98,9 +98,9 @@ const SidebarContent = memo(({
   // But expand if hovered
   const isCollapsed = externalIsCollapsed !== undefined ? (externalIsCollapsed && !isSidebarHovered) : false;
   
-  // Memoized isActive function
+  // Memoized isActive function - use exact match for single items
   const isActive = useCallback((path: string) => {
-    return isRouteActive(location.pathname, path);
+    return isRouteActive(location.pathname, path, true);
   }, [location.pathname]);
 
   // Filter navigation by permissions
