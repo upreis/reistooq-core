@@ -197,15 +197,6 @@ export function VendasComEnvioFilters({
 
         {/* Linha 2: Botões */}
         <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClear}
-            className="text-muted-foreground"
-          >
-            <X className="h-4 w-4 mr-1" />
-            Limpar
-          </Button>
 
           <Button
             size="sm"
