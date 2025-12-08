@@ -329,17 +329,12 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     meta: { headerClassName: 'min-w-[100px]' }
   }),
 
-  columnHelper.display({
+  columnHelper.accessor('buyer_name', {
     id: 'buyer_name',
     header: 'Nome Comprador',
     cell: ({ row }) => {
-      const orderData = row.original.order_data as any;
-      const buyer = orderData?.buyer;
-      // Priorizar nome completo (first_name + last_name) igual /devolucoesdevenda
-      const fullName = buyer?.first_name && buyer?.last_name 
-        ? `${buyer.first_name} ${buyer.last_name}`.trim()
-        : buyer?.first_name || null;
-      return fullName || row.original.buyer_name || buyer?.nickname || row.original.buyer_nickname || '-';
+      // buyer_name já vem mapeado do hook com first_name + last_name (igual comprador_nome_completo de /devolucoesdevenda)
+      return row.original.buyer_name || row.original.buyer_nickname || '-';
     },
     meta: { headerClassName: 'min-w-[150px]' }
   }),
