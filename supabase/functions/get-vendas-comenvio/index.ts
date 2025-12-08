@@ -89,9 +89,10 @@ async function enrichWithShippingDetails(
     return {
       ...order,
       order_data: updatedOrderData,
-      // Atualizar campos diretos também
+      // Atualizar campos diretos também (mapeamento igual /vendas-canceladas)
       shipping_status: shippingDetails.status || order.shipping_status,
-      logistic_type: shippingDetails.logistic_type || order.logistic_type,
+      shipping_substatus: shippingDetails.substatus || order.shipping_substatus,
+      logistic_type: shippingDetails.logistic?.type || shippingDetails.logistic_type || order.logistic_type,
       tracking_number: shippingDetails.tracking_number || order.tracking_number,
       carrier: shippingDetails.tracking_method || shippingDetails.carrier?.name || order.carrier,
     };
