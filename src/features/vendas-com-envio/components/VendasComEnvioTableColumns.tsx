@@ -333,8 +333,8 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     id: 'buyer_name',
     header: 'Nome Comprador',
     cell: ({ row }) => {
-      // buyer_name já vem mapeado do hook com first_name + last_name (igual comprador_nome_completo de /devolucoesdevenda)
-      return row.original.buyer_name || row.original.buyer_nickname || '-';
+      // buyer_name já vem mapeado do hook - SEM nickname como fallback
+      return row.original.buyer_name || '-';
     },
     meta: { headerClassName: 'min-w-[150px]' }
   }),
