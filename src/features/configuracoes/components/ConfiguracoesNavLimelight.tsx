@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Zap, Megaphone } from "lucide-react";
+import { Zap, Megaphone, Bell } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const navItems = [
@@ -12,6 +12,11 @@ const navItems = [
     path: "/configuracoes/anuncios",
     label: "Avisos",
     icon: Megaphone,
+  },
+  {
+    path: "/configuracoes/alertas",
+    label: "Alertas",
+    icon: Bell,
   },
 ];
 
