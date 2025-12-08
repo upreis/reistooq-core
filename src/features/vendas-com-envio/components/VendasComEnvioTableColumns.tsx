@@ -455,12 +455,14 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     meta: { headerClassName: 'min-w-[120px]' }
   }),
 
-  columnHelper.accessor('logistic_type', {
+  // ========== TIPO LOGÍSTICO (padrão /vendas-canceladas) ==========
+  columnHelper.display({
     id: 'logistic_type',
     header: 'Tipo Logístico',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      const type = orderData?.shipping?.logistic_type || orderData?.shipping?.logistic?.type || row.original.logistic_type;
+      // Mesmo padrão de /vendas-canceladas: shipping?.logistic?.type || row.original.logistic_type
+      const type = orderData?.shipping?.logistic?.type || row.original.logistic_type;
       return (
         <span className="text-xs">
           {formatLogisticType(type || '-')}
@@ -470,22 +472,26 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     meta: { headerClassName: 'min-w-[120px]' }
   }),
 
+  // ========== SUBSTATUS (padrão /vendas-canceladas) ==========
   columnHelper.display({
     id: 'substatus',
     header: 'Substatus',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      return <span className="text-xs">{formatSubstatus(orderData?.shipping?.substatus || '-')}</span>;
+      // Mesmo padrão de /vendas-canceladas: shipping?.substatus
+      const substatus = orderData?.shipping?.substatus;
+      return <span className="text-xs">{formatSubstatus(substatus || '-')}</span>;
     },
     meta: { headerClassName: 'min-w-[120px]' }
   }),
 
-  // ========== CÓDIGO RASTREIO ==========
+  // ========== CÓDIGO RASTREIO (padrão /vendas-canceladas) ==========
   columnHelper.display({
     id: 'tracking_number',
     header: 'Código Rastreio',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
+      // Mesmo padrão de /vendas-canceladas: shipping?.tracking_number
       const trackingNumber = orderData?.shipping?.tracking_number || row.original.tracking_number;
       return <span className="font-mono text-xs">{trackingNumber || '-'}</span>;
     },
