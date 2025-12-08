@@ -4,7 +4,7 @@ import { VENDAS_COMENVIO_COLUMN_DEFINITIONS, VENDAS_COMENVIO_DEFAULT_PROFILES, V
 import { loadColumnPreferences, createDebouncedSave } from '@/core/columns';
 
 const STORAGE_KEY = 'vendas-com-envio-column-preferences';
-const STORAGE_VERSION = 4; // v4: removidas 11 colunas
+const STORAGE_VERSION = 5; // v5: todas 32 colunas visíveis por padrão
 
 const savePreferences = createDebouncedSave({
   storageKey: STORAGE_KEY,
