@@ -3752,10 +3752,13 @@ export type Database = {
       }
       ml_vendas_comenvio: {
         Row: {
+          account_name: string | null
           buyer_first_name: string | null
           buyer_id: string | null
           buyer_last_name: string | null
+          buyer_name: string | null
           buyer_nickname: string | null
+          carrier: string | null
           created_at: string | null
           currency_id: string | null
           date_closed: string | null
@@ -3766,23 +3769,34 @@ export type Database = {
           item_quantity: number | null
           item_sku: string | null
           item_title: string | null
+          items: Json | null
+          items_count: number | null
+          items_quantity: number | null
           last_synced_at: string | null
           logistic_type: string | null
           order_data: Json | null
           order_id: string
+          order_status: string | null
           organization_id: string
           paid_amount: number | null
+          payment_status: string | null
+          shipment_id: string | null
+          shipping_deadline: string | null
           shipping_id: string | null
           shipping_status: string | null
           status: string | null
           total_amount: number | null
+          tracking_number: string | null
           updated_at: string | null
         }
         Insert: {
+          account_name?: string | null
           buyer_first_name?: string | null
           buyer_id?: string | null
           buyer_last_name?: string | null
+          buyer_name?: string | null
           buyer_nickname?: string | null
+          carrier?: string | null
           created_at?: string | null
           currency_id?: string | null
           date_closed?: string | null
@@ -3793,23 +3807,34 @@ export type Database = {
           item_quantity?: number | null
           item_sku?: string | null
           item_title?: string | null
+          items?: Json | null
+          items_count?: number | null
+          items_quantity?: number | null
           last_synced_at?: string | null
           logistic_type?: string | null
           order_data?: Json | null
           order_id: string
+          order_status?: string | null
           organization_id: string
           paid_amount?: number | null
+          payment_status?: string | null
+          shipment_id?: string | null
+          shipping_deadline?: string | null
           shipping_id?: string | null
           shipping_status?: string | null
           status?: string | null
           total_amount?: number | null
+          tracking_number?: string | null
           updated_at?: string | null
         }
         Update: {
+          account_name?: string | null
           buyer_first_name?: string | null
           buyer_id?: string | null
           buyer_last_name?: string | null
+          buyer_name?: string | null
           buyer_nickname?: string | null
+          carrier?: string | null
           created_at?: string | null
           currency_id?: string | null
           date_closed?: string | null
@@ -3820,16 +3845,24 @@ export type Database = {
           item_quantity?: number | null
           item_sku?: string | null
           item_title?: string | null
+          items?: Json | null
+          items_count?: number | null
+          items_quantity?: number | null
           last_synced_at?: string | null
           logistic_type?: string | null
           order_data?: Json | null
           order_id?: string
+          order_status?: string | null
           organization_id?: string
           paid_amount?: number | null
+          payment_status?: string | null
+          shipment_id?: string | null
+          shipping_deadline?: string | null
           shipping_id?: string | null
           shipping_status?: string | null
           status?: string | null
           total_amount?: number | null
+          tracking_number?: string | null
           updated_at?: string | null
         }
         Relationships: [
