@@ -141,7 +141,7 @@ export default function Header() {
     
     // Pedidos e Vendas
     if (path === '/pedidos') return { icon: pedidosIcon, label: 'Vendas', isImage: true };
-    if (path.startsWith('/vendas-com-envio')) return { icon: pedidosIcon, label: 'Vendas com Envio', isImage: true };
+    if (path.startsWith('/vendas-com-envio')) return { icon: pedidosIcon, label: 'Canceladas com Envio', isImage: true };
     if (path.startsWith('/devolucoesdevenda')) return { icon: devolucoesdevendaIcon, label: 'Devoluções de Venda', isImage: true };
     if (path.startsWith('/reclamacoes')) return { icon: reclamacoesIcon, label: 'Reclamações', isImage: true };
     
