@@ -27,7 +27,7 @@ export const VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS = [
   'status',
   'date_created',
   'total_amount',
-  'buyer_name',
+  'nome_completo',
   'item_title',
   'quantity',
   'seller_sku',
@@ -239,13 +239,23 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100
   },
   {
-    key: 'buyer_name',
-    label: 'Nome Comprador',
+    key: 'nome_completo',
+    label: 'Nome Completo',
     category: 'customer',
     priority: 'important',
     visible: true,
     default: true,
-    description: 'Nome do comprador',
+    description: 'Nome completo do destinatário (igual /pedidos)',
+    width: 180
+  },
+  {
+    key: 'buyer_name',
+    label: 'Nome Comprador',
+    category: 'customer',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Nome do comprador (first_name + last_name)',
     width: 150
   },
 

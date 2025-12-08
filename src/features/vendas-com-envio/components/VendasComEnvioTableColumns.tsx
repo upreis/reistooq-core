@@ -329,6 +329,33 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     meta: { headerClassName: 'min-w-[100px]' }
   }),
 
+  // ========== NOME COMPLETO (padrão /pedidos) ==========
+  columnHelper.display({
+    id: 'nome_completo',
+    header: 'Nome Completo',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      // Mesma lógica de /pedidos: prioriza receiver_name do shipping
+      const fullName = (
+        orderData?.shipping?.receiver_address?.receiver_name ||
+        orderData?.shipping?.receiver_address?.name ||
+        orderData?.shipping?.destination?.receiver_name ||
+        row.original.buyer_name ||
+        ((orderData?.buyer?.first_name || orderData?.buyer?.last_name)
+          ? `${orderData?.buyer?.first_name ?? ''} ${orderData?.buyer?.last_name ?? ''}`.trim()
+          : undefined) ||
+        row.original.buyer_nickname ||
+        orderData?.buyer?.nickname
+      );
+      return (
+        <div className="max-w-xs truncate" title={fullName || ''}>
+          {fullName || '-'}
+        </div>
+      );
+    },
+    meta: { headerClassName: 'min-w-[180px]' }
+  }),
+
   columnHelper.accessor('buyer_name', {
     id: 'buyer_name',
     header: 'Nome Comprador',
