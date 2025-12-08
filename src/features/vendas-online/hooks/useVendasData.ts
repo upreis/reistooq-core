@@ -87,8 +87,9 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     setError
   } = useVendasStore();
 
-  // 🎯 Ref para evitar múltiplas buscas
+  // 🎯 Refs para controle de estado
   const hasFetchedFromAPI = useRef(false);
+  const hasCompletedFirstFetch = useRef(false);
 
   // 🚀 ESTRATÉGIA HÍBRIDA: Consultar cache primeiro (sempre ativo se há contas)
   const cacheQuery = useMLOrdersFromCache({
@@ -141,6 +142,9 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
         allOrders.push(...result.orders);
       }
       
+      // ✅ Marcar que primeira busca foi concluída
+      hasCompletedFirstFetch.current = true;
+      
       return {
         orders: allOrders,
         total: allOrders.length,
@@ -151,8 +155,10 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateOnMount: true, // 🎯 CORREÇÃO: Permitir busca quando key muda
-      dedupingInterval: 30000 // Cache de 30s
+      revalidateOnMount: true,
+      dedupingInterval: 30000,
+      // 🚀 COMBO 2.1: Polling automático de 5 minutos APENAS após busca manual bem-sucedida
+      refreshInterval: hasCompletedFirstFetch.current ? 5 * 60 * 1000 : 0
     }
   );
 
