@@ -18,21 +18,40 @@ export const CATEGORY_LABELS: Record<string, string> = {
   actions: 'Ações'
 };
 
-// Colunas visíveis por padrão
+// Colunas visíveis por padrão - TODAS as 32 colunas
 export const VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS = [
   'status_analise',
   'anotacoes',
   'account_name',
   'order_id',
+  'pack_id',
   'status',
+  'order_type',
   'date_created',
+  'last_updated',
+  'expiration_date',
   'total_amount',
+  'paid_amount',
+  'shipping_cost',
+  'discount',
+  'sale_fee',
+  'payment_status',
+  'list_cost',
   'nome_completo',
   'item_title',
   'quantity',
   'seller_sku',
+  'shipping_id',
   'shipping_status',
   'logistic_type',
+  'substatus',
+  'tracking_number',
+  'city',
+  'state',
+  'zip_code',
+  'address_line',
+  'fulfilled',
+  'actions',
 ];
 
 export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
