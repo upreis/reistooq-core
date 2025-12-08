@@ -110,13 +110,13 @@ export default function Header() {
     
     // Misc
     if (path.startsWith('/historico')) return { icon: historicoIcon, label: 'Histórico', isImage: true };
-    if (path.startsWith('/alertas')) return { icon: alertasIcon, label: 'Alertas', isImage: true };
     if (path.startsWith('/de-para')) return { icon: deParaIcon, label: 'De-Para', isImage: true };
     if (path.startsWith('/scanner')) return { icon: scannerIcon, label: 'Scanner', isImage: true };
     
     // Configurações
     if (path.startsWith('/configuracoes/integracoes')) return { icon: configuracoesIntegracoesIcon, label: 'Configurações / Integrações', isImage: true };
-    if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Anúncios', isImage: true };
+    if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Avisos', isImage: true };
+    if (path.startsWith('/configuracoes/alertas')) return { icon: alertasIcon, label: 'Configurações / Alertas', isImage: true };
     
     // Apps/Ecommerce
     if (path.startsWith('/apps/ecommerce/import')) return { icon: ecommerceImportIcon, label: 'Apps / Ecommerce / Importar', isImage: true };
@@ -149,11 +149,11 @@ export default function Header() {
     // Ferramentas
     if (path.startsWith('/scanner')) return { icon: '📷', label: 'Scanner' };
     if (path.startsWith('/de-para')) return { icon: '🔄', label: 'De-Para' };
-    if (path.startsWith('/alertas')) return { icon: '🔔', label: 'Alertas' };
     
     // Configurações
     if (path.startsWith('/configuracoes/integracoes')) return { icon: '🔌', label: 'Configurações / Integrações' };
     if (path.startsWith('/configuracoes/anuncios')) return { icon: '📢', label: 'Configurações / Avisos' };
+    if (path.startsWith('/configuracoes/alertas')) return { icon: '🔔', label: 'Configurações / Alertas' };
     if (path.startsWith('/configuracoes')) return { icon: '⚙️', label: 'Configurações' };
     if (path.startsWith('/historico')) return { icon: '📜', label: 'Histórico' };
     

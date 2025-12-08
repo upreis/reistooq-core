@@ -170,12 +170,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'ArrowLeftRight' 
       },
       { 
-        id: 'alertas', 
-        label: 'Alertas', 
-        path: '/alertas', 
-        icon: 'Bell'
-      },
-      { 
         id: 'historico', 
         label: 'Histórico', 
         path: '/historico', 
@@ -198,6 +192,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             id: 'anuncios', 
             label: 'Avisos', 
             path: '/configuracoes/anuncios', 
+            icon: 'Megaphone' 
+          },
+          { 
+            id: 'alertas', 
+            label: 'Alertas', 
+            path: '/configuracoes/alertas',
             icon: 'Megaphone' 
           }
         ]

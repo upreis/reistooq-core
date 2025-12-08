@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Zap, Megaphone } from "lucide-react";
+import { Zap, Megaphone, Bell } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -13,6 +13,11 @@ const navItems = [
     path: "/configuracoes/anuncios", 
     label: "Avisos",
     icon: Megaphone,
+  },
+  {
+    path: "/configuracoes/alertas", 
+    label: "Alertas",
+    icon: Bell,
   },
 ];
 
