@@ -1,21 +1,25 @@
 /**
  * 📦 VENDAS COM ENVIO - Hook de Dados
- * Busca dados da API com React Query (Combo 2.1 - busca manual)
+ * 🚀 COMBO 2.1: Usa mesma infraestrutura de /vendas-canceladas (ml_orders + unified-ml-orders)
+ * Filtra por shipping_status: ready_to_ship, pending, handling
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useVendasComEnvioStore } from '../store/useVendasComEnvioStore';
 import { QUERY_KEY_BASE, STALE_TIME_MS, GC_TIME_MS } from '../config';
-import type { VendaComEnvio, VendasComEnvioFilters } from '../types';
+import type { VendaComEnvio } from '../types';
+
+// Status que indicam "com envio pendente"
+const SHIPPING_STATUS_WITH_PENDING = ['ready_to_ship', 'pending', 'handling'];
 
 interface UseVendasComEnvioDataOptions {
   accounts: Array<{ id: string; nome_conta: string }>;
 }
 
 export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions) {
-  const queryClient = useQueryClient();
+  const hasFetchedFromAPIRef = useRef(false);
   const previousFiltersRef = useRef<string | null>(null);
   
   const {
@@ -47,7 +51,7 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
     appliedFilters.selectedAccounts.slice().sort().join(','),
   ];
 
-  // Função de fetch
+  // Função de fetch - usa ml_orders (mesma tabela de /vendas-canceladas)
   const fetchVendas = useCallback(async (): Promise<{ orders: VendaComEnvio[]; total: number }> => {
     // Validar contas
     const accountsToUse = appliedFilters.selectedAccounts.length > 0
@@ -67,75 +71,113 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
     const dateFromISO = dateFrom.toISOString().split('T')[0];
     const dateToISO = now.toISOString().split('T')[0];
 
-    console.log('[useVendasComEnvioData] Buscando vendas:', {
+    console.log('[useVendasComEnvioData] Buscando vendas de ml_orders:', {
       accounts: accountsToUse.length,
       periodo: appliedFilters.periodo,
       dateFrom: dateFromISO,
       dateTo: dateToISO,
+      shippingStatus: SHIPPING_STATUS_WITH_PENDING,
     });
-
-    // Buscar do Supabase (tabela ml_vendas_comenvio)
-    let query = supabase
-      .from('ml_vendas_comenvio')
-      .select('*', { count: 'exact' })
-      .in('integration_account_id', accountsToUse)
-      .gte('date_created', dateFromISO)
-      .lte('date_created', dateToISO)
-      .order('date_created', { ascending: false });
-
-    // Filtro de status
-    if (appliedFilters.shippingStatus !== 'all') {
-      query = query.eq('shipping_status', appliedFilters.shippingStatus);
-    }
 
     // Paginação
     const offset = (appliedFilters.currentPage - 1) * appliedFilters.itemsPerPage;
-    query = query.range(offset, offset + appliedFilters.itemsPerPage - 1);
+    
+    // Determinar status a filtrar
+    const statusToFilter = appliedFilters.shippingStatus !== 'all' 
+      ? [appliedFilters.shippingStatus] 
+      : SHIPPING_STATUS_WITH_PENDING;
 
-    const { data, error: queryError, count } = await query;
+    // 🔧 BUSCAR DE ml_orders (mesma tabela de /vendas-canceladas)
+    // Usando fetch direto para evitar erro TypeScript de type instantiation
+    const { data, error: queryError, count } = await (supabase
+      .from('ml_orders')
+      .select('*', { count: 'exact' }) as any)
+      .in('integration_account_id', accountsToUse)
+      .gte('order_date', dateFromISO)
+      .lte('order_date', dateToISO)
+      .in('shipping_status', statusToFilter)
+      .order('order_date', { ascending: false })
+      .range(offset, offset + appliedFilters.itemsPerPage - 1);
 
     if (queryError) {
       console.error('[useVendasComEnvioData] Erro na query:', queryError);
       throw new Error(queryError.message);
     }
 
-    // Mapear dados para o tipo correto
-    const orders: VendaComEnvio[] = (data || []).map((row: any) => ({
-      id: row.id,
-      order_id: row.order_id,
-      integration_account_id: row.integration_account_id,
-      organization_id: row.organization_id,
-      account_name: row.account_name,
-      order_status: row.order_status,
-      shipping_status: row.shipping_status,
-      payment_status: row.payment_status,
-      date_created: row.date_created,
-      date_closed: row.date_closed,
-      shipping_deadline: row.shipping_deadline,
-      buyer_id: row.buyer_id,
-      buyer_nickname: row.buyer_nickname,
-      buyer_name: row.buyer_name,
-      total_amount: row.total_amount,
-      currency_id: row.currency_id,
-      shipment_id: row.shipment_id,
-      logistic_type: row.logistic_type,
-      tracking_number: row.tracking_number,
-      carrier: row.carrier,
-      items: row.items || [],
-      items_count: row.items_count || 0,
-      items_quantity: row.items_quantity || 0,
-      order_data: row.order_data || {},
-      last_synced_at: row.last_synced_at,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-    }));
+    console.log('[useVendasComEnvioData] Dados brutos:', data?.length, 'registros');
 
-    console.log('[useVendasComEnvioData] Vendas encontradas:', orders.length, 'de', count);
+    // Mapear dados de ml_orders para VendaComEnvio
+    const orders: VendaComEnvio[] = (data || []).map((row: any) => {
+      // ml_orders armazena order_data como JSONB com dados completos do ML
+      const orderData = row.order_data || {};
+      const shipping = orderData.shipping || {};
+      const buyer = orderData.buyer || {};
+      const items = orderData.order_items || [];
+
+      return {
+        id: row.id,
+        order_id: row.order_id?.toString() || orderData.id?.toString() || '',
+        integration_account_id: row.integration_account_id,
+        organization_id: row.organization_id,
+        account_name: row.account_name || null,
+        
+        // Status
+        order_status: row.order_status || orderData.status || 'unknown',
+        shipping_status: row.shipping_status || shipping.status || 'unknown',
+        payment_status: orderData.payments?.[0]?.status || 'unknown',
+        
+        // Datas
+        date_created: row.order_date || orderData.date_created || '',
+        date_closed: orderData.date_closed || null,
+        shipping_deadline: shipping.lead_time?.shipping_deadline || null,
+        
+        // Comprador
+        buyer_id: buyer.id || null,
+        buyer_nickname: buyer.nickname || null,
+        buyer_name: [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || null,
+        
+        // Valores
+        total_amount: row.total_amount || orderData.total_amount || 0,
+        currency_id: orderData.currency_id || 'BRL',
+        
+        // Envio
+        shipment_id: shipping.id?.toString() || null,
+        logistic_type: shipping.logistic_type || null,
+        tracking_number: shipping.tracking_number || null,
+        carrier: shipping.carrier_info?.name || null,
+        
+        // Itens
+        items: items.map((item: any) => ({
+          id: item.item?.id || '',
+          title: item.item?.title || '',
+          quantity: item.quantity || 0,
+          unit_price: item.unit_price || 0,
+          sku: item.item?.seller_sku || null,
+          variation_id: item.item?.variation_id?.toString() || null,
+          variation_attributes: (item.item?.variation_attributes || []).map((attr: any) => ({
+            name: attr.name,
+            value: attr.value_name
+          }))
+        })),
+        items_count: items.length,
+        items_quantity: items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0),
+        
+        // Dados completos
+        order_data: orderData,
+        
+        // Metadados
+        last_synced_at: row.last_synced_at || new Date().toISOString(),
+        created_at: row.created_at || new Date().toISOString(),
+        updated_at: row.updated_at || new Date().toISOString(),
+      };
+    });
+
+    console.log('[useVendasComEnvioData] Vendas mapeadas:', orders.length, 'de', count);
 
     return { orders, total: count || 0 };
   }, [appliedFilters, accounts]);
 
-  // React Query
+  // React Query com Combo 2.1 (busca manual)
   const query = useQuery({
     queryKey,
     queryFn: fetchVendas,
@@ -160,19 +202,19 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
   // Quando dados chegam da API, salvar no store
   useEffect(() => {
     if (query.data && shouldFetch) {
-      console.log('[useVendasComEnvioData] Dados recebidos, salvando no store');
+      console.log('[useVendasComEnvioData] Dados recebidos, salvando no store:', query.data.orders.length);
       setVendas(query.data.orders, query.data.total);
       setHasFetchedFromAPI(true);
       setShouldFetch(false);
       setDataSource('api');
+      hasFetchedFromAPIRef.current = true;
     }
   }, [query.data, shouldFetch, setVendas, setHasFetchedFromAPI, setShouldFetch, setDataSource]);
 
   // Refetch manual
   const refetch = useCallback(() => {
     setShouldFetch(true);
-    queryClient.invalidateQueries({ queryKey: [QUERY_KEY_BASE] });
-  }, [queryClient, setShouldFetch]);
+  }, [setShouldFetch]);
 
   return {
     // Dados do store (cache-first)
