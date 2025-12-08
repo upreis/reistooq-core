@@ -3,8 +3,7 @@
  * Sincroniza pedidos com envio pendente do Mercado Livre
  * Chamada via pg_cron a cada 1 hora ou manualmente
  * 
- * ✅ CORREÇÃO: Usa unified-orders Edge Function para buscar dados
- * (mesmo padrão de ml-claims-auto-sync que usa get-devolucoes-direct)
+ * ✅ CORREÇÃO: Busca token de integration_secrets (mesmo padrão de get-devolucoes-direct)
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
@@ -17,9 +16,58 @@ const corsHeaders = {
 // Configurações
 const DIAS_BUSCA = 30; // Buscar pedidos dos últimos 30 dias
 const MAX_ACCOUNTS_PER_RUN = 20;
+const ML_API_BASE = 'https://api.mercadolibre.com';
+const ORDERS_PER_PAGE = 50;
+const MAX_PAGES = 20; // Máximo 1000 pedidos por conta
 
 // Status de shipping que indicam "com envio pendente"
 const SHIPPING_STATUS_FILTER = ['ready_to_ship', 'pending', 'handling'];
+
+/**
+ * Busca access_token de integration_secrets
+ * (mesmo padrão de get-devolucoes-direct)
+ */
+async function getAccessToken(supabaseAdmin: any, accountId: string): Promise<string | null> {
+  try {
+    const { data: secretRow, error: secretError } = await supabaseAdmin
+      .from('integration_secrets')
+      .select('simple_tokens, use_simple')
+      .eq('integration_account_id', accountId)
+      .eq('provider', 'mercadolivre')
+      .maybeSingle();
+
+    if (secretError || !secretRow) {
+      console.error(`❌ Token não encontrado para conta ${accountId}`);
+      return null;
+    }
+
+    let accessToken = '';
+    if (secretRow?.use_simple && secretRow?.simple_tokens) {
+      try {
+        const simpleTokensStr = secretRow.simple_tokens as string;
+        if (simpleTokensStr.startsWith('SALT2024::')) {
+          const base64Data = simpleTokensStr.replace('SALT2024::', '');
+          const jsonStr = atob(base64Data);
+          const tokensData = JSON.parse(jsonStr);
+          accessToken = tokensData.access_token || '';
+        }
+      } catch (err) {
+        console.error(`❌ Erro ao descriptografar token: ${err}`);
+        return null;
+      }
+    }
+
+    if (!accessToken) {
+      console.error('❌ Token ML indisponível');
+      return null;
+    }
+
+    return accessToken;
+  } catch (error) {
+    console.error('❌ Erro ao buscar token:', error);
+    return null;
+  }
+}
 
 interface MLOrder {
   id: number;
@@ -147,60 +195,97 @@ Deno.serve(async (req) => {
     const now = new Date();
     const dateFrom = new Date(now);
     dateFrom.setDate(dateFrom.getDate() - DIAS_BUSCA);
-    const dateFromISO = dateFrom.toISOString().split('T')[0];
-    const dateToISO = now.toISOString().split('T')[0];
+    const dateFromISO = dateFrom.toISOString();
+    const dateToISO = now.toISOString();
 
     console.log(`📅 Period: ${dateFromISO} to ${dateToISO}`);
 
-    // ETAPA 2: Processar cada conta via unified-orders
+    // ETAPA 2: Processar cada conta
     for (const account of accounts) {
       const accountStartTime = Date.now();
       
       try {
         console.log(`\n🔄 [${account.name || account.account_identifier}] Starting...`);
 
-        // ✅ CORREÇÃO: Chamar unified-orders diretamente (como ml-claims-auto-sync faz com get-devolucoes-direct)
-        console.log(`📡 Calling unified-orders for ${account.name || account.account_identifier}...`);
-        
-        const { data: ordersResponse, error: ordersError } = await supabaseAdmin.functions.invoke(
-          'unified-orders',
-          {
-            body: {
-              integration_account_ids: [account.id],
-              date_from: dateFromISO,
-              date_to: dateToISO,
-              // Buscar todos, vamos filtrar por shipping_status depois
-              limit: 200, // Buscar bastante para filtrar
-              offset: 0
-            }
-          }
-        );
+        // 2.1: Buscar token de acesso de integration_secrets
+        const accessToken = await getAccessToken(supabaseAdmin, account.id);
 
-        if (ordersError) {
-          throw new Error(`Orders fetch failed: ${ordersError.message}`);
+        if (!accessToken) {
+          throw new Error(`Token not found for account ${account.account_identifier}`);
         }
 
-        // unified-orders retorna { orders: [...], total: N }
-        const allOrders = ordersResponse?.orders || ordersResponse?.data || [];
-        
-        console.log(`📊 Received ${allOrders.length} total orders from unified-orders`);
+        console.log(`✅ Token obtido para ${account.name || account.account_identifier}`);
 
-        // Filtrar apenas pedidos com shipping_status desejado
-        const filteredOrders = allOrders.filter((order: any) => {
-          const shippingStatus = order.shipping?.status || order.shipping_status || '';
-          return SHIPPING_STATUS_FILTER.includes(shippingStatus.toLowerCase());
-        });
+        // 2.2: Buscar pedidos do ML com paginação
+        let allOrders: MLOrder[] = [];
+        let offset = 0;
+        let hasMore = true;
+        let pageCount = 0;
 
-        console.log(`📊 Filtered to ${filteredOrders.length} orders with pending shipping`);
+        while (hasMore && pageCount < MAX_PAGES) {
+          // Buscar pedidos com shipping status específicos
+          const searchUrl = new URL(`${ML_API_BASE}/orders/search`);
+          searchUrl.searchParams.set('seller', account.account_identifier);
+          searchUrl.searchParams.set('order.date_created.from', dateFromISO);
+          searchUrl.searchParams.set('order.date_created.to', dateToISO);
+          searchUrl.searchParams.set('offset', offset.toString());
+          searchUrl.searchParams.set('limit', ORDERS_PER_PAGE.toString());
+          searchUrl.searchParams.set('sort', 'date_desc');
+          // Filtrar por status de shipping
+          searchUrl.searchParams.set('shipping.status', SHIPPING_STATUS_FILTER.join(','));
 
-        if (filteredOrders.length === 0) {
+          console.log(`📡 Fetching page ${pageCount + 1} (offset: ${offset})...`);
+
+          const ordersResponse = await fetch(searchUrl.toString(), {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!ordersResponse.ok) {
+            const errorText = await ordersResponse.text();
+            console.error(`❌ ML API error:`, errorText);
+            
+            // Se token expirado, pular esta conta
+            if (ordersResponse.status === 401) {
+              console.log('⚠️ Token expired, skipping account');
+              throw new Error('Token expired');
+            }
+            
+            throw new Error(`ML API error: ${ordersResponse.status}`);
+          }
+
+          const ordersData = await ordersResponse.json();
+          const orders = ordersData.results || [];
+          const paging = ordersData.paging || { total: 0 };
+
+          console.log(`✅ Page ${pageCount + 1}: ${orders.length} orders (total: ${paging.total})`);
+
+          if (orders.length === 0) {
+            hasMore = false;
+          } else {
+            allOrders.push(...orders);
+            offset += ORDERS_PER_PAGE;
+            pageCount++;
+
+            // Verificar se ainda há mais páginas
+            if (offset >= paging.total) {
+              hasMore = false;
+            }
+          }
+        }
+
+        console.log(`📊 Total orders fetched: ${allOrders.length}`);
+
+        if (allOrders.length === 0) {
           console.log(`ℹ️ No orders with pending shipping for ${account.name || account.account_identifier}`);
           results.accounts_synced++;
           continue;
         }
 
         // ETAPA 3: Salvar na tabela ml_vendas_comenvio
-        const ordersToSave = filteredOrders.map((order: any) => {
+        const ordersToSave = allOrders.map((order: MLOrder) => {
           const items = order.order_items || [];
           const firstItem = items[0]?.item || {};
           const shipping = order.shipping || {};
@@ -282,7 +367,7 @@ Deno.serve(async (req) => {
 
         // Atualizar resultados
         results.accounts_synced++;
-        results.total_orders_fetched += filteredOrders.length;
+        results.total_orders_fetched += allOrders.length;
         results.total_orders_saved += savedCount;
 
         const duration = Date.now() - accountStartTime;
@@ -301,7 +386,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ETAPA 4: Limpar pedidos antigos (opcional - remover pedidos com mais de 60 dias ou já entregues)
+    // ETAPA 4: Limpar pedidos antigos ou já entregues
     try {
       const sixtyDaysAgo = new Date();
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
