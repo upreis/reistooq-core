@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar, Notebook } from "lucide-react";
+import { Calendar, Notebook, Scan } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const navItems = [
@@ -12,6 +12,11 @@ const navItems = [
     path: "/aplicativos/notas",
     label: "Notas",
     icon: Notebook,
+  },
+  {
+    path: "/aplicativos/scanner",
+    label: "Scanner",
+    icon: Scan,
   },
 ];
 

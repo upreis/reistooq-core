@@ -41,7 +41,7 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
     { 
       id: 'scanner', 
       label: 'Scanner', 
-      path: '/scanner', 
+      path: '/aplicativos/scanner', 
       icon: QrCode 
     },
   ];

@@ -154,14 +154,14 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Notas', 
             path: '/aplicativos/notas', 
             icon: 'Notebook' 
+          },
+          { 
+            id: 'scanner', 
+            label: 'Scanner', 
+            path: '/aplicativos/scanner', 
+            icon: 'Scan' 
           }
         ]
-      },
-      { 
-        id: 'scanner', 
-        label: 'Scanner', 
-        path: '/scanner', 
-        icon: 'Scan' 
       },
       { 
         id: 'depara', 
