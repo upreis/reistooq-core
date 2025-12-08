@@ -533,7 +533,54 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
       const history = orderData?.shipping?.status_history;
-      if (!history?.length) return '-';
+      
+      // status_history pode ser objeto com datas ou array
+      if (!history) return '-';
+      
+      // Se for objeto com datas (formato do endpoint /shipments/{id})
+      if (typeof history === 'object' && !Array.isArray(history)) {
+        const dates = Object.entries(history)
+          .filter(([key, value]) => value && key.startsWith('date_'))
+          .map(([key, value]) => ({
+            status: key.replace('date_', ''),
+            date: value as string
+          }))
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        if (dates.length === 0) return '-';
+        
+        return (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <History className="h-4 w-4 mr-1" />
+                {dates.length} eventos
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96" align="start">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Histórico de Status</h4>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {dates.map((item, idx) => (
+                    <div key={idx} className="border-l-2 border-primary pl-3 pb-2">
+                      <div className="text-xs font-medium">
+                        {getShippingStatusLabel(item.status)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {formatDateTime(item.date)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        );
+      }
+      
+      // Se for array (formato legado)
+      if (!Array.isArray(history) || history.length === 0) return '-';
+      
       return (
         <Popover>
           <PopoverTrigger asChild>
@@ -571,12 +618,18 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   }),
 
   // ========== ENDEREÇO ==========
+  // Dados de endereço vêm de order_data.shipping.receiver_address (endpoint /shipments/{id})
   columnHelper.display({
     id: 'city',
     header: 'Cidade',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      return orderData?.shipping?.destination?.shipping_address?.city?.name || '-';
+      // Tentar múltiplos caminhos possíveis
+      const city = orderData?.shipping?.receiver_address?.city?.name 
+        || orderData?.shipping?.destination?.shipping_address?.city?.name
+        || orderData?.shipping?.receiver_address?.city
+        || '-';
+      return city;
     },
     meta: { headerClassName: 'min-w-[150px]' }
   }),
@@ -586,7 +639,11 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'Estado',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      return orderData?.shipping?.destination?.shipping_address?.state?.id || '-';
+      const state = orderData?.shipping?.receiver_address?.state?.id
+        || orderData?.shipping?.receiver_address?.state?.name
+        || orderData?.shipping?.destination?.shipping_address?.state?.id
+        || '-';
+      return state;
     },
     meta: { headerClassName: 'min-w-[80px]' }
   }),
@@ -596,9 +653,12 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'CEP',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
+      const zipCode = orderData?.shipping?.receiver_address?.zip_code
+        || orderData?.shipping?.destination?.shipping_address?.zip_code
+        || '-';
       return (
         <span className="font-mono text-xs">
-          {orderData?.shipping?.destination?.shipping_address?.zip_code || '-'}
+          {zipCode}
         </span>
       );
     },
@@ -610,10 +670,18 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     header: 'Endereço',
     cell: ({ row }) => {
       const orderData = row.original.order_data as any;
-      const address = orderData?.shipping?.destination?.shipping_address?.address_line;
+      // Construir endereço a partir de campos disponíveis
+      const receiverAddr = orderData?.shipping?.receiver_address;
+      const address = receiverAddr?.address_line 
+        || receiverAddr?.street_name 
+        || (receiverAddr?.street_name && receiverAddr?.street_number 
+          ? `${receiverAddr.street_name}, ${receiverAddr.street_number}` 
+          : null)
+        || orderData?.shipping?.destination?.shipping_address?.address_line
+        || '-';
       return (
         <div className="max-w-[250px] truncate" title={address}>
-          {address || '-'}
+          {address}
         </div>
       );
     },
