@@ -229,16 +229,6 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== COMPRADOR ======
   {
-    key: 'buyer_id',
-    label: 'ID Comprador',
-    category: 'customer',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'ID do comprador',
-    width: 100
-  },
-  {
     key: 'nome_completo',
     label: 'Nome Completo',
     category: 'customer',
@@ -248,58 +238,8 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Nome completo do destinatário (igual /pedidos)',
     width: 180
   },
-  {
-    key: 'buyer_name',
-    label: 'Nome Comprador',
-    category: 'customer',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Nome do comprador (first_name + last_name)',
-    width: 150
-  },
-  {
-    key: 'buyer_nickname',
-    label: 'Nickname',
-    category: 'customer',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Nickname do comprador no ML',
-    width: 120
-  },
-  {
-    key: 'buyer_email',
-    label: 'Email',
-    category: 'customer',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Email do comprador',
-    width: 180
-  },
-  {
-    key: 'buyer_phone',
-    label: 'Telefone',
-    category: 'customer',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Telefone do comprador',
-    width: 120
-  },
 
   // ====== PRODUTO ======
-  {
-    key: 'item_id',
-    label: 'ID Item',
-    category: 'product',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'ID do item/produto',
-    width: 100
-  },
   {
     key: 'item_title',
     label: 'Título Produto',
@@ -330,36 +270,6 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: true,
     description: 'SKU do produto',
     width: 200
-  },
-  {
-    key: 'category_id',
-    label: 'Categoria',
-    category: 'product',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Categoria do produto',
-    width: 120
-  },
-  {
-    key: 'variation_id',
-    label: 'ID Variação',
-    category: 'product',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'ID da variação do produto',
-    width: 100
-  },
-  {
-    key: 'variation_attributes',
-    label: 'Variação',
-    category: 'product',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Atributos da variação (cor, tamanho)',
-    width: 150
   },
 
   // ====== ENVIO ======
@@ -412,16 +322,6 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Código de rastreamento do envio',
     width: 200
-  },
-  {
-    key: 'tags',
-    label: 'Tags',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tags do pedido/envio',
-    width: 150
   },
   {
     key: 'carrier',
