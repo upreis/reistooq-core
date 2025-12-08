@@ -25,7 +25,7 @@ export const VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS = [
   'account_name',
   'order_id',
   'status',
-  'data_pedido',
+  'date_created',
   'total_amount',
   'nome_completo',
   'item_title',
@@ -118,23 +118,12 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== DATAS ======
   {
-    key: 'data_pedido',
-    label: 'Data do Pedido',
+    key: 'date_created',
+    label: 'Data Criação',
     category: 'dates',
     priority: 'important',
     visible: true,
     default: true,
-    description: 'Data do pedido (igual /pedidos)',
-    width: 150,
-    sortable: true
-  },
-  {
-    key: 'date_created',
-    label: 'Data Criação',
-    category: 'dates',
-    priority: 'optional',
-    visible: false,
-    default: false,
     description: 'Data de criação do pedido',
     width: 150,
     sortable: true

@@ -196,21 +196,6 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
   }),
 
   // ========== DATAS ==========
-  // Data do Pedido (igual /pedidos)
-  columnHelper.display({
-    id: 'data_pedido',
-    header: 'Data do Pedido',
-    cell: ({ row }) => {
-      // Mesmo padrão de /pedidos: prioriza data_pedido, depois date_created
-      const orderData = row.original.order_data as any;
-      const dataPedido = orderData?.date_created || row.original.date_created;
-      return (
-        <span className="text-xs">{dataPedido ? formatDateTime(dataPedido) : '-'}</span>
-      );
-    },
-    meta: { headerClassName: 'min-w-[150px]' }
-  }),
-
   columnHelper.accessor('date_created', {
     id: 'date_created',
     header: 'Data Criação',
