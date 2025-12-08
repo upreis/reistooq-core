@@ -2,7 +2,7 @@
  * 📦 VENDAS COM ENVIO - Página Principal
  * ✅ Atualizada para usar mesma estrutura de /vendas-canceladas
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useVendasComEnvioStore } from '../store/useVendasComEnvioStore';
 import { 
   useVendasComEnvioFilters, 
@@ -10,22 +10,26 @@ import {
   useVendasComEnvioPolling,
   useVendasComEnvioAccounts 
 } from '../hooks';
+import { useVendasComEnvioColumnManager } from '../hooks/useVendasComEnvioColumnManager';
 import { VendasComEnvioStats } from './VendasComEnvioStats';
 import { VendasComEnvioFilters } from './VendasComEnvioFilters';
 import { VendasComEnvioTableNew } from './VendasComEnvioTableNew';
 import { VendasComEnvioPagination } from './VendasComEnvioPagination';
+import { VendasComEnvioColumnManager } from './VendasComEnvioColumnManager';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  VENDAS_COMENVIO_ALL_COLUMNS, 
-  VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS 
-} from '../config/vendas-comenvio-columns-config';
 
 export function VendasComEnvioPage() {
   const { accounts, isLoading: isLoadingAccounts } = useVendasComEnvioAccounts();
   
+  // 🎯 Column Manager
+  const columnManager = useVendasComEnvioColumnManager();
+  const visibleColumnKeys = useMemo(() => {
+    return Array.from(columnManager.state.visibleColumns);
+  }, [columnManager.state.visibleColumns]);
+
   const {
     vendas,
     totalCount,
@@ -50,11 +54,6 @@ export function VendasComEnvioPage() {
 
   // Polling automático após primeira busca
   useVendasComEnvioPolling({ enabled: true });
-
-  // 🎯 Colunas visíveis (pode ser expandido com useVendasComEnvioColumnManager)
-  const visibleColumnKeys = useMemo(() => {
-    return VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS;
-  }, []);
 
   // Paginação local
   const paginatedVendas = useMemo(() => {
@@ -138,16 +137,19 @@ export function VendasComEnvioPage() {
       {/* Estatísticas */}
       <VendasComEnvioStats stats={stats} />
 
-      {/* Filtros */}
-      <VendasComEnvioFilters
-        accounts={accounts}
-        pendingFilters={pendingFilters}
-        onFilterChange={updatePendingFilter}
-        onApply={applyFilters}
-        onClear={clearFilters}
-        hasChanges={hasChanges}
-        isFetching={isFetching}
-      />
+      {/* Filtros + Seletor de Colunas */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <VendasComEnvioFilters
+          accounts={accounts}
+          pendingFilters={pendingFilters}
+          onFilterChange={updatePendingFilter}
+          onApply={applyFilters}
+          onClear={clearFilters}
+          hasChanges={hasChanges}
+          isFetching={isFetching}
+        />
+        <VendasComEnvioColumnManager manager={columnManager} />
+      </div>
 
       {/* Tabela - NOVA com colunas de /vendas-canceladas */}
       <Card className="overflow-hidden">
