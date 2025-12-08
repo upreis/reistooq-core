@@ -34,6 +34,7 @@ import { differenceInBusinessDays, parseISO } from 'date-fns';
 import { VENDAS_ALL_COLUMNS, VENDAS_DEFAULT_VISIBLE_COLUMNS } from '../config/vendas-columns-config';
 import { useVendasColumnManager } from '../hooks/useVendasColumnManager';
 import { useVendasAggregator } from '../hooks/useVendasAggregator';
+import { useVendasLocalCache } from '../hooks/useVendasLocalCache';
 import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
 
 interface MLAccount {
@@ -86,6 +87,9 @@ export function VendasCanceladasPage() {
   // 🎯 FASE 3: COLUMN MANAGER AVANÇADO
   const columnManager = useVendasColumnManager();
   
+  // 🚀 COMBO 2.1: CACHE LOCAL DE DADOS
+  const localCache = useVendasLocalCache();
+  
   // 🎯 FASE 3: FILTRAR COLUNAS VISÍVEIS (Padrão /reclamacoes)
   const visibleColumnKeys = useMemo(() => {
     const keysArray = Array.from(columnManager.state.visibleColumns);
@@ -133,29 +137,34 @@ export function VendasCanceladasPage() {
     }
   }, [loadingVendas]);
   
-  // 🎯 FASE 2: RESTAURAR CACHE + APLICAR FILTROS DA URL na montagem
+  // 🚀 COMBO 2.1: RESTAURAR CACHE LOCAL na montagem (INSTANTÂNEO)
   useEffect(() => {
+    // Prioridade 1: Cache local (instantâneo)
+    if (localCache.hasCachedData && localCache.cachedData) {
+      console.log('⚡ [VENDAS] Restaurando dados do cache LOCAL (instantâneo):', {
+        vendas: localCache.cachedData.length,
+        idade: localCache.cacheAge + ' min'
+      });
+      setOrders(localCache.cachedData, localCache.cachedTotalCount);
+      return;
+    }
+    
+    // Prioridade 2: Cache do persistentCache (filtros)
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
       
-      console.log('📦 [VENDAS] Restaurando cache:', {
-        vendas: cached.vendas.length,
-        contas: cached.selectedAccounts.length,
-        periodo: cached.filters.periodo
+      console.log('📦 [VENDAS] Restaurando cache persistente:', {
+        vendas: cached.vendas?.length || 0,
+        contas: cached.selectedAccounts?.length || 0
       });
       
-      // Restaurar dados da última busca
-      setOrders(cached.vendas, cached.vendas.length);
-      setPage(cached.currentPage);
-      setItemsPerPage(cached.itemsPerPage);
-      
-      // 🎯 FASE 3: Colunas gerenciadas pelo columnManager (persistência automática)
-      // Não precisa restaurar manualmente - columnManager já faz isso
-      
-      // 🎯 FASE 2: Filtros já foram restaurados pelo useVendasFiltersUnified
-      console.log('🔗 [VENDAS] Filtros ativos:', filters);
+      if (cached.vendas?.length > 0) {
+        setOrders(cached.vendas, cached.vendas.length);
+        setPage(cached.currentPage);
+        setItemsPerPage(cached.itemsPerPage);
+      }
     }
-  }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
+  }, [localCache.hasCachedData, persistentCache.isStateLoaded]);
   
   // ✅ AUTO-SELECIONAR CONTAS na primeira visita
   useEffect(() => {
@@ -224,9 +233,8 @@ export function VendasCanceladasPage() {
     // Ativar busca
     setShouldFetch(true);
     
-    // 🎯 COMBO 2.1: Aguardar query concluir antes de salvar cache
+    // 🚀 COMBO 2.1: Aguardar query concluir antes de salvar cache LOCAL
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
-      // 🔧 CORREÇÃO: Escutar queryKey correto ('ml-orders-cache' ou 'vendas-ml-api')
       const queryKeyBase = event?.query?.queryKey?.[0];
       if (
         (queryKeyBase === 'ml-orders-cache' || queryKeyBase === 'vendas-ml-api') &&
@@ -239,14 +247,18 @@ export function VendasCanceladasPage() {
           account_name: accountsMap.get((order as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
         }));
         
-        persistentCache.saveDataCache(
+        // 🚀 COMBO 2.1: Salvar no cache LOCAL (novo hook)
+        localCache.saveToCache(
           ordersEnriquecidos,
-          filters.selectedAccounts,
-          { search: filters.searchTerm, periodo: filters.periodo },
-          pagination.currentPage,
-          pagination.itemsPerPage,
-          Array.from(columnManager.state.visibleColumns)
+          {
+            accounts: filters.selectedAccounts,
+            periodo: filters.periodo,
+            dateFrom,
+            dateTo
+          },
+          ordersEnriquecidos.length
         );
+        
         setIsManualSearching(false);
         setShouldFetch(false);
         unsubscribe();
