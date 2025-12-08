@@ -480,11 +480,17 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     meta: { headerClassName: 'min-w-[120px]' }
   }),
 
-  // Colunas removidas: shipping_method, estimated_delivery
-
-  // Coluna removida: status_history
-
-  // Colunas removidas: mediations, dimensions
+  // ========== CÓDIGO RASTREIO ==========
+  columnHelper.display({
+    id: 'tracking_number',
+    header: 'Código Rastreio',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const trackingNumber = orderData?.shipping?.tracking_number || row.original.tracking_number;
+      return <span className="font-mono text-xs">{trackingNumber || '-'}</span>;
+    },
+    meta: { headerClassName: 'min-w-[200px]' }
+  }),
 
   // ========== AÇÕES ==========
   columnHelper.display({

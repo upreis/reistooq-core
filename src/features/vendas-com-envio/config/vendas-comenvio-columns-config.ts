@@ -342,7 +342,16 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Substatus do envio',
     width: 120
   },
-  // Colunas removidas: shipping_method, estimated_delivery, status_history
+  {
+    key: 'tracking_number',
+    label: 'Código Rastreio',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Código de rastreamento do envio',
+    width: 200
+  },
 
   // ====== ENDEREÇO ======
   {
