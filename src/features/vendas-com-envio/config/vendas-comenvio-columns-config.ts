@@ -119,7 +119,7 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // ====== DATAS ======
   {
     key: 'date_created',
-    label: 'Data Criação',
+    label: 'Data do Pedido',
     category: 'dates',
     priority: 'important',
     visible: true,
@@ -153,7 +153,7 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // ====== VALORES ======
   {
     key: 'total_amount',
-    label: 'Total',
+    label: 'Total Pedido',
     category: 'financial',
     priority: 'important',
     visible: true,
@@ -197,7 +197,7 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'sale_fee',
-    label: 'Taxa ML',
+    label: 'Valor Líquido',
     category: 'financial',
     priority: 'optional',
     visible: false,
