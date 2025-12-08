@@ -7,4 +7,5 @@ export { VendasComEnvioPage } from './VendasComEnvioPage';
 export { VendasComEnvioStats } from './VendasComEnvioStats';
 export { VendasComEnvioFilters } from './VendasComEnvioFilters';
 export { VendasComEnvioTable } from './VendasComEnvioTable';
+export { VendasComEnvioTableNew } from './VendasComEnvioTableNew';
 export { VendasComEnvioPagination } from './VendasComEnvioPagination';
