@@ -68,11 +68,11 @@ export function VendasComEnvioPagination({
         {/* Info de itens */}
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <span>
-            Mostrando {startItem} a {endItem} de {totalItems.toLocaleString('pt-BR')}
+            Mostrando {startItem} a {endItem} de {totalItems.toLocaleString('pt-BR')} vendas
           </span>
           
           <div className="flex items-center gap-2">
-            <span className="text-xs">Por página:</span>
+            <span className="text-sm">Itens por página:</span>
             <Select
               value={itemsPerPage.toString()}
               onValueChange={(value) => onItemsPerPageChange(parseInt(value, 10))}
