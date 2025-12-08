@@ -66,12 +66,12 @@ export function VendasComEnvioPagination({
     <div className="fixed bottom-0 left-0 right-0 md:left-[72px] bg-background/95 backdrop-blur border-t px-4 py-3 z-40">
       <div className="flex items-center justify-between gap-3">
         {/* Info de itens */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground whitespace-nowrap">
-          <span>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <span className="whitespace-nowrap">
             Mostrando {startItem} a {endItem} de {totalItems.toLocaleString('pt-BR')} vendas
           </span>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 whitespace-nowrap">
             <span>Itens por página:</span>
             <Select
               value={itemsPerPage.toString()}
