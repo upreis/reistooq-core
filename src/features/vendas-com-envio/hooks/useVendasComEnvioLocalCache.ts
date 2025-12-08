@@ -98,10 +98,40 @@ export function useVendasComEnvioLocalCache() {
       return;
     }
 
+    // 🚀 OTIMIZAÇÃO: Limpar caches antigos ANTES de tentar salvar
+    cleanupOldCaches();
+
     const { dateFrom, dateTo } = calculateDates(filters.periodo);
     
+    // 🚀 OTIMIZAÇÃO: Salvar apenas colunas essenciais para reduzir tamanho
+    const optimizedData = data.map(venda => ({
+      id: venda.id,
+      order_id: venda.order_id,
+      integration_account_id: venda.integration_account_id,
+      account_name: venda.account_name,
+      order_status: venda.order_status,
+      shipping_status: venda.shipping_status,
+      payment_status: venda.payment_status,
+      date_created: venda.date_created,
+      date_closed: venda.date_closed,
+      shipping_deadline: venda.shipping_deadline,
+      buyer_id: venda.buyer_id,
+      buyer_nickname: venda.buyer_nickname,
+      buyer_name: venda.buyer_name,
+      total_amount: venda.total_amount,
+      currency_id: venda.currency_id,
+      shipment_id: venda.shipment_id,
+      logistic_type: venda.logistic_type,
+      tracking_number: venda.tracking_number,
+      carrier: venda.carrier,
+      items: venda.items?.slice(0, 3), // Limitar a 3 itens
+      items_count: venda.items_count,
+      items_quantity: venda.items_quantity,
+      // Excluir order_data (JSONB grande) do cache local
+    }));
+    
     const entry: CacheEntry = {
-      data,
+      data: optimizedData as VendaComEnvio[],
       timestamp: Date.now(),
       filters: {
         accounts: filters.selectedAccounts.slice().sort(),
@@ -115,20 +145,49 @@ export function useVendasComEnvioLocalCache() {
     try {
       const serialized = JSON.stringify(entry);
       
-      // Verificar tamanho (limite ~5MB, usar 4MB como safe)
-      if (serialized.length > 4 * 1024 * 1024) {
-        console.warn('[LocalCache] Cache muito grande, não salvando');
+      // Verificar tamanho (limite ~5MB, usar 2MB como safe)
+      if (serialized.length > 2 * 1024 * 1024) {
+        console.warn('[LocalCache] Cache muito grande (' + Math.round(serialized.length/1024) + 'KB), tentando limpar mais espaço');
+        emergencyCleanup();
+        
+        // Tentar novamente com menos dados
+        const reducedEntry = {
+          ...entry,
+          data: optimizedData.slice(0, 200) as VendaComEnvio[], // Limitar a 200 itens
+        };
+        const reducedSerialized = JSON.stringify(reducedEntry);
+        
+        if (reducedSerialized.length > 2 * 1024 * 1024) {
+          console.warn('[LocalCache] Cache ainda muito grande, não salvando');
+          return;
+        }
+        
+        localStorage.setItem(CACHE_KEY, reducedSerialized);
+        setCachedEntry(reducedEntry);
+        console.log('[LocalCache] ✅ Cache salvo (reduzido):', reducedEntry.data.length, 'vendas');
         return;
       }
       
       localStorage.setItem(CACHE_KEY, serialized);
       setCachedEntry(entry);
-      console.log('[LocalCache] ✅ Cache salvo:', data.length, 'vendas');
+      console.log('[LocalCache] ✅ Cache salvo:', optimizedData.length, 'vendas');
     } catch (error) {
       console.warn('[LocalCache] Erro ao salvar cache:', error);
-      // Tentar limpar caches antigos se quota excedida
+      // Tentar limpar e salvar novamente
       if (error instanceof Error && error.name === 'QuotaExceededError') {
-        cleanupOldCaches();
+        emergencyCleanup();
+        try {
+          // Última tentativa com dados mínimos
+          const minimalEntry = {
+            ...entry,
+            data: optimizedData.slice(0, 100) as VendaComEnvio[],
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(minimalEntry));
+          setCachedEntry(minimalEntry);
+          console.log('[LocalCache] ✅ Cache salvo (mínimo):', minimalEntry.data.length, 'vendas');
+        } catch (retryError) {
+          console.warn('[LocalCache] Falha ao salvar mesmo após cleanup');
+        }
       }
     }
   }, []);
@@ -223,7 +282,7 @@ export function useVendasComEnvioLocalCache() {
 }
 
 /**
- * Limpa caches antigos do localStorage
+ * Limpa caches antigos do localStorage (>30 min)
  */
 function cleanupOldCaches() {
   try {
@@ -231,6 +290,8 @@ function cleanupOldCaches() {
       'vendas_com_envio_local_cache_v1',
       'vendas_canceladas_local_cache',
       'reclamacoes_local_cache',
+      'devolucoesdevenda_local_cache',
+      'ml_claims_local_cache',
     ];
     
     keysToCheck.forEach(key => {
@@ -238,7 +299,8 @@ function cleanupOldCaches() {
         const item = localStorage.getItem(key);
         if (item) {
           const parsed = JSON.parse(item);
-          if (parsed.timestamp && Date.now() - parsed.timestamp > 60 * 60 * 1000) {
+          // Remover caches com mais de 30 minutos
+          if (parsed.timestamp && Date.now() - parsed.timestamp > 30 * 60 * 1000) {
             localStorage.removeItem(key);
             console.log('[LocalCache] Removido cache antigo:', key);
           }
@@ -247,6 +309,58 @@ function cleanupOldCaches() {
     });
   } catch (error) {
     console.warn('[LocalCache] Erro ao limpar caches antigos:', error);
+  }
+}
+
+/**
+ * Limpeza emergencial - remove caches maiores para liberar espaço
+ */
+function emergencyCleanup() {
+  try {
+    console.log('[LocalCache] ⚠️ Executando cleanup emergencial');
+    
+    // Coletar todos os caches do sistema
+    const cacheKeys = [
+      'vendas_com_envio_local_cache_v1',
+      'vendas_canceladas_local_cache',
+      'reclamacoes_local_cache',
+      'devolucoesdevenda_local_cache',
+      'ml_claims_local_cache',
+      'pedidos_local_cache',
+    ];
+    
+    // Ordenar por tamanho e remover os maiores primeiro
+    const cachesSized: Array<{key: string; size: number}> = [];
+    
+    cacheKeys.forEach(key => {
+      try {
+        const item = localStorage.getItem(key);
+        if (item) {
+          cachesSized.push({ key, size: item.length });
+        }
+      } catch {}
+    });
+    
+    // Ordenar por tamanho decrescente
+    cachesSized.sort((a, b) => b.size - a.size);
+    
+    // Remover os 3 maiores (exceto o atual se estiver na lista)
+    let removed = 0;
+    for (const cache of cachesSized) {
+      if (cache.key !== CACHE_KEY && removed < 3) {
+        localStorage.removeItem(cache.key);
+        console.log('[LocalCache] Removido cache grande:', cache.key, '(' + Math.round(cache.size/1024) + 'KB)');
+        removed++;
+      }
+    }
+    
+    // Se ainda não removeu nada, remover qualquer coisa
+    if (removed === 0 && cachesSized.length > 0) {
+      localStorage.removeItem(cachesSized[0].key);
+      console.log('[LocalCache] Removido cache mais antigo:', cachesSized[0].key);
+    }
+  } catch (error) {
+    console.warn('[LocalCache] Erro no cleanup emergencial:', error);
   }
 }
 
