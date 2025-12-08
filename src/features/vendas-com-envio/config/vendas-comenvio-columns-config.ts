@@ -11,9 +11,9 @@ export const CATEGORY_LABELS: Record<string, string> = {
   dates: 'Datas',
   customer: 'Cliente',
   product: 'Produto',
-  financial: 'Financeiro',
+  financial: 'Financeiras',
   shipping: 'Envio',
-  meta: 'Meta',
+  meta: 'Metadados',
   actions: 'Ações'
 };
 
@@ -103,6 +103,18 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
 
+  // ====== TIPO PEDIDO ======
+  {
+    key: 'order_type',
+    label: 'Tipo Pedido',
+    category: 'basic',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Tipo do pedido (Normal/Devolução)',
+    width: 150
+  },
+
   // ====== DATAS ======
   {
     key: 'date_created',
@@ -125,6 +137,16 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Data da última atualização',
     width: 150,
     sortable: true
+  },
+  {
+    key: 'expiration_date',
+    label: 'Validade',
+    category: 'dates',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Data de validade do pedido',
+    width: 150
   },
 
   // ====== VALORES ======
@@ -160,6 +182,48 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Valor do frete',
     width: 120,
     sortable: true
+  },
+  {
+    key: 'discount',
+    label: 'Desconto',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Valor do desconto/cupom',
+    width: 120,
+    sortable: true
+  },
+  {
+    key: 'sale_fee',
+    label: 'Taxa ML',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Taxa do Mercado Livre',
+    width: 120,
+    sortable: true
+  },
+  {
+    key: 'payment_status',
+    label: 'Status Pagamento',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Status do pagamento',
+    width: 120
+  },
+  {
+    key: 'list_cost',
+    label: 'Custo Frete Listado',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Custo de frete listado',
+    width: 120
   },
 
   // ====== COMPRADOR ======
@@ -226,6 +290,16 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'SKU do produto',
     width: 200
   },
+  {
+    key: 'category_id',
+    label: 'Categoria',
+    category: 'product',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Categoria do produto',
+    width: 120
+  },
 
   // ====== ENVIO ======
   {
@@ -259,6 +333,26 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
+    key: 'substatus',
+    label: 'Substatus',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Substatus do envio',
+    width: 120
+  },
+  {
+    key: 'shipping_method',
+    label: 'Método Envio',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Método de envio',
+    width: 150
+  },
+  {
     key: 'tracking_number',
     label: 'Código Rastreio',
     category: 'shipping',
@@ -269,6 +363,16 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 200
   },
   {
+    key: 'tracking_method',
+    label: 'Transportadora',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Transportadora responsável',
+    width: 150
+  },
+  {
     key: 'estimated_delivery',
     label: 'Previsão Entrega',
     category: 'shipping',
@@ -277,6 +381,16 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Data prevista de entrega',
     width: 150
+  },
+  {
+    key: 'status_history',
+    label: 'Histórico Status',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Histórico de status do envio',
+    width: 120
   },
 
   // ====== ENDEREÇO ======
@@ -300,6 +414,58 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Estado de destino',
     width: 80
   },
+  {
+    key: 'zip_code',
+    label: 'CEP',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'CEP de destino',
+    width: 100
+  },
+  {
+    key: 'address_line',
+    label: 'Endereço',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Endereço completo de destino',
+    width: 250
+  },
+
+  // ====== METADADOS ======
+  {
+    key: 'fulfilled',
+    label: 'Fulfillment',
+    category: 'meta',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Indica se é fulfillment',
+    width: 120
+  },
+  {
+    key: 'mediations',
+    label: 'Mediações',
+    category: 'meta',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Número de mediações',
+    width: 120
+  },
+  {
+    key: 'dimensions',
+    label: 'Dimensões Pacote',
+    category: 'meta',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Dimensões do pacote',
+    width: 150
+  },
 
   // ====== AÇÕES ======
   {
@@ -320,7 +486,7 @@ export const VENDAS_COMENVIO_DEFAULT_PROFILES: ColumnProfile[] = [
     id: 'standard',
     name: 'Padrão',
     description: 'Visualização padrão com colunas essenciais',
-    columns: VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS
+    columns: VENDAS_COMENVIO_COLUMN_DEFINITIONS.filter(col => col.default).map(col => col.key)
   },
   {
     id: 'essential',
@@ -335,6 +501,14 @@ export const VENDAS_COMENVIO_DEFAULT_PROFILES: ColumnProfile[] = [
     columns: VENDAS_COMENVIO_COLUMN_DEFINITIONS.map(col => col.key)
   },
   {
+    id: 'financial',
+    name: 'Financeiro',
+    description: 'Foco em valores e impacto financeiro',
+    columns: VENDAS_COMENVIO_COLUMN_DEFINITIONS.filter(col => 
+      col.priority === 'essential' || col.category === 'financial'
+    ).map(col => col.key)
+  },
+  {
     id: 'shipping',
     name: 'Logística',
     description: 'Foco em envio e logística',
@@ -343,3 +517,8 @@ export const VENDAS_COMENVIO_DEFAULT_PROFILES: ColumnProfile[] = [
     ).map(col => col.key)
   }
 ];
+
+// Função auxiliar para obter colunas visíveis por padrão
+export const getDefaultVisibleColumns = (): ColumnDefinition[] => {
+  return VENDAS_COMENVIO_COLUMN_DEFINITIONS.filter(col => col.default);
+};
