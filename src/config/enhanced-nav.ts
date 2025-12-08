@@ -117,6 +117,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Package'
           },
           {
+            id: 'depara',
+            label: 'De-Para',
+            path: '/estoque/de-para',
+            icon: 'ArrowLeftRight'
+          },
+          {
             id: 'composicoes',
             label: 'Composições',
             path: '/estoque/composicoes',
@@ -162,12 +168,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Scan' 
           }
         ]
-      },
-      { 
-        id: 'depara', 
-        label: 'De-Para', 
-        path: '/de-para', 
-        icon: 'ArrowLeftRight' 
       },
       { 
         id: 'historico', 
