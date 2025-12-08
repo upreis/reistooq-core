@@ -1,7 +1,8 @@
 /**
  * 📦 VENDAS COM ENVIO - Página Principal
- * Implementa Combo 2.1: cache-first, busca manual
+ * ✅ Atualizada para usar mesma estrutura de /vendas-canceladas
  */
+import { useState, useMemo, useEffect } from 'react';
 import { useVendasComEnvioStore } from '../store/useVendasComEnvioStore';
 import { 
   useVendasComEnvioFilters, 
@@ -11,13 +12,16 @@ import {
 } from '../hooks';
 import { VendasComEnvioStats } from './VendasComEnvioStats';
 import { VendasComEnvioFilters } from './VendasComEnvioFilters';
-import { VendasComEnvioTable } from './VendasComEnvioTable';
+import { VendasComEnvioTableNew } from './VendasComEnvioTableNew';
 import { VendasComEnvioPagination } from './VendasComEnvioPagination';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
+import { 
+  VENDAS_COMENVIO_ALL_COLUMNS, 
+  VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS 
+} from '../config/vendas-comenvio-columns-config';
 
 export function VendasComEnvioPage() {
   const { accounts, isLoading: isLoadingAccounts } = useVendasComEnvioAccounts();
@@ -29,11 +33,11 @@ export function VendasComEnvioPage() {
     isFetching,
     dataSource,
     lastSyncedAt,
+    appliedFilters,
   } = useVendasComEnvioStore();
 
   const {
     pendingFilters,
-    appliedFilters,
     updatePendingFilter,
     applyFilters,
     changePage,
@@ -46,6 +50,18 @@ export function VendasComEnvioPage() {
 
   // Polling automático após primeira busca
   useVendasComEnvioPolling({ enabled: true });
+
+  // 🎯 Colunas visíveis (pode ser expandido com useVendasComEnvioColumnManager)
+  const visibleColumnKeys = useMemo(() => {
+    return VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS;
+  }, []);
+
+  // Paginação local
+  const paginatedVendas = useMemo(() => {
+    const start = (appliedFilters.currentPage - 1) * appliedFilters.itemsPerPage;
+    const end = start + appliedFilters.itemsPerPage;
+    return vendas.slice(start, end);
+  }, [vendas, appliedFilters.currentPage, appliedFilters.itemsPerPage]);
 
   // Auto-selecionar todas as contas no primeiro carregamento
   useEffect(() => {
@@ -133,12 +149,16 @@ export function VendasComEnvioPage() {
         isFetching={isFetching}
       />
 
-      {/* Tabela */}
+      {/* Tabela - NOVA com colunas de /vendas-canceladas */}
       <Card className="overflow-hidden">
-        <VendasComEnvioTable
-          vendas={vendas}
-          isLoading={isFetching && vendas.length === 0}
-          searchTerm={appliedFilters.searchTerm}
+        <VendasComEnvioTableNew
+          orders={paginatedVendas}
+          total={totalCount}
+          loading={isFetching && vendas.length === 0}
+          currentPage={appliedFilters.currentPage}
+          itemsPerPage={appliedFilters.itemsPerPage}
+          onPageChange={changePage}
+          visibleColumnKeys={visibleColumnKeys}
         />
       </Card>
 
