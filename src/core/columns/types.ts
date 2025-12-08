@@ -1,6 +1,6 @@
 /**
- * 🔧 TIPOS UNIFICADOS PARA SISTEMA DE COLUNAS - VENDAS CANCELADAS
- * Mantém compatibilidade com arquitetura /pedidos
+ * 🔧 TIPOS UNIFICADOS PARA SISTEMA DE COLUNAS
+ * Compartilhado entre todas as features que usam column manager
  */
 
 export type ColumnCategory = 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { ColumnDefinition, ColumnProfile, ColumnState, ColumnActions, UseColumnManagerReturn } from '@/features/vendas-online/types/columns.types';
+import type { ColumnDefinition, ColumnProfile, ColumnState, ColumnActions, UseColumnManagerReturn } from '@/core/columns';
 import { VENDAS_COMENVIO_COLUMN_DEFINITIONS, VENDAS_COMENVIO_DEFAULT_PROFILES, VENDAS_COMENVIO_DEFAULT_VISIBLE_COLUMNS } from '../config/vendas-comenvio-columns-config';
 import { loadColumnPreferences, createDebouncedSave } from '@/core/columns';
 

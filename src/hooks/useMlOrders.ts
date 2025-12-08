@@ -98,9 +98,9 @@ export function useMlOrders({
         }
       }
 
-      // 3. Buscar da Edge Function unified-ml-orders
-      console.log('📡 Calling unified-ml-orders Edge Function...');
-      const { data, error } = await supabase.functions.invoke('unified-ml-orders', {
+      // 3. Buscar da Edge Function unified-orders (função compartilhada)
+      console.log('📡 Calling unified-orders Edge Function...');
+      const { data, error } = await supabase.functions.invoke('unified-orders', {
         body: {
           integration_account_ids,
           date_from,
@@ -114,23 +114,34 @@ export function useMlOrders({
         throw error;
       }
 
-      if (!data?.success) {
+      // unified-orders retorna estrutura diferente
+      const orders = data?.unified || data?.orders || [];
+      const total = data?.paging?.total || orders.length;
+
+      if (!data?.ok && !orders.length) {
         throw new Error(data?.error || 'Failed to fetch ML orders');
       }
 
-      console.log(`✅ Fetched ${data.orders.length} orders from ${data.source}`);
+      console.log(`✅ Fetched ${orders.length} orders`);
 
       // Salvar no cache frontend
-      if (data.orders.length > 0) {
+      if (orders.length > 0) {
         mlOrdersCache.set(
           integration_account_ids,
-          data.orders,
+          orders,
           date_from,
           date_to
         );
       }
 
-      return data;
+      return {
+        success: true,
+        orders,
+        total,
+        source: 'ml_api' as const,
+        cached_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+      };
     },
     enabled: enabled && integration_account_ids.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutos

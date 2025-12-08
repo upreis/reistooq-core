@@ -93,9 +93,6 @@ verify_jwt = true
 [functions.shopee-get-token]
 verify_jwt = false
 
-[functions.ml-vendas-unified]
-verify_jwt = true
-
 [functions.ml-execute-action]
 verify_jwt = true
 
@@ -131,12 +128,6 @@ verify_jwt = true
 
 [functions.cleanup-reclamacoes]
 verify_jwt = true
-
-[functions.unified-ml-orders]
-verify_jwt = false
-
-[functions.ml-orders-auto-sync]
-verify_jwt = false
 
 [functions.ml-claims-auto-sync]
 verify_jwt = false

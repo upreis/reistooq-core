@@ -15,11 +15,6 @@ const subNavItems = [
     icon: AlertCircle,
   },
   {
-    path: "/vendas-canceladas",
-    label: "Vendas Canceladas",
-    icon: ShoppingBag,
-  },
-  {
     path: "/vendas-com-envio",
     label: "Vendas com Envio",
     icon: Truck,

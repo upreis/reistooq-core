@@ -47,8 +47,6 @@ import pedidosIcon from "@/assets/pedidos-cart-icon.png";
 import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
-import vendasOnlineIcon from "@/assets/vendas_online.png";
-import vendasOnlineNewIcon from "@/assets/icons/vendas-online-icon.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
 import adminIcon from "@/assets/admin.png";
 import alertasIcon from "@/assets/alertas.png";
@@ -153,14 +151,6 @@ const ALL_PAGES: PageOption[] = [
     icon: <img src={pedidosNewIcon} alt="Pedidos" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
-  },
-  {
-    id: 'vendas-canceladas',
-    label: 'Vendas Canceladas',
-    route: '/vendas-canceladas',
-    icon: <img src={vendasOnlineNewIcon} alt="Vendas Canceladas" className="w-16 h-16 object-contain" />,
-    category: 'Vendas & Pedidos',
-    gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
   {
     id: 'vendas-com-envio',

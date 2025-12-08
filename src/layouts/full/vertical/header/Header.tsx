@@ -3,7 +3,6 @@ import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDo
 import { useLocation } from "react-router-dom";
 import visaoGeralIcon from "@/assets/dashboard-visao-geral-icon.png";
 import pedidosIcon from "@/assets/icons/pedidos-icon.png";
-import vendasOnlineIcon from "@/assets/icons/vendas-online-icon.png";
 import reclamacoesIcon from "@/assets/icons/reclamacoes-icon.png";
 import comprasPedidosIcon from "@/assets/compras-pedidos-icon.png";
 import comprasCotacoesIcon from "@/assets/compras-cotacoes-icon.png";
@@ -142,7 +141,6 @@ export default function Header() {
     
     // Pedidos e Vendas
     if (path === '/pedidos') return { icon: pedidosIcon, label: 'Vendas', isImage: true };
-    if (path.startsWith('/vendas-canceladas')) return { icon: vendasOnlineIcon, label: 'Vendas Canceladas', isImage: true };
     if (path.startsWith('/vendas-com-envio')) return { icon: pedidosIcon, label: 'Vendas com Envio', isImage: true };
     if (path.startsWith('/devolucoesdevenda')) return { icon: devolucoesdevendaIcon, label: 'Devoluções de Venda', isImage: true };
     if (path.startsWith('/reclamacoes')) return { icon: reclamacoesIcon, label: 'Reclamações', isImage: true };
@@ -225,7 +223,7 @@ export default function Header() {
 
         {/* Navigation - Centered */}
         <div className="flex-1 flex justify-center">
-          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-canceladas' || location.pathname === '/devolucoesdevenda') && <OMSNavLimelight />}
+          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-com-envio' || location.pathname === '/devolucoesdevenda') && <OMSNavLimelight />}
           {location.pathname.startsWith('/dashboardinicial') && <DashboardInicialNav />}
           {location.pathname.startsWith('/estoque') && <EstoqueNav />}
           {location.pathname.startsWith('/compras') && <ComprasNavLimelight />}
