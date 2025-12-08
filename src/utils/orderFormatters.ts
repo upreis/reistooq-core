@@ -65,6 +65,12 @@ const SUBSTATUS_MAP: Record<string, string> = {
   'picked_up': 'Coletado',
   'contact_buyer': 'Contatar Comprador',
   'authorized_by_carrier': 'Autorizado pela Transportadora',
+  // Novos substatus
+  'in_packing_list': 'Na Lista de Embalagem',
+  'unfulfillable': 'Não Atendível',
+  'not_visited': 'Não Visitado',
+  'pack_splitted': 'Pacote Dividido',
+  'returned_to_warehouse': 'Devolvido ao Armazém',
 };
 
 // ✅ TIPOS LOGÍSTICOS: Mapeamento
