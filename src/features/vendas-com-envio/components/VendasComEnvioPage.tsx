@@ -20,11 +20,15 @@ import { Loader2 } from 'lucide-react';
 import { parseISO, differenceInBusinessDays } from 'date-fns';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
+import { StatusAnalise, STATUS_ATIVOS as STATUS_ANALISE_ATIVOS, STATUS_HISTORICO as STATUS_ANALISE_HISTORICO } from '../types/venda-analise.types';
 
-// Status que indicam "ativas" (aguardando envio)
-const STATUS_ATIVOS = ['ready_to_ship', 'pending', 'handling'];
-// Status que indicam "histórico" (já processados)
-const STATUS_HISTORICO = ['shipped', 'delivered', 'not_delivered', 'cancelled'];
+// Status de envio que indicam "ativas" (aguardando envio)
+const STATUS_ENVIO_ATIVOS = ['ready_to_ship', 'pending', 'handling'];
+// Status de envio que indicam "histórico" (já processados)
+const STATUS_ENVIO_HISTORICO = ['shipped', 'delivered', 'not_delivered', 'cancelled'];
+
+// Storage key para status de análise
+const STATUS_ANALISE_STORAGE_KEY = 'vendas_com_envio_analise_status';
 
 export function VendasComEnvioPage() {
   const { accounts, isLoading: isLoadingAccounts } = useVendasComEnvioAccounts();
@@ -64,6 +68,30 @@ export function VendasComEnvioPage() {
   // Estado para filtro de resumo
   const [filtroResumoAtivo, setFiltroResumoAtivo] = useState<FiltroResumoEnvio | null>(null);
 
+  // Estado para status de análise (persistido em localStorage)
+  const [statusAnalise, setStatusAnalise] = useState<Record<string, StatusAnalise>>(() => {
+    try {
+      const stored = localStorage.getItem(STATUS_ANALISE_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Persistir status de análise em localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STATUS_ANALISE_STORAGE_KEY, JSON.stringify(statusAnalise));
+    } catch (e) {
+      console.error('Erro ao salvar status de análise:', e);
+    }
+  }, [statusAnalise]);
+
+  // Handler para mudança de status de análise
+  const handleStatusAnaliseChange = useCallback((orderId: string, newStatus: StatusAnalise) => {
+    setStatusAnalise(prev => ({ ...prev, [orderId]: newStatus }));
+  }, []);
+
   // Sincronizar aba com store
   useEffect(() => {
     if (appliedFilters.activeTab !== activeTab) {
@@ -71,19 +99,28 @@ export function VendasComEnvioPage() {
     }
   }, [activeTab]);
 
-  // Contar ativas e histórico
+  // Contar ativas e histórico baseado no status de análise
   const countAtivas = useMemo(() => {
-    return vendas.filter(v => STATUS_ATIVOS.includes(v.shipping_status)).length;
-  }, [vendas]);
+    return vendas.filter(v => {
+      const status = statusAnalise[v.id] || 'pendente';
+      return STATUS_ANALISE_ATIVOS.includes(status);
+    }).length;
+  }, [vendas, statusAnalise]);
 
   const countHistorico = useMemo(() => {
-    return vendas.filter(v => STATUS_HISTORICO.includes(v.shipping_status)).length;
-  }, [vendas]);
+    return vendas.filter(v => {
+      const status = statusAnalise[v.id] || 'pendente';
+      return STATUS_ANALISE_HISTORICO.includes(status);
+    }).length;
+  }, [vendas, statusAnalise]);
 
-  // Filtrar por aba
+  // Filtrar por aba baseado no status de análise
   const vendasFiltradasPorAba = useMemo(() => {
-    const statusFiltro = activeTab === 'ativas' ? STATUS_ATIVOS : STATUS_HISTORICO;
-    let resultado = vendas.filter(v => statusFiltro.includes(v.shipping_status));
+    const statusFiltro = activeTab === 'ativas' ? STATUS_ANALISE_ATIVOS : STATUS_ANALISE_HISTORICO;
+    let resultado = vendas.filter(v => {
+      const status = statusAnalise[v.id] || 'pendente';
+      return statusFiltro.includes(status);
+    });
     
     // Aplicar filtro de resumo se ativo
     if (filtroResumoAtivo) {
@@ -110,7 +147,7 @@ export function VendasComEnvioPage() {
     }
     
     return resultado;
-  }, [vendas, activeTab, filtroResumoAtivo]);
+  }, [vendas, activeTab, filtroResumoAtivo, statusAnalise]);
 
   // Paginação local
   const paginatedVendas = useMemo(() => {
@@ -225,6 +262,8 @@ export function VendasComEnvioPage() {
             itemsPerPage={appliedFilters.itemsPerPage}
             onPageChange={changePage}
             visibleColumnKeys={visibleColumnKeys}
+            statusAnalise={statusAnalise}
+            onStatusAnaliseChange={handleStatusAnaliseChange}
           />
         </div>
         
