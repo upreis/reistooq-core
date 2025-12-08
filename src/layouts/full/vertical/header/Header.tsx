@@ -32,6 +32,7 @@ import deParaIcon from "@/assets/de-para-icon.png";
 import alertasIcon from "@/assets/alertas-icon.png";
 import historicoIcon from "@/assets/historico-icon.png";
 import devolucoesdevendaIcon from "@/assets/icons/devolucoes-venda-icon.png";
+import vendasComEnvioIcon from "@/assets/icons/vendas-com-envio-page-icon.png";
 import pedidosOmsIcon from "@/assets/pedidos-oms-icon.png";
 import clientesOmsIcon from "@/assets/clientes-oms-icon.png";
 import configuracoesOmsIcon from "@/assets/configuracoes-oms-icon.png";
@@ -141,7 +142,7 @@ export default function Header() {
     
     // Pedidos e Vendas
     if (path === '/pedidos') return { icon: pedidosIcon, label: 'Vendas', isImage: true };
-    if (path.startsWith('/vendas-com-envio')) return { icon: pedidosIcon, label: 'Canceladas com Envio', isImage: true };
+    if (path.startsWith('/vendas-com-envio')) return { icon: vendasComEnvioIcon, label: 'Canceladas com Envio', isImage: true };
     if (path.startsWith('/devolucoesdevenda')) return { icon: devolucoesdevendaIcon, label: 'Devoluções de Venda', isImage: true };
     if (path.startsWith('/reclamacoes')) return { icon: reclamacoesIcon, label: 'Reclamações', isImage: true };
     
