@@ -197,7 +197,7 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'sale_fee',
-    label: 'Valor Líquido',
+    label: 'Taxa ML',
     category: 'financial',
     priority: 'optional',
     visible: false,
