@@ -360,10 +360,40 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
     id: 'buyer_name',
     header: 'Nome Comprador',
     cell: ({ row }) => {
-      // buyer_name já vem mapeado do hook com first_name + last_name (igual comprador_nome_completo de /devolucoesdevenda)
       return row.original.buyer_name || row.original.buyer_nickname || '-';
     },
     meta: { headerClassName: 'min-w-[150px]' }
+  }),
+
+  columnHelper.display({
+    id: 'buyer_nickname',
+    header: 'Nickname',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      return row.original.buyer_nickname || orderData?.buyer?.nickname || '-';
+    },
+    meta: { headerClassName: 'min-w-[120px]' }
+  }),
+
+  columnHelper.display({
+    id: 'buyer_email',
+    header: 'Email',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      return orderData?.buyer?.email || '-';
+    },
+    meta: { headerClassName: 'min-w-[180px]' }
+  }),
+
+  columnHelper.display({
+    id: 'buyer_phone',
+    header: 'Telefone',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const phone = orderData?.buyer?.phone?.number || orderData?.buyer?.phone;
+      return phone || '-';
+    },
+    meta: { headerClassName: 'min-w-[120px]' }
   }),
 
   // ========== PRODUTO ==========
@@ -428,6 +458,34 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
       return <span className="text-xs">{firstItem?.item?.category_id || '-'}</span>;
     },
     meta: { headerClassName: 'min-w-[120px]' }
+  }),
+
+  columnHelper.display({
+    id: 'variation_id',
+    header: 'ID Variação',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const firstItem = orderData?.order_items?.[0];
+      return <span className="font-mono text-xs">{firstItem?.item?.variation_id || '-'}</span>;
+    },
+    meta: { headerClassName: 'min-w-[100px]' }
+  }),
+
+  columnHelper.display({
+    id: 'variation_attributes',
+    header: 'Variação',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const firstItem = orderData?.order_items?.[0];
+      const attrs = firstItem?.item?.variation_attributes;
+      if (!attrs || attrs.length === 0) return '-';
+      return (
+        <span className="text-xs">
+          {attrs.map((a: any) => `${a.name}: ${a.value_name}`).join(', ')}
+        </span>
+      );
+    },
+    meta: { headerClassName: 'min-w-[150px]' }
   }),
 
   // ========== ENVIO ==========
@@ -500,6 +558,26 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
       return <span className="font-mono text-xs">{trackingNumber || '-'}</span>;
     },
     meta: { headerClassName: 'min-w-[200px]' }
+  }),
+
+  columnHelper.display({
+    id: 'tags',
+    header: 'Tags',
+    cell: ({ row }) => {
+      const orderData = row.original.order_data as any;
+      const tags = orderData?.tags || (row.original as any).tags;
+      if (!tags || tags.length === 0) return '-';
+      return (
+        <div className="flex flex-wrap gap-1">
+          {(Array.isArray(tags) ? tags : [tags]).slice(0, 3).map((tag: string, i: number) => (
+            <span key={i} className="px-1.5 py-0.5 text-xs bg-muted rounded">
+              {tag}
+            </span>
+          ))}
+        </div>
+      );
+    },
+    meta: { headerClassName: 'min-w-[150px]' }
   }),
 
   // ========== ENDEREÇO ==========
