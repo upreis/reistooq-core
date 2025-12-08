@@ -3,6 +3,7 @@
  * ✅ Layout igual /vendas-canceladas com abas Ativas/Histórico
  */
 import { useMemo, useEffect, useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useVendasComEnvioStore } from '../store/useVendasComEnvioStore';
 import { 
   useVendasComEnvioFilters, 
@@ -31,6 +32,7 @@ const STATUS_ENVIO_HISTORICO = ['shipped', 'delivered', 'not_delivered', 'cancel
 const STATUS_ANALISE_STORAGE_KEY = 'vendas_com_envio_analise_status';
 
 export function VendasComEnvioPage() {
+  const queryClient = useQueryClient();
   const { accounts, isLoading: isLoadingAccounts } = useVendasComEnvioAccounts();
   const { isSidebarCollapsed } = useSidebarUI();
   
@@ -170,10 +172,11 @@ export function VendasComEnvioPage() {
     applyFilters();
   }, [applyFilters]);
 
-  // Handler para cancelar busca - reseta shouldFetch para parar polling
+  // Handler para cancelar busca - cancela queries ativas e reseta shouldFetch
   const handleCancelarBusca = useCallback(() => {
+    queryClient.cancelQueries({ queryKey: ['vendas-com-envio'] });
     setShouldFetch(false);
-  }, [setShouldFetch]);
+  }, [queryClient, setShouldFetch]);
 
   if (isLoadingAccounts) {
     return (
