@@ -101,13 +101,10 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
   // 🔧 CORREÇÃO: Se cache retornou dados válidos E não está loading, usar cache
   const useCacheData = !cacheQuery.isLoading && cacheQuery.data && !cacheQuery.data.cache_expired;
 
-  // ✅ FALLBACK: Buscar de API ML quando:
-  // 1. Cache expirou/vazio E cache terminou loading E há contas
-  // 2. OU usuário clicou buscar manualmente (shouldFetch)
-  const cacheExpired = !cacheQuery.isLoading && (cacheQuery.data?.cache_expired || !cacheQuery.data);
-  const shouldFetchFromAPI = selectedAccountIds.length > 0 && 
-    !cacheQuery.isLoading && 
-    (cacheExpired || shouldFetch); // 🔧 CORREÇÃO: Buscar automaticamente se cache expirou
+  // 🎯 COMBO 2.1: BUSCA APENAS MANUAL
+  // Só busca quando usuário clica "Aplicar Filtros" (shouldFetch = true)
+  // NÃO busca automaticamente quando cache expira
+  const shouldFetchFromAPI = shouldFetch && selectedAccountIds.length > 0 && !cacheQuery.isLoading;
 
   const swrKey = shouldFetchFromAPI
     ? [
@@ -160,27 +157,28 @@ export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: 
   );
 
   // 🔍 DEBUG: Log do estado de busca
+  // 🔍 DEBUG: Log do estado de busca
   useEffect(() => {
     console.log('🔍 [useVendasData] Estado de busca:', {
       shouldFetch,
       shouldFetchFromAPI,
-      cacheExpired,
       cacheLoading: cacheQuery.isLoading,
       hasCacheData: !!cacheQuery.data,
       swrKeyExists: !!swrKey,
       hasFetchedFromAPI: hasFetchedFromAPI.current,
       selectedAccountIds: selectedAccountIds.length
     });
-  }, [shouldFetch, shouldFetchFromAPI, cacheExpired, cacheQuery.isLoading, cacheQuery.data, swrKey, selectedAccountIds.length]);
+  }, [shouldFetch, shouldFetchFromAPI, cacheQuery.isLoading, cacheQuery.data, swrKey, selectedAccountIds.length]);
 
-  // 🎯 COMBO 2.1: Disparar busca automática quando cache expirou
+  // 🎯 COMBO 2.1: BUSCA MANUAL - Apenas quando shouldFetch é true
+  // NÃO dispara automaticamente - usuário deve clicar "Aplicar Filtros"
   useEffect(() => {
-    if (shouldFetchFromAPI && swrKey && !hasFetchedFromAPI.current && !isLoading) {
-      console.log('🚀 [useVendasData] Cache expirado, disparando busca da API...', { swrKey });
+    if (shouldFetch && shouldFetchFromAPI && swrKey && !hasFetchedFromAPI.current && !isLoading) {
+      console.log('🔍 [useVendasData] Busca MANUAL disparada pelo usuário...', { swrKey });
       hasFetchedFromAPI.current = true;
       mutate();
     }
-  }, [shouldFetchFromAPI, swrKey, isLoading, mutate]);
+  }, [shouldFetch, shouldFetchFromAPI, swrKey, isLoading, mutate]);
 
   // Reset flag quando contas ou shouldFetch mudam
   useEffect(() => {
