@@ -145,13 +145,20 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
         date_closed: row.date_closed || null,
         shipping_deadline: row.shipping_deadline || shipping.lead_time?.shipping_deadline || null,
         
-        // Comprador
+        // Comprador - Prioridade: receiver_name (envio) > first+last > nickname (padrão /pedidos)
         buyer_id: row.buyer_id || buyer.id || null,
         buyer_nickname: row.buyer_nickname || buyer.nickname || null,
-        buyer_name: row.buyer_name || 
+        buyer_name: 
+          shipping?.destination?.receiver_name ||
+          row.buyer_name ||
           (row.buyer_first_name && row.buyer_last_name
-            ? `${row.buyer_first_name} ${row.buyer_last_name}`
-            : [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || null),
+            ? `${row.buyer_first_name} ${row.buyer_last_name}`.trim()
+            : null) ||
+          (buyer.first_name || buyer.last_name
+            ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim()
+            : null) ||
+          buyer.nickname ||
+          null,
         
         // Valores
         total_amount: Number(row.total_amount) || orderData.total_amount || 0,
