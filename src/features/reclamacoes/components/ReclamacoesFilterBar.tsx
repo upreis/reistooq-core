@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { Search, CalendarIcon, ChevronDown } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -59,6 +60,11 @@ export function ReclamacoesFilterBar({
 
   const handleToggleAccount = (accountId: string) => {
     const currentIds = selectedAccountIds || [];
+    // Mínimo 1 conta selecionada
+    if (currentIds.includes(accountId) && currentIds.length === 1) {
+      return;
+    }
+    
     if (currentIds.includes(accountId)) {
       onAccountsChange(currentIds.filter(id => id !== accountId));
     } else {
@@ -69,7 +75,8 @@ export function ReclamacoesFilterBar({
   const handleSelectAllAccounts = () => {
     const currentIds = selectedAccountIds || [];
     if (currentIds.length === accounts.length) {
-      onAccountsChange([]);
+      // Manter pelo menos a primeira
+      onAccountsChange([accounts[0]?.id].filter(Boolean));
     } else {
       onAccountsChange(accounts.map(acc => acc.id));
     }
@@ -110,62 +117,53 @@ export function ReclamacoesFilterBar({
                 variant="outline"
                 className="w-full justify-between h-10"
               >
-                <span>
+                <span className="truncate">
                   {!selectedAccountIds || selectedAccountIds.length === 0 
                     ? 'Selecione a Empresa' 
-                    : `${selectedAccountIds.length} Empresa${selectedAccountIds.length > 1 ? 's' : ''}`
+                    : selectedAccountIds.length === accounts.length
+                      ? 'Todas as contas'
+                      : `${selectedAccountIds.length} Empresa${selectedAccountIds.length > 1 ? 's' : ''}`
                   }
                 </span>
-                <ChevronDown className="h-4 w-4 opacity-50" />
+                <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="start">
               <div className="p-4 space-y-4">
-                {/* Header */}
-                <div className="flex items-center justify-between pb-2 border-b">
-                  <h4 className="font-semibold text-sm">Selecionar Contas</h4>
-                  <button
-                    onClick={handleSelectAllAccounts}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    {(selectedAccountIds?.length || 0) === accounts.length ? 'Desmarcar todas' : 'Selecionar todas'}
-                  </button>
-                </div>
-
-                {/* Lista de Contas */}
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {accounts.map((account) => (
-                    <label
-                      key={account.id}
-                      className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-md cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedAccountIds?.includes(account.id) || false}
-                        onChange={() => handleToggleAccount(account.id)}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {account.name || account.account_identifier}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {account.account_identifier}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-
-                {/* Footer */}
-                <div className="pt-2 border-t">
-                  <Button 
-                    onClick={() => setAccountsPopoverOpen(false)}
-                    className="w-full"
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Contas do Mercado Livre</h4>
+                  <Button
+                    variant="ghost"
                     size="sm"
+                    onClick={handleSelectAllAccounts}
+                    className="h-8 text-xs"
                   >
-                    Confirmar
+                    {(selectedAccountIds?.length || 0) === accounts.length ? 'Manter 1' : 'Selecionar Todas'}
                   </Button>
+                </div>
+
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {accounts.map((account) => {
+                    const isSelected = selectedAccountIds?.includes(account.id) || false;
+                    const isOnlyOne = isSelected && (selectedAccountIds?.length || 0) === 1;
+                    
+                    return (
+                      <div key={account.id} className="flex items-start space-x-3">
+                        <Checkbox
+                          id={`account-rec-${account.id}`}
+                          checked={isSelected}
+                          onCheckedChange={() => handleToggleAccount(account.id)}
+                          disabled={isOnlyOne}
+                        />
+                        <label
+                          htmlFor={`account-rec-${account.id}`}
+                          className={`text-sm leading-none cursor-pointer flex-1 ${isOnlyOne ? 'text-muted-foreground' : ''}`}
+                        >
+                          <div className="font-medium">{account.name || account.account_identifier}</div>
+                        </label>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </PopoverContent>
