@@ -63,6 +63,7 @@ const loadPersistedFilters = (): VendasComEnvioFilters => {
           searchTerm: parsed.searchTerm || '',
           currentPage: parsed.currentPage || 1,
           itemsPerPage: parsed.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
+          activeTab: parsed.activeTab || 'ativas',
         };
       }
     }
@@ -77,6 +78,7 @@ const loadPersistedFilters = (): VendasComEnvioFilters => {
     searchTerm: '',
     currentPage: 1,
     itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
+    activeTab: 'ativas',
   };
 };
 
@@ -214,6 +216,7 @@ export const useVendasComEnvioStore = create<VendasComEnvioState>((set, get) => 
         searchTerm: '',
         currentPage: 1,
         itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
+        activeTab: 'ativas',
       },
       shouldFetch: false,
       hasFetchedFromAPI: false,

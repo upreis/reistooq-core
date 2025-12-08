@@ -99,6 +99,9 @@ export interface VendaComEnvio {
   updated_at: string;
 }
 
+// Status de análise para ativas/histórico
+export type StatusAnaliseEnvio = 'pendente' | 'em_analise' | 'enviado' | 'entregue' | 'cancelado';
+
 // Filtros disponíveis
 export interface VendasComEnvioFilters {
   periodo: number;
@@ -107,6 +110,7 @@ export interface VendasComEnvioFilters {
   searchTerm: string;
   currentPage: number;
   itemsPerPage: number;
+  activeTab: 'ativas' | 'historico';
 }
 
 // Estatísticas agregadas

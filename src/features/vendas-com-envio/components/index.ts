@@ -6,6 +6,8 @@
 export { VendasComEnvioPage } from './VendasComEnvioPage';
 export { VendasComEnvioStats } from './VendasComEnvioStats';
 export { VendasComEnvioFilters } from './VendasComEnvioFilters';
+export { VendasComEnvioFilterBar } from './VendasComEnvioFilterBar';
+export { VendasComEnvioResumo } from './VendasComEnvioResumo';
 export { VendasComEnvioTable } from './VendasComEnvioTable';
 export { VendasComEnvioTableNew } from './VendasComEnvioTableNew';
 export { VendasComEnvioPagination } from './VendasComEnvioPagination';
