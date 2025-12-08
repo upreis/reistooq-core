@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { NavItem } from '../types/sidebar.types';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useSidebarUI } from '@/context/SidebarUIContext';
-import { getIconComponent, isRouteActive } from '../utils/sidebar-utils';
+import { getIconComponent, isRouteActive, hasActiveChildRoute } from '../utils/sidebar-utils';
 
 interface SidebarItemWithChildrenProps {
   item: NavItem;
@@ -26,10 +26,10 @@ export const SidebarItemWithChildren = memo(({
   
   const Icon = getIconComponent(item.icon);
   
-  // Check if this item has active children
-  const hasActiveChild = item.children?.some(child => 
-    child.path && isRouteActive(location.pathname, child.path)
-  ) ?? false;
+  // Check if this item has active children (exact match for child items)
+  const hasActiveChild = item.children 
+    ? hasActiveChildRoute(location.pathname, item.children) 
+    : false;
 
   // Check if this group is open
   const isOpen = isGroupOpen(item.id);
@@ -192,7 +192,8 @@ export const SidebarItemWithChildren = memo(({
           )}
         >
           {item.children?.map((child) => {
-            const childActive = child.path ? isRouteActive(location.pathname, child.path) : false;
+            // Use exact match for child items to avoid multiple items being active
+            const childActive = child.path ? isRouteActive(location.pathname, child.path, true) : false;
 
             return (
               <NavLink

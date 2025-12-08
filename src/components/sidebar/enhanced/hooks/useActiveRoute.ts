@@ -5,6 +5,7 @@ import { isRouteActive } from '../utils/sidebar-utils';
 
 /**
  * Simplified hook that returns a function to check if an item has active children
+ * Uses exact match for child items to prevent multiple items being marked active
  */
 export const useActiveRoute = () => {
   const location = useLocation();
@@ -14,7 +15,8 @@ export const useActiveRoute = () => {
     () => (item: NavItem): boolean => {
       if (!item.children) return false;
       return item.children.some(child => {
-        if (child.path && isRouteActive(currentPath, child.path)) return true;
+        // Use exact match for child items
+        if (child.path && isRouteActive(currentPath, child.path, true)) return true;
         if (child.children) return hasActiveChild(child);
         return false;
       });
