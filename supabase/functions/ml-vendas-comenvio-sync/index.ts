@@ -386,7 +386,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ETAPA 4: Limpar pedidos antigos ou já entregues
+    // ETAPA 4: Limpar APENAS pedidos muito antigos (>60 dias)
+    // NÃO remover delivered/cancelled - frontend pode querer ver histórico
     try {
       const sixtyDaysAgo = new Date();
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
@@ -403,17 +404,9 @@ Deno.serve(async (req) => {
         console.log('🧹 Cleaned up old orders (>60 days)');
       }
 
-      // Remover pedidos já entregues/cancelados
-      const { error: deliveredError } = await supabaseAdmin
-        .from('ml_vendas_comenvio')
-        .delete()
-        .in('shipping_status', ['delivered', 'cancelled', 'not_delivered']);
-
-      if (deliveredError) {
-        console.warn('⚠️ Error cleaning delivered orders:', deliveredError);
-      } else {
-        console.log('🧹 Cleaned up delivered/cancelled orders');
-      }
+      // ✅ REMOVIDO: Não deletar delivered/cancelled
+      // O frontend filtra por shipping_status conforme necessário
+      console.log('ℹ️ Keeping all shipping statuses (filter on frontend)');
     } catch (cleanupError) {
       console.warn('⚠️ Cleanup failed:', cleanupError);
     }
