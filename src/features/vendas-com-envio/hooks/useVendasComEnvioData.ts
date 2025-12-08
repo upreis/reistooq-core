@@ -2,12 +2,14 @@
  * 📦 VENDAS COM ENVIO - Hook de Dados
  * 🚀 COMBO 2.1: Usa Edge Function get-vendas-comenvio + tabela ml_vendas_comenvio
  * ✅ Padrão idêntico a /reclamacoes (useMLClaimsFromCache)
+ * ✅ Cache local para restauração instantânea
  */
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useVendasComEnvioStore } from '../store/useVendasComEnvioStore';
+import { useVendasComEnvioLocalCache } from './useVendasComEnvioLocalCache';
 import { QUERY_KEY_BASE, STALE_TIME_MS, GC_TIME_MS } from '../config';
 import type { VendaComEnvio } from '../types';
 
@@ -18,6 +20,10 @@ interface UseVendasComEnvioDataOptions {
 export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions) {
   const hasFetchedFromAPIRef = useRef(false);
   const previousFiltersRef = useRef<string | null>(null);
+  const hasRestoredFromCacheRef = useRef(false);
+  
+  // 🚀 COMBO 2.1: Hook de cache local
+  const localCache = useVendasComEnvioLocalCache();
   
   const {
     vendas,
@@ -37,6 +43,20 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
     setHasFetchedFromAPI,
     setDataSource,
   } = useVendasComEnvioStore();
+
+  // 🚀 COMBO 2.1: Restaurar do cache local no mount (uma vez)
+  useEffect(() => {
+    if (hasRestoredFromCacheRef.current) return;
+    if (vendas.length > 0) return; // Já tem dados
+    
+    const cachedData = localCache.getValidCacheData(appliedFilters);
+    if (cachedData && cachedData.data.length > 0) {
+      console.log('[useVendasComEnvioData] 🔄 Restaurando do cache local:', cachedData.data.length, 'vendas');
+      setVendas(cachedData.data, cachedData.totalCount);
+      setDataSource('cache');
+      hasRestoredFromCacheRef.current = true;
+    }
+  }, [appliedFilters, localCache, vendas.length, setVendas, setDataSource]);
 
   // Construir query key estável
   const queryKey = [
@@ -209,7 +229,7 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
     }
   }, [query.error, setError]);
 
-  // Quando dados chegam da API, salvar no store
+  // Quando dados chegam da API, salvar no store E no cache local
   useEffect(() => {
     if (query.data && shouldFetch) {
       console.log('[useVendasComEnvioData] Dados recebidos, salvando no store:', query.data.orders.length);
@@ -218,8 +238,13 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
       setShouldFetch(false);
       setDataSource('api');
       hasFetchedFromAPIRef.current = true;
+      
+      // 🚀 COMBO 2.1: Salvar no cache local para restauração instantânea
+      if (query.data.orders.length > 0) {
+        localCache.saveToCache(query.data.orders, appliedFilters, query.data.total);
+      }
     }
-  }, [query.data, shouldFetch, setVendas, setHasFetchedFromAPI, setShouldFetch, setDataSource]);
+  }, [query.data, shouldFetch, setVendas, setHasFetchedFromAPI, setShouldFetch, setDataSource, appliedFilters, localCache]);
 
   // Refetch manual
   const refetch = useCallback(() => {
@@ -236,6 +261,10 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
     isFetching: isFetching || query.isFetching,
     error,
     dataSource,
+    
+    // 🚀 COMBO 2.1: Info do cache
+    cacheAgeMinutes: localCache.cacheAgeMinutes,
+    hasCachedData: localCache.hasCachedData,
     
     // Actions
     refetch,
