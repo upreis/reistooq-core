@@ -122,6 +122,7 @@ export function useVendasComEnvioFilters() {
       searchTerm: '',
       currentPage: 1,
       itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
+      activeTab: 'ativas',
     };
     
     setPendingFilters(defaultFilters);

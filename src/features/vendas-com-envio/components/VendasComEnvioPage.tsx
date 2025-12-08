@@ -1,8 +1,8 @@
 /**
  * 📦 VENDAS COM ENVIO - Página Principal
- * ✅ Atualizada para usar mesma estrutura de /vendas-canceladas
+ * ✅ Layout igual /vendas-canceladas com abas Ativas/Histórico
  */
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useVendasComEnvioStore } from '../store/useVendasComEnvioStore';
 import { 
   useVendasComEnvioFilters, 
@@ -11,20 +11,26 @@ import {
   useVendasComEnvioAccounts 
 } from '../hooks';
 import { useVendasComEnvioColumnManager } from '../hooks/useVendasComEnvioColumnManager';
-import { VendasComEnvioStats } from './VendasComEnvioStats';
-import { VendasComEnvioFilters } from './VendasComEnvioFilters';
+import { VendasComEnvioFilterBar } from './VendasComEnvioFilterBar';
+import { VendasComEnvioResumo, type FiltroResumoEnvio } from './VendasComEnvioResumo';
 import { VendasComEnvioTableNew } from './VendasComEnvioTableNew';
 import { VendasComEnvioPagination } from './VendasComEnvioPagination';
-import { VendasComEnvioColumnManager } from './VendasComEnvioColumnManager';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, Package } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2 } from 'lucide-react';
+import { parseISO, differenceInBusinessDays } from 'date-fns';
+import { useSidebarUI } from '@/context/SidebarUIContext';
+import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
+
+// Status que indicam "ativas" (aguardando envio)
+const STATUS_ATIVOS = ['ready_to_ship', 'pending', 'handling'];
+// Status que indicam "histórico" (já processados)
+const STATUS_HISTORICO = ['shipped', 'delivered', 'not_delivered', 'cancelled'];
 
 export function VendasComEnvioPage() {
   const { accounts, isLoading: isLoadingAccounts } = useVendasComEnvioAccounts();
+  const { isSidebarCollapsed } = useSidebarUI();
   
-  // 🎯 Column Manager
+  // Column Manager
   const columnManager = useVendasComEnvioColumnManager();
   const visibleColumnKeys = useMemo(() => {
     return Array.from(columnManager.state.visibleColumns);
@@ -35,9 +41,8 @@ export function VendasComEnvioPage() {
     totalCount,
     stats,
     isFetching,
-    dataSource,
-    lastSyncedAt,
     appliedFilters,
+    setAppliedFilters,
   } = useVendasComEnvioStore();
 
   const {
@@ -46,8 +51,6 @@ export function VendasComEnvioPage() {
     applyFilters,
     changePage,
     changeItemsPerPage,
-    clearFilters,
-    hasChanges,
   } = useVendasComEnvioFilters();
 
   const { refetch } = useVendasComEnvioData({ accounts });
@@ -55,12 +58,66 @@ export function VendasComEnvioPage() {
   // Polling automático após primeira busca
   useVendasComEnvioPolling({ enabled: true });
 
+  // Estado local para aba
+  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>(appliedFilters.activeTab || 'ativas');
+  
+  // Estado para filtro de resumo
+  const [filtroResumoAtivo, setFiltroResumoAtivo] = useState<FiltroResumoEnvio | null>(null);
+
+  // Sincronizar aba com store
+  useEffect(() => {
+    if (appliedFilters.activeTab !== activeTab) {
+      setAppliedFilters({ ...appliedFilters, activeTab });
+    }
+  }, [activeTab]);
+
+  // Contar ativas e histórico
+  const countAtivas = useMemo(() => {
+    return vendas.filter(v => STATUS_ATIVOS.includes(v.shipping_status)).length;
+  }, [vendas]);
+
+  const countHistorico = useMemo(() => {
+    return vendas.filter(v => STATUS_HISTORICO.includes(v.shipping_status)).length;
+  }, [vendas]);
+
+  // Filtrar por aba
+  const vendasFiltradasPorAba = useMemo(() => {
+    const statusFiltro = activeTab === 'ativas' ? STATUS_ATIVOS : STATUS_HISTORICO;
+    let resultado = vendas.filter(v => statusFiltro.includes(v.shipping_status));
+    
+    // Aplicar filtro de resumo se ativo
+    if (filtroResumoAtivo) {
+      const hoje = new Date();
+      
+      if (filtroResumoAtivo.tipo === 'prazo') {
+        if (filtroResumoAtivo.valor === 'vencido') {
+          resultado = resultado.filter(venda => {
+            const deadline = venda.shipping_deadline || venda.date_created;
+            if (!deadline) return false;
+            const dataDeadline = parseISO(deadline);
+            return dataDeadline < hoje;
+          });
+        } else if (filtroResumoAtivo.valor === 'a_vencer') {
+          resultado = resultado.filter(venda => {
+            const deadline = venda.shipping_deadline || venda.date_created;
+            if (!deadline) return false;
+            const dataDeadline = parseISO(deadline);
+            const diasUteis = differenceInBusinessDays(dataDeadline, hoje);
+            return diasUteis >= 0 && diasUteis <= 2;
+          });
+        }
+      }
+    }
+    
+    return resultado;
+  }, [vendas, activeTab, filtroResumoAtivo]);
+
   // Paginação local
   const paginatedVendas = useMemo(() => {
     const start = (appliedFilters.currentPage - 1) * appliedFilters.itemsPerPage;
     const end = start + appliedFilters.itemsPerPage;
-    return vendas.slice(start, end);
-  }, [vendas, appliedFilters.currentPage, appliedFilters.itemsPerPage]);
+    return vendasFiltradasPorAba.slice(start, end);
+  }, [vendasFiltradasPorAba, appliedFilters.currentPage, appliedFilters.itemsPerPage]);
 
   // Auto-selecionar todas as contas no primeiro carregamento
   useEffect(() => {
@@ -70,12 +127,15 @@ export function VendasComEnvioPage() {
     }
   }, [accounts, pendingFilters.selectedAccounts.length, updatePendingFilter]);
 
-  // Formatar última sincronização
-  const formatLastSync = () => {
-    if (!lastSyncedAt) return null;
-    const date = new Date(lastSyncedAt);
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  };
+  // Handler para buscar
+  const handleBuscar = useCallback(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  // Handler para cancelar busca
+  const handleCancelarBusca = useCallback(() => {
+    // Apenas para feedback visual, não faz nada real
+  }, []);
 
   if (isLoadingAccounts) {
     return (
@@ -86,93 +146,106 @@ export function VendasComEnvioPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 pb-24">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Package className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Vendas com Envio</h1>
-            <p className="text-sm text-muted-foreground">
-              Gerencie pedidos aguardando envio
-            </p>
-          </div>
+    <div className="w-full">
+      <div className="pb-20">
+        {/* Sub-navegação */}
+        <div className="px-4 md:px-6">
+          <MLOrdersNav />
         </div>
-
-        <div className="flex items-center gap-2">
-          {/* Indicador de fonte de dados */}
-          {dataSource === 'cache' && (
-            <Badge variant="outline" className="text-xs">
-              Cache local
-            </Badge>
+        
+        {/* Espaçamento padrão */}
+        <div className="py-3 mt-2"></div>
+        
+        {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
+        <div className="px-4 md:px-6 mt-2">
+          <Tabs value={activeTab} onValueChange={(v) => {
+            setActiveTab(v as 'ativas' | 'historico');
+            changePage(1); // Reset para página 1
+          }}>
+            <div className="flex items-center gap-3 flex-nowrap">
+              <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
+                <TabsTrigger value="ativas" className="h-10">
+                  Ativas ({countAtivas})
+                </TabsTrigger>
+                <TabsTrigger value="historico" className="h-10">
+                  Histórico ({countHistorico})
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Filtros integrados na mesma linha */}
+              <div className="flex-1 min-w-0">
+                <VendasComEnvioFilterBar
+                  accounts={accounts}
+                  selectedAccountIds={pendingFilters.selectedAccounts}
+                  onAccountsChange={(ids) => updatePendingFilter('selectedAccounts', ids)}
+                  periodo={pendingFilters.periodo}
+                  onPeriodoChange={(p) => updatePendingFilter('periodo', p)}
+                  searchTerm={pendingFilters.searchTerm}
+                  onSearchChange={(s) => updatePendingFilter('searchTerm', s)}
+                  onBuscar={handleBuscar}
+                  onCancel={handleCancelarBusca}
+                  isLoading={isFetching}
+                  columnManager={columnManager}
+                />
+              </div>
+            </div>
+            
+            {/* Conteúdo das Tabs - Resumo */}
+            <TabsContent value="ativas" className="mt-4 px-0">
+              <VendasComEnvioResumo 
+                vendas={vendasFiltradasPorAba}
+                onFiltroClick={setFiltroResumoAtivo}
+                filtroAtivo={filtroResumoAtivo}
+              />
+            </TabsContent>
+            
+            <TabsContent value="historico" className="mt-4 px-0">
+              <VendasComEnvioResumo 
+                vendas={vendasFiltradasPorAba}
+                onFiltroClick={setFiltroResumoAtivo}
+                filtroAtivo={filtroResumoAtivo}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        {/* Tabela */}
+        <div className="px-4 md:px-6 mt-4 relative">
+          {isFetching && vendas.length === 0 && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
           )}
           
-          {/* Última atualização */}
-          {lastSyncedAt && (
-            <Badge variant="secondary" className="text-xs">
-              Atualizado às {formatLastSync()}
-            </Badge>
-          )}
-
-          {/* Indicador de fetching */}
-          {isFetching && (
-            <Badge variant="secondary" className="text-xs animate-pulse">
-              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-              Atualizando...
-            </Badge>
-          )}
-
-          {/* Botão de refresh manual */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refetch}
-            disabled={isFetching}
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-          </Button>
+          <VendasComEnvioTableNew
+            orders={paginatedVendas}
+            total={vendasFiltradasPorAba.length}
+            loading={isFetching && vendas.length === 0}
+            currentPage={appliedFilters.currentPage}
+            itemsPerPage={appliedFilters.itemsPerPage}
+            onPageChange={changePage}
+            visibleColumnKeys={visibleColumnKeys}
+          />
         </div>
+        
+        {/* Rodapé Fixado com Paginação */}
+        {vendasFiltradasPorAba.length > 0 && (
+          <div 
+            className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
+              isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+            } left-0`}
+          >
+            <VendasComEnvioPagination
+              currentPage={appliedFilters.currentPage}
+              totalPages={Math.ceil(vendasFiltradasPorAba.length / appliedFilters.itemsPerPage)}
+              itemsPerPage={appliedFilters.itemsPerPage}
+              totalItems={vendasFiltradasPorAba.length}
+              onPageChange={changePage}
+              onItemsPerPageChange={changeItemsPerPage}
+            />
+          </div>
+        )}
       </div>
-
-      {/* Estatísticas */}
-      <VendasComEnvioStats stats={stats} />
-
-      {/* Filtros + Seletor de Colunas */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <VendasComEnvioFilters
-          accounts={accounts}
-          pendingFilters={pendingFilters}
-          onFilterChange={updatePendingFilter}
-          onApply={applyFilters}
-          onClear={clearFilters}
-          hasChanges={hasChanges}
-          isFetching={isFetching}
-        />
-        <VendasComEnvioColumnManager manager={columnManager} />
-      </div>
-
-      {/* Tabela - NOVA com colunas de /vendas-canceladas */}
-      <Card className="overflow-hidden">
-        <VendasComEnvioTableNew
-          orders={paginatedVendas}
-          total={totalCount}
-          loading={isFetching && vendas.length === 0}
-          currentPage={appliedFilters.currentPage}
-          itemsPerPage={appliedFilters.itemsPerPage}
-          onPageChange={changePage}
-          visibleColumnKeys={visibleColumnKeys}
-        />
-      </Card>
-
-      {/* Paginação */}
-      <VendasComEnvioPagination
-        currentPage={appliedFilters.currentPage}
-        totalPages={Math.ceil(totalCount / appliedFilters.itemsPerPage)}
-        itemsPerPage={appliedFilters.itemsPerPage}
-        totalItems={totalCount}
-        onPageChange={changePage}
-        onItemsPerPageChange={changeItemsPerPage}
-      />
     </div>
   );
 }
