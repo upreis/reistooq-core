@@ -45,6 +45,7 @@ import {
 import { cn } from "@/lib/utils";
 import pedidosIcon from "@/assets/pedidos-cart-icon.png";
 import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-icon.png";
+import canceladasComEnvioIcon from "@/assets/icons/canceladas-com-envio-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
@@ -156,9 +157,9 @@ const ALL_PAGES: PageOption[] = [
     id: 'vendas-com-envio',
     label: 'Canceladas com Envio',
     route: '/vendas-com-envio',
-    icon: <img src={pedidosNewIcon} alt="Canceladas com Envio" className="w-16 h-16 object-contain" />,
+    icon: <img src={canceladasComEnvioIcon} alt="Canceladas com Envio" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
-    gradient: 'bg-gradient-to-br from-cyan-500 to-cyan-700'
+    gradient: 'bg-gradient-to-br from-rose-500 to-rose-700'
   },
   
   // OMS
