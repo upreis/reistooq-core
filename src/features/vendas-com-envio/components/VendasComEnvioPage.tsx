@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
 
 export function VendasComEnvioPage() {
   const { accounts, isLoading: isLoadingAccounts } = useVendasComEnvioAccounts();
@@ -45,6 +46,14 @@ export function VendasComEnvioPage() {
 
   // Polling automático após primeira busca
   useVendasComEnvioPolling({ enabled: true });
+
+  // Auto-selecionar todas as contas no primeiro carregamento
+  useEffect(() => {
+    if (accounts.length > 0 && pendingFilters.selectedAccounts.length === 0) {
+      const allAccountIds = accounts.map(a => a.id);
+      updatePendingFilter('selectedAccounts', allAccountIds);
+    }
+  }, [accounts, pendingFilters.selectedAccounts.length, updatePendingFilter]);
 
   // Formatar última sincronização
   const formatLastSync = () => {
