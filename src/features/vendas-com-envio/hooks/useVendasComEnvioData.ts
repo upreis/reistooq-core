@@ -127,26 +127,6 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
       const shipping = orderData.shipping || {};
       const buyer = orderData.buyer || {};
       const items = orderData.order_items || row.items || [];
-      
-      // 🔍 Buscar receiver_name em TODOS os caminhos possíveis (padrão /pedidos)
-      const receiverName = 
-        shipping?.destination?.receiver_name ||
-        orderData?.shipping?.destination?.receiver_name ||
-        row.receiver_name ||
-        row.buyer_name ||
-        null;
-      
-      // 🔍 Buscar first_name + last_name em múltiplos caminhos
-      const fullNameFromParts = 
-        (row.buyer_first_name && row.buyer_last_name
-          ? `${row.buyer_first_name} ${row.buyer_last_name}`.trim()
-          : null) ||
-        (buyer.first_name || buyer.last_name
-          ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim()
-          : null) ||
-        (orderData.buyer?.first_name || orderData.buyer?.last_name
-          ? `${orderData.buyer?.first_name || ''} ${orderData.buyer?.last_name || ''}`.trim()
-          : null);
 
       return {
         id: row.id || row.order_id,
@@ -165,10 +145,13 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
         date_closed: row.date_closed || null,
         shipping_deadline: row.shipping_deadline || shipping.lead_time?.shipping_deadline || null,
         
-        // Comprador - Prioridade: receiver_name > first+last > vazio (SEM nickname)
+        // Comprador
         buyer_id: row.buyer_id || buyer.id || null,
         buyer_nickname: row.buyer_nickname || buyer.nickname || null,
-        buyer_name: receiverName || fullNameFromParts || null,
+        buyer_name: row.buyer_name || 
+          (row.buyer_first_name && row.buyer_last_name
+            ? `${row.buyer_first_name} ${row.buyer_last_name}`
+            : [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || null),
         
         // Valores
         total_amount: Number(row.total_amount) || orderData.total_amount || 0,
