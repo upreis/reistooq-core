@@ -5,6 +5,8 @@
  * 
  * Busca pedidos com status: ready_to_ship, pending, handling
  * Salva na tabela ml_vendas_comenvio
+ * 
+ * ✅ Usa get-ml-token para obter access_token (mesmo padrão de unified-orders)
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
@@ -23,6 +25,46 @@ const MAX_PAGES = 20; // Máximo 1000 pedidos por conta
 
 // Status de shipping que indicam "com envio pendente"
 const SHIPPING_STATUS_FILTER = ['ready_to_ship', 'pending', 'handling'];
+
+/**
+ * Busca access_token via get-ml-token edge function
+ */
+async function getAccessToken(supabaseAdmin: any, accountId: string): Promise<string | null> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/get-ml-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        integration_account_id: accountId,
+        provider: 'mercadolivre'
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Erro ao obter token ML:', response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!data?.success || !data?.access_token) {
+      console.error('❌ Token ML não encontrado nos dados:', data);
+      return null;
+    }
+
+    return data.access_token;
+  } catch (error) {
+    console.error('❌ Erro ao buscar token ML:', error);
+    return null;
+  }
+}
 
 interface MLOrder {
   id: number;
@@ -162,22 +204,14 @@ Deno.serve(async (req) => {
       try {
         console.log(`\n🔄 [${account.name || account.account_identifier}] Starting...`);
 
-        // 2.1: Buscar token de acesso
-        const { data: secretData, error: secretError } = await supabaseAdmin.functions.invoke(
-          'integrations-get-secret',
-          {
-            body: { 
-              integration_account_id: account.id,
-              secret_name: 'access_token'
-            }
-          }
-        );
+        // 2.1: Buscar token de acesso via get-ml-token
+        const accessToken = await getAccessToken(supabaseAdmin, account.id);
 
-        if (secretError || !secretData?.secret) {
+        if (!accessToken) {
           throw new Error(`Token not found for account ${account.account_identifier}`);
         }
 
-        const accessToken = secretData.secret;
+        console.log(`✅ Token obtido para ${account.name || account.account_identifier}`);
 
         // 2.2: Buscar pedidos do ML com paginação
         let allOrders: MLOrder[] = [];
