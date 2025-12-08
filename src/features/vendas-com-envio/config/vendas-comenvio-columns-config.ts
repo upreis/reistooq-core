@@ -323,16 +323,6 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Código de rastreamento do envio',
     width: 200
   },
-  {
-    key: 'carrier',
-    label: 'Transportadora',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Transportadora do envio',
-    width: 150
-  },
 
   // ====== ENDEREÇO ======
   {
