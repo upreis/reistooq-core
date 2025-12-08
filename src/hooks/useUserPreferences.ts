@@ -37,7 +37,21 @@ export function useUserPreferences<T>({
   const { user } = useAuth();
   const { profile } = useCurrentProfile();
   const organizationId = profile?.organizacao_id;
-  const [value, setValueState] = useState<T>(defaultValue);
+  
+  // Inicializar DIRETAMENTE do localStorage para evitar flash do defaultValue
+  const [value, setValueState] = useState<T>(() => {
+    if (localStorageKey) {
+      try {
+        const stored = localStorage.getItem(localStorageKey);
+        if (stored) {
+          return JSON.parse(stored);
+        }
+      } catch (err) {
+        console.error('[useUserPreferences] Error reading initial localStorage:', err);
+      }
+    }
+    return defaultValue;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
