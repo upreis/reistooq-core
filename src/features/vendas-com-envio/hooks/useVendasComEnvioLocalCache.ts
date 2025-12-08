@@ -21,7 +21,7 @@ interface CacheEntry {
   totalCount: number;
 }
 
-const CACHE_KEY = 'vendas_com_envio_local_cache_v1';
+const CACHE_KEY = 'vendas_com_envio_local_cache_v2'; // v2: inclui dados de shipping
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 
 /**
@@ -103,35 +103,58 @@ export function useVendasComEnvioLocalCache() {
 
     const { dateFrom, dateTo } = calculateDates(filters.periodo);
     
-    // 🚀 OTIMIZAÇÃO: Salvar apenas colunas essenciais para reduzir tamanho
-    const optimizedData = data.map(venda => ({
-      id: venda.id,
-      order_id: venda.order_id,
-      integration_account_id: venda.integration_account_id,
-      account_name: venda.account_name,
-      order_status: venda.order_status,
-      shipping_status: venda.shipping_status,
-      payment_status: venda.payment_status,
-      date_created: venda.date_created,
-      date_closed: venda.date_closed,
-      shipping_deadline: venda.shipping_deadline,
-      buyer_id: venda.buyer_id,
-      buyer_nickname: venda.buyer_nickname,
-      buyer_name: venda.buyer_name,
-      total_amount: venda.total_amount,
-      currency_id: venda.currency_id,
-      shipment_id: venda.shipment_id,
-      logistic_type: venda.logistic_type,
-      tracking_number: venda.tracking_number,
-      carrier: venda.carrier,
-      items: venda.items?.slice(0, 3), // Limitar a 3 itens
-      items_count: venda.items_count,
-      items_quantity: venda.items_quantity,
-      // Excluir order_data (JSONB grande) do cache local
-    }));
+    // 🚀 OTIMIZAÇÃO: Salvar colunas essenciais + dados shipping necessários
+    const optimizedData = data.map(venda => {
+      const orderData = venda.order_data as any;
+      
+      // Extrair apenas dados de shipping necessários para colunas
+      const shippingData = orderData?.shipping ? {
+        id: orderData.shipping.id,
+        status: orderData.shipping.status,
+        substatus: orderData.shipping.substatus,
+        tracking_number: orderData.shipping.tracking_number,
+        logistic: orderData.shipping.logistic ? {
+          type: orderData.shipping.logistic.type,
+        } : null,
+        receiver_address: orderData.shipping.receiver_address ? {
+          city: orderData.shipping.receiver_address.city,
+          state: orderData.shipping.receiver_address.state,
+          zip_code: orderData.shipping.receiver_address.zip_code,
+          street_name: orderData.shipping.receiver_address.street_name,
+          street_number: orderData.shipping.receiver_address.street_number,
+        } : null,
+      } : null;
+      
+      return {
+        id: venda.id,
+        order_id: venda.order_id,
+        integration_account_id: venda.integration_account_id,
+        account_name: venda.account_name,
+        order_status: venda.order_status,
+        shipping_status: venda.shipping_status,
+        payment_status: venda.payment_status,
+        date_created: venda.date_created,
+        date_closed: venda.date_closed,
+        shipping_deadline: venda.shipping_deadline,
+        buyer_id: venda.buyer_id,
+        buyer_nickname: venda.buyer_nickname,
+        buyer_name: venda.buyer_name,
+        total_amount: venda.total_amount,
+        currency_id: venda.currency_id,
+        shipment_id: venda.shipment_id,
+        logistic_type: venda.logistic_type,
+        tracking_number: venda.tracking_number,
+        carrier: venda.carrier,
+        items: venda.items?.slice(0, 3),
+        items_count: venda.items_count,
+        items_quantity: venda.items_quantity,
+        // Incluir order_data otimizado apenas com shipping essencial
+        order_data: shippingData ? { shipping: shippingData } : null,
+      };
+    });
     
     const entry: CacheEntry = {
-      data: optimizedData as VendaComEnvio[],
+      data: optimizedData as unknown as VendaComEnvio[],
       timestamp: Date.now(),
       filters: {
         accounts: filters.selectedAccounts.slice().sort(),
@@ -153,7 +176,7 @@ export function useVendasComEnvioLocalCache() {
         // Tentar novamente com menos dados
         const reducedEntry = {
           ...entry,
-          data: optimizedData.slice(0, 200) as VendaComEnvio[], // Limitar a 200 itens
+          data: optimizedData.slice(0, 200) as unknown as VendaComEnvio[],
         };
         const reducedSerialized = JSON.stringify(reducedEntry);
         
@@ -180,7 +203,7 @@ export function useVendasComEnvioLocalCache() {
           // Última tentativa com dados mínimos
           const minimalEntry = {
             ...entry,
-            data: optimizedData.slice(0, 100) as VendaComEnvio[],
+            data: optimizedData.slice(0, 100) as unknown as VendaComEnvio[],
           };
           localStorage.setItem(CACHE_KEY, JSON.stringify(minimalEntry));
           setCachedEntry(minimalEntry);
@@ -287,7 +310,8 @@ export function useVendasComEnvioLocalCache() {
 function cleanupOldCaches() {
   try {
     const keysToCheck = [
-      'vendas_com_envio_local_cache_v1',
+      'vendas_com_envio_local_cache_v2',
+      'vendas_com_envio_local_cache_v1', // Versão antiga - limpar
       'vendas_canceladas_local_cache',
       'reclamacoes_local_cache',
       'devolucoesdevenda_local_cache',
@@ -321,7 +345,8 @@ function emergencyCleanup() {
     
     // Coletar todos os caches do sistema
     const cacheKeys = [
-      'vendas_com_envio_local_cache_v1',
+      'vendas_com_envio_local_cache_v2',
+      'vendas_com_envio_local_cache_v1', // Versão antiga - limpar
       'vendas_canceladas_local_cache',
       'reclamacoes_local_cache',
       'devolucoesdevenda_local_cache',

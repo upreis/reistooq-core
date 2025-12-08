@@ -97,13 +97,14 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
     });
 
     // 🔧 Chamar Edge Function (padrão get-devolucoes-direct)
+    // 🔄 force_refresh: true para garantir dados enriquecidos com shipping detalhado
     const { data: response, error: invokeError } = await supabase.functions.invoke('get-vendas-comenvio', {
       body: {
         integration_account_ids: accountsToUse,
         date_from: dateFromISO,
         date_to: dateToISO,
         shipping_status: appliedFilters.shippingStatus !== 'all' ? appliedFilters.shippingStatus : undefined,
-        force_refresh: false,
+        force_refresh: true, // Sempre força busca da API ML para garantir enriquecimento
       }
     });
 
