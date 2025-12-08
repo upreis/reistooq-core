@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 import type { VendaComEnvio } from '../types';
 import { StatusAnaliseSelect } from './StatusAnaliseSelect';
 import { StatusAnalise } from '../types/venda-analise.types';
+import { formatSubstatus as formatSubstatusUtil, formatLogisticType as formatLogisticTypeUtil } from '@/utils/orderFormatters';
 
 const columnHelper = createColumnHelper<VendaComEnvio>();
 
@@ -73,30 +74,7 @@ const getShippingStatusLabel = (status: string): string => {
   return labels[status] || status || '-';
 };
 
-const formatLogisticType = (type: string): string => {
-  const labels: Record<string, string> = {
-    'fulfillment': 'Full',
-    'xd_drop_off': 'Coleta',
-    'self_service': 'Próprio',
-    'drop_off': 'Drop Off',
-    'cross_docking': 'Cross Docking',
-  };
-  return labels[type] || type || '-';
-};
-
-const formatSubstatus = (substatus: string): string => {
-  const labels: Record<string, string> = {
-    'ready_to_print': 'Pronto para Imprimir',
-    'printed': 'Etiqueta Impressa',
-    'stale': 'Atrasado',
-    'in_hub': 'No Hub',
-    'waiting_for_withdrawal': 'Aguardando Retirada',
-    'in_transit': 'Em Trânsito',
-    'out_for_delivery': 'Saiu para Entrega',
-    'soon_deliver': 'Em Breve',
-  };
-  return labels[substatus] || substatus || '-';
-};
+// Usar formatadores centralizados importados de @/utils/orderFormatters
 
 const getPaymentStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
@@ -465,7 +443,7 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
       const type = orderData?.shipping?.logistic?.type || row.original.logistic_type;
       return (
         <span className="text-xs">
-          {formatLogisticType(type || '-')}
+          {formatLogisticTypeUtil(type || '-')}
         </span>
       );
     },
@@ -480,7 +458,7 @@ export const createVendasComEnvioColumns = (context: ColumnContext) => [
       const orderData = row.original.order_data as any;
       // Mesmo padrão de /vendas-canceladas: shipping?.substatus
       const substatus = orderData?.shipping?.substatus;
-      return <span className="text-xs">{formatSubstatus(substatus || '-')}</span>;
+      return <span className="text-xs">{formatSubstatusUtil(substatus || '-')}</span>;
     },
     meta: { headerClassName: 'min-w-[120px]' }
   }),
