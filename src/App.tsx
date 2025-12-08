@@ -143,7 +143,7 @@ function App() {
                     <Route path="estoque/*" element={<Estoque />} />
                     <Route path="pedidos" element={<Pedidos />} />
                     <Route path="pedidos-v2" element={<PedidosV2 />} />
-                    <Route path="scanner" element={<Scanner />} />
+                    <Route path="scanner" element={<Navigate to="/aplicativos/scanner" replace />} />
                     <Route path="historico" element={<Historico />} />
                     
                     {/* Vendas com Envio */}

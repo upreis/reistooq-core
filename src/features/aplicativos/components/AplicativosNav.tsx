@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Calendar, Notebook } from "lucide-react";
+import { Calendar, Notebook, Scan } from "lucide-react";
 
 const navItems = [
   {
@@ -12,6 +12,11 @@ const navItems = [
     path: "/aplicativos/notas", 
     label: "Notas",
     icon: Notebook,
+  },
+  {
+    path: "/aplicativos/scanner", 
+    label: "Scanner",
+    icon: Scan,
   },
 ];
 
