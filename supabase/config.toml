@@ -144,3 +144,5 @@ verify_jwt = false
 [functions.process-claims-queue]
 verify_jwt = false
 
+[functions.ml-vendas-comenvio-sync]
+verify_jwt = false
