@@ -22,6 +22,8 @@ import { parseISO, differenceInBusinessDays } from 'date-fns';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { StatusAnalise, STATUS_ATIVOS as STATUS_ANALISE_ATIVOS, STATUS_HISTORICO as STATUS_ANALISE_HISTORICO } from '../types/venda-analise.types';
+import { VendasComEnvioAnotacoesModal } from './VendasComEnvioAnotacoesModal';
+import type { VendaComEnvio } from '../types';
 
 // Status de envio que indicam "ativas" (aguardando envio)
 const STATUS_ENVIO_ATIVOS = ['ready_to_ship', 'pending', 'handling'];
@@ -30,6 +32,8 @@ const STATUS_ENVIO_HISTORICO = ['shipped', 'delivered', 'not_delivered', 'cancel
 
 // Storage key para status de análise
 const STATUS_ANALISE_STORAGE_KEY = 'vendas_com_envio_analise_status';
+// Storage key para anotações
+const ANOTACOES_STORAGE_KEY = 'vendas_com_envio_anotacoes';
 
 export function VendasComEnvioPage() {
   const queryClient = useQueryClient();
@@ -93,6 +97,40 @@ export function VendasComEnvioPage() {
   // Handler para mudança de status de análise
   const handleStatusAnaliseChange = useCallback((orderId: string, newStatus: StatusAnalise) => {
     setStatusAnalise(prev => ({ ...prev, [orderId]: newStatus }));
+  }, []);
+
+  // Estado para anotações (persistido em localStorage)
+  const [anotacoes, setAnotacoes] = useState<Record<string, string>>(() => {
+    try {
+      const stored = localStorage.getItem(ANOTACOES_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Persistir anotações em localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(ANOTACOES_STORAGE_KEY, JSON.stringify(anotacoes));
+    } catch (e) {
+      console.error('Erro ao salvar anotações:', e);
+    }
+  }, [anotacoes]);
+
+  // Estado para modal de anotações
+  const [anotacoesModalOpen, setAnotacoesModalOpen] = useState(false);
+  const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<VendaComEnvio | null>(null);
+
+  // Handler para abrir modal de anotações
+  const handleOpenAnotacoes = useCallback((order: VendaComEnvio) => {
+    setSelectedOrderForAnotacoes(order);
+    setAnotacoesModalOpen(true);
+  }, []);
+
+  // Handler para salvar anotação
+  const handleSaveAnotacao = useCallback((orderId: string, anotacao: string) => {
+    setAnotacoes(prev => ({ ...prev, [orderId]: anotacao }));
   }, []);
 
   // Sincronizar aba com store
@@ -272,6 +310,8 @@ export function VendasComEnvioPage() {
             visibleColumnKeys={visibleColumnKeys}
             statusAnalise={statusAnalise}
             onStatusAnaliseChange={handleStatusAnaliseChange}
+            anotacoes={anotacoes}
+            onOpenAnotacoes={handleOpenAnotacoes}
           />
         </div>
         
@@ -293,6 +333,17 @@ export function VendasComEnvioPage() {
           </div>
         )}
       </div>
+      
+      {/* Modal de Anotações */}
+      {selectedOrderForAnotacoes && (
+        <VendasComEnvioAnotacoesModal
+          open={anotacoesModalOpen}
+          onOpenChange={setAnotacoesModalOpen}
+          orderId={selectedOrderForAnotacoes.order_id}
+          anotacaoAtual={anotacoes[selectedOrderForAnotacoes.id] || ''}
+          onSave={(orderId, anotacao) => handleSaveAnotacao(selectedOrderForAnotacoes.id, anotacao)}
+        />
+      )}
     </div>
   );
 }
