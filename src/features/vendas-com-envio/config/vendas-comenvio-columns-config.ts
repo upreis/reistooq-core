@@ -423,6 +423,16 @@ export const VENDAS_COMENVIO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Tags do pedido/envio',
     width: 150
   },
+  {
+    key: 'carrier',
+    label: 'Transportadora',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Transportadora do envio',
+    width: 150
+  },
 
   // ====== ENDEREÇO ======
   {
