@@ -1,6 +1,7 @@
 /**
  * 🎯 CONFIGURAÇÃO DE COLUNAS - VENDAS COM ENVIO
  * Replica exatamente as colunas de /vendas-canceladas
+ * @version 1.1
  */
 
 import type { ColumnDefinition, ColumnProfile } from '@/features/vendas-online/types/columns.types';
