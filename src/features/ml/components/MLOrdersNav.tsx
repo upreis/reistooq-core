@@ -10,14 +10,14 @@ const subNavItems = [
     preserveSearch: true,
   },
   {
+    path: "/vendas-com-envio",
+    label: "Canceladas com Envio",
+    icon: Truck,
+  },
+  {
     path: "/reclamacoes",
     label: "Reclamações",
     icon: AlertCircle,
-  },
-  {
-    path: "/vendas-com-envio",
-    label: "Vendas com Envio",
-    icon: Truck,
   },
   {
     path: "/devolucoesdevenda",

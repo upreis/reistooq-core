@@ -152,11 +152,11 @@ const ALL_PAGES: PageOption[] = [
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
-  {
+{
     id: 'vendas-com-envio',
-    label: 'Vendas com Envio',
+    label: 'Canceladas com Envio',
     route: '/vendas-com-envio',
-    icon: <img src={pedidosNewIcon} alt="Vendas com Envio" className="w-16 h-16 object-contain" />,
+    icon: <img src={pedidosNewIcon} alt="Canceladas com Envio" className="w-16 h-16 object-contain" />,
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-cyan-500 to-cyan-700'
   },

@@ -33,8 +33,8 @@ const DEFAULT_SHORTCUTS: Service[] = [
     href: '/estoque',
     gradient: 'bg-gradient-to-br from-amber-500 to-orange-600'
   },
-  {
-    name: 'Vendas com Envio',
+{
+    name: 'Canceladas com Envio',
     imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
     href: '/vendas-com-envio',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
