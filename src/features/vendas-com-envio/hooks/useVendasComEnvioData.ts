@@ -203,9 +203,20 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
       };
     });
 
-    console.log('[useVendasComEnvioData] ✅ Vendas mapeadas:', orders.length);
+    console.log('[useVendasComEnvioData] ✅ Vendas mapeadas (antes filtro):', orders.length);
 
-    return { orders, total: orders.length };
+    // 🔧 FILTRO CRÍTICO: Apenas pedidos cancelados COM código de rastreio
+    const filteredOrders = orders.filter(order => {
+      const isCancelled = order.order_status === 'cancelled' || 
+                          order.shipping_status === 'cancelled';
+      const hasTrackingNumber = !!order.tracking_number && order.tracking_number.trim() !== '';
+      
+      return isCancelled && hasTrackingNumber;
+    });
+
+    console.log('[useVendasComEnvioData] ✅ Vendas após filtro (cancelados + rastreio):', filteredOrders.length);
+
+    return { orders: filteredOrders, total: filteredOrders.length };
   }, [appliedFilters, accounts]);
 
   // React Query com Combo 2.1 (busca manual)
