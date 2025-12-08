@@ -91,8 +91,8 @@ export function VendasComEnvioFilters({
   return (
     <Card className="p-4">
       <div className="flex flex-col gap-4">
-        {/* Linha 1: Período, Status, Contas, Busca */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Linha 1: Período, Contas, Busca */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* Período */}
           <div className="space-y-1.5">
             <Label className="text-xs">Período</Label>
@@ -107,27 +107,6 @@ export function VendasComEnvioFilters({
                 {PERIODO_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status de Envio */}
-          <div className="space-y-1.5">
-            <Label className="text-xs">Status Envio</Label>
-            <Select
-              value={pendingFilters.shippingStatus}
-              onValueChange={(value) => onFilterChange('shippingStatus', value as ShippingStatus | 'all')}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                <SelectItem value="all">Todos</SelectItem>
-                {Object.entries(SHIPPING_STATUS_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
