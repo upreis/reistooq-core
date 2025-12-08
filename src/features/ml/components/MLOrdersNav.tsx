@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Package, RefreshCcw, AlertCircle, ShoppingBag, Undo2, FileText } from "lucide-react";
+import { Package, RefreshCcw, AlertCircle, ShoppingBag, Undo2, FileText, Truck } from "lucide-react";
 import { MagneticTabs } from "@/components/ui/magnetic-tabs";
 
 const subNavItems = [
@@ -18,6 +18,11 @@ const subNavItems = [
     path: "/vendas-canceladas",
     label: "Vendas Canceladas",
     icon: ShoppingBag,
+  },
+  {
+    path: "/vendas-com-envio",
+    label: "Vendas com Envio",
+    icon: Truck,
   },
   {
     path: "/devolucoesdevenda",
