@@ -4084,6 +4084,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          organization_id: string | null
           payment_terms: string | null
           phone: string | null
           price_tier: string | null
@@ -4098,6 +4099,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          organization_id?: string | null
           payment_terms?: string | null
           phone?: string | null
           price_tier?: string | null
@@ -4112,13 +4114,22 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          organization_id?: string | null
           payment_terms?: string | null
           phone?: string | null
           price_tier?: string | null
           shipping_address?: Json | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "oms_customers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       oms_order_items: {
         Row: {
@@ -4191,6 +4202,7 @@ export type Database = {
           notes: string | null
           number: string
           order_date: string
+          organization_id: string | null
           payment_method: string | null
           payment_term_days: number | null
           payment_terms: string | null
@@ -4216,6 +4228,7 @@ export type Database = {
           notes?: string | null
           number: string
           order_date?: string
+          organization_id?: string | null
           payment_method?: string | null
           payment_term_days?: number | null
           payment_terms?: string | null
@@ -4241,6 +4254,7 @@ export type Database = {
           notes?: string | null
           number?: string
           order_date?: string
+          organization_id?: string | null
           payment_method?: string | null
           payment_term_days?: number | null
           payment_terms?: string | null
@@ -4261,6 +4275,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "oms_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "oms_orders_sales_rep_id_fkey"
             columns: ["sales_rep_id"]
             isOneToOne: false
@@ -4277,6 +4298,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          organization_id: string | null
           phone: string | null
           updated_at: string
         }
@@ -4287,6 +4309,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          organization_id?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -4297,10 +4320,19 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          organization_id?: string | null
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "oms_sales_reps_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organizacoes: {
         Row: {
@@ -8280,6 +8312,10 @@ export type Database = {
         }[]
       }
       validate_security_settings: { Args: never; Returns: Json }
+      verify_integration_account_ownership: {
+        Args: { p_integration_account_id: string; p_user_id: string }
+        Returns: boolean
+      }
       verify_view_security: {
         Args: never
         Returns: {
