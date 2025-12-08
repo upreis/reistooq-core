@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import pedidosIcon from "@/assets/pedidos-cart-icon.png";
-import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-icon.png";
+import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-new-icon.png";
 import canceladasComEnvioIcon from "@/assets/icons/canceladas-com-envio-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
