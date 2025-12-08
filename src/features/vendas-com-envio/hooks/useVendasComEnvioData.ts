@@ -145,7 +145,7 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
         date_closed: row.date_closed || null,
         shipping_deadline: row.shipping_deadline || shipping.lead_time?.shipping_deadline || null,
         
-        // Comprador - Prioridade: receiver_name (envio) > first+last > nickname (padrão /pedidos)
+        // Comprador - Prioridade: receiver_name (envio) > first+last > vazio (SEM nickname)
         buyer_id: row.buyer_id || buyer.id || null,
         buyer_nickname: row.buyer_nickname || buyer.nickname || null,
         buyer_name: 
@@ -157,8 +157,7 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
           (buyer.first_name || buyer.last_name
             ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim()
             : null) ||
-          buyer.nickname ||
-          null,
+          null, // SEM nickname como fallback
         
         // Valores
         total_amount: Number(row.total_amount) || orderData.total_amount || 0,
