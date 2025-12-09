@@ -21,7 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Package, CheckCircle, AlertTriangle, Clock, Zap, Database, AlertCircle } from 'lucide-react';
+import { Package, CheckCircle, AlertTriangle, Clock, Zap, Database, AlertCircle, MapPin } from 'lucide-react';
 
 interface BaixaEstoqueModalProps {
   pedidos: Pedido[];
@@ -35,12 +35,13 @@ interface BaixaEstoqueModalProps {
   };
 }
 
-type StatusBaixa = 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado' | 'sem_composicao';
+type StatusBaixa = 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado' | 'sem_composicao' | 'sem_local_estoque';
 
 export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoqueModalProps) {
   const [open, setOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processed, setProcessed] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Autoabrir modal quando não há trigger (uso programático)
   useEffect(() => {
@@ -63,13 +64,24 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       const skuKit = mapping?.skuKit || (pedido as any).sku_kit;
       const temMapeamento = !!skuKit;
       const quantidade = Number((pedido as any).total_itens) || 0;
+      const localEstoqueId = (pedido as any).local_estoque_id;
+      const temLocalEstoque = !!localEstoqueId;
       let statusBaixaCalc = mapping?.statusBaixa as StatusBaixa | undefined;
-      if (!statusBaixaCalc) statusBaixaCalc = temMapeamento ? 'pronto_baixar' : 'sem_mapear';
+      
+      // 🛡️ VALIDAÇÃO: Verificar local de estoque PRIMEIRO
+      if (!temLocalEstoque) {
+        statusBaixaCalc = 'sem_local_estoque';
+      } else if (!statusBaixaCalc) {
+        statusBaixaCalc = temMapeamento ? 'pronto_baixar' : 'sem_mapear';
+      }
+      
       const temEstoque = (statusBaixaCalc === 'pronto_baixar' && quantidade > 0) || (temMapeamento && quantidade > 0 && !mapping?.statusBaixa);
       
-      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado E se tem estoque E se tem composição
+      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado E se tem estoque E se tem composição E se tem local
       let problema = null;
-      if (!temMapeamento) {
+      if (!temLocalEstoque) {
+        problema = 'Sem local de estoque';
+      } else if (!temMapeamento) {
         problema = 'Sem mapeamento';
       } else if (statusBaixaCalc === 'sku_nao_cadastrado') {
         problema = 'SKU não cadastrado no estoque';
@@ -89,6 +101,8 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
         statusBaixa: statusBaixaCalc,
         temMapeamento,
         temEstoque,
+        temLocalEstoque,
+        local_estoque_id: localEstoqueId,
         total_itens: (pedido as any).total_itens,
         problema
       });
@@ -97,6 +111,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
         ...pedido,
         temMapeamento,
         temEstoque,
+        temLocalEstoque,
         statusBaixa: statusBaixaCalc,
         skuKit,
         quantidade,
@@ -107,35 +122,40 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
 
   const resumo = useMemo(() => {
     const total = pedidosAnalise.length;
-    const prontos = pedidosAnalise.filter(p => p.temEstoque && p.temMapeamento).length;
+    const prontos = pedidosAnalise.filter(p => p.temEstoque && p.temMapeamento && p.temLocalEstoque).length;
+    const semLocalEstoque = pedidosAnalise.filter(p => !p.temLocalEstoque).length;
     const problemas = total - prontos;
     const valorTotal = pedidosAnalise.reduce((sum, p) => sum + (p.valor_total || 0), 0);
     
     console.log('🔍 DIAGNÓSTICO - Resumo da análise:', {
       total,
       prontos,
+      semLocalEstoque,
       problemas,
       valorTotal,
       pedidos_com_estoque: pedidosAnalise.filter(p => p.temEstoque).length,
-      pedidos_com_mapeamento: pedidosAnalise.filter(p => p.temMapeamento).length
+      pedidos_com_mapeamento: pedidosAnalise.filter(p => p.temMapeamento).length,
+      pedidos_com_local: pedidosAnalise.filter(p => p.temLocalEstoque).length
     });
     
-    return { total, prontos, problemas, valorTotal };
+    return { total, prontos, semLocalEstoque, problemas, valorTotal };
   }, [pedidosAnalise]);
 
   const handleProcessar = async () => {
     console.log('🚀 Iniciando processamento OTIMIZADO de baixa de estoque');
+    setErrorMessage(null);
     
-    // 🛡️ CRÍTICO: Filtrar apenas pedidos prontos (com mapeamento, cadastro, composição E estoque disponível)
+    // 🛡️ CRÍTICO: Filtrar apenas pedidos prontos (com mapeamento, cadastro, composição, local E estoque disponível)
     const pedidosProntos = pedidosAnalise.filter(p => 
       p.temEstoque && 
       p.temMapeamento && 
+      p.temLocalEstoque &&
       p.statusBaixa === 'pronto_baixar' && // Só processar se statusBaixa === 'pronto_baixar'
       p.statusBaixa !== 'sem_composicao'   // Bloquear pedidos sem composição
     );
     
     if (pedidosProntos.length === 0) {
-      alert('❌ Nenhum pedido está pronto para baixa. Verifique os mapeamentos e estoque disponível.');
+      setErrorMessage('Nenhum pedido está pronto para baixa. Verifique os mapeamentos, local de estoque e estoque disponível.');
       return;
     }
     
@@ -152,7 +172,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       setProcessed(Boolean(ok));
     } catch (error) {
       console.error('❌ Erro ao processar baixa:', error);
-      alert(`Erro: ${error.message}`);
+      setErrorMessage(error.message || 'Erro ao processar baixa de estoque');
     } finally {
       setIsProcessing(false);
     }
@@ -161,6 +181,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
   const handleReset = () => {
     setProcessed(false);
     setIsProcessing(false);
+    setErrorMessage(null);
   };
 
   const defaultTrigger = (
@@ -177,6 +198,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       case 'sem_mapear': return <Clock className="h-4 w-4 text-warning" />;
       case 'sku_nao_cadastrado': return <Database className="h-4 w-4 text-orange-500" />;
       case 'sem_composicao': return <AlertCircle className="h-4 w-4 text-orange-600" />;
+      case 'sem_local_estoque': return <MapPin className="h-4 w-4 text-destructive" />;
       default: return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
     }
   };
@@ -188,6 +210,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       case 'sem_mapear': return <Badge variant="secondary">Sem Mapeamento</Badge>;
       case 'sku_nao_cadastrado': return <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">SKU sem cadastro no Estoque</Badge>;
       case 'sem_composicao': return <Badge variant="outline" className="bg-orange-600/10 text-orange-600 border-orange-600/20">Sem Composição</Badge>;
+      case 'sem_local_estoque': return <Badge variant="destructive">Sem Local de Estoque</Badge>;
       default: return <Badge variant="outline">Indefinido</Badge>;
     }
   };
@@ -212,9 +235,19 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
           <DialogDescription>
             <div className="space-y-2">
               <div>Valor total selecionado: <span className="font-semibold">R$ {resumo.valorTotal.toFixed(2)}</span></div>
-              {resumo.problemas > 0 && (
+              {resumo.semLocalEstoque > 0 && (
+                <div className="text-destructive font-medium">
+                  📍 {resumo.semLocalEstoque} pedido(s) sem local de estoque definido
+                </div>
+              )}
+              {resumo.problemas > 0 && resumo.semLocalEstoque === 0 && (
                 <div className="text-warning">
                   ⚠️ {resumo.problemas} pedido(s) com problemas (serão ignorados)
+                </div>
+              )}
+              {resumo.problemas > 0 && resumo.semLocalEstoque > 0 && resumo.problemas !== resumo.semLocalEstoque && (
+                <div className="text-warning">
+                  ⚠️ {resumo.problemas - resumo.semLocalEstoque} outro(s) pedido(s) com problemas
                 </div>
               )}
             </div>
@@ -222,6 +255,19 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
         </DialogHeader>
 
         <div className="flex-1 space-y-4 overflow-hidden">
+          {/* Erro centralizado */}
+          {errorMessage && !isProcessing && !processed && (
+            <Alert variant="destructive" className="flex flex-col items-center text-center">
+              <AlertCircle className="h-6 w-6 text-destructive mb-2" />
+              <AlertDescription className="text-center">
+                <div className="font-medium text-destructive text-lg mb-1">Não foi possível processar a baixa</div>
+                <div className="text-sm text-destructive/80">
+                  {errorMessage}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Status do Processamento */}
           {isProcessing && (
             <Alert className="border-info/20 bg-info/10">
