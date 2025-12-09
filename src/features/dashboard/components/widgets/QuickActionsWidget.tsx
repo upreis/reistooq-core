@@ -57,16 +57,20 @@ interface DockIconProps {
 
 function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const BASE_SIZE = 69;
   
   const distance = useTransform(mouseX, (val: number) => {
+    // Quando mouseX é Infinity (estado inicial/sem hover), retornar valor alto
+    // para que o transform calcule o tamanho base corretamente
+    if (!isFinite(val)) return 1000;
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
+  const widthSync = useTransform(distance, [-150, 0, 150], [BASE_SIZE, 104, BASE_SIZE]);
   const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
-  const heightSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
+  const heightSync = useTransform(distance, [-150, 0, 150], [BASE_SIZE, 104, BASE_SIZE]);
   const height = useSpring(heightSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
   const [isHovered, setIsHovered] = useState(false);
@@ -154,16 +158,19 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
 
 function AddDockIcon({ mouseX, onClick }: { mouseX: any; onClick: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const BASE_SIZE = 69;
   
   const distance = useTransform(mouseX, (val: number) => {
+    // Quando mouseX é Infinity (estado inicial/sem hover), retornar valor alto
+    if (!isFinite(val)) return 1000;
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
+  const widthSync = useTransform(distance, [-150, 0, 150], [BASE_SIZE, 104, BASE_SIZE]);
   const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
-  const heightSync = useTransform(distance, [-150, 0, 150], [69, 104, 69]);
+  const heightSync = useTransform(distance, [-150, 0, 150], [BASE_SIZE, 104, BASE_SIZE]);
   const height = useSpring(heightSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
   const [isHovered, setIsHovered] = useState(false);
