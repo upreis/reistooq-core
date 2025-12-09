@@ -24,16 +24,14 @@ export function usePedidosHandlers({
   
   /**
    * Handler para mudança de filtro rápido
+   * ⚡ OTIMIZAÇÃO: Apenas filtra client-side, SEM refetch da API
    */
   const handleQuickFilterChange = useCallback((newFilter: any) => {
     setQuickFilter(newFilter);
     persistentState.saveQuickFilter(newFilter);
-    
-    // Forçar refresh dos dados para recalcular totais
-    setTimeout(() => {
-      actions.refetch();
-    }, 100);
-  }, [actions, persistentState, setQuickFilter]);
+    // ✅ NÃO fazer refetch - filtro rápido é apenas client-side
+    // O displayedOrders no SimplePedidosPage já filtra via useMemo
+  }, [persistentState, setQuickFilter]);
 
   /**
    * Handler para mudança de filtros gerais
