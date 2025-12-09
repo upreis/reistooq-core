@@ -187,7 +187,7 @@ export default function Header() {
 
   return (
     <header className={`sticky z-40 bg-card transition-all duration-300 ${hasAnnouncements && !isCollapsed && !isHidden ? 'top-12' : 'top-0'}`}>
-      <div className="flex items-center gap-2 h-14" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
+      <div className="relative flex items-center gap-2 h-14" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
         {/* Desktop Sidebar Toggle */}
         <button
           type="button"
@@ -222,8 +222,8 @@ export default function Header() {
           )}
         </div>
 
-        {/* Navigation - Centered */}
-        <div className="flex-1 flex justify-center">
+        {/* Navigation - Absolutely centered */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-com-envio' || location.pathname === '/devolucoesdevenda') && <OMSNavLimelight />}
           {location.pathname.startsWith('/dashboardinicial') && <DashboardInicialNav />}
           {location.pathname.startsWith('/estoque') && <EstoqueNav />}
@@ -233,6 +233,9 @@ export default function Header() {
           {location.pathname.startsWith('/admin') && <AdminNavLimelight />}
           {location.pathname.startsWith('/apps/ecommerce') && <EcommerceNavLimelight />}
         </div>
+
+        {/* Spacer to push right side to the end */}
+        <div className="flex-1" />
 
         {/* Right side - Actions and user menu */}
         <div className="flex items-center gap-3">
