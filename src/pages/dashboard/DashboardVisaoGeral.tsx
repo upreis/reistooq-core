@@ -3,6 +3,7 @@ import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HorizontalSemesterCalendar } from '@/components/dashboard/HorizontalSemesterCalendar';
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
+import { FeaturesBentoGrid } from '@/features/dashboard/components/widgets/FeaturesBentoGrid';
 import { ProductStockCard } from '@/components/dashboard/ProductStockCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
@@ -53,6 +54,9 @@ export default function DashboardVisaoGeral() {
 
   return (
     <div className="space-y-6 p-6 bg-card w-full">
+      {/* Features Bento Grid */}
+      <FeaturesBentoGrid />
+
       {/* Cards Analíticos */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_auto]">
         {/* Card 1: Vendas */}
