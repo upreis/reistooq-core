@@ -6822,27 +6822,14 @@ export type Database = {
     Functions: {
       accept_invitation_secure: { Args: { _token: string }; Returns: Json }
       accept_invite:
-        | { Args: { _token: string; _user_email: string }; Returns: Json }
         | { Args: { _token: string }; Returns: Json }
+        | { Args: { _token: string; _user_email: string }; Returns: Json }
       admin_create_customer: { Args: { p_customer: Json }; Returns: string }
       admin_delete_customer: {
         Args: { p_customer_id: string }
         Returns: boolean
       }
       admin_list_profiles:
-        | {
-            Args: { _limit?: number; _offset?: number; _search?: string }
-            Returns: {
-              cargo: string
-              created_at: string
-              departamento: string
-              id: string
-              nome_completo: string
-              nome_exibicao: string
-              organizacao_id: string
-              telefone: string
-            }[]
-          }
         | {
             Args: { _search?: string }
             Returns: {
@@ -6869,6 +6856,19 @@ export type Database = {
               isSetofReturn: true
             }
           }
+        | {
+            Args: { _limit?: number; _offset?: number; _search?: string }
+            Returns: {
+              cargo: string
+              created_at: string
+              departamento: string
+              id: string
+              nome_completo: string
+              nome_exibicao: string
+              organizacao_id: string
+              telefone: string
+            }[]
+          }
       admin_update_customer: {
         Args: { p_customer: Json; p_customer_id: string }
         Returns: boolean
@@ -6884,8 +6884,8 @@ export type Database = {
       backfill_config_for_current_org: { Args: never; Returns: Json }
       backfill_historico_vendas_orphans: { Args: never; Returns: Json }
       baixar_estoque_direto:
-        | { Args: { p_quantidade: number; p_sku: string }; Returns: Json }
         | { Args: { p_baixas: Json }; Returns: Json }
+        | { Args: { p_quantidade: number; p_sku: string }; Returns: Json }
       baixar_insumos_pedido: { Args: { p_insumos: Json }; Returns: Json }
       calcular_dias_restantes_acao: {
         Args: { p_deadline: string }
@@ -6893,8 +6893,8 @@ export type Database = {
       }
       can_view_sensitive_customer_data: { Args: never; Returns: boolean }
       check_access_schedule:
-        | { Args: { p_role_id?: string; p_user_id: string }; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
+        | { Args: { p_role_id?: string; p_user_id: string }; Returns: boolean }
       check_clientes_secure_access: { Args: never; Returns: boolean }
       cleanup_expired_notifications: { Args: never; Returns: undefined }
       cleanup_expired_sensitive_data: { Args: never; Returns: undefined }
@@ -6915,22 +6915,22 @@ export type Database = {
       complete_devolucoes_sync:
         | {
             Args: {
-              p_duration_ms: number
-              p_sync_id: string
-              p_total_created: number
-              p_total_processed: number
-              p_total_updated: number
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
               p_account_id: string
               p_duration_ms: number
               p_items_failed: number
               p_items_synced: number
               p_items_total: number
               p_sync_type: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_duration_ms: number
+              p_sync_id: string
+              p_total_created: number
+              p_total_processed: number
+              p_total_updated: number
             }
             Returns: undefined
           }
@@ -6947,21 +6947,22 @@ export type Database = {
       converter_quantidade:
         | {
             Args: {
-              quantidade_origem: number
-              unidade_destino_id: string
-              unidade_origem_id: string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
               p_quantidade: number
               p_unidade_destino: string
               p_unidade_origem: string
             }
             Returns: number
           }
+        | {
+            Args: {
+              quantidade_origem: number
+              unidade_destino_id: string
+              unidade_origem_id: string
+            }
+            Returns: number
+          }
       count_baixados:
+        | { Args: never; Returns: number }
         | {
             Args: {
               _account_ids: string[]
@@ -6971,7 +6972,6 @@ export type Database = {
             }
             Returns: number
           }
-        | { Args: never; Returns: number }
       count_mapeamentos_pendentes:
         | {
             Args: { _account_ids?: string[]; _from?: string; _to?: string }
@@ -7083,18 +7083,18 @@ export type Database = {
       fail_devolucoes_sync:
         | {
             Args: {
-              p_duration_ms: number
+              p_account_id: string
+              p_error_details?: Json
               p_error_message: string
-              p_sync_id: string
+              p_sync_type: string
             }
             Returns: undefined
           }
         | {
             Args: {
-              p_account_id: string
-              p_error_details?: Json
+              p_duration_ms: number
               p_error_message: string
-              p_sync_type: string
+              p_sync_id: string
             }
             Returns: undefined
           }
@@ -7105,8 +7105,8 @@ export type Database = {
       gerar_numero_cotacao: { Args: never; Returns: string }
       gerar_numero_pedido_compra: { Args: never; Returns: string }
       gerar_sku_automatico:
-        | { Args: { org_id: string; prefixo?: string }; Returns: string }
         | { Args: never; Returns: string }
+        | { Args: { org_id: string; prefixo?: string }; Returns: string }
       get_categorias_hierarquicas: {
         Args: { org_id: string }
         Returns: {
@@ -7528,24 +7528,6 @@ export type Database = {
       get_historico_vendas_masked:
         | {
             Args: {
-              p_limit?: number
-              p_offset?: number
-              p_organization_id: string
-            }
-            Returns: {
-              buyer_cpf: string
-              buyer_email: string
-              buyer_name: string
-              buyer_phone: string
-              created_at: string
-              id: string
-              order_id: string
-              organization_id: string
-              total_amount: number
-            }[]
-          }
-        | {
-            Args: {
               _end?: string
               _limit?: number
               _offset?: number
@@ -7650,6 +7632,24 @@ export type Database = {
               valor_pago: number
               valor_total: number
               valor_unitario: number
+            }[]
+          }
+        | {
+            Args: {
+              p_limit?: number
+              p_offset?: number
+              p_organization_id: string
+            }
+            Returns: {
+              buyer_cpf: string
+              buyer_email: string
+              buyer_name: string
+              buyer_phone: string
+              created_at: string
+              id: string
+              order_id: string
+              organization_id: string
+              total_amount: number
             }[]
           }
       get_integration_secret: {
@@ -8000,15 +8000,15 @@ export type Database = {
       }
       log_customer_access:
         | {
+            Args: { access_type?: string; customer_id: string; details?: Json }
+            Returns: undefined
+          }
+        | {
             Args: {
               p_action: string
               p_customer_id: string
               p_sensitive_accessed?: boolean
             }
-            Returns: undefined
-          }
-        | {
-            Args: { access_type?: string; customer_id: string; details?: Json }
             Returns: undefined
           }
       log_customer_data_access:
@@ -8113,18 +8113,6 @@ export type Database = {
       revoke_invitation: { Args: { _id: string }; Returns: Json }
       search_customers_secure:
         | {
-            Args: { p_organization_id: string; p_search_term: string }
-            Returns: {
-              cpf_cnpj: string
-              created_at: string
-              email: string
-              id: string
-              nome: string
-              organization_id: string
-              telefone: string
-            }[]
-          }
-        | {
             Args: {
               p_cidade?: string
               p_limit?: number
@@ -8159,6 +8147,18 @@ export type Database = {
               total_pedidos: number
               updated_at: string
               valor_total_gasto: number
+            }[]
+          }
+        | {
+            Args: { p_organization_id: string; p_search_term: string }
+            Returns: {
+              cpf_cnpj: string
+              created_at: string
+              email: string
+              id: string
+              nome: string
+              organization_id: string
+              telefone: string
             }[]
           }
         | {
@@ -8209,6 +8209,7 @@ export type Database = {
           }
         | { Args: { p_integration_account_id: string }; Returns: string }
       sync_cliente_from_pedido:
+        | { Args: never; Returns: Json }
         | {
             Args: {
               p_cidade?: string
@@ -8222,10 +8223,9 @@ export type Database = {
             }
             Returns: string
           }
-        | { Args: never; Returns: Json }
       tiny3_get_credentials:
         | {
-            Args: { _org_id: string }
+            Args: { _client_id: string }
             Returns: {
               client_id: string
               client_secret: string
@@ -8233,7 +8233,7 @@ export type Database = {
             }[]
           }
         | {
-            Args: { _client_id: string }
+            Args: { _org_id: string }
             Returns: {
               client_id: string
               client_secret: string
@@ -8254,7 +8254,6 @@ export type Database = {
             Args: {
               _client_id: string
               _client_secret: string
-              _org_id: string
               _redirect_uri?: string
             }
             Returns: undefined
@@ -8263,6 +8262,7 @@ export type Database = {
             Args: {
               _client_id: string
               _client_secret: string
+              _org_id: string
               _redirect_uri?: string
             }
             Returns: undefined
