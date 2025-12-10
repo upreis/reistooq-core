@@ -26,13 +26,28 @@ interface TooltipData {
   color: string;
 }
 
-const COLORS = [
+// Cores alinhadas com os filtros em FeaturesBentoGrid.tsx
+const ACCOUNT_COLORS: Record<string, string> = {
+  "BRCR20240514161447": "#3b82f6", // blue-500
+  "PLATINUMLOJA2020": "#ec4899",   // pink-500
+  "UNIVERSOMELI": "#22c55e",       // green-500
+  "HORE20240106205039": "#f97316", // orange-500
+  "LOJAOITO": "#a855f7",           // purple-500
+  "LUTHORSHOPLTDA": "#06b6d4",     // cyan-500
+};
+
+const DEFAULT_COLORS = [
   "#3b82f6", // blue
   "#ec4899", // pink
   "#22c55e", // green
   "#f97316", // orange
   "#a855f7", // purple
+  "#06b6d4", // cyan
 ];
+
+const getAccountColor = (accountName: string, index: number): string => {
+  return ACCOUNT_COLORS[accountName] || DEFAULT_COLORS[index % DEFAULT_COLORS.length];
+};
 
 export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVendasChartProps) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -200,7 +215,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
                 key={account}
                 d={generatePath(account)}
                 fill="none"
-                stroke={COLORS[index % COLORS.length]}
+                stroke={getAccountColor(account, index)}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -225,7 +240,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
             return Array.from(horasAgrupadas.entries()).map(([intervalo, valor]) => {
               const xPercent = (intervalo / 22) * 100;
               const yPercent = Math.max(5, 100 - (valor / maxValue) * 90);
-              const color = COLORS[accIndex % COLORS.length];
+              const color = getAccountColor(account, accIndex);
               
               return (
                 <div
