@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Building2 } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -13,13 +13,6 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const COLORS = [
   "hsl(221, 83%, 53%)", // blue
@@ -45,9 +38,11 @@ interface ChartDataPoint {
   [key: string]: string | number;
 }
 
-export function TendenciaVendasChart() {
-  const [selectedAccount, setSelectedAccount] = useState<string>("todas");
+interface TendenciaVendasChartProps {
+  selectedAccount?: string;
+}
 
+export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVendasChartProps) {
   const { data: vendas = [] } = useQuery({
     queryKey: ["vendas-hoje-tendencia"],
     queryFn: async () => {
@@ -63,7 +58,7 @@ export function TendenciaVendasChart() {
     refetchInterval: 60000,
   });
 
-  const { chartData, accounts, filteredAccounts } = useMemo(() => {
+  const { chartData, filteredAccounts } = useMemo(() => {
     const accountsMap = new Map<string, string>();
     const horaMap = new Map<string, Map<string, number>>();
 
@@ -104,7 +99,7 @@ export function TendenciaVendasChart() {
 
     chartData.sort((a, b) => a.hora.localeCompare(b.hora));
 
-    return { chartData, accounts, filteredAccounts };
+    return { chartData, filteredAccounts };
   }, [vendas, selectedAccount]);
 
   const formatCurrency = (value: number) => {
@@ -156,20 +151,6 @@ export function TendenciaVendasChart() {
         <h3 className="font-serif text-lg text-foreground font-medium">
           Tendências em vendas brutas
         </h3>
-        <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-          <SelectTrigger className="w-[180px] h-8 text-xs">
-            <Building2 className="w-3 h-3 mr-1" />
-            <SelectValue placeholder="Selecione conta" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as contas</SelectItem>
-            {accounts.map((account) => (
-              <SelectItem key={account} value={account}>
-                {account}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Chart */}
