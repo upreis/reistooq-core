@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
-import { motion } from "framer-motion";
 import { TrendingUp } from "lucide-react";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -178,20 +177,14 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       
       <div style={{ width: '100%', height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={testData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+          <BarChart data={testData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
             <XAxis dataKey="hora" stroke="#666" />
             <YAxis stroke="#666" />
             <Tooltip />
             <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="vendas" 
-              stroke="#3b82f6" 
-              strokeWidth={2}
-              dot={{ fill: '#3b82f6' }}
-            />
-          </LineChart>
+            <Bar dataKey="vendas" fill="#3b82f6" />
+          </BarChart>
         </ResponsiveContainer>
       </div>
       
