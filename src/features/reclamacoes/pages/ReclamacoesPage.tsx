@@ -479,7 +479,7 @@ export function ReclamacoesPage() {
 
 
             {/* Tabs: Ativas vs Histórico + Filtros */}
-            <div className="px-4 md:px-6 mt-2">
+            <div className="px-4 md:px-6 mt-8">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
                 <div className="flex items-center gap-3 flex-nowrap">
                   <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
