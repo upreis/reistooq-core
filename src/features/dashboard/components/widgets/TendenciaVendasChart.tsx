@@ -175,12 +175,12 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
 
   if (accounts.length === 0) {
     return (
-      <div className="md:col-span-4 md:row-span-2 bg-background border border-border rounded-xl p-4">
-        <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
+      <div className="md:col-span-4 md:row-span-1 bg-background border border-border rounded-xl p-3">
+        <h3 className="font-serif text-sm text-foreground font-medium mb-2 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-primary" />
           Tendência de vendas por hora
         </h3>
-        <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+        <div className="flex items-center justify-center h-[100px] text-muted-foreground text-sm">
           Nenhuma venda hoje ainda
         </div>
       </div>
@@ -191,15 +191,15 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
   const yLabels = [maxValue, maxValue * 0.75, maxValue * 0.5, maxValue * 0.25, 0];
 
   return (
-    <div className="md:col-span-4 md:row-span-2 bg-background border border-border rounded-xl p-4">
-      <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
-        <TrendingUp className="h-5 w-5 text-primary" />
+    <div className="md:col-span-4 md:row-span-1 bg-background border border-border rounded-xl p-3">
+      <h3 className="font-serif text-sm text-foreground font-medium mb-2 flex items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-primary" />
         Tendência de vendas por hora
       </h3>
       
       <div className="flex">
         {/* Eixo Y */}
-        <div className="flex flex-col justify-between h-[200px] pr-2 text-[10px] text-muted-foreground">
+        <div className="flex flex-col justify-between h-[120px] pr-2 text-[10px] text-muted-foreground">
           {yLabels.map((val, i) => (
             <span key={i}>{formatCurrency(val)}</span>
           ))}
@@ -207,7 +207,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
         
         {/* Gráfico */}
         <div 
-          className="flex-1 relative h-[200px]"
+          className="flex-1 relative h-[120px]"
           onMouseLeave={() => setTooltip(null)}
         >
           
