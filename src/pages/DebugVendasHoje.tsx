@@ -64,14 +64,21 @@ export default function DebugVendasHoje() {
   const syncVendas = async () => {
     setSyncing(true);
     try {
-      // Primeiro, pegar organization_id do usuário
-      const { data: profile } = await supabase
+      // Primeiro, pegar o usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Buscar organization_id do perfil do usuário
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('organizacao_id')
+        .eq('id', user.id)
         .single();
 
-      if (!profile?.organizacao_id) {
-        throw new Error('Organization ID não encontrado');
+      if (profileError || !profile?.organizacao_id) {
+        throw new Error('Organization ID não encontrado. Verifique se seu perfil está vinculado a uma organização.');
       }
 
       const { data, error } = await supabase.functions.invoke('sync-vendas-hoje', {
