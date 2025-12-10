@@ -59,9 +59,12 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
   });
 
   const { chartData, filteredAccounts } = useMemo(() => {
-    if (!vendas.length) return { chartData: [], filteredAccounts: [] };
+    if (!vendas || vendas.length === 0) {
+      console.log("[TendenciaVendasChart] Sem vendas disponíveis");
+      return { chartData: [], filteredAccounts: [] };
+    }
 
-    console.log("[TendenciaVendasChart] Total vendas:", vendas.length);
+    console.log("[TendenciaVendasChart] Processando vendas:", vendas.length);
 
     const accountsSet = new Set<string>();
     const horaMap = new Map<string, Map<string, number>>();
@@ -71,12 +74,14 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       accountsSet.add(accountName);
 
       const dateStr = venda.date_created || venda.created_at;
-      const date = new Date(dateStr);
+      if (!dateStr) {
+        console.log("[TendenciaVendasChart] Venda sem data:", venda);
+        return;
+      }
       
-      // Get hour in local timezone (browser timezone = Brasília)
+      const date = new Date(dateStr);
       const hora = date.getHours().toString().padStart(2, "0");
-
-      console.log(`[TendenciaVendasChart] Venda: ${dateStr} -> hora local: ${hora}h, valor: ${venda.total_amount}, conta: ${accountName}`);
+      const valor = Number(venda.total_amount) || 0;
 
       if (!horaMap.has(hora)) {
         horaMap.set(hora, new Map());
@@ -84,7 +89,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       
       const horaData = horaMap.get(hora)!;
       const current = horaData.get(accountName) || 0;
-      horaData.set(accountName, current + (venda.total_amount || 0));
+      horaData.set(accountName, current + valor);
     });
 
     const accounts = Array.from(accountsSet);
@@ -92,11 +97,12 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       ? accounts 
       : accounts.filter(a => a === selectedAccount);
     
-    console.log("[TendenciaVendasChart] Accounts:", accounts, "Filtered:", filteredAccounts);
+    console.log("[TendenciaVendasChart] Contas encontradas:", accounts);
+    console.log("[TendenciaVendasChart] Contas filtradas:", filteredAccounts);
+    console.log("[TendenciaVendasChart] Horas com dados:", Array.from(horaMap.keys()));
 
     const chartData: ChartDataPoint[] = [];
 
-    // Include ALL hours that have data for ANY account (not just filtered)
     horaMap.forEach((accountData, hora) => {
       const point: ChartDataPoint = { hora: `${hora}h` };
       filteredAccounts.forEach((account) => {
@@ -105,14 +111,14 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       chartData.push(point);
     });
 
-    // Sort by hour
     chartData.sort((a, b) => {
       const horaA = parseInt(a.hora.replace('h', ''));
       const horaB = parseInt(b.hora.replace('h', ''));
       return horaA - horaB;
     });
 
-    console.log("[TendenciaVendasChart] Chart data FINAL:", JSON.stringify(chartData));
+    console.log("[TendenciaVendasChart] chartData FINAL:", chartData);
+    console.log("[TendenciaVendasChart] Exemplo primeiro ponto:", chartData[0]);
 
     return { chartData, filteredAccounts };
   }, [vendas, selectedAccount]);
