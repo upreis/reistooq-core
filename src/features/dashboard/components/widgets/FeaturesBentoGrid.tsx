@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { VendasHojeCard } from "./VendasHojeCard";
 import { TendenciaVendasChart } from "./TendenciaVendasChart";
+import { QuickActionCards } from "./QuickActionCards";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -81,7 +82,10 @@ export function FeaturesBentoGrid() {
         {/* 1. Vendas de Hoje ao Vivo */}
         <VendasHojeCard selectedAccount={selectedAccount} />
 
-        {/* 2. Tendência de Vendas - Expandido (4x2) */}
+        {/* 2. Quick Action Cards - 4 cards pequenos */}
+        <QuickActionCards />
+
+        {/* 3. Tendência de Vendas */}
         <TendenciaVendasChart selectedAccount={selectedAccount} />
       </div>
     </div>
