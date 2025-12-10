@@ -790,7 +790,7 @@ function SimplePedidosPage({ className }: Props) {
           </div>
 
           {/* 📊 Resumo de Métricas - após as abas */}
-          <div className="mt-6 px-4 md:px-6">
+          <div className="px-4 md:px-6 mt-12">
             <PedidosResumo
               pedidos={displayedOrders || ordersFilteredByTab}
               onFiltroClick={(filtro) => handlers.handleQuickFilterChange(filtro)}
