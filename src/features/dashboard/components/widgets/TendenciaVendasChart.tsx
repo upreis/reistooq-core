@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +17,15 @@ interface TendenciaVendasChartProps {
   selectedAccount?: string;
 }
 
+interface TooltipData {
+  account: string;
+  valor: number;
+  hora: number;
+  x: number;
+  y: number;
+  color: string;
+}
+
 const COLORS = [
   "#3b82f6", // blue
   "#ec4899", // pink
@@ -26,6 +35,7 @@ const COLORS = [
 ];
 
 export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVendasChartProps) {
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const { data: vendas = [] } = useQuery({
     queryKey: ["vendas-hoje-tendencia"],
     queryFn: async () => {
@@ -155,7 +165,11 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
         </div>
         
         {/* Gráfico */}
-        <div className="flex-1 relative h-[200px]">
+        <div 
+          className="flex-1 relative h-[200px]"
+          onMouseLeave={() => setTooltip(null)}
+        >
+          
           {/* Grid horizontal */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
             {[0, 1, 2, 3, 4].map((i) => (
@@ -183,28 +197,68 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
             ))}
           </svg>
           
-          {/* Pontos - usando divs para manter formato redondo */}
+          {/* Pontos interativos */}
           {filteredAccounts.map((account, accIndex) => {
             const accountData = chartData.get(account);
             if (!accountData) return null;
             
             return Array.from(accountData.entries()).map(([hora, valor]) => {
               const xPercent = (hora / 23) * 100;
-              const yPercent = 100 - (valor / maxValue) * 100;
+              const yPercent = Math.max(5, 100 - (valor / maxValue) * 90);
+              const color = COLORS[accIndex % COLORS.length];
+              
               return (
                 <div
                   key={`${account}-${hora}`}
-                  className="absolute w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform -translate-x-1/2 -translate-y-1/2"
+                  className="absolute w-3 h-3 rounded-full cursor-pointer hover:scale-150 transition-transform -translate-x-1/2 -translate-y-1/2 z-10"
                   style={{ 
                     left: `${xPercent}%`, 
                     top: `${yPercent}%`,
-                    backgroundColor: COLORS[accIndex % COLORS.length]
+                    backgroundColor: color
                   }}
-                  title={`${account}: ${formatCurrency(valor)} às ${hora}h`}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+                    if (rect) {
+                      setTooltip({
+                        account,
+                        valor,
+                        hora,
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top,
+                        color
+                      });
+                    }
+                  }}
+                  onMouseLeave={() => setTooltip(null)}
                 />
               );
             });
           })}
+          
+          {/* Tooltip customizado */}
+          {tooltip && (
+            <div 
+              className="absolute z-50 pointer-events-none bg-popover border border-border rounded-lg shadow-lg p-2 text-sm"
+              style={{
+                left: tooltip.x + 10,
+                top: tooltip.y - 40,
+                transform: tooltip.x > 200 ? 'translateX(-100%)' : 'none'
+              }}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div 
+                  className="w-2 h-2 rounded-full" 
+                  style={{ backgroundColor: tooltip.color }}
+                />
+                <span className="font-medium text-foreground truncate max-w-[150px]">
+                  {tooltip.account}
+                </span>
+              </div>
+              <div className="text-muted-foreground">
+                {formatCurrency(tooltip.valor)} às {tooltip.hora}h
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
