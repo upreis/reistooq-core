@@ -184,23 +184,22 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={chartData}
-              margin={{ top: 20, right: 20, left: 10, bottom: 20 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" opacity={0.5} />
               <XAxis
                 dataKey="hora"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="#666"
                 fontSize={11}
                 tickLine={false}
-                axisLine={{ stroke: "hsl(var(--border))" }}
               />
               <YAxis
-                stroke="hsl(var(--muted-foreground))"
+                stroke="#666"
                 fontSize={11}
                 tickLine={false}
-                axisLine={{ stroke: "hsl(var(--border))" }}
                 tickFormatter={formatYAxis}
-                width={60}
+                width={70}
+                domain={[0, 'auto']}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend
@@ -208,19 +207,23 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
                 align="right"
                 wrapperStyle={{ fontSize: 11, paddingBottom: 10 }}
               />
-              {filteredAccounts.map((account, index) => (
-                <Line
-                  key={account}
-                  type="monotone"
-                  dataKey={account}
-                  name={account}
-                  stroke={COLORS[index % COLORS.length]}
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: COLORS[index % COLORS.length] }}
-                  activeDot={{ r: 6 }}
-                  connectNulls
-                />
-              ))}
+              {filteredAccounts.map((account, index) => {
+                const color = COLORS[index % COLORS.length];
+                return (
+                  <Line
+                    key={account}
+                    type="monotone"
+                    dataKey={account}
+                    name={account}
+                    stroke={color}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: color, strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: color }}
+                    connectNulls={true}
+                    isAnimationActive={false}
+                  />
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         )}
