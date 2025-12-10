@@ -59,7 +59,9 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
   });
 
   const { chartData, filteredAccounts } = useMemo(() => {
-    const accountsMap = new Map<string, string>();
+    if (!vendas.length) return { chartData: [], filteredAccounts: [] };
+
+    const accountsSet = new Set<string>();
     const horaMap = new Map<string, Map<string, number>>();
 
     // Initialize hours 00-23
@@ -70,9 +72,12 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
 
     vendas.forEach((venda) => {
       const accountName = venda.account_name || "Desconhecido";
-      accountsMap.set(venda.integration_account_id, accountName);
+      accountsSet.add(accountName);
 
-      const date = new Date(venda.date_created || venda.created_at);
+      const dateStr = venda.date_created || venda.created_at;
+      const date = new Date(dateStr);
+      
+      // Get hour in local timezone
       const hora = date.getHours().toString().padStart(2, "0");
 
       const horaData = horaMap.get(hora);
@@ -82,7 +87,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       }
     });
 
-    const accounts = Array.from(accountsMap.values());
+    const accounts = Array.from(accountsSet);
     const filteredAccounts = selectedAccount === "todas" 
       ? accounts 
       : accounts.filter(a => a === selectedAccount);
@@ -90,14 +95,19 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     const chartData: ChartDataPoint[] = [];
 
     horaMap.forEach((accountData, hora) => {
-      const point: ChartDataPoint = { hora };
+      const point: ChartDataPoint = { hora: `${hora}h` };
       filteredAccounts.forEach((account) => {
         point[account] = accountData.get(account) || 0;
       });
       chartData.push(point);
     });
 
-    chartData.sort((a, b) => a.hora.localeCompare(b.hora));
+    // Sort by hour
+    chartData.sort((a, b) => {
+      const horaA = parseInt(a.hora.replace('h', ''));
+      const horaB = parseInt(b.hora.replace('h', ''));
+      return horaA - horaB;
+    });
 
     return { chartData, filteredAccounts };
   }, [vendas, selectedAccount]);
@@ -167,12 +177,6 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              label={{
-                value: "Horas",
-                position: "bottom",
-                offset: -5,
-                style: { fill: "hsl(var(--muted-foreground))", fontSize: 11 },
-              }}
             />
             <YAxis
               stroke="hsl(var(--muted-foreground))"
@@ -180,13 +184,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
               tickLine={false}
               axisLine={false}
               tickFormatter={formatYAxis}
-              label={{
-                value: "Vendas (R$)",
-                angle: -90,
-                position: "insideLeft",
-                offset: 10,
-                style: { fill: "hsl(var(--muted-foreground))", fontSize: 11 },
-              }}
+              width={50}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend
