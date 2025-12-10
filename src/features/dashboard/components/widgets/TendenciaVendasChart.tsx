@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 interface VendaRealtime {
   id: string;
@@ -18,11 +19,11 @@ interface TendenciaVendasChartProps {
 }
 
 const COLORS = [
-  "hsl(221, 83%, 53%)", // blue
-  "hsl(340, 82%, 52%)", // pink
-  "hsl(142, 71%, 45%)", // green
-  "hsl(38, 92%, 50%)",  // orange
-  "hsl(262, 83%, 58%)", // purple
+  "#3b82f6", // blue
+  "#ec4899", // pink
+  "#22c55e", // green
+  "#f97316", // orange
+  "#a855f7", // purple
 ];
 
 export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVendasChartProps) {
@@ -41,14 +42,14 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     refetchInterval: 60000,
   });
 
-  const { chartData, maxValue, accounts, allHoras } = useMemo(() => {
+  const { chartData, accounts } = useMemo(() => {
     if (!vendas || vendas.length === 0) {
-      return { chartData: new Map(), maxValue: 0, accounts: [], allHoras: [] };
+      return { chartData: [], accounts: [] };
     }
 
     const accountsSet = new Set<string>();
-    // Map: account -> Map<hora, valor>
-    const chartData = new Map<string, Map<string, number>>();
+    // Map: hora -> { hora, account1: valor, account2: valor, ... }
+    const horaMap = new Map<string, Record<string, string | number>>();
 
     vendas.forEach((venda) => {
       const accountName = venda.account_name || "Desconhecido";
@@ -61,33 +62,22 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       const hora = date.getHours().toString().padStart(2, "0");
       const valor = Number(venda.total_amount) || 0;
 
-      if (!chartData.has(accountName)) {
-        chartData.set(accountName, new Map());
+      if (!horaMap.has(hora)) {
+        horaMap.set(hora, { hora: `${hora}` });
       }
       
-      const accountData = chartData.get(accountName)!;
-      const current = accountData.get(hora) || 0;
-      accountData.set(hora, current + valor);
+      const horaData = horaMap.get(hora)!;
+      horaData[accountName] = ((horaData[accountName] as number) || 0) + valor;
     });
 
     const accounts = Array.from(accountsSet);
     
-    // Coletar todas as horas únicas
-    const horasSet = new Set<string>();
-    chartData.forEach((accountMap) => {
-      accountMap.forEach((_, hora) => horasSet.add(hora));
-    });
-    const allHoras = Array.from(horasSet).sort((a, b) => parseInt(a) - parseInt(b));
+    // Ordenar por hora e converter para array
+    const chartData = Array.from(horaMap.entries())
+      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+      .map(([_, data]) => data);
 
-    // Calcular máximo
-    let maxValue = 1;
-    chartData.forEach((accountMap) => {
-      accountMap.forEach((valor) => {
-        if (valor > maxValue) maxValue = valor;
-      });
-    });
-
-    return { chartData, maxValue, accounts, allHoras };
+    return { chartData, accounts };
   }, [vendas]);
 
   const filteredAccounts = selectedAccount === "todas" 
@@ -101,7 +91,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     return `R$ ${value.toFixed(0)}`;
   };
 
-  if (allHoras.length === 0) {
+  if (chartData.length === 0) {
     return (
       <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
         <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
@@ -122,75 +112,52 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
         Tendência de vendas por hora
       </h3>
       
-      {/* Gráfico de linhas por conta */}
-      <div className="relative h-[220px] w-full">
-        {/* Grid de fundo */}
-        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="border-t border-border/30 w-full" />
+      <ResponsiveContainer width="100%" height={250}>
+        <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <XAxis 
+            dataKey="hora" 
+            tickFormatter={(v) => `${v}h`}
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+            axisLine={{ stroke: 'hsl(var(--border))' }}
+            tickLine={{ stroke: 'hsl(var(--border))' }}
+          />
+          <YAxis 
+            tickFormatter={formatCurrency}
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+            axisLine={{ stroke: 'hsl(var(--border))' }}
+            tickLine={{ stroke: 'hsl(var(--border))' }}
+            width={70}
+          />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'hsl(var(--popover))', 
+              border: '1px solid hsl(var(--border))',
+              borderRadius: '8px',
+              fontSize: '12px'
+            }}
+            labelStyle={{ color: 'hsl(var(--foreground))' }}
+            formatter={(value: number, name: string) => [formatCurrency(value), name]}
+            labelFormatter={(label) => `${label}h`}
+          />
+          <Legend 
+            wrapperStyle={{ fontSize: '11px' }}
+            iconType="circle"
+            iconSize={8}
+          />
+          {filteredAccounts.map((account, index) => (
+            <Line
+              key={account}
+              type="monotone"
+              dataKey={account}
+              stroke={COLORS[index % COLORS.length]}
+              strokeWidth={2.5}
+              dot={{ r: 4, fill: COLORS[index % COLORS.length] }}
+              activeDot={{ r: 6 }}
+              connectNulls
+            />
           ))}
-        </div>
-        
-        {/* SVG para linhas */}
-        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-          {filteredAccounts.map((account, accIndex) => {
-            const accountData = chartData.get(account);
-            if (!accountData) return null;
-            
-            const points = allHoras.map((hora, horaIndex) => {
-              const valor = accountData.get(hora) || 0;
-              const x = (horaIndex / (allHoras.length - 1 || 1)) * 100;
-              const y = 100 - (valor / maxValue) * 100;
-              return `${x},${y}`;
-            }).join(" ");
-            
-            return (
-              <polyline
-                key={account}
-                points={points}
-                fill="none"
-                stroke={COLORS[accIndex % COLORS.length]}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            );
-          })}
-          
-          {/* Pontos */}
-          {filteredAccounts.map((account, accIndex) => {
-            const accountData = chartData.get(account);
-            if (!accountData) return null;
-            
-            return allHoras.map((hora, horaIndex) => {
-              const valor = accountData.get(hora) || 0;
-              if (valor === 0) return null;
-              const x = (horaIndex / (allHoras.length - 1 || 1)) * 100;
-              const y = 100 - (valor / maxValue) * 100;
-              return (
-                <g key={`${account}-${hora}`} className="group">
-                  <circle
-                    cx={`${x}%`}
-                    cy={`${y}%`}
-                    r="4"
-                    fill={COLORS[accIndex % COLORS.length]}
-                    className="cursor-pointer hover:r-6"
-                  />
-                  <title>{`${account}: ${formatCurrency(valor)} às ${hora}h`}</title>
-                </g>
-              );
-            });
-          })}
-        </svg>
-      </div>
-      
-      {/* Labels das horas */}
-      <div className="flex justify-between mt-2 text-[10px] text-muted-foreground px-1">
-        {allHoras.map((hora) => (
-          <span key={hora}>{hora}h</span>
-        ))}
-      </div>
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
