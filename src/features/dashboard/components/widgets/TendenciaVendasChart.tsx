@@ -175,7 +175,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
 
   if (accounts.length === 0) {
     return (
-      <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
+      <div className="md:col-span-4 md:row-span-2 bg-background border border-border rounded-xl p-4">
         <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
           Tendência de vendas por hora
@@ -191,7 +191,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
   const yLabels = [maxValue, maxValue * 0.75, maxValue * 0.5, maxValue * 0.25, 0];
 
   return (
-    <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
+    <div className="md:col-span-4 md:row-span-2 bg-background border border-border rounded-xl p-4">
       <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
         <TrendingUp className="h-5 w-5 text-primary" />
         Tendência de vendas por hora
