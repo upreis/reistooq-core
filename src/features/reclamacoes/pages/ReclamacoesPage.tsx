@@ -515,7 +515,7 @@ export function ReclamacoesPage() {
                 </div>
                 
                 {/* Resumo de Métricas - após as abas */}
-                <div className="px-4 md:px-6 mt-12">
+                <div className="mt-12">
                   <ReclamacoesResumo 
                     reclamacoes={reclamacoesEnriquecidas} 
                     onFiltroClick={setFiltroResumo}
