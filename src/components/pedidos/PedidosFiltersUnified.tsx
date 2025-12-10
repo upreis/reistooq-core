@@ -116,150 +116,142 @@ export function PedidosFiltersUnified({
   const selectedContasML = filters.contasML || [];
 
   return (
-    <div className="space-y-4">
-      {/* Layout principal dos filtros */}
-      <div className="flex items-center gap-3 flex-nowrap">
-        <div className="min-w-[200px] flex-shrink-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Número, cliente, CPF/CNPJ..."
-              value={filters.search || ''}
-              onChange={(e) => onFilterChange('search', e.target.value)}
-              className="pl-10 h-10"
-            />
-          </div>
+    <div className="flex items-center gap-3 flex-nowrap">
+      {/* Busca */}
+      <div className="min-w-[200px] flex-shrink-0">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar"
+            value={filters.search || ''}
+            onChange={(e) => onFilterChange('search', e.target.value)}
+            className="pl-10 h-10"
+          />
         </div>
-
-        <div className="min-w-[180px] flex-shrink-0">
-          <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={contasMLOpen}
-                className="w-full justify-between h-10"
-              >
-                <span className="truncate">
-                  {selectedContasML.length === 0 
-                    ? "Selecione a Empresa"
-                    : selectedContasML.length === 1
-                    ? "1 Empresa"
-                    : `${selectedContasML.length} Empresas`
-                  }
-                </span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0 bg-background border border-border z-50">
-              <div className="p-2 space-y-2 max-h-64 overflow-y-auto">
-                <div className="text-sm font-medium px-2 py-1">Selecione as contas:</div>
-                {contasML.map((conta) => (
-                  <div key={conta.id} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
-                    <Checkbox
-                      id={`conta-${conta.id}`}
-                      checked={selectedContasML.includes(conta.id)}
-                      onCheckedChange={(checked) => handleContasMLChange(conta.id, checked as boolean)}
-                    />
-                    <label htmlFor={`conta-${conta.id}`} className="text-sm cursor-pointer flex-1">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{conta.nickname || conta.name}</span>
-                        {conta.nickname && conta.name && conta.nickname !== conta.name && (
-                          <span className="text-xs text-muted-foreground">{conta.name}</span>
-                        )}
-                        {conta.active === false && (
-                          <span className="text-xs text-destructive">Inativa</span>
-                        )}
-                      </div>
-                    </label>
-                  </div>
-                ))}
-                {contasML.length === 0 && (
-                  <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                    Nenhuma conta encontrada
-                  </div>
-                )}
-                {selectedContasML.length > 0 && (
-                  <div className="border-t pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onFilterChange('contasML', undefined)}
-                      className="w-full"
-                    >
-                      Limpar seleção
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="lg:col-span-3 xl:col-span-3">
-          <div className="flex items-end gap-2">
-            <SimplifiedPeriodFilter
-              startDate={filters.dataInicio}
-              endDate={filters.dataFim}
-              onDateRangeChange={(startDate, endDate) => {
-                console.log('🗓️ [PedidosFiltersUnified] Período alterado:', {
-                  startDate,
-                  endDate,
-                  startFormatted: startDate?.toISOString(),
-                  endFormatted: endDate?.toISOString()
-                });
-                onFilterChange('dataInicio', startDate);
-                onFilterChange('dataFim', endDate);
-              }}
-              hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
-              className="min-w-[200px]"
-              placeholder="Selecionar período"
-            />
-
-            {/* Botão Aplicar Filtros */}
-            <Button
-              onClick={onApplyFilters}
-              disabled={!hasPendingChanges}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Pesquisar
-            </Button>
-
-            {/* Botão de Colunas */}
-            {columnManager && (
-              <ColumnManager 
-                manager={columnManager}
-                trigger={
-                  <Button variant="outline" size="sm" className="h-10 w-10 p-0">
-                    <Columns3 className="h-4 w-4" />
-                  </Button>
-                }
-              />
-            )}
-
-            {/* Botão Locais de Estoque */}
-            {onOpenConfigLocais && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onOpenConfigLocais}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                Locais de Estoque
-              </Button>
-            )}
-
-          </div>
-        </div>
-
-        {/* Espaço vazio para manter layout grid */}
-        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1"></div>
       </div>
 
+      {/* Contas ML */}
+      <div className="min-w-[180px] flex-shrink-0">
+        <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={contasMLOpen}
+              className="w-full justify-between h-10"
+            >
+              <span className="truncate">
+                {selectedContasML.length === 0 
+                  ? "Selecione a Empresa"
+                  : selectedContasML.length === 1
+                  ? "1 Empresa"
+                  : `${selectedContasML.length} Empresas`
+                }
+              </span>
+              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0 bg-background border border-border z-50">
+            <div className="p-2 space-y-2 max-h-64 overflow-y-auto">
+              <div className="text-sm font-medium px-2 py-1">Selecione as contas:</div>
+              {contasML.map((conta) => (
+                <div key={conta.id} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
+                  <Checkbox
+                    id={`conta-${conta.id}`}
+                    checked={selectedContasML.includes(conta.id)}
+                    onCheckedChange={(checked) => handleContasMLChange(conta.id, checked as boolean)}
+                  />
+                  <label htmlFor={`conta-${conta.id}`} className="text-sm cursor-pointer flex-1">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{conta.nickname || conta.name}</span>
+                      {conta.nickname && conta.name && conta.nickname !== conta.name && (
+                        <span className="text-xs text-muted-foreground">{conta.name}</span>
+                      )}
+                      {conta.active === false && (
+                        <span className="text-xs text-destructive">Inativa</span>
+                      )}
+                    </div>
+                  </label>
+                </div>
+              ))}
+              {contasML.length === 0 && (
+                <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                  Nenhuma conta encontrada
+                </div>
+              )}
+              {selectedContasML.length > 0 && (
+                <div className="border-t pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onFilterChange('contasML', undefined)}
+                    className="w-full"
+                  >
+                    Limpar seleção
+                  </Button>
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
 
+      {/* Período */}
+      <div className="min-w-[180px] flex-shrink-0">
+        <SimplifiedPeriodFilter
+          startDate={filters.dataInicio}
+          endDate={filters.dataFim}
+          onDateRangeChange={(startDate, endDate) => {
+            onFilterChange('dataInicio', startDate);
+            onFilterChange('dataFim', endDate);
+          }}
+          hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
+          className="h-10"
+          placeholder="Selecionar período"
+        />
+      </div>
 
+      {/* Botão Aplicar */}
+      <div className="min-w-[160px] flex-shrink-0">
+        <Button
+          onClick={onApplyFilters}
+          disabled={!hasPendingChanges}
+          className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          <Search className="h-4 w-4 mr-2" />
+          Aplicar Filtros
+        </Button>
+      </div>
+
+      {/* Colunas */}
+      {columnManager && (
+        <div className="flex-shrink-0">
+          <ColumnManager 
+            manager={columnManager}
+            trigger={
+              <Button variant="outline" size="sm" className="h-10 px-3 gap-2">
+                <Columns3 className="h-4 w-4" />
+                Colunas
+              </Button>
+            }
+          />
+        </div>
+      )}
+
+      {/* Locais de Estoque */}
+      {onOpenConfigLocais && (
+        <div className="flex-shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenConfigLocais}
+            className="h-10 gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Locais
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
