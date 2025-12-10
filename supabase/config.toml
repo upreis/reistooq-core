@@ -137,3 +137,6 @@ verify_jwt = false
 
 [functions.ml-vendas-comenvio-sync]
 verify_jwt = false
+
+[functions.sync-vendas-hoje]
+verify_jwt = false

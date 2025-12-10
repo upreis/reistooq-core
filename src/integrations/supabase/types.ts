@@ -6704,6 +6704,92 @@ export type Database = {
           },
         ]
       }
+      vendas_hoje_realtime: {
+        Row: {
+          account_name: string | null
+          buyer_id: string | null
+          buyer_nickname: string | null
+          created_at: string | null
+          currency_id: string | null
+          date_closed: string | null
+          date_created: string | null
+          id: string
+          integration_account_id: string
+          item_id: string | null
+          item_quantity: number | null
+          item_sku: string | null
+          item_thumbnail: string | null
+          item_title: string | null
+          item_unit_price: number | null
+          order_data: Json | null
+          order_id: string
+          order_status: string | null
+          organization_id: string
+          paid_amount: number | null
+          synced_at: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          buyer_id?: string | null
+          buyer_nickname?: string | null
+          created_at?: string | null
+          currency_id?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          id?: string
+          integration_account_id: string
+          item_id?: string | null
+          item_quantity?: number | null
+          item_sku?: string | null
+          item_thumbnail?: string | null
+          item_title?: string | null
+          item_unit_price?: number | null
+          order_data?: Json | null
+          order_id: string
+          order_status?: string | null
+          organization_id: string
+          paid_amount?: number | null
+          synced_at?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          buyer_id?: string | null
+          buyer_nickname?: string | null
+          created_at?: string | null
+          currency_id?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          id?: string
+          integration_account_id?: string
+          item_id?: string | null
+          item_quantity?: number | null
+          item_sku?: string | null
+          item_thumbnail?: string | null
+          item_title?: string | null
+          item_unit_price?: number | null
+          order_data?: Json | null
+          order_id?: string
+          order_status?: string | null
+          organization_id?: string
+          paid_amount?: number | null
+          synced_at?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_hoje_realtime_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       clientes_secure: {
