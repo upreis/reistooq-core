@@ -159,85 +159,45 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     );
   };
 
+  // DADOS DE TESTE FIXOS para verificar se o gráfico funciona
+  const testData = [
+    { hora: '06h', vendas: 100 },
+    { hora: '07h', vendas: 250 },
+    { hora: '08h', vendas: 400 },
+    { hora: '09h', vendas: 600 },
+    { hora: '10h', vendas: 500 },
+    { hora: '11h', vendas: 350 },
+    { hora: '12h', vendas: 200 },
+  ];
+
   return (
-    <motion.div
-      className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4 flex flex-col hover:border-primary/50 transition-colors overflow-hidden"
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: 0.2 }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-serif text-lg text-foreground font-medium">
-          Tendências em vendas brutas
-        </h3>
+    <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
+      <h3 className="font-serif text-lg text-foreground font-medium mb-4">
+        Tendências em vendas brutas (TESTE)
+      </h3>
+      
+      <div style={{ width: '100%', height: 300 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={testData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+            <XAxis dataKey="hora" stroke="#666" />
+            <YAxis stroke="#666" />
+            <Tooltip />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="vendas" 
+              stroke="#3b82f6" 
+              strokeWidth={2}
+              dot={{ fill: '#3b82f6' }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
-
-      {/* Chart */}
-      <div className="flex-1 w-full" style={{ minHeight: 280 }}>
-        {chartData.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-            Carregando dados do gráfico...
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart
-              data={chartData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" opacity={0.5} />
-              <XAxis
-                dataKey="hora"
-                stroke="#666"
-                fontSize={11}
-                tickLine={false}
-              />
-              <YAxis
-                stroke="#666"
-                fontSize={11}
-                tickLine={false}
-                tickFormatter={formatYAxis}
-                width={70}
-                domain={[0, 'auto']}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                verticalAlign="top"
-                align="right"
-                wrapperStyle={{ fontSize: 11, paddingBottom: 10 }}
-              />
-              {filteredAccounts.map((account, index) => {
-                const color = COLORS[index % COLORS.length];
-                return (
-                  <Line
-                    key={account}
-                    type="monotone"
-                    dataKey={account}
-                    name={account}
-                    stroke={color}
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: color, strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: color }}
-                    connectNulls={true}
-                    isAnimationActive={false}
-                  />
-                );
-              })}
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="mt-2 pt-2 border-t border-border">
-        <p className="text-muted-foreground text-xs flex items-center gap-1">
-          <TrendingUp className="w-3 h-3" />
-          {selectedAccount === "todas" 
-            ? "Vendas por hora - todas as contas" 
-            : `Vendas por hora - ${selectedAccount}`}
-        </p>
-      </div>
-    </motion.div>
+      
+      <p className="text-muted-foreground text-xs mt-2">
+        Dados de teste - se este gráfico aparecer, o Recharts funciona
+      </p>
+    </div>
   );
 }
