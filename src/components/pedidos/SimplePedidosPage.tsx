@@ -515,23 +515,23 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'numero', label: 'ID do Pedido (ML)', default: true, category: 'basic' },
     { key: 'nome_completo', label: 'Nome Completo', default: true, category: 'basic' },
     { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
-    { key: 'last_updated', label: 'Última Atualização', default: false, category: 'basic' },
+    { key: 'last_updated', label: 'Atualizado', default: false, category: 'basic' },
 
     // Produtos
-    { key: 'skus_produtos', label: 'SKUs/Produtos', default: true, category: 'products' },
-    { key: 'quantidade_itens', label: 'Quantidade Total', default: true, category: 'products' },
+    { key: 'skus_produtos', label: 'SKU', default: true, category: 'products' },
+    { key: 'quantidade_itens', label: 'Quantidade', default: true, category: 'products' },
     { key: 'titulo_anuncio', label: 'Título do Produto', default: true, category: 'products' },
 
     // Financeiro - CAMPOS SEPARADOS E EXCLUSIVOS
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
     
     // 💰 FLEX & CUSTOS (Ocultos por padrão)
-    { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: false, category: 'financial' },
-    { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
+    { key: 'receita_flex', label: 'Receita Flex', default: false, category: 'financial' },
+    { key: 'custo_envio_seller', label: 'Custo Envio', default: false, category: 'financial' },
     
     { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
     { key: 'custo_fixo_meli', label: 'Custo Fixo Meli', default: false, category: 'financial' },
-    { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
+    { key: 'valor_liquido_vendedor', label: 'Valor Líquido', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
 
