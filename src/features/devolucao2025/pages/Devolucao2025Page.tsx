@@ -499,11 +499,8 @@ export const Devolucao2025Page = () => {
             <MLOrdersNav />
           </div>
           
-          {/* Espaçamento padrão - igual /reclamacoes */}
-          <div className="py-3 mt-2"></div>
-
           {/* Tabs: Ativas vs Histórico + Filtros */}
-          <div className="px-4 md:px-6 mt-2">
+          <div className="px-4 md:px-6 mt-8">
             <Tabs value={activeTab} onValueChange={(v) => updateFilter('activeTab', v as 'ativas' | 'historico')}>
               <div className="flex items-center gap-3 flex-nowrap">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
