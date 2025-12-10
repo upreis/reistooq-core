@@ -149,9 +149,20 @@ Deno.serve(async (req) => {
 
         console.log(`[sync-vendas-hoje:${correlationId}] 📦 ${ordersData.results.length} pedidos encontrados para ${account.name}`);
 
-        // 4. Salvar na tabela vendas_hoje_realtime (UPSERT)
-        const vendas = ordersData.results.map((order: any) => {
+        // 4. Enriquecer com thumbnails e salvar na tabela vendas_hoje_realtime (UPSERT)
+        const vendas = await Promise.all(ordersData.results.map(async (order: any) => {
           const firstItem = order.order_items?.[0]?.item || {};
+          
+          // Buscar thumbnail via API /items/{item_id}
+          let itemThumbnail = '';
+          if (firstItem.id) {
+            try {
+              const productInfo = await fetchProductInfo(firstItem.id, accessToken, correlationId);
+              itemThumbnail = productInfo.thumbnail || '';
+            } catch (e) {
+              console.warn(`[sync-vendas-hoje:${correlationId}] ⚠️ Erro buscando thumbnail ${firstItem.id}`);
+            }
+          }
           
           return {
             organization_id: params.organization_id,
@@ -168,7 +179,7 @@ Deno.serve(async (req) => {
             buyer_nickname: order.buyer?.nickname || '',
             item_id: firstItem.id || '',
             item_title: firstItem.title || '',
-            item_thumbnail: firstItem.thumbnail || '',
+            item_thumbnail: itemThumbnail,
             item_quantity: order.order_items?.[0]?.quantity || 1,
             item_unit_price: order.order_items?.[0]?.unit_price || 0,
             item_sku: firstItem.seller_sku || firstItem.seller_custom_field || '',
@@ -176,7 +187,7 @@ Deno.serve(async (req) => {
             synced_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
-        });
+        }));
 
         // UPSERT - atualiza se já existe
         const { data: upsertData, error: upsertError } = await supabase
@@ -295,4 +306,30 @@ async function fetchMLOrdersToday(
   }
 
   return data;
+}
+
+/**
+ * Busca informações do produto (incluindo thumbnail) via API do ML
+ */
+async function fetchProductInfo(itemId: string, accessToken: string, cid: string): Promise<{ thumbnail: string }> {
+  try {
+    const response = await fetch(`https://api.mercadolibre.com/items/${itemId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return { thumbnail: '' };
+    }
+
+    const itemData = await response.json();
+    const thumbnail = itemData.thumbnail || itemData.pictures?.[0]?.url || '';
+    
+    return { thumbnail };
+  } catch (error) {
+    console.warn(`[sync-vendas-hoje:${cid}] ⚠️ Erro fetchProductInfo ${itemId}:`, error);
+    return { thumbnail: '' };
+  }
 }
