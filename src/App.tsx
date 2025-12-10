@@ -62,6 +62,7 @@ import CategoryManager from "./pages/CategoryManager";
 import ShopeeCallbackPage from "./pages/ShopeeCallbackPage";
 import Compras from "./pages/Compras";
 import AIInsights from "./pages/AIInsights";
+import DebugVendasHoje from "./pages/DebugVendasHoje";
 
 // Create QueryClient instance outside component to avoid recreation
 const queryClient = new QueryClient({
@@ -175,6 +176,9 @@ function App() {
                     
                     {/* AI Insights */}
                     <Route path="ai-insights" element={<AIInsights />} />
+                    
+                    {/* Debug - Vendas Hoje */}
+                    <Route path="debug-vendas-hoje" element={<DebugVendasHoje />} />
                     
                     {/* E-commerce */}
                     <Route path="shop" element={<Shop />} />
