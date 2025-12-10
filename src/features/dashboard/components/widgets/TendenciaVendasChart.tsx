@@ -1,26 +1,7 @@
 import React, { useMemo } from "react";
 import { TrendingUp } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-
-const COLORS = [
-  "hsl(221, 83%, 53%)", // blue
-  "hsl(340, 82%, 52%)", // pink/magenta
-  "hsl(142, 71%, 45%)", // green
-  "hsl(38, 92%, 50%)",  // orange
-  "hsl(262, 83%, 58%)", // purple
-  "hsl(199, 89%, 48%)", // cyan
-];
 
 interface VendaRealtime {
   id: string;
@@ -32,14 +13,17 @@ interface VendaRealtime {
   created_at: string;
 }
 
-interface ChartDataPoint {
-  hora: string;
-  [key: string]: string | number;
-}
-
 interface TendenciaVendasChartProps {
   selectedAccount?: string;
 }
+
+const COLORS = [
+  "hsl(221, 83%, 53%)", // blue
+  "hsl(340, 82%, 52%)", // pink
+  "hsl(142, 71%, 45%)", // green
+  "hsl(38, 92%, 50%)",  // orange
+  "hsl(262, 83%, 58%)", // purple
+];
 
 export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVendasChartProps) {
   const { data: vendas = [] } = useQuery({
@@ -57,13 +41,10 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     refetchInterval: 60000,
   });
 
-  const { chartData, filteredAccounts } = useMemo(() => {
+  const { chartData, maxValue, filteredAccounts } = useMemo(() => {
     if (!vendas || vendas.length === 0) {
-      console.log("[TendenciaVendasChart] Sem vendas disponíveis");
-      return { chartData: [], filteredAccounts: [] };
+      return { chartData: [], maxValue: 0, filteredAccounts: [] };
     }
-
-    console.log("[TendenciaVendasChart] Processando vendas:", vendas.length);
 
     const accountsSet = new Set<string>();
     const horaMap = new Map<string, Map<string, number>>();
@@ -73,10 +54,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       accountsSet.add(accountName);
 
       const dateStr = venda.date_created || venda.created_at;
-      if (!dateStr) {
-        console.log("[TendenciaVendasChart] Venda sem data:", venda);
-        return;
-      }
+      if (!dateStr) return;
       
       const date = new Date(dateStr);
       const hora = date.getHours().toString().padStart(2, "0");
@@ -95,108 +73,96 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     const filteredAccounts = selectedAccount === "todas" 
       ? accounts 
       : accounts.filter(a => a === selectedAccount);
+
+    // Criar array de horas ordenadas
+    const horas = Array.from(horaMap.keys()).sort((a, b) => parseInt(a) - parseInt(b));
     
-    console.log("[TendenciaVendasChart] Contas encontradas:", accounts);
-    console.log("[TendenciaVendasChart] Contas filtradas:", filteredAccounts);
-    console.log("[TendenciaVendasChart] Horas com dados:", Array.from(horaMap.keys()));
-
-    const chartData: ChartDataPoint[] = [];
-
-    horaMap.forEach((accountData, hora) => {
-      const point: ChartDataPoint = { hora: `${hora}h` };
-      filteredAccounts.forEach((account) => {
-        point[account] = accountData.get(account) || 0;
+    // Calcular total por hora (todas as contas filtradas)
+    const chartData = horas.map(hora => {
+      const horaData = horaMap.get(hora)!;
+      let total = 0;
+      filteredAccounts.forEach(account => {
+        total += horaData.get(account) || 0;
       });
-      chartData.push(point);
+      return { hora: `${hora}h`, total };
     });
 
-    chartData.sort((a, b) => {
-      const horaA = parseInt(a.hora.replace('h', ''));
-      const horaB = parseInt(b.hora.replace('h', ''));
-      return horaA - horaB;
-    });
+    const maxValue = Math.max(...chartData.map(d => d.total), 1);
 
-    console.log("[TendenciaVendasChart] chartData FINAL:", chartData);
-    console.log("[TendenciaVendasChart] Exemplo primeiro ponto:", chartData[0]);
-
-    return { chartData, filteredAccounts };
+    return { chartData, maxValue, filteredAccounts };
   }, [vendas, selectedAccount]);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
-  const formatYAxis = (value: number) => {
     if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)} mil`;
+      return `R$ ${(value / 1000).toFixed(1)}k`;
     }
-    return value.toString();
+    return `R$ ${value.toFixed(0)}`;
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
-
+  if (chartData.length === 0) {
     return (
-      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
-        <p className="font-medium text-foreground mb-2">{label}h - Vendas brutas</p>
-        {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center gap-2 text-sm">
-            <span
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-muted-foreground">{entry.name}</span>
-            <span className="font-semibold text-foreground ml-auto">
-              {formatCurrency(entry.value)}
-            </span>
-          </div>
-        ))}
+      <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
+        <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Tendência de vendas por hora
+        </h3>
+        <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+          Nenhuma venda hoje ainda
+        </div>
       </div>
     );
-  };
-
-  // DADOS DE TESTE FIXOS para verificar se o gráfico funciona
-  const testData = [
-    { hora: '06h', vendas: 100 },
-    { hora: '07h', vendas: 250 },
-    { hora: '08h', vendas: 400 },
-    { hora: '09h', vendas: 600 },
-    { hora: '10h', vendas: 500 },
-    { hora: '11h', vendas: 350 },
-    { hora: '12h', vendas: 200 },
-  ];
+  }
 
   return (
     <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
-      <h3 className="font-serif text-lg text-foreground font-medium mb-4">
-        Tendências em vendas brutas (TESTE)
+      <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
+        <TrendingUp className="h-5 w-5 text-primary" />
+        Tendência de vendas por hora
       </h3>
       
-      <div className="w-full h-[300px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={testData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="hora" className="text-xs" tick={{ fill: 'hsl(var(--foreground))' }} />
-            <YAxis className="text-xs" tick={{ fill: 'hsl(var(--foreground))' }} />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'hsl(var(--background))', 
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px'
-              }}
-            />
-            <Legend />
-            <Bar dataKey="vendas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      {/* Gráfico de barras CSS */}
+      <div className="flex items-end gap-1 h-[200px] px-2">
+        {chartData.map((item, index) => {
+          const heightPercent = (item.total / maxValue) * 100;
+          return (
+            <div 
+              key={item.hora} 
+              className="flex-1 flex flex-col items-center gap-1 group"
+            >
+              {/* Tooltip no hover */}
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-center bg-popover border border-border rounded px-2 py-1 shadow-lg whitespace-nowrap">
+                {formatCurrency(item.total)}
+              </div>
+              
+              {/* Barra */}
+              <div 
+                className="w-full bg-primary rounded-t transition-all duration-300 hover:bg-primary/80 min-h-[4px]"
+                style={{ height: `${Math.max(heightPercent, 2)}%` }}
+              />
+              
+              {/* Label da hora */}
+              <span className="text-[10px] text-muted-foreground mt-1">
+                {item.hora}
+              </span>
+            </div>
+          );
+        })}
       </div>
-      
-      <p className="text-muted-foreground text-xs mt-2">
-        Dados de teste - se este gráfico aparecer, o Recharts funciona
-      </p>
+
+      {/* Legenda */}
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="w-3 h-3 rounded bg-primary" />
+          <span>
+            {selectedAccount === "todas" 
+              ? `Todas as contas (${filteredAccounts.length})` 
+              : selectedAccount}
+          </span>
+        </div>
+        <div className="text-sm font-medium text-foreground">
+          Total: {formatCurrency(chartData.reduce((acc, d) => acc + d.total, 0))}
+        </div>
+      </div>
     </div>
   );
 }
