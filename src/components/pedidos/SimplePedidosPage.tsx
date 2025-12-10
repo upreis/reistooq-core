@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'react-hot-toast';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
@@ -194,6 +195,9 @@ function SimplePedidosPage({ className }: Props) {
     return persistentState.persistedState?.quickFilter as any || 'all';
   });
 
+  // 🆕 ABAS: Pendentes vs Histórico (igual /reclamacoes)
+  const [activeTab, setActiveTab] = useState<'pendentes' | 'historico'>('pendentes');
+
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   // ✅ ETAPA 3: 100% baseado em URL params para filtros persistentes
   const filtersManager = usePedidosFiltersUnified({
@@ -361,10 +365,39 @@ function SimplePedidosPage({ className }: Props) {
     pauseOnInteraction: true // Pausa quando usuário está interagindo
   });
 
+  // 🆕 ABAS: Função helper para verificar se pedido está baixado
+  const isPedidoBaixado = useCallback((order: any) => {
+    return !!isPedidoProcessado(order) || String(order?.status_baixa || '').toLowerCase().includes('baixado');
+  }, [isPedidoProcessado]);
+
+  // 🆕 ABAS: Contadores para as abas (memoizados)
+  const tabCounts = useMemo(() => {
+    if (!orders) return { pendentes: 0, historico: 0 };
+    
+    const pendentes = orders.filter((order: any) => !isPedidoBaixado(order)).length;
+    const historico = orders.filter((order: any) => isPedidoBaixado(order)).length;
+    
+    return { pendentes, historico };
+  }, [orders, isPedidoBaixado]);
+
+  // 🆕 ABAS: Filtrar por aba primeiro
+  const ordersFilteredByTab = useMemo(() => {
+    if (!orders) return [];
+    
+    return orders.filter((order: any) => {
+      const baixado = isPedidoBaixado(order);
+      if (activeTab === 'pendentes') {
+        return !baixado;
+      } else {
+        return baixado;
+      }
+    });
+  }, [orders, activeTab, isPedidoBaixado]);
+
   // P3.1: Lista exibida considerando o filtro rápido (memoizada para performance)
   const displayedOrders = useMemo(() => {
-    if (!orders || quickFilter === 'all') return orders;
-    return orders.filter((order: any) => {
+    if (!ordersFilteredByTab || quickFilter === 'all') return ordersFilteredByTab;
+    return ordersFilteredByTab.filter((order: any) => {
       const id = order?.id || order?.numero || order?.unified?.id;
       const mapping = (mappingData as any)?.get?.(id);
       const statuses = [
@@ -404,7 +437,7 @@ function SimplePedidosPage({ className }: Props) {
           return true;
       }
     });
-  }, [orders, quickFilter, mappingData, isPedidoProcessado]);
+  }, [ordersFilteredByTab, quickFilter, mappingData, isPedidoProcessado]);
 
   // ✅ MIGRAÇÃO FASE 1: Funções de tradução movidas para @/utils/pedidos-translations
 
@@ -713,23 +746,37 @@ function SimplePedidosPage({ className }: Props) {
             <MLOrdersNav />
           </div>
           
-          {/* Header */}
-          <div className="px-4 md:px-6 py-3 mt-2">
-            <PedidosHeaderSection
-              fonte={state.fonte}
-              totalCount={total}
-              loading={loading}
-              isRefreshing={state.isRefreshing}
-              onRefresh={actions.refetch}
-              onApplyFilters={() => {
-                console.groupCollapsed('[apply/click] from=header');
-                console.log('draftFilters', filtersManager.filters);
-                console.groupEnd();
-                filtersManager.applyFilters();
-              }}
-              selectedOrdersCount={selectedOrders.size}
-              hasPendingChanges={filtersManager.hasPendingChanges}
-            />
+          {/* 🆕 ABAS: Pendentes vs Histórico */}
+          <div className="px-4 md:px-6 mt-4">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'pendentes' | 'historico')}>
+              <div className="flex items-center gap-4">
+                <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
+                  <TabsTrigger value="pendentes" className="h-10 px-4">
+                    Pendentes ({tabCounts.pendentes})
+                  </TabsTrigger>
+                  <TabsTrigger value="historico" className="h-10 px-4">
+                    Histórico ({tabCounts.historico})
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Header inline com as abas */}
+                <PedidosHeaderSection
+                  fonte={state.fonte}
+                  totalCount={activeTab === 'pendentes' ? tabCounts.pendentes : tabCounts.historico}
+                  loading={loading}
+                  isRefreshing={state.isRefreshing}
+                  onRefresh={actions.refetch}
+                  onApplyFilters={() => {
+                    console.groupCollapsed('[apply/click] from=header');
+                    console.log('draftFilters', filtersManager.filters);
+                    console.groupEnd();
+                    filtersManager.applyFilters();
+                  }}
+                  selectedOrdersCount={selectedOrders.size}
+                  hasPendingChanges={filtersManager.hasPendingChanges}
+                />
+              </div>
+            </Tabs>
           </div>
 
 
@@ -737,7 +784,7 @@ function SimplePedidosPage({ className }: Props) {
           {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
           <div className="px-4 md:px-6 mt-2">
             <PedidosStickyActions
-              orders={orders}
+              orders={ordersFilteredByTab}
               displayedOrders={displayedOrders}
               selectedOrders={selectedOrders}
               setSelectedOrders={setSelectedOrders}
@@ -781,7 +828,7 @@ function SimplePedidosPage({ className }: Props) {
           {/* 📊 Resumo de Métricas - após as abas */}
           <div className="mt-12 px-4 md:px-6">
             <PedidosResumo
-              pedidos={displayedOrders || orders}
+              pedidos={displayedOrders || ordersFilteredByTab}
               onFiltroClick={(filtro) => handlers.handleQuickFilterChange(filtro)}
               filtroAtivo={quickFilter}
               mappingData={mappingData}
