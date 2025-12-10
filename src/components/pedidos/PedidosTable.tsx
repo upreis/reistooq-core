@@ -211,8 +211,8 @@ export function PedidosTable({
     <div className="space-y-4 text-foreground">
       <div className="rounded-lg border border-gray-600 overflow-auto bg-card">
         <Table>
-          <TableHeader>
-            <TableRow>
+          <TableHeader className="sticky top-0 z-50 bg-muted shadow-sm">
+            <TableRow className="hover:bg-muted">
               <TableHead className="w-12">
                 <input
                   type="checkbox"
