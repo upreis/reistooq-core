@@ -157,27 +157,23 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
       {/* Tabela Principal */}
       <Card>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b">
-              <tr className="text-left">
-                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left">
+          <table className="w-full min-w-max">
+            <thead className="sticky top-0 z-10 bg-background shadow-sm">
+              <tr className="text-left hover:bg-transparent border-b-2">
+                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left whitespace-nowrap">
                   <Checkbox
                     checked={selectedOrders.size === orders.length && orders.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
                 {/* Coluna fixa: ID-Único sempre primeiro */}
-                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left">ID-Único</th>
+                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left whitespace-nowrap">ID-Único</th>
                 {/* Demais cabeçalhos conforme ordem/seleção */}
                 {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
                   <th 
                     key={def.key} 
                     className={cn(
-                      "px-4 h-12 text-sm text-muted-foreground font-medium text-left",
-                      // Colunas SKU com largura ajustada ao conteúdo
-                      (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
-                      // Colunas de envio sem quebra de linha
-                      (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap",
+                      "px-4 h-12 text-sm text-muted-foreground font-medium text-left whitespace-nowrap",
                       // Tags com quebra permitida
                       def.key === 'tags' && "break-words"
                     )}
