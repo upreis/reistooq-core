@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 interface VendaRealtime {
   id: string;
@@ -42,14 +41,13 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     refetchInterval: 60000,
   });
 
-  const { chartData, accounts } = useMemo(() => {
+  const { chartData, maxValue, accounts } = useMemo(() => {
     if (!vendas || vendas.length === 0) {
-      return { chartData: [], accounts: [] };
+      return { chartData: new Map<string, Map<number, number>>(), maxValue: 0, accounts: [] };
     }
 
     const accountsSet = new Set<string>();
-    // Map: hora -> { hora, account1: valor, account2: valor, ... }
-    const horaMap = new Map<string, Record<string, string | number>>();
+    const chartData = new Map<string, Map<number, number>>();
 
     vendas.forEach((venda) => {
       const accountName = venda.account_name || "Desconhecido";
@@ -59,25 +57,28 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       if (!dateStr) return;
       
       const date = new Date(dateStr);
-      const hora = date.getHours().toString().padStart(2, "0");
+      const hora = date.getHours();
       const valor = Number(venda.total_amount) || 0;
 
-      if (!horaMap.has(hora)) {
-        horaMap.set(hora, { hora: `${hora}` });
+      if (!chartData.has(accountName)) {
+        chartData.set(accountName, new Map());
       }
       
-      const horaData = horaMap.get(hora)!;
-      horaData[accountName] = ((horaData[accountName] as number) || 0) + valor;
+      const accountData = chartData.get(accountName)!;
+      const current = accountData.get(hora) || 0;
+      accountData.set(hora, current + valor);
     });
 
     const accounts = Array.from(accountsSet);
     
-    // Ordenar por hora e converter para array
-    const chartData = Array.from(horaMap.entries())
-      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-      .map(([_, data]) => data);
+    let maxValue = 1;
+    chartData.forEach((accountMap) => {
+      accountMap.forEach((valor) => {
+        if (valor > maxValue) maxValue = valor;
+      });
+    });
 
-    return { chartData, accounts };
+    return { chartData, maxValue, accounts };
   }, [vendas]);
 
   const filteredAccounts = selectedAccount === "todas" 
@@ -91,7 +92,43 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     return `R$ ${value.toFixed(0)}`;
   };
 
-  if (chartData.length === 0) {
+  // Gerar path SVG com curvas suaves
+  const generatePath = (accountName: string): string => {
+    const accountData = chartData.get(accountName);
+    if (!accountData || accountData.size === 0) return "";
+
+    const horas = Array.from(accountData.keys()).sort((a, b) => a - b);
+    if (horas.length === 0) return "";
+
+    const width = 100;
+    const height = 100;
+    const points: { x: number; y: number }[] = [];
+
+    horas.forEach((hora) => {
+      const valor = accountData.get(hora) || 0;
+      const x = (hora / 23) * width;
+      const y = height - (valor / maxValue) * height;
+      points.push({ x, y });
+    });
+
+    if (points.length === 1) {
+      return `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`;
+    }
+
+    // Criar curva suave usando quadratic bezier
+    let path = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const midX = (prev.x + curr.x) / 2;
+      path += ` Q ${prev.x} ${prev.y} ${midX} ${(prev.y + curr.y) / 2}`;
+    }
+    path += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
+    
+    return path;
+  };
+
+  if (accounts.length === 0) {
     return (
       <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
         <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
@@ -105,59 +142,106 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     );
   }
 
+  // Gerar labels do eixo Y
+  const yLabels = [0, maxValue * 0.25, maxValue * 0.5, maxValue * 0.75, maxValue];
+
   return (
     <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
-      <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
-        <TrendingUp className="h-5 w-5 text-primary" />
-        Tendência de vendas por hora
-      </h3>
-      
-      <ResponsiveContainer width="100%" height={250}>
-        <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-          <XAxis 
-            dataKey="hora" 
-            tickFormatter={(v) => `${v}h`}
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-            axisLine={{ stroke: 'hsl(var(--border))' }}
-            tickLine={{ stroke: 'hsl(var(--border))' }}
-          />
-          <YAxis 
-            tickFormatter={formatCurrency}
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-            axisLine={{ stroke: 'hsl(var(--border))' }}
-            tickLine={{ stroke: 'hsl(var(--border))' }}
-            width={70}
-          />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'hsl(var(--popover))', 
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-              fontSize: '12px'
-            }}
-            labelStyle={{ color: 'hsl(var(--foreground))' }}
-            formatter={(value: number, name: string) => [formatCurrency(value), name]}
-            labelFormatter={(label) => `${label}h`}
-          />
-          <Legend 
-            wrapperStyle={{ fontSize: '11px' }}
-            iconType="circle"
-            iconSize={8}
-          />
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-serif text-lg text-foreground font-medium flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Tendência de vendas por hora
+        </h3>
+        {/* Legenda */}
+        <div className="flex flex-wrap gap-3">
           {filteredAccounts.map((account, index) => (
-            <Line
-              key={account}
-              type="monotone"
-              dataKey={account}
-              stroke={COLORS[index % COLORS.length]}
-              strokeWidth={2.5}
-              dot={{ r: 4, fill: COLORS[index % COLORS.length] }}
-              activeDot={{ r: 6 }}
-              connectNulls
-            />
+            <div key={account} className="flex items-center gap-1.5 text-xs">
+              <div 
+                className="w-2.5 h-2.5 rounded-full" 
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+              />
+              <span className="text-muted-foreground truncate max-w-[100px]">{account}</span>
+            </div>
           ))}
-        </LineChart>
-      </ResponsiveContainer>
+        </div>
+      </div>
+      
+      <div className="flex">
+        {/* Eixo Y */}
+        <div className="flex flex-col justify-between h-[200px] pr-2 text-[10px] text-muted-foreground">
+          {yLabels.reverse().map((val, i) => (
+            <span key={i}>{formatCurrency(val)}</span>
+          ))}
+        </div>
+        
+        {/* Gráfico */}
+        <div className="flex-1 relative h-[200px]">
+          {/* Grid horizontal */}
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="border-t border-border/30 w-full" />
+            ))}
+          </div>
+          
+          {/* SVG com linhas */}
+          <svg 
+            className="absolute inset-0 w-full h-full" 
+            viewBox="0 0 100 100" 
+            preserveAspectRatio="none"
+          >
+            {filteredAccounts.map((account, index) => (
+              <path
+                key={account}
+                d={generatePath(account)}
+                fill="none"
+                stroke={COLORS[index % COLORS.length]}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+          </svg>
+          
+          {/* Pontos */}
+          <svg 
+            className="absolute inset-0 w-full h-full" 
+            viewBox="0 0 100 100" 
+            preserveAspectRatio="none"
+          >
+            {filteredAccounts.map((account, accIndex) => {
+              const accountData = chartData.get(account);
+              if (!accountData) return null;
+              
+              return Array.from(accountData.entries()).map(([hora, valor]) => {
+                const x = (hora / 23) * 100;
+                const y = 100 - (valor / maxValue) * 100;
+                return (
+                  <g key={`${account}-${hora}`} className="group">
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="1.5"
+                      fill={COLORS[accIndex % COLORS.length]}
+                      className="cursor-pointer"
+                      vectorEffect="non-scaling-stroke"
+                    >
+                      <title>{`${account}: ${formatCurrency(valor)} às ${hora}h`}</title>
+                    </circle>
+                  </g>
+                );
+              });
+            })}
+          </svg>
+        </div>
+      </div>
+      
+      {/* Eixo X */}
+      <div className="flex justify-between mt-2 ml-12 text-[10px] text-muted-foreground">
+        {[0, 4, 8, 12, 16, 20, 23].map((hora) => (
+          <span key={hora}>{hora}h</span>
+        ))}
+      </div>
     </div>
   );
 }
