@@ -747,7 +747,7 @@ function SimplePedidosPage({ className }: Props) {
           </div>
           
           {/* 🆕 ABAS + FILTROS: Layout unificado igual /reclamacoes */}
-          <div className="px-4 md:px-6 mt-4">
+          <div className="px-4 md:px-6 mt-2">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'pendentes' | 'historico')}>
               <div className="flex items-center gap-3 flex-nowrap">
                 {/* Abas pill-style */}
@@ -760,29 +760,31 @@ function SimplePedidosPage({ className }: Props) {
                   </TabsTrigger>
                 </TabsList>
                 
-                {/* Filtros integrados diretamente na mesma linha */}
-                <ErrorBoundary name="PedidosFiltersUnified">
-                  <PedidosFiltersUnified
-                    filters={filtersManager.filters}
-                    appliedFilters={filtersManager.appliedFilters}
-                    onFilterChange={filtersManager.updateFilter}
-                    onApplyFilters={filtersManager.applyFilters}
-                    onCancelChanges={filtersManager.cancelChanges}
-                    onClearFilters={filtersManager.clearFilters}
-                    hasPendingChanges={filtersManager.hasPendingChanges}
-                    needsManualApplication={filtersManager.needsManualApplication}
-                    isApplying={filtersManager.isApplying}
-                    columnManager={columnManager}
-                    onOpenConfigLocais={() => setConfigLocaisOpen(true)}
-                    activeFiltersCount={filtersManager.activeFiltersCount}
-                    contasML={accounts}
-                    useAdvancedStatus={useAdvancedStatus}
-                    onToggleAdvancedStatus={setUseAdvancedStatus}
-                    advancedStatusFilters={advancedStatusFilters}
-                    onAdvancedStatusFiltersChange={handleAdvancedStatusFiltersChange}
-                    onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
-                  />
-                </ErrorBoundary>
+                {/* Filtros integrados + Seletor de Colunas */}
+                <div className="flex-1 min-w-0">
+                  <ErrorBoundary name="PedidosFiltersUnified">
+                    <PedidosFiltersUnified
+                      filters={filtersManager.filters}
+                      appliedFilters={filtersManager.appliedFilters}
+                      onFilterChange={filtersManager.updateFilter}
+                      onApplyFilters={filtersManager.applyFilters}
+                      onCancelChanges={filtersManager.cancelChanges}
+                      onClearFilters={filtersManager.clearFilters}
+                      hasPendingChanges={filtersManager.hasPendingChanges}
+                      needsManualApplication={filtersManager.needsManualApplication}
+                      isApplying={filtersManager.isApplying}
+                      columnManager={columnManager}
+                      onOpenConfigLocais={() => setConfigLocaisOpen(true)}
+                      activeFiltersCount={filtersManager.activeFiltersCount}
+                      contasML={accounts}
+                      useAdvancedStatus={useAdvancedStatus}
+                      onToggleAdvancedStatus={setUseAdvancedStatus}
+                      advancedStatusFilters={advancedStatusFilters}
+                      onAdvancedStatusFiltersChange={handleAdvancedStatusFiltersChange}
+                      onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
+                    />
+                  </ErrorBoundary>
+                </div>
               </div>
             </Tabs>
           </div>

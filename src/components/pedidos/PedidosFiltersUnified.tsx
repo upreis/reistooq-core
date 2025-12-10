@@ -117,7 +117,7 @@ export function PedidosFiltersUnified({
   const selectedContasML = filters.contasML || [];
 
   return (
-    <>
+    <div className="flex items-center gap-3 flex-nowrap">
       {/* Busca */}
       <div className="min-w-[200px] flex-shrink-0">
         <div className="relative">
@@ -251,6 +251,6 @@ export function PedidosFiltersUnified({
           </Button>
         </div>
       )}
-    </>
+    </div>
   );
 }
