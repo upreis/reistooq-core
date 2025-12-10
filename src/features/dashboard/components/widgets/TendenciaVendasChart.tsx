@@ -77,17 +77,24 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     // Criar array de horas ordenadas
     const horas = Array.from(horaMap.keys()).sort((a, b) => parseInt(a) - parseInt(b));
     
-    // Calcular total por hora (todas as contas filtradas)
+    // Criar dados por hora COM valores separados por conta
     const chartData = horas.map(hora => {
       const horaData = horaMap.get(hora)!;
-      let total = 0;
+      const accountValues: Record<string, number> = {};
       filteredAccounts.forEach(account => {
-        total += horaData.get(account) || 0;
+        accountValues[account] = horaData.get(account) || 0;
       });
-      return { hora: `${hora}h`, total };
+      return { hora: `${hora}h`, ...accountValues };
     });
 
-    const maxValue = Math.max(...chartData.map(d => d.total), 1);
+    // Calcular máximo considerando todas as contas
+    let maxValue = 1;
+    chartData.forEach(item => {
+      filteredAccounts.forEach(account => {
+        const val = (item as Record<string, number | string>)[account] as number || 0;
+        if (val > maxValue) maxValue = val;
+      });
+    });
 
     return { chartData, maxValue, filteredAccounts };
   }, [vendas, selectedAccount]);
@@ -120,48 +127,61 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
         Tendência de vendas por hora
       </h3>
       
-      {/* Gráfico de barras CSS */}
-      <div className="flex items-end gap-1 h-[200px] px-2">
-        {chartData.map((item, index) => {
-          const heightPercent = (item.total / maxValue) * 100;
-          return (
-            <div 
-              key={item.hora} 
-              className="flex-1 flex flex-col items-center gap-1 group"
-            >
-              {/* Tooltip no hover */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-center bg-popover border border-border rounded px-2 py-1 shadow-lg whitespace-nowrap">
-                {formatCurrency(item.total)}
-              </div>
-              
-              {/* Barra */}
-              <div 
-                className="w-full bg-primary rounded-t transition-all duration-300 hover:bg-primary/80 min-h-[4px]"
-                style={{ height: `${Math.max(heightPercent, 2)}%` }}
-              />
-              
-              {/* Label da hora */}
-              <span className="text-[10px] text-muted-foreground mt-1">
-                {item.hora}
-              </span>
+      {/* Gráfico de barras CSS - agrupado por conta */}
+      <div className="flex items-end gap-2 h-[200px] px-2">
+        {chartData.map((item) => (
+          <div 
+            key={item.hora} 
+            className="flex-1 flex flex-col items-center gap-1"
+          >
+            {/* Barras agrupadas por conta */}
+            <div className="flex items-end gap-[2px] w-full h-full">
+              {filteredAccounts.map((account, accIndex) => {
+                const value = (item as Record<string, number | string>)[account] as number || 0;
+                const heightPercent = (value / maxValue) * 100;
+                return (
+                  <div 
+                    key={account}
+                    className="flex-1 group relative"
+                    style={{ height: '100%' }}
+                  >
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-popover border border-border rounded px-2 py-1 shadow-lg whitespace-nowrap z-10">
+                      <div className="font-medium">{account}</div>
+                      <div>{formatCurrency(value)}</div>
+                    </div>
+                    {/* Barra */}
+                    <div 
+                      className="w-full rounded-t transition-all duration-300 hover:opacity-80 absolute bottom-0"
+                      style={{ 
+                        height: `${Math.max(heightPercent, 2)}%`,
+                        backgroundColor: COLORS[accIndex % COLORS.length]
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+            
+            {/* Label da hora */}
+            <span className="text-[10px] text-muted-foreground mt-1">
+              {item.hora}
+            </span>
+          </div>
+        ))}
       </div>
 
-      {/* Legenda */}
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <div className="w-3 h-3 rounded bg-primary" />
-          <span>
-            {selectedAccount === "todas" 
-              ? `Todas as contas (${filteredAccounts.length})` 
-              : selectedAccount}
-          </span>
-        </div>
-        <div className="text-sm font-medium text-foreground">
-          Total: {formatCurrency(chartData.reduce((acc, d) => acc + d.total, 0))}
-        </div>
+      {/* Legenda por conta */}
+      <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-border">
+        {filteredAccounts.map((account, index) => (
+          <div key={account} className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div 
+              className="w-3 h-3 rounded" 
+              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+            />
+            <span className="truncate max-w-[150px]">{account}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
