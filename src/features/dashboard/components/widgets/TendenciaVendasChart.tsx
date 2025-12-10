@@ -147,24 +147,10 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
 
   return (
     <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-serif text-lg text-foreground font-medium flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          Tendência de vendas por hora
-        </h3>
-        {/* Legenda */}
-        <div className="flex flex-wrap gap-3">
-          {filteredAccounts.map((account, index) => (
-            <div key={account} className="flex items-center gap-1.5 text-xs">
-              <div 
-                className="w-2.5 h-2.5 rounded-full" 
-                style={{ backgroundColor: COLORS[index % COLORS.length] }}
-              />
-              <span className="text-muted-foreground truncate max-w-[100px]">{account}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
+        <TrendingUp className="h-5 w-5 text-primary" />
+        Tendência de vendas por hora
+      </h3>
       
       <div className="flex">
         {/* Eixo Y */}
