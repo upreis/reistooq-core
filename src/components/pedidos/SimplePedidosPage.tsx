@@ -747,7 +747,7 @@ function SimplePedidosPage({ className }: Props) {
           </div>
           
           {/* 🆕 ABAS + FILTROS: Layout unificado igual /reclamacoes */}
-          <div className="px-4 md:px-6 mt-2">
+          <div className="px-4 md:px-6 mt-4">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'pendentes' | 'historico')}>
               <div className="flex items-center gap-3 flex-nowrap">
                 {/* Abas pill-style */}
@@ -790,7 +790,7 @@ function SimplePedidosPage({ className }: Props) {
           </div>
 
           {/* 📊 Resumo de Métricas - após as abas */}
-          <div className="mt-4 px-4 md:px-6">
+          <div className="mt-6 px-4 md:px-6">
             <PedidosResumo
               pedidos={displayedOrders || ordersFilteredByTab}
               onFiltroClick={(filtro) => handlers.handleQuickFilterChange(filtro)}
