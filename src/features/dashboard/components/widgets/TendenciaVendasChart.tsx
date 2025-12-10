@@ -46,7 +46,7 @@ export function TendenciaVendasChart() {
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("*")
-        .gte("order_date", hoje);
+        .gte("date_created", hoje);
 
       if (error) throw error;
       return (data || []) as VendaRealtime[];
