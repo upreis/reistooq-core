@@ -747,7 +747,7 @@ function SimplePedidosPage({ className }: Props) {
           </div>
           
           {/* 🆕 ABAS + FILTROS: Layout unificado igual /reclamacoes */}
-          <div className="px-4 md:px-6 mt-4">
+          <div className="px-4 md:px-6 mt-8">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'pendentes' | 'historico')}>
               <div className="flex items-center gap-3 flex-nowrap">
                 {/* Abas pill-style */}
