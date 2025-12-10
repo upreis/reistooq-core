@@ -39,11 +39,16 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
   const { data: vendas = [] } = useQuery({
     queryKey: ["vendas-hoje-tendencia"],
     queryFn: async () => {
-      const hoje = new Date().toISOString().split("T")[0];
+      // Início de hoje em UTC (São Paulo é UTC-3)
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("*")
-        .gte("date_created", hoje);
+        .gte("date_created", startOfToday.toISOString())
+        .lte("date_created", endOfToday.toISOString());
 
       if (error) throw error;
       return (data || []) as VendaRealtime[];
@@ -102,20 +107,28 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     return `R$ ${value.toFixed(0)}`;
   };
 
-  // Gerar path SVG com linhas retas (mais confiável)
+  // Gerar path SVG com linhas retas (intervalos de 2h: 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22)
   const generatePath = (accountName: string): string => {
     const accountData = chartData.get(accountName);
     if (!accountData || accountData.size === 0) return "";
 
-    const horas = Array.from(accountData.keys()).sort((a, b) => a - b);
-    if (horas.length === 0) return "";
+    // Agrupar por intervalos de 2 horas
+    const horasAgrupadas = new Map<number, number>();
+    accountData.forEach((valor, hora) => {
+      const intervalo = Math.floor(hora / 2) * 2; // 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22
+      const atual = horasAgrupadas.get(intervalo) || 0;
+      horasAgrupadas.set(intervalo, atual + valor);
+    });
+
+    const intervalos = Array.from(horasAgrupadas.keys()).sort((a, b) => a - b);
+    if (intervalos.length === 0) return "";
 
     const points: { x: number; y: number }[] = [];
 
-    horas.forEach((hora) => {
-      const valor = accountData.get(hora) || 0;
-      const x = (hora / 23) * 100;
-      const y = Math.max(5, 100 - (valor / maxValue) * 90); // Deixa margem de 5-95%
+    intervalos.forEach((intervalo) => {
+      const valor = horasAgrupadas.get(intervalo) || 0;
+      const x = (intervalo / 22) * 100; // 22 é o último intervalo (22h-24h)
+      const y = Math.max(5, 100 - (valor / maxValue) * 90);
       points.push({ x, y });
     });
 
@@ -123,7 +136,6 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       return `M ${points[0].x} ${points[0].y} L ${points[0].x + 1} ${points[0].y}`;
     }
 
-    // Linha simples conectando pontos
     let path = `M ${points[0].x} ${points[0].y}`;
     for (let i = 1; i < points.length; i++) {
       path += ` L ${points[i].x} ${points[i].y}`;
@@ -197,19 +209,27 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
             ))}
           </svg>
           
-          {/* Pontos interativos */}
+          {/* Pontos interativos - agrupados por 2h */}
           {filteredAccounts.map((account, accIndex) => {
             const accountData = chartData.get(account);
             if (!accountData) return null;
             
-            return Array.from(accountData.entries()).map(([hora, valor]) => {
-              const xPercent = (hora / 23) * 100;
+            // Agrupar por intervalos de 2 horas para os pontos também
+            const horasAgrupadas = new Map<number, number>();
+            accountData.forEach((valor, hora) => {
+              const intervalo = Math.floor(hora / 2) * 2;
+              const atual = horasAgrupadas.get(intervalo) || 0;
+              horasAgrupadas.set(intervalo, atual + valor);
+            });
+            
+            return Array.from(horasAgrupadas.entries()).map(([intervalo, valor]) => {
+              const xPercent = (intervalo / 22) * 100;
               const yPercent = Math.max(5, 100 - (valor / maxValue) * 90);
               const color = COLORS[accIndex % COLORS.length];
               
               return (
                 <div
-                  key={`${account}-${hora}`}
+                  key={`${account}-${intervalo}`}
                   className="absolute w-3 h-3 rounded-full cursor-pointer hover:scale-150 transition-transform -translate-x-1/2 -translate-y-1/2 z-10"
                   style={{ 
                     left: `${xPercent}%`, 
@@ -222,7 +242,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
                       setTooltip({
                         account,
                         valor,
-                        hora,
+                        hora: intervalo,
                         x: e.clientX - rect.left,
                         y: e.clientY - rect.top,
                         color
@@ -255,16 +275,16 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
                 </span>
               </div>
               <div className="text-muted-foreground">
-                {formatCurrency(tooltip.valor)} às {tooltip.hora}h
+                {formatCurrency(tooltip.valor)} ({tooltip.hora}h - {tooltip.hora + 2}h)
               </div>
             </div>
           )}
         </div>
       </div>
       
-      {/* Eixo X */}
+      {/* Eixo X - intervalos de 2h */}
       <div className="flex justify-between mt-2 ml-12 text-[10px] text-muted-foreground">
-        {[0, 4, 8, 12, 16, 20, 23].map((hora) => (
+        {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22].map((hora) => (
           <span key={hora}>{hora}h</span>
         ))}
       </div>
