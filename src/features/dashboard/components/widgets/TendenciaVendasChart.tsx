@@ -175,15 +175,21 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
         Tendências em vendas brutas (TESTE)
       </h3>
       
-      <div style={{ width: '100%', height: 300 }}>
+      <div className="w-full h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={testData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-            <XAxis dataKey="hora" stroke="#666" />
-            <YAxis stroke="#666" />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis dataKey="hora" className="text-xs" tick={{ fill: 'hsl(var(--foreground))' }} />
+            <YAxis className="text-xs" tick={{ fill: 'hsl(var(--foreground))' }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'hsl(var(--background))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px'
+              }}
+            />
             <Legend />
-            <Bar dataKey="vendas" fill="#3b82f6" />
+            <Bar dataKey="vendas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
