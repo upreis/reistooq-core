@@ -63,7 +63,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'last_updated',
-    label: 'Última Atualização',
+    label: 'Atualizado',
     category: 'basic',
     priority: 'optional',
     visible: false,
@@ -76,7 +76,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // ====== PRODUTOS (da imagem 1) ======
   {
     key: 'skus_produtos',
-    label: 'SKUs/Produtos',
+    label: 'SKU',
     category: 'products',
     priority: 'essential',
     visible: true,
@@ -86,7 +86,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'quantidade_itens',
-    label: 'Quantidade Total',
+    label: 'Quantidade',
     category: 'products',
     priority: 'essential',
     visible: true,
@@ -120,7 +120,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'receita_flex',
-    label: 'Receita Flex (Bônus)',
+    label: 'Receita Flex',
     category: 'financial',
     priority: 'important',
     visible: true,
@@ -142,7 +142,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'custo_envio_seller',
-    label: 'Custo Envio Seller',
+    label: 'Custo Envio',
     category: 'financial',
     priority: 'optional',
     visible: false,
@@ -164,7 +164,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'valor_liquido_vendedor',
-    label: 'Valor Líquido Vendedor',
+    label: 'Valor Líquido',
     category: 'financial',
     priority: 'important',
     visible: true,
@@ -373,7 +373,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'url_rastreamento',
-    label: 'URL Rastreamento',
+    label: 'Rastreamento',
     category: 'shipping',
     priority: 'important',
     visible: true,
