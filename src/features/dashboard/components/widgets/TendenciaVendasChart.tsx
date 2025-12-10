@@ -61,14 +61,10 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
   const { chartData, filteredAccounts } = useMemo(() => {
     if (!vendas.length) return { chartData: [], filteredAccounts: [] };
 
+    console.log("[TendenciaVendasChart] Total vendas:", vendas.length);
+
     const accountsSet = new Set<string>();
     const horaMap = new Map<string, Map<string, number>>();
-
-    // Initialize hours 00-23
-    for (let i = 0; i < 24; i++) {
-      const hora = i.toString().padStart(2, "0");
-      horaMap.set(hora, new Map());
-    }
 
     vendas.forEach((venda) => {
       const accountName = venda.account_name || "Desconhecido";
@@ -77,14 +73,18 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       const dateStr = venda.date_created || venda.created_at;
       const date = new Date(dateStr);
       
-      // Get hour in local timezone
+      // Get hour in local timezone (browser timezone = Brasília)
       const hora = date.getHours().toString().padStart(2, "0");
 
-      const horaData = horaMap.get(hora);
-      if (horaData) {
-        const current = horaData.get(accountName) || 0;
-        horaData.set(accountName, current + (venda.total_amount || 0));
+      console.log(`[TendenciaVendasChart] Venda: ${dateStr} -> hora local: ${hora}h, valor: ${venda.total_amount}, conta: ${accountName}`);
+
+      if (!horaMap.has(hora)) {
+        horaMap.set(hora, new Map());
       }
+      
+      const horaData = horaMap.get(hora)!;
+      const current = horaData.get(accountName) || 0;
+      horaData.set(accountName, current + (venda.total_amount || 0));
     });
 
     const accounts = Array.from(accountsSet);
@@ -92,14 +92,25 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       ? accounts 
       : accounts.filter(a => a === selectedAccount);
     
+    console.log("[TendenciaVendasChart] Accounts:", accounts, "Filtered:", filteredAccounts);
+
     const chartData: ChartDataPoint[] = [];
 
+    // Only include hours that have data
     horaMap.forEach((accountData, hora) => {
-      const point: ChartDataPoint = { hora: `${hora}h` };
+      // Check if there's any value for filtered accounts
+      let hasValue = false;
       filteredAccounts.forEach((account) => {
-        point[account] = accountData.get(account) || 0;
+        if ((accountData.get(account) || 0) > 0) hasValue = true;
       });
-      chartData.push(point);
+      
+      if (hasValue) {
+        const point: ChartDataPoint = { hora: `${hora}h` };
+        filteredAccounts.forEach((account) => {
+          point[account] = accountData.get(account) || 0;
+        });
+        chartData.push(point);
+      }
     });
 
     // Sort by hour
@@ -108,6 +119,8 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       const horaB = parseInt(b.hora.replace('h', ''));
       return horaA - horaB;
     });
+
+    console.log("[TendenciaVendasChart] Chart data:", chartData);
 
     return { chartData, filteredAccounts };
   }, [vendas, selectedAccount]);
