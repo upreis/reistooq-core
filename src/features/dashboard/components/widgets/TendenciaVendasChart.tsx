@@ -122,7 +122,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     return `R$ ${value.toFixed(0)}`;
   };
 
-  // Gerar path SVG com linhas retas (intervalos de 2h: 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22)
+  // Gerar path SVG com curvas suaves (bezier) - intervalos de 2h
   const generatePath = (accountName: string): string => {
     const accountData = chartData.get(accountName);
     if (!accountData || accountData.size === 0) return "";
@@ -151,9 +151,23 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       return `M ${points[0].x} ${points[0].y} L ${points[0].x + 1} ${points[0].y}`;
     }
 
+    // Criar curva suave usando cubic bezier
     let path = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      path += ` L ${points[i].x} ${points[i].y}`;
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
+      
+      // Calcular pontos de controle para curva suave (Catmull-Rom to Bezier)
+      const tension = 0.3;
+      const cp1x = p1.x + (p2.x - p0.x) * tension;
+      const cp1y = p1.y + (p2.y - p0.y) * tension;
+      const cp2x = p2.x - (p3.x - p1.x) * tension;
+      const cp2y = p2.y - (p3.y - p1.y) * tension;
+      
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
     }
     
     return path;
