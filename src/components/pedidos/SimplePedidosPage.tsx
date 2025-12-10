@@ -746,10 +746,11 @@ function SimplePedidosPage({ className }: Props) {
             <MLOrdersNav />
           </div>
           
-          {/* 🆕 ABAS: Pendentes vs Histórico */}
-          <div className="px-4 md:px-6 mt-4">
+          {/* 🆕 ABAS + FILTROS: Layout unificado igual /reclamacoes */}
+          <div className="px-4 md:px-6 mt-2">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'pendentes' | 'historico')}>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 flex-nowrap">
+                {/* Abas pill-style */}
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
                   <TabsTrigger value="pendentes" className="h-10 px-4">
                     Pendentes ({tabCounts.pendentes})
@@ -759,70 +760,33 @@ function SimplePedidosPage({ className }: Props) {
                   </TabsTrigger>
                 </TabsList>
                 
-                {/* Header inline com as abas */}
-                <PedidosHeaderSection
-                  fonte={state.fonte}
-                  totalCount={activeTab === 'pendentes' ? tabCounts.pendentes : tabCounts.historico}
-                  loading={loading}
-                  isRefreshing={state.isRefreshing}
-                  onRefresh={actions.refetch}
-                  onApplyFilters={() => {
-                    console.groupCollapsed('[apply/click] from=header');
-                    console.log('draftFilters', filtersManager.filters);
-                    console.groupEnd();
-                    filtersManager.applyFilters();
-                  }}
-                  selectedOrdersCount={selectedOrders.size}
-                  hasPendingChanges={filtersManager.hasPendingChanges}
-                />
+                {/* Filtros integrados na mesma linha */}
+                <div className="flex-1 min-w-0">
+                  <ErrorBoundary name="PedidosFiltersUnified">
+                    <PedidosFiltersUnified
+                      filters={filtersManager.filters}
+                      appliedFilters={filtersManager.appliedFilters}
+                      onFilterChange={filtersManager.updateFilter}
+                      onApplyFilters={filtersManager.applyFilters}
+                      onCancelChanges={filtersManager.cancelChanges}
+                      onClearFilters={filtersManager.clearFilters}
+                      hasPendingChanges={filtersManager.hasPendingChanges}
+                      needsManualApplication={filtersManager.needsManualApplication}
+                      isApplying={filtersManager.isApplying}
+                      columnManager={columnManager}
+                      onOpenConfigLocais={() => setConfigLocaisOpen(true)}
+                      activeFiltersCount={filtersManager.activeFiltersCount}
+                      contasML={accounts}
+                      useAdvancedStatus={useAdvancedStatus}
+                      onToggleAdvancedStatus={setUseAdvancedStatus}
+                      advancedStatusFilters={advancedStatusFilters}
+                      onAdvancedStatusFiltersChange={handleAdvancedStatusFiltersChange}
+                      onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
+                    />
+                  </ErrorBoundary>
+                </div>
               </div>
             </Tabs>
-          </div>
-
-
-
-          {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
-          <div className="px-4 md:px-6 mt-2">
-            <PedidosStickyActions
-              orders={ordersFilteredByTab}
-              displayedOrders={displayedOrders}
-              selectedOrders={selectedOrders}
-              setSelectedOrders={setSelectedOrders}
-              mappingData={mappingData}
-              isPedidoProcessado={isPedidoProcessado}
-              quickFilter={quickFilter}
-              onBaixaConcluida={() => {
-                setSelectedOrders(new Set());
-                actions.refetch();
-              }}
-            />
-          </div>
-
-          {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
-          <div className="px-4 md:px-6 mt-2">
-            {/* F4.3: PedidosFiltersUnified com Error Boundary */}
-            <ErrorBoundary name="PedidosFiltersUnified">
-              <PedidosFiltersUnified
-                filters={filtersManager.filters}
-                appliedFilters={filtersManager.appliedFilters}
-                onFilterChange={filtersManager.updateFilter}
-                onApplyFilters={filtersManager.applyFilters}
-                onCancelChanges={filtersManager.cancelChanges}
-                onClearFilters={filtersManager.clearFilters}
-                hasPendingChanges={filtersManager.hasPendingChanges}
-                needsManualApplication={filtersManager.needsManualApplication}
-                isApplying={filtersManager.isApplying}
-                columnManager={columnManager}
-                onOpenConfigLocais={() => setConfigLocaisOpen(true)}
-                activeFiltersCount={filtersManager.activeFiltersCount}
-                contasML={accounts}
-                useAdvancedStatus={useAdvancedStatus}
-                onToggleAdvancedStatus={setUseAdvancedStatus}
-                advancedStatusFilters={advancedStatusFilters}
-                onAdvancedStatusFiltersChange={handleAdvancedStatusFiltersChange}
-                onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
-              />
-            </ErrorBoundary>
           </div>
 
           {/* 📊 Resumo de Métricas - após as abas */}
