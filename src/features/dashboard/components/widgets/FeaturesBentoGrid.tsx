@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Smartphone, Globe } from "lucide-react";
+import { Lock, Smartphone } from "lucide-react";
 import { VendasHojeCard } from "./VendasHojeCard";
+import { TendenciaVendasChart } from "./TendenciaVendasChart";
 
 function LayoutAnimation() {
   const [layout, setLayout] = useState(0);
@@ -125,29 +126,6 @@ function SecurityBadge() {
   );
 }
 
-function GlobalNetwork() {
-  const pulses = [0, 1, 2, 3, 4];
-
-  return (
-    <div className="flex items-center justify-center h-full relative">
-      <Globe className="w-16 h-16 text-foreground/80 z-10" />
-      {pulses.map((pulse) => (
-        <motion.div
-          key={pulse}
-          className="absolute w-16 h-16 border-2 border-foreground/30 rounded-full"
-          initial={{ scale: 0.5, opacity: 1 }}
-          animate={{ scale: 3, opacity: 0 }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            delay: pulse * 0.8,
-            ease: "easeOut",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export function FeaturesBentoGrid() {
   return (
@@ -177,33 +155,8 @@ export function FeaturesBentoGrid() {
         </div>
       </motion.div>
 
-      {/* 3. Global Network - Tall (2x2) */}
-      <motion.div
-        className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-6 flex flex-col hover:border-primary/50 transition-colors cursor-pointer overflow-hidden"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.2 }}
-        whileHover={{
-          scale: 1.02,
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-        }}
-      >
-        <div className="flex-1 flex items-center justify-center">
-          <div className="relative">
-            <GlobalNetwork />
-          </div>
-        </div>
-        <div className="mt-auto relative z-20 bg-background/50 backdrop-blur-sm rounded-lg p-2">
-          <h3 className="font-serif text-xl text-foreground flex items-center gap-2 font-medium">
-            <Globe className="w-5 h-5" />
-            Global CDN
-          </h3>
-          <p className="text-muted-foreground text-sm mt-1">
-            Lightning-fast content delivery worldwide with edge locations.
-          </p>
-        </div>
-      </motion.div>
+      {/* 3. Tendência de Vendas - Tall (2x2) */}
+      <TendenciaVendasChart />
 
       {/* 4. Speed - Standard (2x1) */}
       <motion.div
