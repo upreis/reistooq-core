@@ -48,7 +48,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   // Colunas específicas do Mercado Livre
   { key: 'date_created', label: 'Data Criação ML', visible: false, category: 'ml' },
   { key: 'date_closed', label: 'Data Fechamento ML', visible: false, category: 'ml' },
-  { key: 'last_updated', label: 'Última Atualização ML', visible: false, category: 'ml' },
+  { key: 'last_updated', label: 'Atualizado', visible: false, category: 'ml' },
   { key: 'pickup_id', label: 'Pickup ID', visible: false, category: 'ml' },
   { key: 'status_detail', label: 'Status Detalhe', visible: false, category: 'ml' },
   { key: 'tags', label: 'Tags ML', visible: false, category: 'ml' },
@@ -77,7 +77,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'power_seller_status', label: 'Medalha', visible: false, category: 'ml' },
   { key: 'level_id', label: 'Reputação', visible: false, category: 'ml' },
   { key: 'codigo_rastreamento', label: 'Código Rastreamento', visible: false, category: 'ml' },
-  { key: 'url_rastreamento', label: 'URL Rastreamento', visible: false, category: 'ml' },
+  { key: 'url_rastreamento', label: 'Rastreamento', visible: false, category: 'ml' },
   
   // Status Avançados
   { key: 'order_status_advanced', label: 'Status do Pedido (Avançado)', visible: true, category: 'ml' },
