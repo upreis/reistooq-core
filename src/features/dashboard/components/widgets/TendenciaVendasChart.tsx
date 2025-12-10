@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Calendar } from "lucide-react";
+import { TrendingUp, Building2 } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -13,6 +13,13 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const COLORS = [
   "hsl(221, 83%, 53%)", // blue
@@ -39,6 +46,8 @@ interface ChartDataPoint {
 }
 
 export function TendenciaVendasChart() {
+  const [selectedAccount, setSelectedAccount] = useState<string>("todas");
+
   const { data: vendas = [] } = useQuery({
     queryKey: ["vendas-hoje-tendencia"],
     queryFn: async () => {
@@ -54,7 +63,7 @@ export function TendenciaVendasChart() {
     refetchInterval: 60000,
   });
 
-  const { chartData, accounts } = useMemo(() => {
+  const { chartData, accounts, filteredAccounts } = useMemo(() => {
     const accountsMap = new Map<string, string>();
     const horaMap = new Map<string, Map<string, number>>();
 
@@ -79,11 +88,15 @@ export function TendenciaVendasChart() {
     });
 
     const accounts = Array.from(accountsMap.values());
+    const filteredAccounts = selectedAccount === "todas" 
+      ? accounts 
+      : accounts.filter(a => a === selectedAccount);
+    
     const chartData: ChartDataPoint[] = [];
 
     horaMap.forEach((accountData, hora) => {
       const point: ChartDataPoint = { hora };
-      accounts.forEach((account) => {
+      filteredAccounts.forEach((account) => {
         point[account] = accountData.get(account) || 0;
       });
       chartData.push(point);
@@ -91,8 +104,8 @@ export function TendenciaVendasChart() {
 
     chartData.sort((a, b) => a.hora.localeCompare(b.hora));
 
-    return { chartData, accounts };
-  }, [vendas]);
+    return { chartData, accounts, filteredAccounts };
+  }, [vendas, selectedAccount]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -113,7 +126,7 @@ export function TendenciaVendasChart() {
 
     return (
       <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
-        <p className="font-medium text-foreground mb-2">Vendas brutas</p>
+        <p className="font-medium text-foreground mb-2">{label}h - Vendas brutas</p>
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
             <span
@@ -143,9 +156,20 @@ export function TendenciaVendasChart() {
         <h3 className="font-serif text-lg text-foreground font-medium">
           Tendências em vendas brutas
         </h3>
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-        </div>
+        <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+          <SelectTrigger className="w-[180px] h-8 text-xs">
+            <Building2 className="w-3 h-3 mr-1" />
+            <SelectValue placeholder="Selecione conta" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as contas</SelectItem>
+            {accounts.map((account) => (
+              <SelectItem key={account} value={account}>
+                {account}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Chart */}
@@ -189,7 +213,7 @@ export function TendenciaVendasChart() {
               align="right"
               wrapperStyle={{ fontSize: 11, paddingBottom: 10 }}
             />
-            {accounts.map((account, index) => (
+            {filteredAccounts.map((account, index) => (
               <Line
                 key={account}
                 type="monotone"
@@ -209,7 +233,9 @@ export function TendenciaVendasChart() {
       <div className="mt-2 pt-2 border-t border-border">
         <p className="text-muted-foreground text-xs flex items-center gap-1">
           <TrendingUp className="w-3 h-3" />
-          Vendas por hora do dia atual
+          {selectedAccount === "todas" 
+            ? "Vendas por hora - todas as contas" 
+            : `Vendas por hora - ${selectedAccount}`}
         </p>
       </div>
     </motion.div>
