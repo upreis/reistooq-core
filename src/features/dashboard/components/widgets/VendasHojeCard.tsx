@@ -7,9 +7,14 @@ import { ptBR } from "date-fns/locale";
 
 interface VendaHoje {
   total_amount: number;
+  account_name: string | null;
 }
 
-export function VendasHojeCard() {
+interface VendasHojeCardProps {
+  selectedAccount?: string;
+}
+
+export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProps) {
   const [totalVendas, setTotalVendas] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
@@ -39,12 +44,17 @@ export function VendasHojeCard() {
 
         const { data, error } = await supabase
           .from('vendas_hoje_realtime')
-          .select('total_amount')
+          .select('total_amount, account_name')
           .eq('organization_id', profile.organizacao_id);
 
         if (error) throw error;
 
-        const total = (data || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
+        // Filtrar por conta se não for "todas"
+        const filteredData = selectedAccount === "todas" 
+          ? data || []
+          : (data || []).filter((v: VendaHoje) => v.account_name === selectedAccount);
+
+        const total = filteredData.reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
         setTotalVendas(total);
       } catch (error) {
         console.error('Erro ao buscar vendas:', error);
@@ -74,7 +84,7 @@ export function VendasHojeCard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [selectedAccount]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -126,11 +136,13 @@ export function VendasHojeCard() {
         )}
       </div>
 
-      {/* Footer com ícone de tendência */}
+      {/* Footer */}
       <div className="mt-auto pt-4 border-t border-border/50">
         <div className="flex items-center justify-center gap-2 text-muted-foreground">
           <TrendingUp className="w-4 h-4 text-green-500" />
-          <span className="text-sm">Atualizado em tempo real</span>
+          <span className="text-sm">
+            {selectedAccount === "todas" ? "Todas as contas" : selectedAccount}
+          </span>
         </div>
       </div>
     </motion.div>
