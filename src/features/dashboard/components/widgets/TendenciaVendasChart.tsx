@@ -143,7 +143,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     intervalos.forEach((intervalo) => {
       const valor = horasAgrupadas.get(intervalo) || 0;
       const x = (intervalo / 22) * 100; // 22 é o último intervalo (22h-24h)
-      const y = Math.max(5, 100 - (valor / maxValue) * 90);
+      const y = Math.max(10, 100 - (valor / maxValue) * 80); // Mais margem no topo
       points.push({ x, y });
     });
 
@@ -220,8 +220,8 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
           
           {/* SVG com linhas */}
           <svg 
-            className="absolute inset-0 w-full h-full" 
-            viewBox="0 0 100 100" 
+            className="absolute inset-0 w-full h-full overflow-visible" 
+            viewBox="-2 -10 104 120" 
             preserveAspectRatio="none"
           >
             {filteredAccounts.map((account, index) => (
@@ -253,7 +253,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
             
             return Array.from(horasAgrupadas.entries()).map(([intervalo, valor]) => {
               const xPercent = (intervalo / 22) * 100;
-              const yPercent = Math.max(5, 100 - (valor / maxValue) * 90);
+              const yPercent = Math.max(10, 100 - (valor / maxValue) * 80); // Mesma fórmula do path
               const color = getAccountColor(account, accIndex);
               
               return (
