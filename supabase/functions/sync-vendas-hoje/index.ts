@@ -2,9 +2,16 @@
  * 🔴 SYNC VENDAS HOJE - Edge Function
  * Busca vendas do dia de todas as contas ML e salva na tabela vendas_hoje_realtime
  * Para painel de vendas ao vivo
+ * 
+ * ✅ Padrão idêntico a get-vendas-comenvio (tokens via integration_secrets)
  */
 
-import { makeServiceClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const cid = () => crypto.randomUUID().slice(0, 8);
 
@@ -24,17 +31,32 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = makeServiceClient();
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Service Client (bypass RLS)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false }
+    });
+
     const params: SyncParams = await req.json().catch(() => ({}));
     
     console.log(`[sync-vendas-hoje:${correlationId}] 📋 Parâmetros:`, params);
 
-    // 1. Buscar contas ML ativas
+    if (!params.organization_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'organization_id é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 1. Buscar contas ML ativas da organização
     let accountsQuery = supabase
       .from('integration_accounts')
-      .select('id, name, account_identifier, access_token, refresh_token, expires_at')
+      .select('id, name, account_identifier, organization_id')
       .eq('provider', 'mercadolivre')
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .eq('organization_id', params.organization_id);
 
     if (params.integration_account_ids?.length) {
       accountsQuery = accountsQuery.in('id', params.integration_account_ids);
@@ -44,12 +66,18 @@ Deno.serve(async (req) => {
 
     if (accountsError) {
       console.error(`[sync-vendas-hoje:${correlationId}] ❌ Erro ao buscar contas:`, accountsError);
-      return fail('Erro ao buscar contas ML', { status: 500, headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Erro ao buscar contas ML' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     if (!accounts?.length) {
       console.log(`[sync-vendas-hoje:${correlationId}] ⚠️ Nenhuma conta ML ativa encontrada`);
-      return ok({ success: true, message: 'Nenhuma conta ML ativa', synced: 0 }, { headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ success: true, message: 'Nenhuma conta ML ativa', synced: 0 }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${accounts.length} contas encontradas`);
@@ -71,10 +99,43 @@ Deno.serve(async (req) => {
       try {
         console.log(`[sync-vendas-hoje:${correlationId}] 🔄 Processando conta: ${account.name} (${account.account_identifier})`);
 
+        // Buscar token de integration_secrets (padrão get-vendas-comenvio)
+        const { data: secretRow, error: secretError } = await supabase
+          .from('integration_secrets')
+          .select('simple_tokens, use_simple')
+          .eq('integration_account_id', account.id)
+          .eq('provider', 'mercadolivre')
+          .maybeSingle();
+
+        if (secretError || !secretRow) {
+          console.warn(`[sync-vendas-hoje:${correlationId}] ⚠️ Token não encontrado para ${account.name}`);
+          errors.push({ account: account.name, error: 'Token não encontrado' });
+          continue;
+        }
+
+        let accessToken = '';
+        if (secretRow?.use_simple && secretRow?.simple_tokens) {
+          const simpleTokensStr = secretRow.simple_tokens as string;
+          if (simpleTokensStr.startsWith('SALT2024::')) {
+            const base64Data = simpleTokensStr.replace('SALT2024::', '');
+            const jsonStr = atob(base64Data);
+            const tokensData = JSON.parse(jsonStr);
+            accessToken = tokensData.access_token || '';
+          }
+        }
+
+        if (!accessToken) {
+          console.warn(`[sync-vendas-hoje:${correlationId}] ⚠️ Token vazio para ${account.name}`);
+          errors.push({ account: account.name, error: 'Token vazio' });
+          continue;
+        }
+
+        console.log(`[sync-vendas-hoje:${correlationId}] ✅ Token obtido para ${account.name}`);
+
         // Buscar pedidos do ML usando API direta
         const ordersData = await fetchMLOrdersToday(
           account.account_identifier,
-          account.access_token,
+          accessToken,
           dateFrom,
           dateTo,
           correlationId
@@ -144,17 +205,23 @@ Deno.serve(async (req) => {
 
     console.log(`[sync-vendas-hoje:${correlationId}] 🏁 Sincronização concluída: ${totalSynced} vendas`);
 
-    return ok({
-      success: true,
-      synced: totalSynced,
-      accounts: results,
-      errors: errors.length > 0 ? errors : undefined,
-      timestamp: new Date().toISOString()
-    }, { headers: corsHeaders });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        synced: totalSynced,
+        accounts: results,
+        errors: errors.length > 0 ? errors : undefined,
+        timestamp: new Date().toISOString()
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error(`[sync-vendas-hoje:${correlationId}] ❌ Erro geral:`, error);
-    return fail(String(error), { status: 500, headers: corsHeaders });
+    return new Response(
+      JSON.stringify({ success: false, error: String(error) }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });
 
@@ -168,10 +235,8 @@ async function fetchMLOrdersToday(
   dateTo: string,
   cid: string
 ): Promise<any> {
-  const mlConfig = getMlConfig();
-  
   // Buscar apenas pedidos PAID (vendas concluídas)
-  const url = new URL(`${mlConfig.apiUrl}/orders/search`);
+  const url = new URL('https://api.mercadolibre.com/orders/search');
   url.searchParams.set('seller', sellerId);
   url.searchParams.set('order.date_created.from', dateFrom);
   url.searchParams.set('order.date_created.to', dateTo);
