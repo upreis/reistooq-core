@@ -41,13 +41,14 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     refetchInterval: 60000,
   });
 
-  const { chartData, maxValue, filteredAccounts } = useMemo(() => {
+  const { chartData, maxValue, accounts, allHoras } = useMemo(() => {
     if (!vendas || vendas.length === 0) {
-      return { chartData: [], maxValue: 0, filteredAccounts: [] };
+      return { chartData: new Map(), maxValue: 0, accounts: [], allHoras: [] };
     }
 
     const accountsSet = new Set<string>();
-    const horaMap = new Map<string, Map<string, number>>();
+    // Map: account -> Map<hora, valor>
+    const chartData = new Map<string, Map<string, number>>();
 
     vendas.forEach((venda) => {
       const accountName = venda.account_name || "Desconhecido";
@@ -60,44 +61,38 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       const hora = date.getHours().toString().padStart(2, "0");
       const valor = Number(venda.total_amount) || 0;
 
-      if (!horaMap.has(hora)) {
-        horaMap.set(hora, new Map());
+      if (!chartData.has(accountName)) {
+        chartData.set(accountName, new Map());
       }
       
-      const horaData = horaMap.get(hora)!;
-      const current = horaData.get(accountName) || 0;
-      horaData.set(accountName, current + valor);
+      const accountData = chartData.get(accountName)!;
+      const current = accountData.get(hora) || 0;
+      accountData.set(hora, current + valor);
     });
 
     const accounts = Array.from(accountsSet);
-    const filteredAccounts = selectedAccount === "todas" 
-      ? accounts 
-      : accounts.filter(a => a === selectedAccount);
-
-    // Criar array de horas ordenadas
-    const horas = Array.from(horaMap.keys()).sort((a, b) => parseInt(a) - parseInt(b));
     
-    // Criar dados por hora COM valores separados por conta
-    const chartData = horas.map(hora => {
-      const horaData = horaMap.get(hora)!;
-      const accountValues: Record<string, number> = {};
-      filteredAccounts.forEach(account => {
-        accountValues[account] = horaData.get(account) || 0;
-      });
-      return { hora: `${hora}h`, ...accountValues };
+    // Coletar todas as horas únicas
+    const horasSet = new Set<string>();
+    chartData.forEach((accountMap) => {
+      accountMap.forEach((_, hora) => horasSet.add(hora));
     });
+    const allHoras = Array.from(horasSet).sort((a, b) => parseInt(a) - parseInt(b));
 
-    // Calcular máximo considerando todas as contas
+    // Calcular máximo
     let maxValue = 1;
-    chartData.forEach(item => {
-      filteredAccounts.forEach(account => {
-        const val = (item as Record<string, number | string>)[account] as number || 0;
-        if (val > maxValue) maxValue = val;
+    chartData.forEach((accountMap) => {
+      accountMap.forEach((valor) => {
+        if (valor > maxValue) maxValue = valor;
       });
     });
 
-    return { chartData, maxValue, filteredAccounts };
-  }, [vendas, selectedAccount]);
+    return { chartData, maxValue, accounts, allHoras };
+  }, [vendas]);
+
+  const filteredAccounts = selectedAccount === "todas" 
+    ? accounts 
+    : accounts.filter(a => a === selectedAccount);
 
   const formatCurrency = (value: number) => {
     if (value >= 1000) {
@@ -106,7 +101,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     return `R$ ${value.toFixed(0)}`;
   };
 
-  if (chartData.length === 0) {
+  if (allHoras.length === 0) {
     return (
       <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
         <h3 className="font-serif text-lg text-foreground font-medium mb-4 flex items-center gap-2">
@@ -127,60 +122,73 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
         Tendência de vendas por hora
       </h3>
       
-      {/* Gráfico de barras CSS - agrupado por conta */}
-      <div className="flex items-end gap-2 h-[200px] px-2">
-        {chartData.map((item) => (
-          <div 
-            key={item.hora} 
-            className="flex-1 flex flex-col items-center gap-1"
-          >
-            {/* Barras agrupadas por conta */}
-            <div className="flex items-end gap-[2px] w-full h-full">
-              {filteredAccounts.map((account, accIndex) => {
-                const value = (item as Record<string, number | string>)[account] as number || 0;
-                const heightPercent = (value / maxValue) * 100;
-                return (
-                  <div 
-                    key={account}
-                    className="flex-1 group relative"
-                    style={{ height: '100%' }}
-                  >
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-popover border border-border rounded px-2 py-1 shadow-lg whitespace-nowrap z-10">
-                      <div className="font-medium">{account}</div>
-                      <div>{formatCurrency(value)}</div>
-                    </div>
-                    {/* Barra */}
-                    <div 
-                      className="w-full rounded-t transition-all duration-300 hover:opacity-80 absolute bottom-0"
-                      style={{ 
-                        height: `${Math.max(heightPercent, 2)}%`,
-                        backgroundColor: COLORS[accIndex % COLORS.length]
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+      {/* Gráfico de linhas por conta */}
+      <div className="relative h-[220px] w-full">
+        {/* Grid de fundo */}
+        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="border-t border-border/30 w-full" />
+          ))}
+        </div>
+        
+        {/* SVG para linhas */}
+        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+          {filteredAccounts.map((account, accIndex) => {
+            const accountData = chartData.get(account);
+            if (!accountData) return null;
             
-            {/* Label da hora */}
-            <span className="text-[10px] text-muted-foreground mt-1">
-              {item.hora}
-            </span>
-          </div>
-        ))}
+            const points = allHoras.map((hora, horaIndex) => {
+              const valor = accountData.get(hora) || 0;
+              const x = (horaIndex / (allHoras.length - 1 || 1)) * 100;
+              const y = 100 - (valor / maxValue) * 100;
+              return `${x},${y}`;
+            }).join(" ");
+            
+            return (
+              <polyline
+                key={account}
+                points={points}
+                fill="none"
+                stroke={COLORS[accIndex % COLORS.length]}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            );
+          })}
+          
+          {/* Pontos */}
+          {filteredAccounts.map((account, accIndex) => {
+            const accountData = chartData.get(account);
+            if (!accountData) return null;
+            
+            return allHoras.map((hora, horaIndex) => {
+              const valor = accountData.get(hora) || 0;
+              if (valor === 0) return null;
+              const x = (horaIndex / (allHoras.length - 1 || 1)) * 100;
+              const y = 100 - (valor / maxValue) * 100;
+              return (
+                <g key={`${account}-${hora}`} className="group">
+                  <circle
+                    cx={`${x}%`}
+                    cy={`${y}%`}
+                    r="4"
+                    fill={COLORS[accIndex % COLORS.length]}
+                    className="cursor-pointer hover:r-6"
+                  />
+                  <title>{`${account}: ${formatCurrency(valor)} às ${hora}h`}</title>
+                </g>
+              );
+            });
+          })}
+        </svg>
       </div>
-
-      {/* Legenda por conta */}
-      <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-border">
-        {filteredAccounts.map((account, index) => (
-          <div key={account} className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div 
-              className="w-3 h-3 rounded" 
-              style={{ backgroundColor: COLORS[index % COLORS.length] }}
-            />
-            <span className="truncate max-w-[150px]">{account}</span>
-          </div>
+      
+      {/* Labels das horas */}
+      <div className="flex justify-between mt-2 text-[10px] text-muted-foreground px-1">
+        {allHoras.map((hora) => (
+          <span key={hora}>{hora}h</span>
         ))}
       </div>
     </div>
