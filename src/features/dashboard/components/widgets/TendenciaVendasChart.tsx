@@ -92,7 +92,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     return `R$ ${value.toFixed(0)}`;
   };
 
-  // Gerar path SVG com curvas suaves
+  // Gerar path SVG com linhas retas (mais confiável)
   const generatePath = (accountName: string): string => {
     const accountData = chartData.get(accountName);
     if (!accountData || accountData.size === 0) return "";
@@ -100,30 +100,24 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     const horas = Array.from(accountData.keys()).sort((a, b) => a - b);
     if (horas.length === 0) return "";
 
-    const width = 100;
-    const height = 100;
     const points: { x: number; y: number }[] = [];
 
     horas.forEach((hora) => {
       const valor = accountData.get(hora) || 0;
-      const x = (hora / 23) * width;
-      const y = height - (valor / maxValue) * height;
+      const x = (hora / 23) * 100;
+      const y = Math.max(5, 100 - (valor / maxValue) * 90); // Deixa margem de 5-95%
       points.push({ x, y });
     });
 
     if (points.length === 1) {
-      return `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`;
+      return `M ${points[0].x} ${points[0].y} L ${points[0].x + 1} ${points[0].y}`;
     }
 
-    // Criar curva suave usando quadratic bezier
+    // Linha simples conectando pontos
     let path = `M ${points[0].x} ${points[0].y}`;
     for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const curr = points[i];
-      const midX = (prev.x + curr.x) / 2;
-      path += ` Q ${prev.x} ${prev.y} ${midX} ${(prev.y + curr.y) / 2}`;
+      path += ` L ${points[i].x} ${points[i].y}`;
     }
-    path += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
     
     return path;
   };
@@ -142,8 +136,8 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     );
   }
 
-  // Gerar labels do eixo Y
-  const yLabels = [0, maxValue * 0.25, maxValue * 0.5, maxValue * 0.75, maxValue];
+  // Gerar labels do eixo Y (usar spread para não mutar)
+  const yLabels = [maxValue, maxValue * 0.75, maxValue * 0.5, maxValue * 0.25, 0];
 
   return (
     <div className="md:col-span-2 md:row-span-2 bg-background border border-border rounded-xl p-4">
@@ -155,7 +149,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       <div className="flex">
         {/* Eixo Y */}
         <div className="flex flex-col justify-between h-[200px] pr-2 text-[10px] text-muted-foreground">
-          {yLabels.reverse().map((val, i) => (
+          {yLabels.map((val, i) => (
             <span key={i}>{formatCurrency(val)}</span>
           ))}
         </div>
