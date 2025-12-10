@@ -99,7 +99,7 @@ export function PedidosResumo({
       valor: total,
       icon: FileText,
       destaque: true,
-      color: 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
+      color: 'bg-primary text-primary-foreground hover:bg-primary/90 border-0'
     },
     {
       id: 'pronto_baixar' as FiltroResumo,
