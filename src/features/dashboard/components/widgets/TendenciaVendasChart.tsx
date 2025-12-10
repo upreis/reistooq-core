@@ -189,36 +189,28 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
             ))}
           </svg>
           
-          {/* Pontos */}
-          <svg 
-            className="absolute inset-0 w-full h-full" 
-            viewBox="0 0 100 100" 
-            preserveAspectRatio="none"
-          >
-            {filteredAccounts.map((account, accIndex) => {
-              const accountData = chartData.get(account);
-              if (!accountData) return null;
-              
-              return Array.from(accountData.entries()).map(([hora, valor]) => {
-                const x = (hora / 23) * 100;
-                const y = 100 - (valor / maxValue) * 100;
-                return (
-                  <g key={`${account}-${hora}`} className="group">
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="1.5"
-                      fill={COLORS[accIndex % COLORS.length]}
-                      className="cursor-pointer"
-                      vectorEffect="non-scaling-stroke"
-                    >
-                      <title>{`${account}: ${formatCurrency(valor)} às ${hora}h`}</title>
-                    </circle>
-                  </g>
-                );
-              });
-            })}
-          </svg>
+          {/* Pontos - usando divs para manter formato redondo */}
+          {filteredAccounts.map((account, accIndex) => {
+            const accountData = chartData.get(account);
+            if (!accountData) return null;
+            
+            return Array.from(accountData.entries()).map(([hora, valor]) => {
+              const xPercent = (hora / 23) * 100;
+              const yPercent = 100 - (valor / maxValue) * 100;
+              return (
+                <div
+                  key={`${account}-${hora}`}
+                  className="absolute w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform -translate-x-1/2 -translate-y-1/2"
+                  style={{ 
+                    left: `${xPercent}%`, 
+                    top: `${yPercent}%`,
+                    backgroundColor: COLORS[accIndex % COLORS.length]
+                  }}
+                  title={`${account}: ${formatCurrency(valor)} às ${hora}h`}
+                />
+              );
+            });
+          })}
         </div>
       </div>
       
