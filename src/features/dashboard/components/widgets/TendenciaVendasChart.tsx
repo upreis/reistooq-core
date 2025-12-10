@@ -175,13 +175,13 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       </div>
 
       {/* Chart */}
-      <div className="flex-1 h-[280px] w-full">
+      <div className="flex-1 w-full" style={{ minHeight: 280 }}>
         {chartData.length === 0 ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
             Carregando dados do gráfico...
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={280}>
             <LineChart
               data={chartData}
               margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
