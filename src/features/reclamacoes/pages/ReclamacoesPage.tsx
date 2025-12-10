@@ -442,24 +442,7 @@ export function ReclamacoesPage() {
             <div className="px-4 md:px-6">
               <MLOrdersNav />
             </div>
-            
-            {/* Badges de status e Alertas - compacto */}
-            {(dataSource === 'cache' || isFetching) && (
-              <div className="px-4 md:px-6 py-1">
-                <div className="flex items-center gap-3">
-                  {dataSource === 'cache' && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      ⚡ Cache ({reclamacoesCached.length} itens)
-                    </span>
-                  )}
-                  {isFetching && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 animate-pulse">
-                      🔄 Atualizando...
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+
 
             {/* Tabs: Ativas vs Histórico + Filtros */}
             <div className="px-4 md:px-6 mt-8">
