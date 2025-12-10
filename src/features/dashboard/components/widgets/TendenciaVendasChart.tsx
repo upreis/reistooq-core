@@ -177,48 +177,55 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       </div>
 
       {/* Chart */}
-      <div className="flex-1 min-h-[280px]">
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart
-            data={chartData}
-            margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis
-              dataKey="hora"
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={11}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={11}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={formatYAxis}
-              width={50}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              verticalAlign="top"
-              align="right"
-              wrapperStyle={{ fontSize: 11, paddingBottom: 10 }}
-            />
-            {filteredAccounts.map((account, index) => (
-              <Line
-                key={account}
-                type="monotone"
-                dataKey={account}
-                name={account}
-                stroke={COLORS[index % COLORS.length]}
-                strokeWidth={2}
-                dot={{ r: 3, fill: COLORS[index % COLORS.length] }}
-                activeDot={{ r: 5 }}
+      <div className="flex-1 h-[280px] w-full">
+        {chartData.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+            Carregando dados do gráfico...
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={chartData}
+              margin={{ top: 20, right: 20, left: 10, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+              <XAxis
+                dataKey="hora"
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={11}
+                tickLine={false}
+                axisLine={{ stroke: "hsl(var(--border))" }}
               />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={11}
+                tickLine={false}
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                tickFormatter={formatYAxis}
+                width={60}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend
+                verticalAlign="top"
+                align="right"
+                wrapperStyle={{ fontSize: 11, paddingBottom: 10 }}
+              />
+              {filteredAccounts.map((account, index) => (
+                <Line
+                  key={account}
+                  type="monotone"
+                  dataKey={account}
+                  name={account}
+                  stroke={COLORS[index % COLORS.length]}
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: COLORS[index % COLORS.length] }}
+                  activeDot={{ r: 6 }}
+                  connectNulls
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Footer */}
