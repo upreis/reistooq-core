@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { SimplifiedPeriodFilter } from './SimplifiedPeriodFilter';
+import { FlipButton } from '@/components/ui/flip-button';
 
 import { StatusFilters } from '@/features/orders/types/orders-status.types';
 
@@ -211,16 +212,14 @@ export function PedidosFiltersUnified({
         />
       </div>
 
-      {/* Botão Aplicar */}
-      <div className="min-w-[160px] flex-shrink-0">
-        <Button
-          onClick={onApplyFilters}
-          disabled={!hasPendingChanges}
-          className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Search className="h-4 w-4 mr-2" />
-          Aplicar Filtros
-        </Button>
+      {/* FlipButton - igual /vendas-com-envio */}
+      <div className="min-w-[220px] flex-shrink-0">
+        <FlipButton
+          text1="Cancelar a Busca"
+          text2="Aplicar Filtros e Buscar"
+          onClick={isApplying ? onCancelChanges : onApplyFilters}
+          isFlipped={isApplying}
+        />
       </div>
 
       {/* Colunas */}
