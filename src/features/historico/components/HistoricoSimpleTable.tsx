@@ -148,7 +148,7 @@ export function HistoricoSimpleTable({
   };
 
   return (
-    <div className="rounded-md border">
+    <div>
       <Table>
         <TableHeader>
           <TableRow>

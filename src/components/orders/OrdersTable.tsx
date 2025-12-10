@@ -128,7 +128,7 @@ export const OrdersTable = memo<OrdersTableProps>(({
   
   if (isLoading) {
     return (
-      <div className="rounded-md border border-gray-600">
+      <div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -155,7 +155,7 @@ export const OrdersTable = memo<OrdersTableProps>(({
   
   if (orders.length === 0) {
     return (
-      <div className="rounded-md border p-8 text-center">
+      <div className="p-8 text-center">
         <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground" />
         <h3 className="mt-4 text-lg font-semibold">Nenhum pedido encontrado</h3>
         <p className="text-muted-foreground">
@@ -166,7 +166,7 @@ export const OrdersTable = memo<OrdersTableProps>(({
   }
   
   return (
-    <div className="rounded-md border border-gray-600">
+    <div>
       <Table>
         <TableHeader>
           <TableRow>

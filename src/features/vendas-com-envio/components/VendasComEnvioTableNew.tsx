@@ -120,7 +120,7 @@ export const VendasComEnvioTableNew = ({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      <div>
         <Table className="min-w-max">
           <TableHeader className="sticky top-0 z-50 bg-background shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (

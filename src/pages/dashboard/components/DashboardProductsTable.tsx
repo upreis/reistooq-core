@@ -98,7 +98,7 @@ export function DashboardProductsTable({ products }: DashboardProductsTableProps
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        <div>
           <Table>
             <TableHeader>
               <TableRow>

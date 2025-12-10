@@ -356,7 +356,7 @@ export function HistoricoVirtualTable({
   return (
     <div 
       ref={parentRef}
-      className="overflow-auto rounded-md border"
+      className="overflow-auto"
       style={{ height: `${height}px` }}
     >
       <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
