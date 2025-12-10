@@ -443,9 +443,9 @@ export function ReclamacoesPage() {
               <MLOrdersNav />
             </div>
             
-            {/* Badges de status e Alertas */}
-            <div className="px-4 md:px-6 py-3 mt-2">
-              <div className="flex justify-between items-start gap-4">
+            {/* Badges de status e Alertas - compacto */}
+            {(dataSource === 'cache' || isFetching) && (
+              <div className="px-4 md:px-6 py-1">
                 <div className="flex items-center gap-3">
                   {dataSource === 'cache' && (
                     <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
@@ -458,25 +458,8 @@ export function ReclamacoesPage() {
                     </span>
                   )}
                 </div>
-                {/* Alertas de ciclo de vida - Posicionado no canto direito */}
-                <div className="w-full max-w-sm shrink-0">
-                  <ReclamacoesLifecycleAlert reclamacoes={reclamacoesEnriquecidas} />
-                </div>
               </div>
-            </div>
-
-            {/* Filtros rápidos de ciclo de vida */}
-            <div className="px-4 md:px-6 mt-2">
-              <ReclamacoesLifecycleQuickFilter
-                onFilterChange={setLifecycleFilter}
-                counts={{
-                  critical: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'critical').length,
-                  urgent: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'urgent').length,
-                  attention: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'attention').length,
-                }}
-              />
-            </div>
-
+            )}
 
             {/* Tabs: Ativas vs Histórico + Filtros */}
             <div className="px-4 md:px-6 mt-8">
