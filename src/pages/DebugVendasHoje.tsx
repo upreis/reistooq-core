@@ -36,6 +36,7 @@ export default function DebugVendasHoje() {
   const [vendas, setVendas] = useState<VendaHoje[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
   const { toast } = useToast();
 
   // Carregar dados da tabela
@@ -105,6 +106,47 @@ export default function DebugVendasHoje() {
       });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // Backfill estados das vendas existentes
+  const backfillEstados = async () => {
+    setBackfilling(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.organizacao_id) {
+        throw new Error('Organization ID não encontrado');
+      }
+
+      const { data, error } = await supabase.functions.invoke('backfill-shipping-states', {
+        body: { organization_id: profile.organizacao_id, limit: 200 }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Backfill concluído',
+        description: `${data?.updated || 0} vendas atualizadas com estado`,
+      });
+
+      await loadVendas();
+    } catch (err) {
+      console.error('Erro no backfill:', err);
+      toast({
+        title: 'Erro no backfill',
+        description: String(err),
+        variant: 'destructive'
+      });
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -179,6 +221,10 @@ export default function DebugVendasHoje() {
           <Button onClick={loadVendas} disabled={loading} variant="outline">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Recarregar
+          </Button>
+          <Button onClick={backfillEstados} disabled={backfilling} variant="outline">
+            {backfilling ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Backfill Estados
           </Button>
           <Button onClick={syncVendas} disabled={syncing}>
             {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
