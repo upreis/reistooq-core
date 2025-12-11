@@ -115,8 +115,8 @@ export function FeaturesBentoGrid() {
           </div>
         </div>
         
-        {/* Gráfico de Tendência ao lado */}
-        <div className="flex-1">
+        {/* Gráfico de Tendência ao lado - 60% da largura */}
+        <div className="w-[60%]">
           <TendenciaVendasChart selectedAccount={selectedAccount} />
         </div>
       </div>
