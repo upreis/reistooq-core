@@ -107,8 +107,8 @@ export function FeaturesBentoGrid() {
 
       {/* Layout: Vendas + Produtos | Gráfico */}
       <div className="flex gap-4">
-        {/* Coluna esquerda: Card de Vendas em cima + Produtos abaixo */}
-        <div className="flex flex-col gap-3 w-[280px]">
+        {/* Coluna esquerda: Card de Vendas em cima + Produtos abaixo - 40% da largura */}
+        <div className="flex flex-col gap-3 w-[40%]">
           <VendasHojeCard selectedAccount={selectedAccount} />
           <div className="flex-1">
             <QuickActionCards selectedAccount={selectedAccount} />
