@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { VendasHojeCard } from "./VendasHojeCard";
 import { TendenciaVendasChart } from "./TendenciaVendasChart";
 import { QuickActionCards } from "./QuickActionCards";
+import { BrazilSalesMap } from "./BrazilSalesMap";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { startOfDay, endOfDay, startOfMonth, endOfMonth, getYear, getMonth } from "date-fns";
@@ -122,8 +123,8 @@ export function FeaturesBentoGrid() {
 
       {/* Layout: Vendas + Produtos | Gráfico */}
       <div className="flex gap-4">
-        {/* Coluna esquerda: Card de Vendas em cima + Produtos abaixo - 40% da largura */}
-        <div className="flex flex-col gap-3 w-[40%]">
+        {/* Coluna esquerda: Card de Vendas em cima + Produtos abaixo - 30% da largura */}
+        <div className="flex flex-col gap-3 w-[30%]">
           <VendasHojeCard 
             selectedAccount={selectedAccount} 
             dateRange={dateRange}
@@ -134,8 +135,13 @@ export function FeaturesBentoGrid() {
           </div>
         </div>
         
-        {/* Gráfico de Tendência ao lado - 60% da largura */}
-        <div className="w-[60%]">
+        {/* Mapa do Brasil - 25% da largura */}
+        <div className="w-[25%]">
+          <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
+        </div>
+        
+        {/* Gráfico de Tendência ao lado - 45% da largura */}
+        <div className="w-[45%]">
           <TendenciaVendasChart 
             selectedAccount={selectedAccount}
             selectedDate={selectedDate}
