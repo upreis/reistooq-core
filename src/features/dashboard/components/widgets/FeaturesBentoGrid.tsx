@@ -14,11 +14,30 @@ const ACCOUNT_COLORS: Record<string, string> = {
   "LUTHORSHOPLTDA": "border-cyan-500 bg-cyan-500",
 };
 
-// Helper para obter data de hoje em São Paulo
-const getHojeSaoPaulo = () => {
+// Helper para obter início e fim do dia em São Paulo (UTC-3)
+const getHojeRangeSaoPaulo = () => {
   const now = new Date();
-  const saoPauloTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  return saoPauloTime.toISOString().split("T")[0];
+  // São Paulo é UTC-3
+  const offsetHours = 3;
+  
+  // Início do dia em São Paulo (00:00 SP = 03:00 UTC)
+  const startOfDaySP = new Date(now);
+  startOfDaySP.setUTCHours(offsetHours, 0, 0, 0);
+  
+  // Se a hora atual UTC for antes das 03:00, estamos ainda no dia anterior em SP
+  if (now.getUTCHours() < offsetHours) {
+    startOfDaySP.setUTCDate(startOfDaySP.getUTCDate() - 1);
+  }
+  
+  // Fim do dia em São Paulo (23:59:59 SP = 02:59:59 UTC do dia seguinte)
+  const endOfDaySP = new Date(startOfDaySP);
+  endOfDaySP.setUTCDate(endOfDaySP.getUTCDate() + 1);
+  endOfDaySP.setUTCMilliseconds(-1);
+  
+  return {
+    start: startOfDaySP.toISOString(),
+    end: endOfDaySP.toISOString()
+  };
 };
 
 export function FeaturesBentoGrid() {
@@ -28,14 +47,13 @@ export function FeaturesBentoGrid() {
   const { data: accounts = [] } = useQuery({
     queryKey: ["vendas-hoje-accounts"],
     queryFn: async () => {
-      // Buscar últimas 24h para garantir que pegamos todas as vendas de hoje
-      const ontem = new Date();
-      ontem.setDate(ontem.getDate() - 1);
+      const { start, end } = getHojeRangeSaoPaulo();
       
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("account_name")
-        .gte("date_created", ontem.toISOString());
+        .gte("date_created", start)
+        .lte("date_created", end);
 
       if (error) throw error;
       
