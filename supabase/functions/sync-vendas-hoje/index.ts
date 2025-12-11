@@ -1,9 +1,11 @@
 /**
  * 🔴 SYNC VENDAS HOJE - Edge Function
- * Busca vendas do dia de todas as contas ML e salva na tabela vendas_hoje_realtime
- * Para painel de vendas ao vivo
+ * Busca vendas dos últimos 60 dias de todas as contas ML e salva na tabela vendas_hoje_realtime
+ * Para painel de vendas ao vivo e histórico
  * 
  * ✅ Padrão idêntico a get-vendas-comenvio (tokens via integration_secrets)
+ * ✅ Paginação completa para buscar todas as vendas
+ * ✅ UPSERT para não duplicar
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
@@ -19,11 +21,12 @@ interface SyncParams {
   organization_id?: string;
   integration_account_ids?: string[];
   force_refresh?: boolean;
+  days_back?: number; // Quantos dias para trás buscar (default: 60)
 }
 
 Deno.serve(async (req) => {
   const correlationId = cid();
-  console.log(`[sync-vendas-hoje:${correlationId}] 🚀 Iniciando sincronização de vendas do dia`);
+  console.log(`[sync-vendas-hoje:${correlationId}] 🚀 Iniciando sincronização de vendas`);
 
   // CORS preflight
   if (req.method === 'OPTIONS') {
@@ -82,13 +85,14 @@ Deno.serve(async (req) => {
 
     console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${accounts.length} contas encontradas`);
 
-    // 2. Definir período: HOJE (00:00 até agora)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dateFrom = today.toISOString();
-    const dateTo = new Date().toISOString();
+    // 2. Definir período: últimos 60 dias (ou customizado)
+    const daysBack = params.days_back || 60;
+    const dateFrom = new Date();
+    dateFrom.setDate(dateFrom.getDate() - daysBack);
+    dateFrom.setHours(0, 0, 0, 0);
+    const dateTo = new Date();
 
-    console.log(`[sync-vendas-hoje:${correlationId}] 📅 Período: ${dateFrom} a ${dateTo}`);
+    console.log(`[sync-vendas-hoje:${correlationId}] 📅 Período: últimos ${daysBack} dias (${dateFrom.toISOString()} a ${dateTo.toISOString()})`)
 
     // 3. Buscar vendas de cada conta
     let totalSynced = 0;
@@ -132,12 +136,12 @@ Deno.serve(async (req) => {
 
         console.log(`[sync-vendas-hoje:${correlationId}] ✅ Token obtido para ${account.name}`);
 
-        // Buscar pedidos do ML usando API direta
-        const ordersData = await fetchMLOrdersToday(
+        // Buscar pedidos do ML usando API direta (com paginação completa)
+        const ordersData = await fetchMLOrders(
           account.account_identifier,
           accessToken,
-          dateFrom,
-          dateTo,
+          dateFrom.toISOString(),
+          dateTo.toISOString(),
           correlationId
         );
 
@@ -237,15 +241,19 @@ Deno.serve(async (req) => {
 });
 
 /**
- * Busca pedidos do dia via API do Mercado Livre
+ * Busca pedidos via API do Mercado Livre com paginação completa
+ * Suporta até 2000 pedidos por conta (limite de segurança)
  */
-async function fetchMLOrdersToday(
+async function fetchMLOrders(
   sellerId: string,
   accessToken: string,
   dateFrom: string,
   dateTo: string,
   cid: string
 ): Promise<any> {
+  const MAX_ORDERS = 2000; // Limite de segurança para 60 dias
+  const PAGE_SIZE = 50;
+  
   // Buscar apenas pedidos PAID (vendas concluídas)
   const url = new URL('https://api.mercadolibre.com/orders/search');
   url.searchParams.set('seller', sellerId);
@@ -253,7 +261,7 @@ async function fetchMLOrdersToday(
   url.searchParams.set('order.date_created.to', dateTo);
   url.searchParams.set('order.status', 'paid');
   url.searchParams.set('sort', 'date_desc');
-  url.searchParams.set('limit', '50'); // Máximo por página
+  url.searchParams.set('limit', String(PAGE_SIZE));
   url.searchParams.set('offset', '0');
 
   console.log(`[sync-vendas-hoje:${cid}] 🔍 Buscando: ${url.toString()}`);
@@ -273,36 +281,48 @@ async function fetchMLOrdersToday(
   }
 
   const data = await response.json();
-  console.log(`[sync-vendas-hoje:${cid}] ✅ ML API retornou ${data.results?.length || 0} pedidos (total: ${data.paging?.total || 0})`);
+  const total = data.paging?.total || 0;
+  console.log(`[sync-vendas-hoje:${cid}] ✅ ML API retornou ${data.results?.length || 0} pedidos (total: ${total})`);
 
   // Se houver mais páginas, buscar todas
-  if (data.paging?.total > 50) {
-    console.log(`[sync-vendas-hoje:${cid}] 📄 Buscando páginas adicionais (${data.paging.total} total)`);
+  if (total > PAGE_SIZE) {
+    const pagesToFetch = Math.min(total, MAX_ORDERS);
+    console.log(`[sync-vendas-hoje:${cid}] 📄 Buscando páginas adicionais (${pagesToFetch} de ${total} total)`);
     
     const allResults = [...data.results];
-    let offset = 50;
+    let offset = PAGE_SIZE;
     
-    while (offset < data.paging.total && offset < 500) { // Limite de segurança: 500 pedidos/dia
+    while (offset < pagesToFetch) {
       url.searchParams.set('offset', String(offset));
       
-      const pageResponse = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'x-format-new': 'true'
+      try {
+        const pageResponse = await fetch(url.toString(), {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'x-format-new': 'true'
+          }
+        });
+        
+        if (pageResponse.ok) {
+          const pageData = await pageResponse.json();
+          allResults.push(...(pageData.results || []));
+          console.log(`[sync-vendas-hoje:${cid}] 📄 Página offset=${offset}: +${pageData.results?.length || 0} pedidos`);
+        } else {
+          console.warn(`[sync-vendas-hoje:${cid}] ⚠️ Erro página offset=${offset}: ${pageResponse.status}`);
         }
-      });
-      
-      if (pageResponse.ok) {
-        const pageData = await pageResponse.json();
-        allResults.push(...(pageData.results || []));
-        console.log(`[sync-vendas-hoje:${cid}] 📄 Página offset=${offset}: +${pageData.results?.length || 0} pedidos`);
+      } catch (pageError) {
+        console.warn(`[sync-vendas-hoje:${cid}] ⚠️ Erro fetch página offset=${offset}:`, pageError);
       }
       
-      offset += 50;
+      offset += PAGE_SIZE;
+      
+      // Pequeno delay para não sobrecarregar a API
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
     
     data.results = allResults;
+    console.log(`[sync-vendas-hoje:${cid}] ✅ Total de pedidos coletados: ${allResults.length}`);
   }
 
   return data;
