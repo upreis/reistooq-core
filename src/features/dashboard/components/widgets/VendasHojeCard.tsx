@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ViewMode } from "./FeaturesBentoGrid";
 
@@ -18,8 +18,15 @@ interface VendasHojeCardProps {
 
 export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode }: VendasHojeCardProps) {
   const [totalVendas, setTotalVendas] = useState(0);
+  const [totalVendasMes, setTotalVendasMes] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
+
+  // Range do mês atual (dia 1 até hoje)
+  const monthRange = {
+    start: startOfMonth(new Date()),
+    end: endOfDay(new Date())
+  };
 
   // Atualizar relógio a cada segundo
   useEffect(() => {
@@ -45,6 +52,7 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
 
         if (!profile?.organizacao_id) return;
 
+        // Buscar vendas do período selecionado
         const { data, error } = await supabase
           .from('vendas_hoje_realtime')
           .select('total_amount, account_name')
@@ -54,13 +62,30 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
 
         if (error) throw error;
 
+        // Buscar vendas do mês atual
+        const { data: dataMes, error: errorMes } = await supabase
+          .from('vendas_hoje_realtime')
+          .select('total_amount, account_name')
+          .eq('organization_id', profile.organizacao_id)
+          .gte('date_created', monthRange.start.toISOString())
+          .lte('date_created', monthRange.end.toISOString());
+
+        if (errorMes) throw errorMes;
+
         // Filtrar por conta se não for "todas"
         const filteredData = selectedAccount === "todas" 
           ? data || []
           : (data || []).filter((v: VendaHoje) => v.account_name === selectedAccount);
 
+        const filteredDataMes = selectedAccount === "todas" 
+          ? dataMes || []
+          : (dataMes || []).filter((v: VendaHoje) => v.account_name === selectedAccount);
+
         const total = filteredData.reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
+        const totalMes = filteredDataMes.reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
+        
         setTotalVendas(total);
+        setTotalVendasMes(totalMes);
       } catch (error) {
         console.error('Erro ao buscar vendas:', error);
       } finally {
@@ -134,24 +159,53 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
         </span>
       </div>
 
-      {/* Conteúdo centralizado */}
-      <div className="flex flex-col items-center justify-center text-center pt-2">
-        <h2 className="text-lg font-semibold text-primary mb-1">
-          {getTitle()}
-        </h2>
-        {isLoading ? (
-          <div className="h-10 w-40 bg-foreground/10 rounded animate-pulse" />
-        ) : (
-          <motion.span
-            key={totalVendas}
-            className="text-4xl font-bold text-foreground tracking-tight"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          >
-            {formatCurrency(totalVendas)}
-          </motion.span>
-        )}
+      {/* Dois cards lado a lado */}
+      <div className="flex gap-4 pt-2">
+        {/* Card Vendas do Período Selecionado */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <h2 className="text-sm font-semibold text-primary mb-1">
+            {getTitle()}
+          </h2>
+          {isLoading ? (
+            <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
+          ) : (
+            <motion.span
+              key={totalVendas}
+              className="text-2xl font-bold text-foreground tracking-tight"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            >
+              {formatCurrency(totalVendas)}
+            </motion.span>
+          )}
+        </div>
+
+        {/* Divisor vertical */}
+        <div className="w-px bg-border" />
+
+        {/* Card Vendas do Mês */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <h2 className="text-sm font-semibold text-muted-foreground mb-1">
+            Vendas deste mês
+          </h2>
+          {isLoading ? (
+            <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
+          ) : (
+            <motion.span
+              key={totalVendasMes}
+              className="text-2xl font-bold text-foreground tracking-tight"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            >
+              {formatCurrency(totalVendasMes)}
+            </motion.span>
+          )}
+          <span className="text-xs text-muted-foreground mt-1">
+            {format(monthRange.start, "dd/MM", { locale: ptBR })} - {format(monthRange.end, "dd/MM", { locale: ptBR })}
+          </span>
+        </div>
       </div>
     </motion.div>
   );
