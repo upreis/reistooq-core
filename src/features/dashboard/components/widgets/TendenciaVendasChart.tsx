@@ -9,6 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { ViewMode } from "./FeaturesBentoGrid";
+
 interface VendaRealtime {
   id: string;
   integration_account_id: string;
@@ -21,6 +23,10 @@ interface VendaRealtime {
 
 interface TendenciaVendasChartProps {
   selectedAccount?: string;
+  selectedDate: Date;
+  setSelectedDate: (date: Date) => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
 }
 
 interface TooltipData {
@@ -31,8 +37,6 @@ interface TooltipData {
   y: number;
   color: string;
 }
-
-type ViewMode = "day" | "month";
 
 const MONTHS_PT = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
@@ -62,12 +66,16 @@ const getAccountColor = (accountName: string, index: number): string => {
   return ACCOUNT_COLORS[accountName] || DEFAULT_COLORS[index % DEFAULT_COLORS.length];
 };
 
-export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVendasChartProps) {
+export function TendenciaVendasChart({ 
+  selectedAccount = "todas",
+  selectedDate,
+  setSelectedDate,
+  viewMode,
+  setViewMode
+}: TendenciaVendasChartProps) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+  const [pickerYear, setPickerYear] = useState(selectedDate.getFullYear());
 
   const { startDate, endDate } = useMemo(() => {
     if (viewMode === "day") {

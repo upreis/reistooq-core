@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ViewMode } from "./FeaturesBentoGrid";
 
 interface VendaHoje {
   total_amount: number;
@@ -12,9 +12,11 @@ interface VendaHoje {
 
 interface VendasHojeCardProps {
   selectedAccount?: string;
+  dateRange: { start: Date; end: Date };
+  viewMode: ViewMode;
 }
 
-export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProps) {
+export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode }: VendasHojeCardProps) {
   const [totalVendas, setTotalVendas] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
@@ -27,9 +29,10 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
     return () => clearInterval(interval);
   }, []);
 
-  // Buscar total de vendas do dia
+  // Buscar total de vendas do período selecionado
   useEffect(() => {
     const fetchTotalVendas = async () => {
+      setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -45,7 +48,9 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
         const { data, error } = await supabase
           .from('vendas_hoje_realtime')
           .select('total_amount, account_name')
-          .eq('organization_id', profile.organizacao_id);
+          .eq('organization_id', profile.organizacao_id)
+          .gte('date_created', dateRange.start.toISOString())
+          .lte('date_created', dateRange.end.toISOString());
 
         if (error) throw error;
 
@@ -84,7 +89,7 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedAccount]);
+  }, [selectedAccount, dateRange.start, dateRange.end]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -94,7 +99,26 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
     }).format(value);
   };
 
-  const formattedDate = format(currentTime, "d 'de' MMMM, HH:mm:ss", { locale: ptBR });
+  // Título dinâmico baseado no período
+  const getTitle = () => {
+    if (viewMode === "day") {
+      const isToday = dateRange.start.toDateString() === new Date().toDateString();
+      return isToday ? "Vendas de hoje ao vivo" : `Vendas do dia`;
+    }
+    return `Vendas do mês`;
+  };
+
+  // Badge com data/período selecionado
+  const getBadgeText = () => {
+    if (viewMode === "day") {
+      const isToday = dateRange.start.toDateString() === new Date().toDateString();
+      if (isToday) {
+        return format(currentTime, "d 'de' MMMM, HH:mm:ss", { locale: ptBR });
+      }
+      return format(dateRange.start, "d 'de' MMMM, yyyy", { locale: ptBR });
+    }
+    return format(dateRange.start, "MMMM 'de' yyyy", { locale: ptBR });
+  };
 
   return (
     <motion.div
@@ -106,19 +130,20 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
       {/* Badge de data - posicionado no topo, metade dentro/fora */}
       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
         <span className="bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap shadow-md">
-          {formattedDate}
+          {getBadgeText()}
         </span>
       </div>
 
       {/* Conteúdo centralizado */}
       <div className="flex flex-col items-center justify-center text-center pt-2">
         <h2 className="text-lg font-semibold text-primary mb-1">
-          Vendas de hoje ao vivo
+          {getTitle()}
         </h2>
         {isLoading ? (
           <div className="h-10 w-40 bg-foreground/10 rounded animate-pulse" />
         ) : (
           <motion.span
+            key={totalVendas}
             className="text-4xl font-bold text-foreground tracking-tight"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
