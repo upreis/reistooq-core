@@ -106,7 +106,7 @@ export function FeaturesBentoGrid() {
       </div>
 
       {/* Grid de Cards - Linha 1: Vendas + Gráfico */}
-      <div className="grid grid-cols-1 md:grid-cols-10 gap-4 auto-rows-[200px]">
+      <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
         {/* 1. Vendas de Hoje ao Vivo - Maior horizontalmente */}
         <VendasHojeCard selectedAccount={selectedAccount} />
 

@@ -98,22 +98,19 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
 
   return (
     <motion.div
-      className="md:col-span-6 md:row-span-1 bg-background border border-border rounded-xl p-6 flex flex-col hover:border-primary/50 transition-colors cursor-pointer overflow-hidden relative"
+      className="md:col-span-5 md:row-span-1 bg-background border border-border rounded-xl p-6 flex flex-col hover:border-primary/50 transition-colors cursor-pointer overflow-hidden relative"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       whileHover={{ scale: 1.01 }}
     >
-      {/* Header com título e valor na mesma linha */}
-      <div className="flex items-center justify-between gap-4 mb-2">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm whitespace-nowrap">
-            Vendas de hoje ao vivo
-          </h2>
-          {/* Badge de data/hora */}
-          <div className="bg-[#FFE600] text-black px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
-            {formattedDate}
-          </div>
+      {/* Header com título e data na mesma linha */}
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm whitespace-nowrap">
+          Vendas de hoje ao vivo
+        </h2>
+        <div className="bg-[#FFE600] text-black px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
+          {formattedDate}
         </div>
       </div>
 
