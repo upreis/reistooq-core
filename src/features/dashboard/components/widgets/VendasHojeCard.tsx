@@ -104,22 +104,13 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
       viewport={{ once: true }}
     >
       <div className="flex flex-col h-full justify-between">
-        {/* Título */}
-        <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm mb-3">
-          Vendas de hoje ao vivo
-        </h2>
-        
-        {/* Badge de data */}
-        <div className="mb-4">
-          <span className="bg-[#FFE600] text-black px-3 py-1.5 rounded-full text-sm font-medium">
-            {formattedDate}
-          </span>
-        </div>
-
-        {/* Valor */}
-        <div className="mt-auto">
+        {/* Título e Valor */}
+        <div className="mb-3">
+          <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm">
+            Vendas de hoje ao vivo
+          </h2>
           {isLoading ? (
-            <div className="h-10 w-full bg-foreground/10 rounded animate-pulse" />
+            <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse mt-1" />
           ) : (
             <motion.span
               className="text-3xl font-bold text-foreground tracking-tight"
@@ -130,6 +121,13 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
               {formatCurrency(totalVendas)}
             </motion.span>
           )}
+        </div>
+        
+        {/* Badge de data */}
+        <div className="mt-auto">
+          <span className="bg-[#FFE600] text-black px-3 py-1.5 rounded-full text-sm font-medium">
+            {formattedDate}
+          </span>
         </div>
       </div>
     </motion.div>
