@@ -122,7 +122,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
             <div className="relative w-[320px] flex-shrink-0 flex flex-col">
               <svg
                 viewBox="0 0 612 640"
-                className="w-full flex-1 max-h-[420px]"
+                className="w-full flex-1 max-h-[580px]"
                 preserveAspectRatio="xMidYMid meet"
               >
                 {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
@@ -184,8 +184,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                   <span>Valor</span>
                 </div>
                 
-                {/* Lista com scroll */}
-                <div className="flex-1 overflow-y-auto space-y-0.5 pr-1">
+                {/* Lista - sem scroll pois card comporta 27 estados */}
+                <div className="flex-1 space-y-0.5 pr-1">
                   {[...salesByState]
                     .sort((a, b) => b.vendas - a.vendas)
                     .map((state, index) => {
