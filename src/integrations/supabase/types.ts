@@ -6726,6 +6726,7 @@ export type Database = {
           order_status: string | null
           organization_id: string
           paid_amount: number | null
+          shipping_state: string | null
           synced_at: string | null
           total_amount: number | null
           updated_at: string | null
@@ -6751,6 +6752,7 @@ export type Database = {
           order_status?: string | null
           organization_id: string
           paid_amount?: number | null
+          shipping_state?: string | null
           synced_at?: string | null
           total_amount?: number | null
           updated_at?: string | null
@@ -6776,6 +6778,7 @@ export type Database = {
           order_status?: string | null
           organization_id?: string
           paid_amount?: number | null
+          shipping_state?: string | null
           synced_at?: string | null
           total_amount?: number | null
           updated_at?: string | null

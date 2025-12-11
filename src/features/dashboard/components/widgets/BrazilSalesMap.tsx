@@ -76,10 +76,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
 
       if (!profile?.organizacao_id) return [];
 
-      // Buscar vendas do período com order_data que pode ter info de estado
+      // Buscar vendas do período com shipping_state
       let query = supabase
         .from("vendas_hoje_realtime")
-        .select("order_id, total_amount, order_data, account_name")
+        .select("order_id, total_amount, shipping_state, account_name, integration_account_id")
         .eq("organization_id", profile.organizacao_id)
         .gte("date_created", dateRange.start.toISOString())
         .lte("date_created", dateRange.end.toISOString());
@@ -91,18 +91,22 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       const { data, error } = await query;
       if (error) throw error;
 
-      // Agregar por estado (extrair de order_data se disponível)
-      // Por enquanto, vamos usar dados mock até termos o shipping enriquecido
+      // Agregar por estado
       const stateMap = new Map<string, { vendas: number; valor: number }>();
+      const ordersWithoutState: { order_id: string; integration_account_id: string }[] = [];
       
-      // Tentar extrair estado do order_data
       (data || []).forEach((order: any) => {
-        let state = "SP"; // Default
+        const state = order.shipping_state;
         
-        // Tentar extrair do order_data.shipping se disponível
-        const orderData = order.order_data;
-        if (orderData?.shipping?.receiver_address?.state?.id) {
-          state = orderData.shipping.receiver_address.state.id;
+        if (!state) {
+          // Registrar para enriquecimento posterior
+          if (order.integration_account_id) {
+            ordersWithoutState.push({
+              order_id: order.order_id,
+              integration_account_id: order.integration_account_id
+            });
+          }
+          return;
         }
         
         const current = stateMap.get(state) || { vendas: 0, valor: 0 };
@@ -112,6 +116,23 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         });
       });
 
+      // Enriquecer pedidos sem estado (em background, max 20 por vez)
+      if (ordersWithoutState.length > 0) {
+        const byAccount = new Map<string, string[]>();
+        ordersWithoutState.slice(0, 20).forEach(o => {
+          const list = byAccount.get(o.integration_account_id) || [];
+          list.push(o.order_id);
+          byAccount.set(o.integration_account_id, list);
+        });
+
+        // Chamar edge function em background (não bloquear)
+        byAccount.forEach((orderIds, accountId) => {
+          supabase.functions.invoke("enrich-shipping-state", {
+            body: { order_ids: orderIds, integration_account_id: accountId }
+          }).catch(() => {});
+        });
+      }
+
       return Array.from(stateMap.entries()).map(([uf, data]) => ({
         uf,
         vendas: data.vendas,
@@ -119,6 +140,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       }));
     },
     staleTime: 60 * 1000,
+    refetchInterval: 2 * 60 * 1000, // Refetch a cada 2 min para pegar estados enriquecidos
   });
 
   const maxVendas = useMemo(() => {
