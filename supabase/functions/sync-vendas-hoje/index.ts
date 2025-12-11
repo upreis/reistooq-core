@@ -158,12 +158,18 @@ Deno.serve(async (req) => {
         console.log(`[sync-vendas-hoje:${correlationId}] 📦 ${ordersData.results.length} pedidos encontrados para ${account.name}`);
 
         // 4. Enriquecer com thumbnails e salvar na tabela vendas_hoje_realtime (UPSERT)
+        // SKIP thumbnails para backfills grandes (>14 dias) para evitar timeout
+        const skipThumbnails = daysBack > 14;
+        if (skipThumbnails) {
+          console.log(`[sync-vendas-hoje:${correlationId}] ⚡ Modo rápido: pulando thumbnails para backfill de ${daysBack} dias`);
+        }
+
         const vendas = await Promise.all(ordersData.results.map(async (order: any) => {
           const firstItem = order.order_items?.[0]?.item || {};
           
-          // Buscar thumbnail via API /items/{item_id}
+          // Buscar thumbnail via API /items/{item_id} - APENAS para syncs curtos
           let itemThumbnail = '';
-          if (firstItem.id) {
+          if (firstItem.id && !skipThumbnails) {
             try {
               const productInfo = await fetchProductInfo(firstItem.id, accessToken, correlationId);
               itemThumbnail = productInfo.thumbnail || '';
