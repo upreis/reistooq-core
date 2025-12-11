@@ -44,23 +44,6 @@ Deno.serve(async (req) => {
 
   const params: SyncParams = await req.json().catch(() => ({}));
 
-  // Para backfills grandes (>14 dias), usar background task
-  if (params.days_back && params.days_back > 14) {
-    console.log(`[sync-vendas-hoje:${correlationId}] ⚡ Backfill de ${params.days_back} dias - executando em background`);
-    
-    // @ts-ignore - EdgeRuntime exists in Supabase Edge Functions
-    EdgeRuntime.waitUntil(executeSyncInBackground(supabase, params, correlationId));
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Backfill de ${params.days_back} dias iniciado em background. Verifique os logs.`,
-        background: true 
-      }),
-      { status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-
   try {
     
     console.log(`[sync-vendas-hoje:${correlationId}] 📋 Parâmetros:`, params);
@@ -104,9 +87,9 @@ Deno.serve(async (req) => {
 
     console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${accounts.length} contas encontradas`);
 
-    // 2. Definir período: últimos 7 dias por padrão (rolling window para capturar mudanças de status)
-    // Use days_back=60 para backfill inicial no OAuth callback
-    const daysBack = params.days_back || 7;
+    // 2. Definir período: últimos 45 dias por padrão para cobrir mês anterior completo
+    // Use days_back para customizar (ex: 60 para backfill inicial)
+    const daysBack = params.days_back || 45;
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - daysBack);
     dateFrom.setHours(0, 0, 0, 0);
@@ -381,88 +364,3 @@ async function fetchProductInfo(itemId: string, accessToken: string, cid: string
   }
 }
 
-/**
- * Executa sync em background para backfills grandes
- */
-async function executeSyncInBackground(supabase: any, params: SyncParams, correlationId: string) {
-  console.log(`[sync-vendas-hoje:${correlationId}] 🔄 Background sync iniciado para ${params.days_back} dias`);
-  
-  try {
-    let accountsQuery = supabase
-      .from('integration_accounts')
-      .select('id, name, account_identifier, organization_id')
-      .eq('provider', 'mercadolivre')
-      .eq('is_active', true)
-      .eq('organization_id', params.organization_id);
-
-    if (params.integration_account_ids?.length) {
-      accountsQuery = accountsQuery.in('id', params.integration_account_ids);
-    }
-
-    const { data: accounts } = await accountsQuery;
-    if (!accounts?.length) return;
-
-    const daysBack = params.days_back || 60;
-    const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - daysBack);
-    dateFrom.setHours(0, 0, 0, 0);
-    const dateTo = new Date();
-
-    for (const account of accounts) {
-      try {
-        const { data: secretData } = await supabase
-          .from('integration_secrets')
-          .select('encrypted_value')
-          .eq('key', `SALT2024::${account.id}`)
-          .single();
-
-        if (!secretData?.encrypted_value) continue;
-
-        const accessToken = secretData.encrypted_value;
-        console.log(`[sync-vendas-hoje:${correlationId}] 🔄 Background: processando ${account.name}`);
-        
-        const ordersData = await fetchMLOrders(
-          account.account_identifier,
-          accessToken,
-          dateFrom.toISOString(),
-          dateTo.toISOString(),
-          correlationId
-        );
-
-        if (ordersData?.results?.length) {
-          const vendas = ordersData.results.map((order: any) => {
-            const firstItem = order.order_items?.[0]?.item || {};
-            return {
-              organization_id: account.organization_id,
-              integration_account_id: account.id,
-              account_name: account.name,
-              order_id: String(order.id),
-              status: order.status,
-              total_amount: order.total_amount,
-              currency_id: order.currency_id,
-              date_created: order.date_created,
-              buyer_id: String(order.buyer?.id || ''),
-              buyer_nickname: order.buyer?.nickname || '',
-              item_id: firstItem.id || '',
-              item_title: firstItem.title || '',
-              item_sku: firstItem.seller_sku || firstItem.seller_custom_field || '',
-              item_quantity: order.order_items?.[0]?.quantity || 1,
-              item_unit_price: order.order_items?.[0]?.unit_price || 0,
-              item_thumbnail: '',
-              order_data: order
-            };
-          });
-
-          await supabase.from('vendas_hoje_realtime').upsert(vendas, { onConflict: 'order_id' });
-          console.log(`[sync-vendas-hoje:${correlationId}] ✅ Background: ${vendas.length} vendas sincronizadas para ${account.name}`);
-        }
-      } catch (err) {
-        console.error(`[sync-vendas-hoje:${correlationId}] ❌ Background erro ${account.name}:`, err);
-      }
-    }
-    
-    console.log(`[sync-vendas-hoje:${correlationId}] 🏁 Background sync concluído`);
-  } catch (error) {
-    console.error(`[sync-vendas-hoje:${correlationId}] ❌ Background sync falhou:`, error);
-  }
-}
