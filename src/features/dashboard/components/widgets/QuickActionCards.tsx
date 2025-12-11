@@ -11,6 +11,7 @@ interface TopProduct {
   item_thumbnail: string | null;
   item_title: string | null;
   vendas: number;
+  valorTotal: number;
 }
 
 // Helper para obter início e fim do dia em São Paulo (UTC-3)
@@ -43,7 +44,7 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
       
       let query = supabase
         .from("vendas_hoje_realtime")
-        .select("item_id, item_thumbnail, item_title, account_name")
+        .select("item_id, item_thumbnail, item_title, account_name, total_amount")
         .gte("date_created", start)
         .lte("date_created", end);
 
@@ -55,19 +56,21 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
 
       if (error) throw error;
 
-      // Agrupar por item_id e contar vendas
+      // Agrupar por item_id e contar vendas + somar valor
       const productCounts = new Map<string, TopProduct>();
       
       (data || []).forEach((item) => {
         const existing = productCounts.get(item.item_id);
         if (existing) {
           existing.vendas += 1;
+          existing.valorTotal += item.total_amount || 0;
         } else {
           productCounts.set(item.item_id, {
             item_id: item.item_id,
             item_thumbnail: item.item_thumbnail,
             item_title: item.item_title,
-            vendas: 1
+            vendas: 1,
+            valorTotal: item.total_amount || 0
           });
         }
       });
@@ -84,6 +87,16 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
   const truncateTitle = (title: string | null, maxLength: number = 40) => {
     if (!title) return "Produto";
     return title.length > maxLength ? title.slice(0, maxLength) + "..." : title;
+  };
+
+  // Formatar valor em BRL
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   };
 
   return (
@@ -140,8 +153,13 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
               </div>
               
               {/* Nome do produto */}
-              <span className="text-[9px] font-medium text-foreground text-center leading-tight line-clamp-2 w-full px-0.5">
-                {truncateTitle(product.item_title, 30)}
+              <span className="text-[9px] font-medium text-foreground text-center leading-tight line-clamp-3 w-full px-0.5">
+                {truncateTitle(product.item_title, 40)}
+              </span>
+              
+              {/* Valor vendido */}
+              <span className="text-[10px] font-bold text-[#FFE600] text-center">
+                {formatCurrency(product.valorTotal)}
               </span>
             </div>
           ))
