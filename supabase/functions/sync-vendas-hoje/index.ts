@@ -87,9 +87,9 @@ Deno.serve(async (req) => {
 
     console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${accounts.length} contas encontradas`);
 
-    // 2. Definir período: últimos 45 dias por padrão para cobrir mês anterior completo
-    // Use days_back para customizar (ex: 60 para backfill inicial)
-    const daysBack = params.days_back || 45;
+    // 2. Definir período: últimos 60 dias por padrão para garantir histórico completo
+    // Use days_back para customizar se necessário
+    const daysBack = params.days_back || 60;
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - daysBack);
     dateFrom.setHours(0, 0, 0, 0);
