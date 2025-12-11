@@ -251,7 +251,7 @@ async function fetchMLOrders(
   dateTo: string,
   cid: string
 ): Promise<any> {
-  const MAX_ORDERS = 2000; // Limite de segurança para 60 dias
+  const MAX_ORDERS = 5000; // Limite aumentado para cobrir meses com muitas vendas
   const PAGE_SIZE = 50;
   
   // Buscar TODOS os status de pedidos (paid, shipped, delivered são vendas válidas)
