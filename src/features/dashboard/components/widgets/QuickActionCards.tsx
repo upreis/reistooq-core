@@ -146,10 +146,6 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
                 <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[8px] font-bold px-1 rounded-br">
                   #{index + 1}
                 </div>
-                {/* Badge de vendas */}
-                <div className="absolute bottom-0 right-0 bg-green-500 text-white text-[8px] font-bold px-1 rounded-tl">
-                  {product.vendas}x
-                </div>
               </div>
               
               {/* Nome do produto */}
@@ -158,7 +154,7 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
               </span>
               
               {/* Valor vendido */}
-              <span className="text-[10px] font-bold text-[#FFE600] text-center">
+              <span className="text-[10px] font-bold text-[#22c55e] text-center">
                 {formatCurrency(product.valorTotal)}
               </span>
               
