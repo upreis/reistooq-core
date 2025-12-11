@@ -163,7 +163,7 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
               </span>
               
               {/* Quantidade vendida */}
-              <span className="text-[8px] text-muted-foreground text-center">
+              <span className="text-[12px] font-bold text-[#22c55e] text-center">
                 {product.vendas} {product.vendas === 1 ? 'vendido' : 'vendidos'}
               </span>
             </div>
