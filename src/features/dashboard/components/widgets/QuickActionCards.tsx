@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 
 interface QuickActionCardsProps {
   selectedAccount: string;
+  dateRange: { start: Date; end: Date };
 }
 
 interface TopProduct {
@@ -15,29 +16,7 @@ interface TopProduct {
   valorTotal: number;
 }
 
-// Helper para obter início e fim do dia em São Paulo (UTC-3)
-const getHojeRangeSaoPaulo = () => {
-  const now = new Date();
-  const offsetHours = 3;
-  
-  const startOfDaySP = new Date(now);
-  startOfDaySP.setUTCHours(offsetHours, 0, 0, 0);
-  
-  if (now.getUTCHours() < offsetHours) {
-    startOfDaySP.setUTCDate(startOfDaySP.getUTCDate() - 1);
-  }
-  
-  const endOfDaySP = new Date(startOfDaySP);
-  endOfDaySP.setUTCDate(endOfDaySP.getUTCDate() + 1);
-  endOfDaySP.setUTCMilliseconds(-1);
-  
-  return {
-    start: startOfDaySP.toISOString(),
-    end: endOfDaySP.toISOString()
-  };
-};
-
-export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
+export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCardsProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [smoothPosition, setSmoothPosition] = useState({ x: 0, y: 0 });
@@ -88,15 +67,14 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
   };
 
   const { data: topProducts = [], isLoading } = useQuery({
-    queryKey: ["top-products-hoje", selectedAccount],
+    queryKey: ["top-products-periodo", selectedAccount, dateRange.start.toISOString(), dateRange.end.toISOString()],
     queryFn: async () => {
-      const { start, end } = getHojeRangeSaoPaulo();
       
       let query = supabase
         .from("vendas_hoje_realtime")
         .select("item_id, item_thumbnail, item_title, account_name, total_amount")
-        .gte("date_created", start)
-        .lte("date_created", end);
+        .gte("date_created", dateRange.start.toISOString())
+        .lte("date_created", dateRange.end.toISOString());
 
       if (selectedAccount !== "todas") {
         query = query.eq("account_name", selectedAccount);
