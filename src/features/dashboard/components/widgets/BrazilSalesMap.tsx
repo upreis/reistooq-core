@@ -184,8 +184,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                   <span>Valor</span>
                 </div>
                 
-                {/* Lista - sem scroll pois card comporta 27 estados */}
-                <div className="flex-1 space-y-0.5 pr-1">
+                {/* Lista - compacta */}
+                <div className="flex-1 pr-1">
                   {[...salesByState]
                     .sort((a, b) => b.vendas - a.vendas)
                     .map((state, index) => {
@@ -194,7 +194,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                       return (
                         <div
                           key={state.uf}
-                          className={`grid grid-cols-[24px_32px_40px_1fr] gap-1 items-center px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                          className={`grid grid-cols-[24px_32px_40px_1fr] gap-1 items-center px-2 py-0.5 rounded text-xs cursor-pointer transition-colors ${
                             isSelected 
                               ? "bg-primary/20 border border-primary/30" 
                               : "hover:bg-muted/50"
