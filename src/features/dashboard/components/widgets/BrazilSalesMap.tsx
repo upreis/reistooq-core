@@ -76,10 +76,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
 
       if (!profile?.organizacao_id) return [];
 
-      // Buscar vendas do período com order_data para extrair estado
+      // Buscar vendas do período com shipping_state
       let query = supabase
         .from("vendas_hoje_realtime")
-        .select("order_id, total_amount, shipping_state, order_data, account_name")
+        .select("order_id, total_amount, shipping_state, account_name")
         .eq("organization_id", profile.organizacao_id)
         .gte("date_created", dateRange.start.toISOString())
         .lte("date_created", dateRange.end.toISOString());
@@ -91,18 +91,11 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       const { data, error } = await query;
       if (error) throw error;
 
-      // Agregar por estado - extraindo de order_data como /vendas-com-envio faz
+      // Agregar por estado usando coluna shipping_state
       const stateMap = new Map<string, { vendas: number; valor: number }>();
       
       (data || []).forEach((order: any) => {
-        // Tentar extrair estado de order_data (como vendas-com-envio faz)
-        const orderData = order.order_data as any;
-        const stateFromOrderData = orderData?.shipping?.receiver_address?.state?.id 
-          || orderData?.shipping?.receiver_address?.state?.name;
-        
-        // Fallback para coluna shipping_state se existir
-        const state = stateFromOrderData || order.shipping_state;
-        
+        const state = order.shipping_state;
         if (!state) return;
         
         const current = stateMap.get(state) || { vendas: 0, valor: 0 };

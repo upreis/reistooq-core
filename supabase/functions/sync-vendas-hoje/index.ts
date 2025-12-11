@@ -202,6 +202,18 @@ Deno.serve(async (req) => {
             }
           }
           
+          // Buscar shipping info para obter o estado (receiver_address)
+          let shippingState = '';
+          const shippingId = order.shipping?.id;
+          if (shippingId && !skipThumbnails) {
+            try {
+              const shippingInfo = await fetchShippingInfo(shippingId, accessToken, correlationId);
+              shippingState = shippingInfo.state || '';
+            } catch (e) {
+              console.warn(`[sync-vendas-hoje:${correlationId}] ⚠️ Erro buscando shipping ${shippingId}`);
+            }
+          }
+          
           return {
             organization_id: params.organization_id,
             integration_account_id: account.id,
@@ -222,6 +234,7 @@ Deno.serve(async (req) => {
             item_unit_price: order.order_items?.[0]?.unit_price || 0,
             item_sku: firstItem.seller_sku || firstItem.seller_custom_field || '',
             order_data: order,
+            shipping_state: shippingState || null,
             synced_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
@@ -386,6 +399,44 @@ async function fetchProductInfo(itemId: string, accessToken: string, cid: string
   } catch (error) {
     console.warn(`[sync-vendas-hoje:${cid}] ⚠️ Erro fetchProductInfo ${itemId}:`, error);
     return { thumbnail: '' };
+  }
+}
+
+/**
+ * Busca informações de shipping para obter estado (UF) do destinatário
+ * Endpoint: GET /shipments/{shipment_id}
+ */
+async function fetchShippingInfo(shipmentId: number, accessToken: string, cid: string): Promise<{ state: string }> {
+  try {
+    const response = await fetch(`https://api.mercadolibre.com/shipments/${shipmentId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return { state: '' };
+    }
+
+    const shipData = await response.json();
+    // Extrair estado: pode ser ID (BR-SP) ou nome (São Paulo)
+    const stateId = shipData.receiver_address?.state?.id || '';
+    const stateName = shipData.receiver_address?.state?.name || '';
+    
+    // Preferir ID pois é mais padronizado (BR-SP -> SP)
+    let state = '';
+    if (stateId) {
+      // BR-SP -> SP, BR-RJ -> RJ, etc.
+      state = stateId.replace('BR-', '');
+    } else if (stateName) {
+      state = stateName;
+    }
+    
+    return { state };
+  } catch (error) {
+    console.warn(`[sync-vendas-hoje:${cid}] ⚠️ Erro fetchShippingInfo ${shipmentId}:`, error);
+    return { state: '' };
   }
 }
 
