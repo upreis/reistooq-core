@@ -19,7 +19,7 @@ interface StateData {
 
 // Função para calcular cor baseada na intensidade de vendas
 function getStateColor(vendas: number, maxVendas: number): string {
-  if (vendas === 0 || maxVendas === 0) return "hsl(var(--muted))";
+  if (vendas === 0 || maxVendas === 0) return "hsl(var(--muted) / 0.4)";
   
   const intensity = Math.min(vendas / maxVendas, 1);
   // Gradiente de verde claro para verde escuro
@@ -139,8 +139,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                         <path
                           d={path}
                           fill={getStateColor(vendas, maxVendas)}
-                          stroke={isSelected ? "hsl(var(--primary))" : isHovered ? "hsl(var(--foreground))" : "hsl(var(--border))"}
-                          strokeWidth={isSelected ? 2 : isHovered ? 1.5 : 0.5}
+                          stroke={isSelected ? "hsl(var(--primary))" : isHovered ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground) / 0.5)"}
+                          strokeWidth={isSelected ? 2 : isHovered ? 1.5 : 0.8}
                           className="cursor-pointer transition-all duration-200"
                           onMouseEnter={() => setHoveredState(uf)}
                           onMouseLeave={() => setHoveredState(null)}
