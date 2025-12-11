@@ -87,16 +87,16 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
   };
 
   return (
-    <div className="flex flex-wrap gap-4 justify-start">
+    <div className="flex flex-wrap gap-4">
       {isLoading ? (
         // Skeleton loading - 5 cards
         Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex flex-col items-center gap-3 p-4 bg-card border border-border rounded-2xl animate-pulse w-[180px]"
+            className="flex flex-col items-center gap-2 p-3 bg-card border border-border rounded-2xl animate-pulse w-[150px]"
           >
-            <div className="w-24 h-24 bg-muted rounded-xl" />
-            <div className="w-full h-4 bg-muted rounded" />
+            <div className="w-20 h-20 bg-muted rounded-xl" />
+            <div className="w-full h-3 bg-muted rounded" />
           </div>
         ))
       ) : topProducts.length === 0 ? (
@@ -104,12 +104,12 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
         Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex flex-col items-center gap-3 p-4 bg-card border border-border rounded-2xl w-[180px]"
+            className="flex flex-col items-center gap-2 p-3 bg-card border border-border rounded-2xl w-[150px]"
           >
-            <div className="p-6 rounded-xl bg-muted/50">
-              <Package className="h-12 w-12 text-muted-foreground" />
+            <div className="p-4 rounded-xl bg-muted/50">
+              <Package className="h-10 w-10 text-muted-foreground" />
             </div>
-            <span className="text-sm text-muted-foreground text-center">
+            <span className="text-xs text-muted-foreground text-center">
               Sem vendas
             </span>
           </div>
@@ -119,10 +119,10 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
         topProducts.map((product, index) => (
           <div
             key={product.item_id}
-            className="flex flex-col items-center gap-3 p-4 bg-card border border-border rounded-2xl hover:bg-accent/30 transition-all group w-[180px]"
+            className="flex flex-col items-center gap-2 p-3 bg-card border border-border rounded-2xl hover:bg-accent/30 transition-all group w-[150px]"
           >
             {/* Imagem do produto */}
-            <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-muted flex-shrink-0">
+            <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0">
               {product.item_thumbnail ? (
                 <img
                   src={product.item_thumbnail}
@@ -131,22 +131,22 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Package className="h-10 w-10 text-muted-foreground" />
+                  <Package className="h-8 w-8 text-muted-foreground" />
                 </div>
               )}
               {/* Badge de ranking */}
-              <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-br-xl">
+              <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-br-lg">
                 #{index + 1}
               </div>
               {/* Badge de vendas */}
-              <div className="absolute bottom-0 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-tl-xl">
+              <div className="absolute bottom-0 right-0 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-tl-lg">
                 {product.vendas}x
               </div>
             </div>
             
             {/* Nome do produto */}
-            <span className="text-sm font-medium text-foreground text-center leading-tight line-clamp-2 w-full">
-              {truncateTitle(product.item_title, 35)}
+            <span className="text-[11px] font-medium text-foreground text-center leading-tight line-clamp-2 w-full">
+              {truncateTitle(product.item_title, 30)}
             </span>
           </div>
         ))
