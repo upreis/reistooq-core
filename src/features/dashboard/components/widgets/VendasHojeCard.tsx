@@ -98,33 +98,38 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
 
   return (
     <motion.div
-      className="md:col-span-5 md:row-span-1 bg-background border border-border rounded-xl p-6 flex flex-col hover:border-primary/50 transition-colors cursor-pointer overflow-hidden relative"
+      className="md:col-span-3 md:row-span-1 bg-background border border-border rounded-xl p-4 flex flex-col hover:border-primary/50 transition-colors cursor-pointer overflow-hidden relative"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      whileHover={{ scale: 1.01 }}
+      whileHover={{ scale: 1.02 }}
     >
-      {/* Header com título e data na mesma linha */}
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm whitespace-nowrap">
+      {/* Header com título amarelo */}
+      <div className="text-center mb-2">
+        <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm">
           Vendas de hoje ao vivo
         </h2>
-        <div className="bg-[#FFE600] text-black px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
+      </div>
+
+      {/* Badge de data/hora */}
+      <div className="flex justify-center mb-3">
+        <div className="bg-[#FFE600] text-black px-3 py-1 rounded-full text-xs font-medium">
           {formattedDate}
         </div>
       </div>
 
-      {/* Valor total grande */}
-      <div className="flex-1 flex items-center">
+      {/* Valor total */}
+      <div className="flex-1 flex items-center justify-center">
         {isLoading ? (
-          <div className="h-16 w-64 bg-foreground/10 rounded animate-pulse" />
+          <div className="h-12 w-40 bg-foreground/10 rounded animate-pulse" />
         ) : (
           <motion.div
+            className="text-center"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
           >
-            <span className="text-5xl md:text-6xl font-bold text-foreground tracking-tight">
+            <span className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
               {formatCurrency(totalVendas)}
             </span>
           </motion.div>
