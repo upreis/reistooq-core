@@ -173,61 +173,41 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
               </div>
 
               {/* Lista de Top Estados */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 flex flex-col overflow-hidden">
                 <p className="text-sm font-semibold text-muted-foreground mb-2">Top Estados</p>
                 
-                {/* Container com duas colunas */}
-                <div className="flex gap-2">
-                  {(() => {
-                    const sortedStates = [...salesByState].sort((a, b) => b.vendas - a.vendas);
-                    const itemsPerColumn = 8;
-                    const firstColumn = sortedStates.slice(0, itemsPerColumn);
-                    const secondColumn = sortedStates.slice(itemsPerColumn, itemsPerColumn * 2);
-                    
-                    const renderColumn = (states: StateData[], startIndex: number) => (
-                      <div className="flex-1 min-w-0">
-                        {/* Cabeçalho */}
-                        <div className="grid grid-cols-[20px_28px_36px_1fr] gap-1 px-1 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
-                          <span>#</span>
-                          <span>UF</span>
-                          <span>Qtd</span>
-                          <span>Valor</span>
+                {/* Cabeçalho */}
+                <div className="grid grid-cols-[24px_32px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
+                  <span>#</span>
+                  <span>UF</span>
+                  <span>Qtd</span>
+                  <span>Valor</span>
+                </div>
+                
+                {/* Lista com scroll */}
+                <div className="flex-1 overflow-y-auto space-y-0.5 pr-1">
+                  {[...salesByState]
+                    .sort((a, b) => b.vendas - a.vendas)
+                    .map((state, index) => {
+                      const isSelected = selectedState === state.uf;
+                      
+                      return (
+                        <div
+                          key={state.uf}
+                          className={`grid grid-cols-[24px_32px_40px_1fr] gap-1 items-center px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                            isSelected 
+                              ? "bg-primary/20 border border-primary/30" 
+                              : "hover:bg-muted/50"
+                          }`}
+                          onClick={() => setSelectedState(selectedState === state.uf ? null : state.uf)}
+                        >
+                          <span className="text-muted-foreground font-mono text-[10px]">{index + 1}</span>
+                          <span className="font-medium">{state.uf}</span>
+                          <span className="font-semibold">{state.vendas}</span>
+                          <span className="text-muted-foreground truncate">{formatCurrency(state.valor)}</span>
                         </div>
-                        
-                        {/* Lista */}
-                        <div className="space-y-0.5">
-                          {states.map((state, index) => {
-                            const isSelected = selectedState === state.uf;
-                            const globalIndex = startIndex + index;
-                            
-                            return (
-                              <div
-                                key={state.uf}
-                                className={`grid grid-cols-[20px_28px_36px_1fr] gap-1 items-center px-1 py-0.5 rounded text-[11px] cursor-pointer transition-colors ${
-                                  isSelected 
-                                    ? "bg-primary/20 border border-primary/30" 
-                                    : "hover:bg-muted/50"
-                                }`}
-                                onClick={() => setSelectedState(selectedState === state.uf ? null : state.uf)}
-                              >
-                                <span className="text-muted-foreground font-mono text-[10px]">{globalIndex + 1}</span>
-                                <span className="font-medium">{state.uf}</span>
-                                <span className="font-semibold">{state.vendas}</span>
-                                <span className="text-muted-foreground truncate text-[10px]">{formatCurrency(state.valor)}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                    
-                    return (
-                      <>
-                        {renderColumn(firstColumn, 0)}
-                        {secondColumn.length > 0 && renderColumn(secondColumn, itemsPerColumn)}
-                      </>
-                    );
-                  })()}
+                      );
+                    })}
                 </div>
                   
                 {salesByState.length === 0 && (
