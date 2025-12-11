@@ -36,7 +36,7 @@ export function QuickActionCards() {
   const navigate = useNavigate();
 
   return (
-    <div className="md:col-span-1 grid grid-cols-2 gap-2">
+    <div className="md:col-span-2 grid grid-cols-2 gap-2">
       {quickActions.map((action) => (
         <button
           key={action.route}

@@ -98,7 +98,7 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
 
   return (
     <motion.div
-      className="md:col-span-2 md:row-span-1 bg-background border border-border rounded-xl p-4 flex flex-col hover:border-primary/50 transition-colors cursor-pointer overflow-hidden relative"
+      className="md:col-span-3 md:row-span-1 bg-background border border-border rounded-xl p-4 flex flex-col hover:border-primary/50 transition-colors cursor-pointer overflow-hidden relative"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
