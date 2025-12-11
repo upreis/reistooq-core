@@ -6985,6 +6985,7 @@ export type Database = {
       cleanup_expired_notifications: { Args: never; Returns: undefined }
       cleanup_expired_sensitive_data: { Args: never; Returns: undefined }
       cleanup_oauth_states: { Args: never; Returns: undefined }
+      cleanup_vendas_antigas: { Args: never; Returns: undefined }
       complete_background_job:
         | {
             Args: { p_error_message?: string; p_job_id: string }
