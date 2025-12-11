@@ -98,29 +98,31 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
 
   return (
     <motion.div
-      className="bg-background border border-border rounded-xl p-6 hover:border-primary/50 transition-colors"
+      className="bg-card border border-border rounded-2xl p-4 hover:bg-accent/30 transition-all w-[200px] flex-shrink-0"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
     >
-      <div className="flex items-center justify-between gap-8">
-        {/* Lado esquerdo: título e data */}
-        <div className="flex flex-col items-start">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#FFE600] drop-shadow-sm mb-2">
-            Vendas de hoje ao vivo
-          </h2>
-          <div className="bg-[#FFE600] text-black px-4 py-1.5 rounded-full text-sm font-medium">
+      <div className="flex flex-col h-full">
+        {/* Título */}
+        <h2 className="text-lg font-bold text-[#FFE600] drop-shadow-sm mb-2">
+          Vendas de hoje ao vivo
+        </h2>
+        
+        {/* Badge de data */}
+        <div className="mb-3">
+          <span className="bg-[#FFE600] text-black px-3 py-1 rounded-full text-xs font-medium">
             {formattedDate}
-          </div>
+          </span>
         </div>
 
-        {/* Lado direito: valor */}
-        <div className="flex-shrink-0">
+        {/* Valor */}
+        <div className="flex-1 flex items-center">
           {isLoading ? (
-            <div className="h-14 w-48 bg-foreground/10 rounded animate-pulse" />
+            <div className="h-8 w-full bg-foreground/10 rounded animate-pulse" />
           ) : (
             <motion.span
-              className="text-5xl md:text-6xl font-bold text-foreground tracking-tight"
+              className="text-2xl font-bold text-foreground tracking-tight"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
