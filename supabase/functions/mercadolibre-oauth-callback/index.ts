@@ -238,34 +238,40 @@ Deno.serve(async (req) => {
 
     console.log("ML OAuth completed successfully for account:", account.id);
 
-    // 🚀 TRIGGER BACKFILL: Buscar 3 meses de histórico automaticamente
-    // Mês atual + 2 meses anteriores = ~3 meses de dados
-    console.log(`[ML OAuth Callback] 🔄 Iniciando backfill automático de 3 meses para conta: ${account.id}`);
+    // 🚀 TRIGGER BACKFILL: Buscar últimos 60 dias de histórico automaticamente
+    // Usa EdgeRuntime.waitUntil para não bloquear a resposta ao usuário
+    console.log(`[ML OAuth Callback] 🔄 Iniciando backfill automático de 60 dias para conta: ${account.id}`);
     
-    try {
-      const backfillResp = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/backfill-vendas-historico`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-        body: JSON.stringify({
-          organization_id: organizationId,
-          integration_account_ids: [account.id],
-          months_back: 3 // Mês atual + 2 anteriores
-        })
-      });
+    // Background task para não bloquear o OAuth
+    const backfillTask = async () => {
+      try {
+        const backfillResp = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-vendas-hoje`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            organization_id: organizationId,
+            integration_account_ids: [account.id],
+            days_back: 60 // Backfill inicial de 60 dias
+          })
+        });
 
-      if (backfillResp.ok) {
-        const backfillResult = await backfillResp.json();
-        console.log(`[ML OAuth Callback] ✅ Backfill concluído: ${backfillResult.total_synced || 0} vendas sincronizadas`);
-      } else {
-        console.warn(`[ML OAuth Callback] ⚠️ Backfill falhou (não crítico):`, await backfillResp.text());
+        if (backfillResp.ok) {
+          const backfillResult = await backfillResp.json();
+          console.log(`[ML OAuth Callback] ✅ Backfill concluído: ${backfillResult.synced || 0} vendas sincronizadas`);
+        } else {
+          console.warn(`[ML OAuth Callback] ⚠️ Backfill falhou (não crítico):`, await backfillResp.text());
+        }
+      } catch (backfillError) {
+        // Backfill é best-effort, não deve bloquear OAuth
+        console.warn(`[ML OAuth Callback] ⚠️ Erro no backfill (não crítico):`, backfillError);
       }
-    } catch (backfillError) {
-      // Backfill é best-effort, não deve bloquear OAuth
-      console.warn(`[ML OAuth Callback] ⚠️ Erro no backfill (não crítico):`, backfillError);
-    }
+    };
+
+    // Executa em background sem bloquear resposta
+    EdgeRuntime.waitUntil(backfillTask());
 
     return new Response(
       "<!doctype html><script>" +
