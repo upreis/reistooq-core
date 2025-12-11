@@ -1,11 +1,14 @@
 /**
  * 🔴 SYNC VENDAS HOJE - Edge Function
- * Busca vendas dos últimos 60 dias de todas as contas ML e salva na tabela vendas_hoje_realtime
- * Para painel de vendas ao vivo e histórico
+ * 
+ * PADRÃO DE SINCRONIZAÇÃO:
+ * - CRON (cada 5 min): Busca últimos 7 dias para capturar mudanças de status (cancelamentos, estornos)
+ * - OAuth Callback: Busca últimos 60 dias para backfill inicial
+ * - Dados mantidos por 6 meses, depois excluídos automaticamente
  * 
  * ✅ Padrão idêntico a get-vendas-comenvio (tokens via integration_secrets)
  * ✅ Paginação completa para buscar todas as vendas
- * ✅ UPSERT para não duplicar
+ * ✅ UPSERT para não duplicar e atualizar status
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
@@ -21,7 +24,7 @@ interface SyncParams {
   organization_id?: string;
   integration_account_ids?: string[];
   force_refresh?: boolean;
-  days_back?: number; // Quantos dias para trás buscar (default: 60)
+  days_back?: number; // Quantos dias para trás buscar (default: 7 para CRON, 60 para backfill)
 }
 
 Deno.serve(async (req) => {
@@ -85,8 +88,9 @@ Deno.serve(async (req) => {
 
     console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${accounts.length} contas encontradas`);
 
-    // 2. Definir período: últimos 60 dias (ou customizado)
-    const daysBack = params.days_back || 60;
+    // 2. Definir período: últimos 7 dias por padrão (rolling window para capturar mudanças de status)
+    // Use days_back=60 para backfill inicial no OAuth callback
+    const daysBack = params.days_back || 7;
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - daysBack);
     dateFrom.setHours(0, 0, 0, 0);
