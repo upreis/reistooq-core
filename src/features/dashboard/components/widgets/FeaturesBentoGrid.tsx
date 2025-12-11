@@ -113,7 +113,7 @@ export function FeaturesBentoGrid() {
             viewMode={viewMode}
           />
           <div className="flex-1">
-            <QuickActionCards selectedAccount={selectedAccount} />
+            <QuickActionCards selectedAccount={selectedAccount} dateRange={dateRange} />
           </div>
         </div>
         
