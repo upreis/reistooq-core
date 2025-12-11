@@ -583,7 +583,7 @@ export function TendenciaVendasChart({
                 onMouseEnter={() => {
                   setTooltip({
                     xIndex: xKey,
-                    xLabel: label,
+                    xLabel: viewMode === 'month' ? `Dia ${label}` : label,
                     accounts: accountsData,
                     xPercent
                   });
