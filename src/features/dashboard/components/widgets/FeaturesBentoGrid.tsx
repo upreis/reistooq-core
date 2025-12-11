@@ -14,6 +14,13 @@ const ACCOUNT_COLORS: Record<string, string> = {
   "LUTHORSHOPLTDA": "border-cyan-500 bg-cyan-500",
 };
 
+// Helper para obter data de hoje em São Paulo
+const getHojeSaoPaulo = () => {
+  const now = new Date();
+  const saoPauloTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  return saoPauloTime.toISOString().split("T")[0];
+};
+
 export function FeaturesBentoGrid() {
   const [selectedAccount, setSelectedAccount] = useState<string>("todas");
 
@@ -21,7 +28,7 @@ export function FeaturesBentoGrid() {
   const { data: accounts = [] } = useQuery({
     queryKey: ["vendas-hoje-accounts"],
     queryFn: async () => {
-      const hoje = new Date().toISOString().split("T")[0];
+      const hoje = getHojeSaoPaulo();
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("account_name")
