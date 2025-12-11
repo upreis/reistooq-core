@@ -4,6 +4,7 @@ import { MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { BRAZIL_STATES_SVG } from "./brazil-states-svg";
 
 interface BrazilSalesMapProps {
   selectedAccount: string;
@@ -15,37 +16,6 @@ interface StateData {
   vendas: number;
   valor: number;
 }
-
-// Dados simplificados dos estados brasileiros com paths SVG
-const BRAZIL_STATES: Record<string, { name: string; path: string }> = {
-  AC: { name: "Acre", path: "M67.5,198.5 L82.5,198.5 L82.5,218.5 L67.5,218.5 Z" },
-  AL: { name: "Alagoas", path: "M327.5,178.5 L342.5,178.5 L342.5,188.5 L327.5,188.5 Z" },
-  AP: { name: "Amapá", path: "M217.5,68.5 L237.5,68.5 L237.5,98.5 L217.5,98.5 Z" },
-  AM: { name: "Amazonas", path: "M82.5,118.5 L167.5,118.5 L167.5,188.5 L82.5,188.5 Z" },
-  BA: { name: "Bahia", path: "M267.5,168.5 L327.5,168.5 L327.5,238.5 L267.5,238.5 Z" },
-  CE: { name: "Ceará", path: "M297.5,128.5 L337.5,128.5 L337.5,158.5 L297.5,158.5 Z" },
-  DF: { name: "Distrito Federal", path: "M227.5,218.5 L242.5,218.5 L242.5,228.5 L227.5,228.5 Z" },
-  ES: { name: "Espírito Santo", path: "M297.5,248.5 L317.5,248.5 L317.5,273.5 L297.5,273.5 Z" },
-  GO: { name: "Goiás", path: "M197.5,218.5 L252.5,218.5 L252.5,268.5 L197.5,268.5 Z" },
-  MA: { name: "Maranhão", path: "M237.5,108.5 L287.5,108.5 L287.5,158.5 L237.5,158.5 Z" },
-  MT: { name: "Mato Grosso", path: "M137.5,188.5 L197.5,188.5 L197.5,268.5 L137.5,268.5 Z" },
-  MS: { name: "Mato Grosso do Sul", path: "M157.5,268.5 L207.5,268.5 L207.5,328.5 L157.5,328.5 Z" },
-  MG: { name: "Minas Gerais", path: "M227.5,228.5 L297.5,228.5 L297.5,293.5 L227.5,293.5 Z" },
-  PA: { name: "Pará", path: "M167.5,88.5 L267.5,88.5 L267.5,168.5 L167.5,168.5 Z" },
-  PB: { name: "Paraíba", path: "M317.5,148.5 L352.5,148.5 L352.5,163.5 L317.5,163.5 Z" },
-  PR: { name: "Paraná", path: "M197.5,298.5 L252.5,298.5 L252.5,333.5 L197.5,333.5 Z" },
-  PE: { name: "Pernambuco", path: "M287.5,158.5 L342.5,158.5 L342.5,178.5 L287.5,178.5 Z" },
-  PI: { name: "Piauí", path: "M267.5,128.5 L297.5,128.5 L297.5,178.5 L267.5,178.5 Z" },
-  RJ: { name: "Rio de Janeiro", path: "M272.5,283.5 L302.5,283.5 L302.5,303.5 L272.5,303.5 Z" },
-  RN: { name: "Rio Grande do Norte", path: "M317.5,133.5 L352.5,133.5 L352.5,148.5 L317.5,148.5 Z" },
-  RS: { name: "Rio Grande do Sul", path: "M187.5,343.5 L242.5,343.5 L242.5,398.5 L187.5,398.5 Z" },
-  RO: { name: "Rondônia", path: "M97.5,198.5 L137.5,198.5 L137.5,248.5 L97.5,248.5 Z" },
-  RR: { name: "Roraima", path: "M117.5,48.5 L162.5,48.5 L162.5,98.5 L117.5,98.5 Z" },
-  SC: { name: "Santa Catarina", path: "M207.5,333.5 L252.5,333.5 L252.5,358.5 L207.5,358.5 Z" },
-  SP: { name: "São Paulo", path: "M207.5,278.5 L272.5,278.5 L272.5,318.5 L207.5,318.5 Z" },
-  SE: { name: "Sergipe", path: "M317.5,183.5 L337.5,183.5 L337.5,198.5 L317.5,198.5 Z" },
-  TO: { name: "Tocantins", path: "M227.5,158.5 L267.5,158.5 L267.5,218.5 L227.5,218.5 Z" },
-};
 
 // Função para calcular cor baseada na intensidade de vendas
 function getStateColor(vendas: number, maxVendas: number): string {
@@ -157,7 +127,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 className="w-full h-[280px]"
                 style={{ maxWidth: "200px" }}
               >
-                {Object.entries(BRAZIL_STATES).map(([uf, { name, path }]) => {
+                {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
                   const stateData = getStateData(uf);
                   const vendas = stateData?.vendas || 0;
                   const isHovered = hoveredState === uf;
@@ -195,7 +165,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 .sort((a, b) => b.vendas - a.vendas)
                 .slice(0, 8)
                 .map((state, index) => {
-                  const stateName = BRAZIL_STATES[state.uf]?.name || state.uf;
+                  const stateName = BRAZIL_STATES_SVG[state.uf]?.name || state.uf;
                   const isSelected = selectedState === state.uf;
                   
                   return (
@@ -234,7 +204,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">
-                  {BRAZIL_STATES[selectedState!]?.name || selectedState}
+                  {BRAZIL_STATES_SVG[selectedState!]?.name || selectedState}
                 </p>
                 <p className="text-lg font-bold">{selectedStateData.vendas} vendas</p>
               </div>
