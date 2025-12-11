@@ -117,62 +117,63 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
             Carregando mapa...
           </div>
         ) : (
-          <div className="flex flex-col h-full">
-            {/* Título e Total - Topo do card */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 text-base font-semibold">
-                <MapPin className="h-4 w-4 text-primary" />
-                Vendas por Estado
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {totalVendas} vendas no período
-              </span>
+          <div className="flex gap-4 h-full">
+            {/* Mapa SVG - Esquerda */}
+            <div className="relative w-[320px] flex-shrink-0">
+              <svg
+                viewBox="0 0 612 640"
+                className="w-full h-full max-h-[460px]"
+                preserveAspectRatio="xMidYMid meet"
+              >
+                {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
+                  const stateData = getStateData(uf);
+                  const vendas = stateData?.vendas || 0;
+                  const isHovered = hoveredState === uf;
+                  const isSelected = selectedState === uf;
+                  
+                  return (
+                    <path
+                      key={uf}
+                      d={path}
+                      fill={getStateColor(vendas, maxVendas)}
+                      stroke={isSelected ? "#000000" : isHovered ? "#000000" : vendas > 0 ? "#000000" : "hsl(var(--primary))"}
+                      strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : vendas > 0 ? 1 : 0.5}
+                      className="cursor-pointer transition-all duration-200"
+                      onMouseEnter={() => setHoveredState(uf)}
+                      onMouseLeave={() => setHoveredState(null)}
+                      onClick={() => setSelectedState(selectedState === uf ? null : uf)}
+                    />
+                  );
+                })}
+              </svg>
+              
+              {/* Tooltip customizado */}
+              {hoveredState && (
+                <div className="absolute top-2 left-2 bg-popover border border-border rounded-md px-2 py-1 shadow-md text-xs pointer-events-none z-10">
+                  <div className="font-semibold">{BRAZIL_STATES_SVG[hoveredState]?.name} ({hoveredState})</div>
+                  <div>{getStateData(hoveredState)?.vendas || 0} vendas</div>
+                  {getStateData(hoveredState) && (
+                    <div>{formatCurrency(getStateData(hoveredState)!.valor)}</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="flex gap-4 flex-1 min-h-0">
-              {/* Mapa SVG - Esquerda */}
-              <div className="relative w-[320px] flex-shrink-0">
-                <svg
-                  viewBox="0 0 612 640"
-                  className="w-full h-full max-h-[420px]"
-                  preserveAspectRatio="xMidYMid meet"
-                >
-                  {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
-                    const stateData = getStateData(uf);
-                    const vendas = stateData?.vendas || 0;
-                    const isHovered = hoveredState === uf;
-                    const isSelected = selectedState === uf;
-                    
-                    return (
-                      <path
-                        key={uf}
-                        d={path}
-                        fill={getStateColor(vendas, maxVendas)}
-                        stroke={isSelected ? "#000000" : isHovered ? "#000000" : vendas > 0 ? "#000000" : "hsl(var(--primary))"}
-                        strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : vendas > 0 ? 1 : 0.5}
-                        className="cursor-pointer transition-all duration-200"
-                        onMouseEnter={() => setHoveredState(uf)}
-                        onMouseLeave={() => setHoveredState(null)}
-                        onClick={() => setSelectedState(selectedState === uf ? null : uf)}
-                      />
-                    );
-                  })}
-                </svg>
-                
-                {/* Tooltip customizado */}
-                {hoveredState && (
-                  <div className="absolute top-2 left-2 bg-popover border border-border rounded-md px-2 py-1 shadow-md text-xs pointer-events-none z-10">
-                    <div className="font-semibold">{BRAZIL_STATES_SVG[hoveredState]?.name} ({hoveredState})</div>
-                    <div>{getStateData(hoveredState)?.vendas || 0} vendas</div>
-                    {getStateData(hoveredState) && (
-                      <div>{formatCurrency(getStateData(hoveredState)!.valor)}</div>
-                    )}
-                  </div>
-                )}
+            {/* Conteúdo - Direita */}
+            <div className="flex-1 flex flex-col min-w-0">
+              {/* Título e Total */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 text-base font-semibold">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  Vendas por Estado
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {totalVendas} vendas no período
+                </p>
               </div>
 
-              {/* Lista - Direita */}
-              <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              {/* Lista de Estados */}
+              <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Cabeçalho */}
                 <div className="grid grid-cols-[24px_32px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
                   <span>#</span>
