@@ -115,7 +115,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
             <TooltipProvider>
               <svg
                 viewBox="0 0 612 640"
-                className="w-[280px] h-full max-h-[400px] flex-shrink-0"
+                className="w-[320px] h-full max-h-[460px] flex-shrink-0"
                 preserveAspectRatio="xMidYMid meet"
               >
                 {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
