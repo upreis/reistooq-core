@@ -222,15 +222,9 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
           {isLoading ? (
             <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
           ) : (
-            <motion.span
-              key={totalVendas}
-              className="text-2xl font-bold text-foreground tracking-tight"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            >
+            <span className="text-2xl font-bold text-foreground tracking-tight">
               {formatCurrency(totalVendas)}
-            </motion.span>
+            </span>
           )}
         </div>
 
@@ -243,15 +237,9 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
           {isLoading ? (
             <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
           ) : (
-            <motion.span
-              key={totalVendasMes}
-              className="text-2xl font-bold text-foreground tracking-tight"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            >
+            <span className="text-2xl font-bold text-foreground tracking-tight">
               {formatCurrency(totalVendasMes)}
-            </motion.span>
+            </span>
           )}
           <span className="text-xs text-muted-foreground mt-1">
             {format(currentMonthRange.start, "dd/MM", { locale: ptBR })} - {format(currentMonthRange.end, "dd/MM", { locale: ptBR })}
