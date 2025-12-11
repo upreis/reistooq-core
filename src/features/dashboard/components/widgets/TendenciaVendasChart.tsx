@@ -276,18 +276,8 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     if (viewMode === "day") {
       return [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22].map(h => `${h}h`);
     } else {
-      // Para mês, mostrar todos os dias com step apropriado
-      const days: string[] = [];
-      // Mostrar ~10 labels espaçados uniformemente
-      const step = Math.ceil(daysInMonth / 10);
-      for (let i = 1; i <= daysInMonth; i += step) {
-        days.push(i.toString());
-      }
-      // Garantir que o último dia está incluído
-      if (!days.includes(daysInMonth.toString())) {
-        days.push(daysInMonth.toString());
-      }
-      return days;
+      // Para mês, mostrar todos os dias de 1 até o último dia do mês
+      return Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
     }
   }, [viewMode, daysInMonth]);
 
