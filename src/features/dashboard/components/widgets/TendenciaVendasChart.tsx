@@ -31,12 +31,14 @@ interface TendenciaVendasChartProps {
 }
 
 interface TooltipData {
-  account: string;
-  valor: number;
-  label: string;
-  x: number;
-  y: number;
-  color: string;
+  xIndex: number;
+  xLabel: string;
+  accounts: Array<{
+    name: string;
+    valor: number;
+    color: string;
+  }>;
+  xPercent: number;
 }
 
 const MONTHS_PT = [
@@ -448,6 +450,14 @@ export function TendenciaVendasChart({
             ))}
           </div>
           
+          {/* Linha vertical tracejada ao hover */}
+          {tooltip && (
+            <div 
+              className="absolute top-0 bottom-0 w-px border-l border-dashed border-muted-foreground/50 pointer-events-none z-20"
+              style={{ left: `${tooltip.xPercent}%` }}
+            />
+          )}
+          
           {/* SVG com linhas */}
           <svg 
             className="absolute inset-0 w-full h-full overflow-visible" 
@@ -468,7 +478,7 @@ export function TendenciaVendasChart({
             ))}
           </svg>
           
-          {/* Pontos interativos */}
+          {/* Pontos nos dados - circles maiores no hover */}
           {filteredAccounts.map((account, accIndex) => {
             const accountData = chartData.get(account);
             if (!accountData) return null;
@@ -493,68 +503,145 @@ export function TendenciaVendasChart({
                 : (key / maxXValue) * 100;
               const yPercent = Math.max(10, 100 - (valor / maxValue) * 80);
               const color = getAccountColor(account, accIndex);
-              const label = viewMode === "day" ? `${key}h - ${key + 2}h` : `Dia ${key}`;
+              const isHovered = tooltip?.xIndex === key;
               
               return (
                 <div
                   key={`${account}-${key}`}
-                  className="absolute w-3 h-3 rounded-full cursor-pointer hover:scale-150 transition-transform -translate-x-1/2 -translate-y-1/2 z-10"
+                  className={cn(
+                    "absolute rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 transition-all duration-150",
+                    isHovered ? "w-4 h-4 ring-2 ring-background" : "w-2 h-2"
+                  )}
                   style={{ 
                     left: `${xPercent}%`, 
                     top: `${yPercent}%`,
                     backgroundColor: color
                   }}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.parentElement?.getBoundingClientRect();
-                    if (rect) {
-                      setTooltip({
-                        account,
-                        valor,
-                        label,
-                        x: e.clientX - rect.left,
-                        y: e.clientY - rect.top,
-                        color
-                      });
-                    }
-                  }}
-                  onMouseLeave={() => setTooltip(null)}
                 />
               );
             });
           })}
           
-          {/* Tooltip customizado */}
-          {tooltip && (
+          {/* Zonas de hover invisíveis por coluna X */}
+          {xAxisLabels.map((label, index) => {
+            // Calcular xPercent baseado no index
+            let xKey: number;
+            let xPercent: number;
+            
+            if (viewMode === "day") {
+              xKey = index * 2; // 0, 2, 4, 6...
+              xPercent = (xKey / maxXValue) * 100;
+            } else {
+              xKey = index + 1; // 1, 2, 3...
+              xPercent = (index / Math.max(daysInMonth - 1, 1)) * 100;
+            }
+            
+            // Coletar dados de todas contas para este ponto X
+            const accountsData = filteredAccounts
+              .map((account, accIndex) => {
+                const accountMap = chartData.get(account);
+                if (!accountMap) return null;
+                
+                let valor = 0;
+                if (viewMode === "day") {
+                  // Agregar por intervalo de 2h
+                  accountMap.forEach((v, hora) => {
+                    const intervalo = Math.floor(hora / 2) * 2;
+                    if (intervalo === xKey) valor += v;
+                  });
+                } else {
+                  valor = accountMap.get(xKey) || 0;
+                }
+                
+                if (valor === 0) return null;
+                
+                return {
+                  name: account,
+                  valor,
+                  color: getAccountColor(account, accIndex)
+                };
+              })
+              .filter(Boolean) as Array<{ name: string; valor: number; color: string }>;
+            
+            if (accountsData.length === 0) return null;
+            
+            return (
+              <div
+                key={`hover-zone-${index}`}
+                className="absolute top-0 bottom-0 cursor-crosshair"
+                style={{ 
+                  left: `${Math.max(0, xPercent - (50 / xAxisLabels.length))}%`,
+                  width: `${100 / xAxisLabels.length}%`
+                }}
+                onMouseEnter={() => {
+                  setTooltip({
+                    xIndex: xKey,
+                    xLabel: label,
+                    accounts: accountsData,
+                    xPercent
+                  });
+                }}
+              />
+            );
+          })}
+          
+          {/* Tooltip multi-conta customizado */}
+          {tooltip && tooltip.accounts.length > 0 && (
             <div 
-              className="absolute z-50 pointer-events-none bg-popover border border-border rounded-lg shadow-lg p-2 text-sm"
+              className="absolute z-50 pointer-events-none bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl py-2 px-3"
               style={{
-                left: tooltip.x + 10,
-                top: tooltip.y - 40,
-                transform: tooltip.x > 200 ? 'translateX(-100%)' : 'none'
+                left: `${tooltip.xPercent}%`,
+                top: '50%',
+                transform: `translate(${tooltip.xPercent > 70 ? 'calc(-100% - 15px)' : '15px'}, -50%)`
               }}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <div 
-                  className="w-2 h-2 rounded-full" 
-                  style={{ backgroundColor: tooltip.color }}
-                />
-                <span className="font-medium text-foreground truncate max-w-[150px]">
-                  {tooltip.account}
-                </span>
+              {/* Label do eixo X destacado */}
+              <div className="text-white font-medium text-sm mb-2 text-center">
+                {tooltip.xLabel}
               </div>
-              <div className="text-muted-foreground">
-                {formatCurrency(tooltip.valor)} ({tooltip.label})
+              
+              {/* Dados de cada conta */}
+              <div className="space-y-1.5">
+                {tooltip.accounts.map((acc, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div 
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                      style={{ backgroundColor: acc.color }}
+                    />
+                    <span className="text-zinc-300 text-sm">
+                      {formatCurrency(acc.valor)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       </div>
       
-      {/* Eixo X dinâmico */}
+      {/* Eixo X dinâmico com destaque ao hover */}
       <div className="flex justify-between mt-2 ml-12 text-[10px] text-muted-foreground">
-        {xAxisLabels.map((label, i) => (
-          <span key={i}>{label}</span>
-        ))}
+        {xAxisLabels.map((label, i) => {
+          let xKey: number;
+          if (viewMode === "day") {
+            xKey = i * 2;
+          } else {
+            xKey = i + 1;
+          }
+          const isHovered = tooltip?.xIndex === xKey;
+          
+          return (
+            <span 
+              key={i} 
+              className={cn(
+                "transition-all duration-150 px-1 py-0.5 rounded",
+                isHovered && "bg-zinc-900 text-white font-medium"
+              )}
+            >
+              {label}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
