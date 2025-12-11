@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { VendasHojeCard } from "./VendasHojeCard";
 import { TendenciaVendasChart } from "./TendenciaVendasChart";
 import { QuickActionCards } from "./QuickActionCards";
@@ -22,10 +22,12 @@ export function FeaturesBentoGrid() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
 
-  // Calcular range de datas baseado no viewMode
-  const dateRange = viewMode === "day" 
-    ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) }
-    : { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
+  // Calcular range de datas baseado no viewMode - memoizado para evitar re-renders
+  const dateRange = useMemo(() => {
+    return viewMode === "day" 
+      ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) }
+      : { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
+  }, [viewMode, selectedDate.getTime()]);
 
   // Fetch ALL available accounts (últimos 60 dias) - independente do período selecionado
   const { data: accounts = [] } = useQuery({
