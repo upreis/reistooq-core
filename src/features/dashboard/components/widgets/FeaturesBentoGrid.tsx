@@ -106,15 +106,21 @@ export function FeaturesBentoGrid() {
       </div>
 
       {/* Grid de Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-10 gap-4 auto-rows-[300px]">
-        {/* 1. Vendas de Hoje ao Vivo */}
-        <VendasHojeCard selectedAccount={selectedAccount} />
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* Linha 1: Vendas + Produtos + Gráfico */}
+        <div className="md:col-span-3">
+          <VendasHojeCard selectedAccount={selectedAccount} />
+        </div>
 
-        {/* 2. Quick Action Cards - 4 cards pequenos */}
-        <QuickActionCards selectedAccount={selectedAccount} />
+        {/* 2. Quick Action Cards - produtos mais vendidos */}
+        <div className="md:col-span-3">
+          <QuickActionCards selectedAccount={selectedAccount} />
+        </div>
 
         {/* 3. Tendência de Vendas */}
-        <TendenciaVendasChart selectedAccount={selectedAccount} />
+        <div className="md:col-span-6">
+          <TendenciaVendasChart selectedAccount={selectedAccount} />
+        </div>
       </div>
     </div>
   );
