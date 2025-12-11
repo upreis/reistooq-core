@@ -94,17 +94,31 @@ export function TendenciaVendasChart({
   const { data: vendas = [] } = useQuery({
     queryKey: ["vendas-tendencia", startDate.toISOString(), endDate.toISOString()],
     queryFn: async () => {
-      // Buscar TODOS os registros (Supabase tem limite de 1000 por default)
-      // Usando paginação para pegar todos os dados
+      // Buscar organization_id do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.organizacao_id) return [];
+
+      // Buscar TODOS os registros com paginação
       const allData: VendaRealtime[] = [];
       let offset = 0;
       const pageSize = 1000;
       let hasMore = true;
 
+      console.log(`[TendenciaVendasChart] Buscando vendas de ${startDate.toISOString()} até ${endDate.toISOString()}`);
+
       while (hasMore) {
         const { data, error } = await supabase
           .from("vendas_hoje_realtime")
           .select("id, integration_account_id, account_name, order_id, total_amount, date_created, created_at")
+          .eq("organization_id", profile.organizacao_id)
           .gte("date_created", startDate.toISOString())
           .lte("date_created", endDate.toISOString())
           .range(offset, offset + pageSize - 1);
