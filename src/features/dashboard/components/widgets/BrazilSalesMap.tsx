@@ -130,8 +130,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                         <path
                           d={path}
                           fill={getStateColor(vendas, maxVendas)}
-                          stroke={isSelected ? "hsl(var(--primary))" : isHovered ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground) / 0.5)"}
-                          strokeWidth={isSelected ? 2 : isHovered ? 1.5 : 0.8}
+                          stroke={isSelected ? "#000000" : isHovered ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground) / 0.5)"}
+                          strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : 0.8}
                           className="cursor-pointer transition-all duration-200"
                           onMouseEnter={() => setHoveredState(uf)}
                           onMouseLeave={() => setHoveredState(null)}
