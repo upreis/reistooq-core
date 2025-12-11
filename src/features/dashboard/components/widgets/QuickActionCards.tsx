@@ -175,13 +175,15 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
             body: { item_ids: itemIds, integration_account_id: accountId }
           });
 
-          if (!error && data?.thumbnails) {
+          // Silenciosamente ignora erros (ex: token não encontrado)
+          if (!error && data?.thumbnails && Object.keys(data.thumbnails).length > 0) {
             setEnrichedThumbnails((prev) => ({ ...prev, ...data.thumbnails }));
             // Refetch para atualizar os dados do banco
             setTimeout(() => refetch(), 1000);
           }
         } catch (err) {
-          console.error('Error enriching thumbnails:', err);
+          // Silenciosamente ignora erros de enriquecimento
+          console.debug('Enrichment skipped:', err);
         } finally {
           itemIds.forEach((id) => enrichingRef.current.delete(id));
         }
