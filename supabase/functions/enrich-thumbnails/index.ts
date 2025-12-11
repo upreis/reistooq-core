@@ -62,9 +62,16 @@ serve(async (req) => {
       .single();
 
     if (secretError || !secretData?.access_token) {
-      console.error(`[enrich-thumbnails] No token found for account ${integration_account_id}`, secretError);
-      return new Response(JSON.stringify({ error: "Token not found", details: secretError?.message }), {
-        status: 404,
+      console.warn(`[enrich-thumbnails] No token found for account ${integration_account_id} - skipping enrichment`);
+      // Retornar sucesso vazio ao invés de erro para evitar runtime errors no frontend
+      return new Response(JSON.stringify({ 
+        success: true, 
+        thumbnails: {}, 
+        enriched: 0,
+        skipped: true,
+        reason: "No token available for this account"
+      }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
