@@ -254,12 +254,13 @@ async function fetchMLOrders(
   const MAX_ORDERS = 2000; // Limite de segurança para 60 dias
   const PAGE_SIZE = 50;
   
-  // Buscar apenas pedidos PAID (vendas concluídas)
+  // Buscar TODOS os status de pedidos (paid, shipped, delivered são vendas válidas)
+  // NÃO filtrar por status para pegar tudo
   const url = new URL('https://api.mercadolibre.com/orders/search');
   url.searchParams.set('seller', sellerId);
   url.searchParams.set('order.date_created.from', dateFrom);
   url.searchParams.set('order.date_created.to', dateTo);
-  url.searchParams.set('order.status', 'paid');
+  // Removido: url.searchParams.set('order.status', 'paid');
   url.searchParams.set('sort', 'date_desc');
   url.searchParams.set('limit', String(PAGE_SIZE));
   url.searchParams.set('offset', '0');

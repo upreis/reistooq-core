@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Package } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { formatInTimeZone } from "date-fns-tz";
 
 interface QuickActionCardsProps {
   selectedAccount: string;
@@ -66,15 +67,25 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
     setIsVisible(false);
   };
 
+  // Converter datas para strings com timezone São Paulo
+  const dateStartISO = useMemo(() => 
+    formatInTimeZone(dateRange.start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX"), 
+    [dateRange.start]
+  );
+  const dateEndISO = useMemo(() => 
+    formatInTimeZone(dateRange.end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX"), 
+    [dateRange.end]
+  );
+
   const { data: topProducts = [], isLoading } = useQuery({
-    queryKey: ["top-products-periodo", selectedAccount, dateRange.start.toISOString(), dateRange.end.toISOString()],
+    queryKey: ["top-products-periodo", selectedAccount, dateStartISO, dateEndISO],
     queryFn: async () => {
       
       let query = supabase
         .from("vendas_hoje_realtime")
         .select("item_id, item_thumbnail, item_title, account_name, total_amount")
-        .gte("date_created", dateRange.start.toISOString())
-        .lte("date_created", dateRange.end.toISOString());
+        .gte("date_created", dateStartISO)
+        .lte("date_created", dateEndISO);
 
       if (selectedAccount !== "todas") {
         query = query.eq("account_name", selectedAccount);

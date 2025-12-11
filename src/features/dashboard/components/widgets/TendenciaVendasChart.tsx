@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth, getDaysInMonth, startOfDay, endOfDay, setMonth, setYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatInTimeZone } from "date-fns-tz";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -77,22 +78,19 @@ export function TendenciaVendasChart({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(selectedDate.getFullYear());
 
-  const { startDate, endDate } = useMemo(() => {
-    if (viewMode === "day") {
-      return {
-        startDate: startOfDay(selectedDate),
-        endDate: endOfDay(selectedDate)
-      };
-    } else {
-      return {
-        startDate: startOfMonth(selectedDate),
-        endDate: endOfMonth(selectedDate)
-      };
-    }
+  const { startDate, endDate, startDateISO, endDateISO } = useMemo(() => {
+    const start = viewMode === "day" ? startOfDay(selectedDate) : startOfMonth(selectedDate);
+    const end = viewMode === "day" ? endOfDay(selectedDate) : endOfMonth(selectedDate);
+    return {
+      startDate: start,
+      endDate: end,
+      startDateISO: formatInTimeZone(start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX"),
+      endDateISO: formatInTimeZone(end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX")
+    };
   }, [selectedDate, viewMode]);
 
   const { data: vendas = [] } = useQuery({
-    queryKey: ["vendas-tendencia", startDate.toISOString(), endDate.toISOString()],
+    queryKey: ["vendas-tendencia", startDateISO, endDateISO],
     queryFn: async () => {
       // Buscar organization_id do usuário
       const { data: { user } } = await supabase.auth.getUser();
@@ -112,15 +110,15 @@ export function TendenciaVendasChart({
       const pageSize = 1000;
       let hasMore = true;
 
-      console.log(`[TendenciaVendasChart] Buscando vendas de ${startDate.toISOString()} até ${endDate.toISOString()}`);
+      console.log(`[TendenciaVendasChart] Buscando vendas de ${startDateISO} até ${endDateISO}`);
 
       while (hasMore) {
         const { data, error } = await supabase
           .from("vendas_hoje_realtime")
           .select("id, integration_account_id, account_name, order_id, total_amount, date_created, created_at")
           .eq("organization_id", profile.organizacao_id)
-          .gte("date_created", startDate.toISOString())
-          .lte("date_created", endDate.toISOString())
+          .gte("date_created", startDateISO)
+          .lte("date_created", endDateISO)
           .range(offset, offset + pageSize - 1);
 
         if (error) throw error;
