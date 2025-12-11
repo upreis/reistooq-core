@@ -517,7 +517,7 @@ export function TendenciaVendasChart({
                   key={`${account}-${key}`}
                   className={cn(
                     "absolute rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 transition-all duration-150",
-                    isHovered ? "w-4 h-4 ring-2 ring-background" : "w-2 h-2"
+                    isHovered ? "w-4 h-4 ring-2 ring-background opacity-100" : "w-2 h-2 opacity-0"
                   )}
                   style={{ 
                     left: `${xPercent}%`, 
