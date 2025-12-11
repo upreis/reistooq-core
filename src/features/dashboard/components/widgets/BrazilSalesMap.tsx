@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { BRAZIL_STATES_SVG } from "./brazil-states-svg";
 
 interface BrazilSalesMapProps {
@@ -112,10 +112,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         ) : (
           <div className="flex gap-4 h-full">
             {/* Mapa SVG - Esquerda */}
-            <TooltipProvider>
+            <div className="relative w-[320px] flex-shrink-0">
               <svg
                 viewBox="0 0 612 640"
-                className="w-[320px] h-full max-h-[460px] flex-shrink-0"
+                className="w-full h-full max-h-[460px]"
                 preserveAspectRatio="xMidYMid meet"
               >
                 {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
@@ -125,29 +125,32 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                   const isSelected = selectedState === uf;
                   
                   return (
-                    <Tooltip key={uf}>
-                      <TooltipTrigger asChild>
-                        <path
-                          d={path}
-                          fill={getStateColor(vendas, maxVendas)}
-                          stroke={isSelected ? "#000000" : isHovered ? "#000000" : vendas > 0 ? "#000000" : "hsl(var(--primary))"}
-                          strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : vendas > 0 ? 1 : 0.5}
-                          className="cursor-pointer transition-all duration-200"
-                          onMouseEnter={() => setHoveredState(uf)}
-                          onMouseLeave={() => setHoveredState(null)}
-                          onClick={() => setSelectedState(selectedState === uf ? null : uf)}
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs">
-                        <div className="font-semibold">{name} ({uf})</div>
-                        <div>{vendas} vendas</div>
-                        {stateData && <div>{formatCurrency(stateData.valor)}</div>}
-                      </TooltipContent>
-                    </Tooltip>
+                    <path
+                      key={uf}
+                      d={path}
+                      fill={getStateColor(vendas, maxVendas)}
+                      stroke={isSelected ? "#000000" : isHovered ? "#000000" : vendas > 0 ? "#000000" : "hsl(var(--primary))"}
+                      strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : vendas > 0 ? 1 : 0.5}
+                      className="cursor-pointer transition-all duration-200"
+                      onMouseEnter={() => setHoveredState(uf)}
+                      onMouseLeave={() => setHoveredState(null)}
+                      onClick={() => setSelectedState(selectedState === uf ? null : uf)}
+                    />
                   );
                 })}
               </svg>
-            </TooltipProvider>
+              
+              {/* Tooltip customizado */}
+              {hoveredState && (
+                <div className="absolute top-2 left-2 bg-popover border border-border rounded-md px-2 py-1 shadow-md text-xs pointer-events-none z-10">
+                  <div className="font-semibold">{BRAZIL_STATES_SVG[hoveredState]?.name} ({hoveredState})</div>
+                  <div>{getStateData(hoveredState)?.vendas || 0} vendas</div>
+                  {getStateData(hoveredState) && (
+                    <div>{formatCurrency(getStateData(hoveredState)!.valor)}</div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Conteúdo - Direita */}
             <div className="flex-1 flex flex-col min-w-0">
