@@ -98,7 +98,7 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
 
   return (
     <motion.div
-      className="bg-background border border-border rounded-xl p-5 pt-8 hover:bg-accent/10 transition-all flex-shrink-0 relative mt-4"
+      className="bg-background border border-border rounded-xl p-6 hover:bg-accent/10 transition-all flex-shrink-0 relative mt-4"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -110,16 +110,16 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
         </span>
       </div>
 
-      {/* Título e Valor na mesma linha */}
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-xl font-bold text-primary drop-shadow-sm whitespace-nowrap">
+      {/* Conteúdo centralizado */}
+      <div className="flex flex-col items-center justify-center text-center pt-2">
+        <h2 className="text-lg font-semibold text-primary mb-1">
           Vendas de hoje ao vivo
         </h2>
         {isLoading ? (
-          <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
+          <div className="h-10 w-40 bg-foreground/10 rounded animate-pulse" />
         ) : (
           <motion.span
-            className="text-3xl font-bold text-foreground tracking-tight"
+            className="text-4xl font-bold text-foreground tracking-tight"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
