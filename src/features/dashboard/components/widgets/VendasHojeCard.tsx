@@ -36,13 +36,19 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
     return () => clearInterval(interval);
   }, []);
 
+  // Converter datas para ISO strings para usar como dependências estáveis
+  const dateStartISO = dateRange.start.toISOString();
+  const dateEndISO = dateRange.end.toISOString();
+
   // Buscar total de vendas do período selecionado
   useEffect(() => {
+    let isCancelled = false;
+    
     const fetchTotalVendas = async () => {
       setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        if (!user || isCancelled) {
           setIsLoading(false);
           return;
         }
@@ -53,25 +59,18 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
           .eq('id', user.id)
           .single();
 
-        if (!profile?.organizacao_id) {
+        if (!profile?.organizacao_id || isCancelled) {
           setIsLoading(false);
           return;
         }
-
-        console.log('[VendasHojeCard] Buscando vendas:', {
-          dateRange: { start: dateRange.start.toISOString(), end: dateRange.end.toISOString() },
-          selectedAccount,
-          viewMode,
-          organizationId: profile.organizacao_id
-        });
 
         // Buscar vendas do período selecionado
         let query = supabase
           .from('vendas_hoje_realtime')
           .select('total_amount, account_name')
           .eq('organization_id', profile.organizacao_id)
-          .gte('date_created', dateRange.start.toISOString())
-          .lte('date_created', dateRange.end.toISOString());
+          .gte('date_created', dateStartISO)
+          .lte('date_created', dateEndISO);
 
         if (selectedAccount !== "todas") {
           query = query.eq('account_name', selectedAccount);
@@ -79,15 +78,13 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
 
         const { data, error } = await query;
 
-        if (error) {
-          console.error('[VendasHojeCard] Erro na query:', error);
-          throw error;
+        if (error || isCancelled) {
+          if (error) console.error('[VendasHojeCard] Erro na query:', error);
+          return;
         }
 
-        console.log('[VendasHojeCard] Dados do período:', data?.length || 0, 'registros');
-
         const total = (data || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
-        setTotalVendas(total);
+        if (!isCancelled) setTotalVendas(total);
 
         // Buscar vendas do mês atual (apenas se viewMode for "day")
         if (viewMode === "day") {
@@ -107,15 +104,14 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
           if (errorMes) throw errorMes;
 
           const totalMes = (dataMes || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
-          setTotalVendasMes(totalMes);
+          if (!isCancelled) setTotalVendasMes(totalMes);
         } else {
-          // No modo mês, o segundo card não é mostrado, então não precisa buscar
-          setTotalVendasMes(0);
+          if (!isCancelled) setTotalVendasMes(0);
         }
       } catch (error) {
-        console.error('[VendasHojeCard] Erro ao buscar vendas:', error);
+        if (!isCancelled) console.error('[VendasHojeCard] Erro ao buscar vendas:', error);
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) setIsLoading(false);
       }
     };
 
@@ -138,9 +134,10 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
       .subscribe();
 
     return () => {
+      isCancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [selectedAccount, dateRange.start, dateRange.end, viewMode, currentMonthRange]);
+  }, [selectedAccount, dateStartISO, dateEndISO, viewMode, currentMonthRange]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
