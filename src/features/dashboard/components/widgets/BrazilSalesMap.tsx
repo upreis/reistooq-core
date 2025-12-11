@@ -162,38 +162,38 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 </p>
               </div>
 
-              {/* Lista de Top Estados */}
-              <div className="flex-1 space-y-2 overflow-y-auto">
+              {/* Lista de Top Estados - Grid 2 colunas */}
+              <div className="flex-1 overflow-hidden">
                 <p className="text-sm font-semibold text-muted-foreground mb-2">Top Estados</p>
-                {salesByState
-                  .sort((a, b) => b.vendas - a.vendas)
-                  .slice(0, 8)
-                  .map((state, index) => {
-                    const stateName = BRAZIL_STATES_SVG[state.uf]?.name || state.uf;
-                    const isSelected = selectedState === state.uf;
-                    
-                    return (
-                      <div
-                        key={state.uf}
-                        className={`flex items-center justify-between p-2 rounded text-sm cursor-pointer transition-colors ${
-                          isSelected 
-                            ? "bg-primary/20 border border-primary/30" 
-                            : "bg-muted/50 hover:bg-muted"
-                        }`}
-                        onClick={() => setSelectedState(selectedState === state.uf ? null : state.uf)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground font-mono w-5">#{index + 1}</span>
-                          <span className="font-medium">{state.uf}</span>
-                          <span className="text-muted-foreground text-xs truncate">- {stateName}</span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {salesByState
+                    .sort((a, b) => b.vendas - a.vendas)
+                    .slice(0, 10)
+                    .map((state, index) => {
+                      const stateName = BRAZIL_STATES_SVG[state.uf]?.name || state.uf;
+                      const isSelected = selectedState === state.uf;
+                      
+                      return (
+                        <div
+                          key={state.uf}
+                          className={`flex items-center justify-between px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${
+                            isSelected 
+                              ? "bg-primary/20 border border-primary/30" 
+                              : "bg-muted/50 hover:bg-muted"
+                          }`}
+                          onClick={() => setSelectedState(selectedState === state.uf ? null : state.uf)}
+                        >
+                          <div className="flex items-center gap-1 min-w-0">
+                            <span className="text-muted-foreground font-mono text-[10px]">#{index + 1}</span>
+                            <span className="font-medium">{state.uf}</span>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="font-semibold">{state.vendas}</div>
+                          </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="font-semibold">{state.vendas}</div>
-                          <div className="text-xs text-muted-foreground">{formatCurrency(state.valor)}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                </div>
                   
                 {salesByState.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">
