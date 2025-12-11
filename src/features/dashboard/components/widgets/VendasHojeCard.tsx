@@ -22,11 +22,11 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Range do mês atual (dia 1 até hoje)
-  const monthRange = {
+  // Range do mês atual (dia 1 até hoje) - usado apenas quando viewMode é "day"
+  const currentMonthRange = React.useMemo(() => ({
     start: startOfMonth(new Date()),
     end: endOfDay(new Date())
-  };
+  }), []);
 
   // Atualizar relógio a cada segundo
   useEffect(() => {
@@ -42,7 +42,10 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
       setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -50,44 +53,67 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
           .eq('id', user.id)
           .single();
 
-        if (!profile?.organizacao_id) return;
+        if (!profile?.organizacao_id) {
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('[VendasHojeCard] Buscando vendas:', {
+          dateRange: { start: dateRange.start.toISOString(), end: dateRange.end.toISOString() },
+          selectedAccount,
+          viewMode,
+          organizationId: profile.organizacao_id
+        });
 
         // Buscar vendas do período selecionado
-        const { data, error } = await supabase
+        let query = supabase
           .from('vendas_hoje_realtime')
           .select('total_amount, account_name')
           .eq('organization_id', profile.organizacao_id)
           .gte('date_created', dateRange.start.toISOString())
           .lte('date_created', dateRange.end.toISOString());
 
-        if (error) throw error;
+        if (selectedAccount !== "todas") {
+          query = query.eq('account_name', selectedAccount);
+        }
 
-        // Buscar vendas do mês atual
-        const { data: dataMes, error: errorMes } = await supabase
-          .from('vendas_hoje_realtime')
-          .select('total_amount, account_name')
-          .eq('organization_id', profile.organizacao_id)
-          .gte('date_created', monthRange.start.toISOString())
-          .lte('date_created', monthRange.end.toISOString());
+        const { data, error } = await query;
 
-        if (errorMes) throw errorMes;
+        if (error) {
+          console.error('[VendasHojeCard] Erro na query:', error);
+          throw error;
+        }
 
-        // Filtrar por conta se não for "todas"
-        const filteredData = selectedAccount === "todas" 
-          ? data || []
-          : (data || []).filter((v: VendaHoje) => v.account_name === selectedAccount);
+        console.log('[VendasHojeCard] Dados do período:', data?.length || 0, 'registros');
 
-        const filteredDataMes = selectedAccount === "todas" 
-          ? dataMes || []
-          : (dataMes || []).filter((v: VendaHoje) => v.account_name === selectedAccount);
-
-        const total = filteredData.reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
-        const totalMes = filteredDataMes.reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
-        
+        const total = (data || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
         setTotalVendas(total);
-        setTotalVendasMes(totalMes);
+
+        // Buscar vendas do mês atual (apenas se viewMode for "day")
+        if (viewMode === "day") {
+          let queryMes = supabase
+            .from('vendas_hoje_realtime')
+            .select('total_amount, account_name')
+            .eq('organization_id', profile.organizacao_id)
+            .gte('date_created', currentMonthRange.start.toISOString())
+            .lte('date_created', currentMonthRange.end.toISOString());
+
+          if (selectedAccount !== "todas") {
+            queryMes = queryMes.eq('account_name', selectedAccount);
+          }
+
+          const { data: dataMes, error: errorMes } = await queryMes;
+
+          if (errorMes) throw errorMes;
+
+          const totalMes = (dataMes || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
+          setTotalVendasMes(totalMes);
+        } else {
+          // No modo mês, o segundo card não é mostrado, então não precisa buscar
+          setTotalVendasMes(0);
+        }
       } catch (error) {
-        console.error('Erro ao buscar vendas:', error);
+        console.error('[VendasHojeCard] Erro ao buscar vendas:', error);
       } finally {
         setIsLoading(false);
       }
@@ -97,7 +123,7 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
 
     // Subscription Realtime para atualizações instantâneas
     const channel = supabase
-      .channel('vendas-hoje-realtime')
+      .channel('vendas-hoje-realtime-card')
       .on(
         'postgres_changes',
         {
@@ -114,7 +140,7 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedAccount, dateRange.start, dateRange.end]);
+  }, [selectedAccount, dateRange.start, dateRange.end, viewMode, currentMonthRange]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -159,10 +185,10 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
         </span>
       </div>
 
-      {/* Dois cards lado a lado */}
+      {/* Conteúdo baseado no viewMode */}
       <div className="flex gap-4 pt-2">
-        {/* Card Vendas do Período Selecionado */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
+        {/* Card Vendas do Período Selecionado - sempre presente */}
+        <div className={`flex flex-col items-center justify-center text-center ${viewMode === "month" ? "flex-1" : "flex-1"}`}>
           <h2 className="text-sm font-semibold text-primary mb-1">
             {getTitle()}
           </h2>
@@ -181,31 +207,33 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
           )}
         </div>
 
-        {/* Divisor vertical */}
-        <div className="w-px bg-border" />
-
-        {/* Card Vendas do Mês */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-            Vendas deste mês
-          </h2>
-          {isLoading ? (
-            <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
-          ) : (
-            <motion.span
-              key={totalVendasMes}
-              className="text-2xl font-bold text-foreground tracking-tight"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            >
-              {formatCurrency(totalVendasMes)}
-            </motion.span>
-          )}
-          <span className="text-xs text-muted-foreground mt-1">
-            {format(monthRange.start, "dd/MM", { locale: ptBR })} - {format(monthRange.end, "dd/MM", { locale: ptBR })}
-          </span>
-        </div>
+        {/* Divisor e Card do Mês Atual - apenas no modo dia */}
+        {viewMode === "day" && (
+          <>
+            <div className="w-px bg-border" />
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <h2 className="text-sm font-semibold text-muted-foreground mb-1">
+                Vendas deste mês
+              </h2>
+              {isLoading ? (
+                <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
+              ) : (
+                <motion.span
+                  key={totalVendasMes}
+                  className="text-2xl font-bold text-foreground tracking-tight"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                >
+                  {formatCurrency(totalVendasMes)}
+                </motion.span>
+              )}
+              <span className="text-xs text-muted-foreground mt-1">
+                {format(currentMonthRange.start, "dd/MM", { locale: ptBR })} - {format(currentMonthRange.end, "dd/MM", { locale: ptBR })}
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </motion.div>
   );
