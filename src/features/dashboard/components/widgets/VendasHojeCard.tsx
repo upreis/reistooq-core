@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { ViewMode } from "./FeaturesBentoGrid";
 
 interface VendaHoje {
@@ -36,9 +37,10 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
     return () => clearInterval(interval);
   }, []);
 
-  // Converter datas para ISO strings para usar como dependências estáveis
-  const dateStartISO = dateRange.start.toISOString();
-  const dateEndISO = dateRange.end.toISOString();
+  // Converter datas para strings com timezone São Paulo (evita problemas de UTC)
+  // Formato: YYYY-MM-DDTHH:mm:ss-03:00
+  const dateStartISO = formatInTimeZone(dateRange.start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX");
+  const dateEndISO = formatInTimeZone(dateRange.end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX");
 
   // Buscar total de vendas do período selecionado
   useEffect(() => {
@@ -87,12 +89,15 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
         if (!isCancelled) setTotalVendas(total);
 
         // Buscar vendas do mês atual (sempre - para comparação)
+        const monthStartISO = formatInTimeZone(currentMonthRange.start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX");
+        const monthEndISO = formatInTimeZone(currentMonthRange.end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX");
+        
         let queryMes = supabase
           .from('vendas_hoje_realtime')
           .select('total_amount, account_name')
           .eq('organization_id', profile.organizacao_id)
-          .gte('date_created', currentMonthRange.start.toISOString())
-          .lte('date_created', currentMonthRange.end.toISOString());
+          .gte('date_created', monthStartISO)
+          .lte('date_created', monthEndISO);
 
         if (selectedAccount !== "todas") {
           queryMes = queryMes.eq('account_name', selectedAccount);
