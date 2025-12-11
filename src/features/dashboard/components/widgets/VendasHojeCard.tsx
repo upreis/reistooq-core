@@ -200,7 +200,7 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
 
   return (
     <motion.div
-      className="bg-background border border-border rounded-xl p-6 hover:bg-accent/10 transition-all flex-shrink-0 relative mt-4"
+      className="bg-background border border-muted-foreground/30 rounded-xl p-6 hover:bg-accent/10 transition-all flex-shrink-0 relative mt-4"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
