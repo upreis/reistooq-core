@@ -27,9 +27,9 @@ export function FeaturesBentoGrid() {
     ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) }
     : { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
 
-  // Fetch available accounts from vendas_hoje_realtime
+  // Fetch ALL available accounts (últimos 60 dias) - independente do período selecionado
   const { data: accounts = [] } = useQuery({
-    queryKey: ["vendas-accounts", dateRange.start.toISOString(), dateRange.end.toISOString()],
+    queryKey: ["vendas-accounts-all"],
     queryFn: async () => {
       // Buscar organization_id do usuário
       const { data: { user } } = await supabase.auth.getUser();
@@ -43,19 +43,22 @@ export function FeaturesBentoGrid() {
 
       if (!profile?.organizacao_id) return [];
 
+      // Buscar contas dos últimos 60 dias (todas disponíveis)
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("account_name")
         .eq("organization_id", profile.organizacao_id)
-        .gte("date_created", dateRange.start.toISOString())
-        .lte("date_created", dateRange.end.toISOString());
+        .gte("date_created", sixtyDaysAgo.toISOString());
 
       if (error) throw error;
       
       const uniqueAccounts = [...new Set((data || []).map(d => d.account_name).filter(Boolean))];
       return uniqueAccounts as string[];
     },
-    refetchInterval: 60000,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   const getAccountColor = (account: string, isActive: boolean) => {
