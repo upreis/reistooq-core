@@ -4,7 +4,10 @@ import { TendenciaVendasChart } from "./TendenciaVendasChart";
 import { QuickActionCards } from "./QuickActionCards";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
+import { startOfDay, endOfDay, startOfMonth, endOfMonth, getYear, getMonth } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+
+const TIMEZONE = 'America/Sao_Paulo';
 
 const ACCOUNT_COLORS: Record<string, string> = {
   "BRCR20240514161447": "border-blue-500 bg-blue-500",
@@ -23,10 +26,22 @@ export function FeaturesBentoGrid() {
   const [viewMode, setViewMode] = useState<ViewMode>("day");
 
   // Calcular range de datas baseado no viewMode - memoizado para evitar re-renders
+  // IMPORTANTE: usar timezone São Paulo para calcular início/fim do mês corretamente
   const dateRange = useMemo(() => {
-    return viewMode === "day" 
-      ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) }
-      : { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
+    // Converter para timezone São Paulo primeiro
+    const zonedDate = toZonedTime(selectedDate, TIMEZONE);
+    
+    if (viewMode === "day") {
+      return { start: startOfDay(zonedDate), end: endOfDay(zonedDate) };
+    }
+    
+    // Para mês, criar datas explícitas no timezone correto
+    const year = getYear(zonedDate);
+    const month = getMonth(zonedDate);
+    const monthStart = new Date(year, month, 1, 0, 0, 0, 0);
+    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    
+    return { start: monthStart, end: monthEnd };
   }, [viewMode, selectedDate.getTime()]);
 
   // Fetch ALL available accounts (últimos 60 dias) - independente do período selecionado
