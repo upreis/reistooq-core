@@ -446,14 +446,14 @@ export function TendenciaVendasChart({
           {/* Grid horizontal */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
             {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="border-t border-border/30 w-full" />
+              <div key={i} className="border-t border-border/40 w-full" />
             ))}
           </div>
           
           {/* Grid vertical */}
           <div className="absolute inset-0 flex justify-between pointer-events-none">
             {xAxisLabels.map((_, i) => (
-              <div key={i} className="border-l border-border/30 h-full" />
+              <div key={i} className="border-l border-border/40 h-full" />
             ))}
           </div>
           
