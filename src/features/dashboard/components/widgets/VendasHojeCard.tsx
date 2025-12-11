@@ -86,28 +86,24 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
         const total = (data || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
         if (!isCancelled) setTotalVendas(total);
 
-        // Buscar vendas do mês atual (apenas se viewMode for "day")
-        if (viewMode === "day") {
-          let queryMes = supabase
-            .from('vendas_hoje_realtime')
-            .select('total_amount, account_name')
-            .eq('organization_id', profile.organizacao_id)
-            .gte('date_created', currentMonthRange.start.toISOString())
-            .lte('date_created', currentMonthRange.end.toISOString());
+        // Buscar vendas do mês atual (sempre - para comparação)
+        let queryMes = supabase
+          .from('vendas_hoje_realtime')
+          .select('total_amount, account_name')
+          .eq('organization_id', profile.organizacao_id)
+          .gte('date_created', currentMonthRange.start.toISOString())
+          .lte('date_created', currentMonthRange.end.toISOString());
 
-          if (selectedAccount !== "todas") {
-            queryMes = queryMes.eq('account_name', selectedAccount);
-          }
-
-          const { data: dataMes, error: errorMes } = await queryMes;
-
-          if (errorMes) throw errorMes;
-
-          const totalMes = (dataMes || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
-          if (!isCancelled) setTotalVendasMes(totalMes);
-        } else {
-          if (!isCancelled) setTotalVendasMes(0);
+        if (selectedAccount !== "todas") {
+          queryMes = queryMes.eq('account_name', selectedAccount);
         }
+
+        const { data: dataMes, error: errorMes } = await queryMes;
+
+        if (errorMes) throw errorMes;
+
+        const totalMes = (dataMes || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
+        if (!isCancelled) setTotalVendasMes(totalMes);
       } catch (error) {
         if (!isCancelled) console.error('[VendasHojeCard] Erro ao buscar vendas:', error);
       } finally {
@@ -137,7 +133,7 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
       isCancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [selectedAccount, dateStartISO, dateEndISO, viewMode, currentMonthRange]);
+  }, [selectedAccount, dateStartISO, dateEndISO, currentMonthRange]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -204,33 +200,29 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
           )}
         </div>
 
-        {/* Divisor e Card do Mês Atual - apenas no modo dia */}
-        {viewMode === "day" && (
-          <>
-            <div className="w-px bg-border" />
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-                Vendas deste mês
-              </h2>
-              {isLoading ? (
-                <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
-              ) : (
-                <motion.span
-                  key={totalVendasMes}
-                  className="text-2xl font-bold text-foreground tracking-tight"
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                >
-                  {formatCurrency(totalVendasMes)}
-                </motion.span>
-              )}
-              <span className="text-xs text-muted-foreground mt-1">
-                {format(currentMonthRange.start, "dd/MM", { locale: ptBR })} - {format(currentMonthRange.end, "dd/MM", { locale: ptBR })}
-              </span>
-            </div>
-          </>
-        )}
+        {/* Divisor e Card do Mês Atual - sempre visível para comparação */}
+        <div className="w-px bg-border" />
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <h2 className="text-sm font-semibold text-muted-foreground mb-1">
+            Vendas deste mês
+          </h2>
+          {isLoading ? (
+            <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
+          ) : (
+            <motion.span
+              key={totalVendasMes}
+              className="text-2xl font-bold text-foreground tracking-tight"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            >
+              {formatCurrency(totalVendasMes)}
+            </motion.span>
+          )}
+          <span className="text-xs text-muted-foreground mt-1">
+            {format(currentMonthRange.start, "dd/MM", { locale: ptBR })} - {format(currentMonthRange.end, "dd/MM", { locale: ptBR })}
+          </span>
+        </div>
       </div>
     </motion.div>
   );
