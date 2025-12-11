@@ -29,6 +29,7 @@ interface VendaHoje {
   item_sku: string;
   synced_at: string;
   shipping_state: string | null;
+  order_data: any; // Para extrair estado do shipping.receiver_address.state
 }
 
 export default function DebugVendasHoje() {
@@ -321,11 +322,19 @@ export default function DebugVendasHoje() {
                     <TableCell>{venda.item_quantity}</TableCell>
                     <TableCell>{venda.buyer_nickname}</TableCell>
                     <TableCell>
-                      {venda.shipping_state ? (
-                        <Badge variant="outline">{venda.shipping_state}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )}
+                      {(() => {
+                        // Extrair estado de order_data como /vendas-com-envio faz
+                        const orderData = venda.order_data;
+                        const stateFromOrderData = orderData?.shipping?.receiver_address?.state?.id 
+                          || orderData?.shipping?.receiver_address?.state?.name;
+                        const state = stateFromOrderData || venda.shipping_state;
+                        
+                        return state ? (
+                          <Badge variant="outline">{state}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-right font-medium text-green-600">
                       R$ {venda.total_amount?.toFixed(2)}
