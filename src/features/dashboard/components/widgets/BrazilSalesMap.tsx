@@ -172,10 +172,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 </p>
               </div>
 
-              {/* Lista de Top Estados */}
+              {/* Lista de Estados */}
               <div className="flex-1 flex flex-col overflow-hidden">
-                <p className="text-sm font-semibold text-muted-foreground mb-2">Top Estados</p>
-                
                 {/* Cabeçalho */}
                 <div className="grid grid-cols-[24px_32px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
                   <span>#</span>
