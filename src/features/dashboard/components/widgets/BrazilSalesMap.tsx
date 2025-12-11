@@ -103,7 +103,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
   const selectedStateData = selectedState ? getStateData(selectedState) : null;
 
   return (
-    <Card className="border-muted-foreground/30 h-full">
+    <Card className="border-muted-foreground/30 h-full flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <MapPin className="h-4 w-4 text-primary" />
@@ -113,19 +113,19 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
           {totalVendas} vendas no período
         </p>
       </CardHeader>
-      <CardContent className="p-3">
+      <CardContent className="p-4 flex-1">
         {isLoading ? (
-          <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
             Carregando mapa...
           </div>
         ) : (
-          <div className="flex gap-3">
-            {/* Mapa SVG */}
+          <div className="flex gap-6 h-full">
+            {/* Mapa SVG - Maior */}
             <TooltipProvider>
               <svg
-                viewBox="50 30 320 390"
-                className="w-full h-[280px]"
-                style={{ maxWidth: "200px" }}
+                viewBox="0 0 612 640"
+                className="flex-1 h-full max-h-[420px]"
+                preserveAspectRatio="xMidYMid meet"
               >
                 {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
                   const stateData = getStateData(uf);
@@ -159,11 +159,11 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
             </TooltipProvider>
 
             {/* Lista de Top Estados */}
-            <div className="flex-1 space-y-1 overflow-y-auto max-h-[280px]">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Top Estados</p>
+            <div className="w-64 space-y-2 overflow-y-auto">
+              <p className="text-sm font-semibold text-muted-foreground mb-3">Top Estados</p>
               {salesByState
                 .sort((a, b) => b.vendas - a.vendas)
-                .slice(0, 8)
+                .slice(0, 10)
                 .map((state, index) => {
                   const stateName = BRAZIL_STATES_SVG[state.uf]?.name || state.uf;
                   const isSelected = selectedState === state.uf;
@@ -171,26 +171,28 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                   return (
                     <div
                       key={state.uf}
-                      className={`flex items-center justify-between p-1.5 rounded text-xs cursor-pointer transition-colors ${
+                      className={`flex items-center justify-between p-2 rounded text-sm cursor-pointer transition-colors ${
                         isSelected 
                           ? "bg-primary/20 border border-primary/30" 
                           : "bg-muted/50 hover:bg-muted"
                       }`}
                       onClick={() => setSelectedState(selectedState === state.uf ? null : state.uf)}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground font-mono w-4">#{index + 1}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground font-mono w-5">#{index + 1}</span>
                         <span className="font-medium">{state.uf}</span>
+                        <span className="text-muted-foreground text-xs">- {stateName}</span>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold">{state.vendas}</div>
+                        <div className="font-semibold">{state.vendas} vendas</div>
+                        <div className="text-xs text-muted-foreground">{formatCurrency(state.valor)}</div>
                       </div>
                     </div>
                   );
                 })}
                 
               {salesByState.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-4">
+                <p className="text-sm text-muted-foreground text-center py-4">
                   Nenhuma venda no período
                 </p>
               )}
