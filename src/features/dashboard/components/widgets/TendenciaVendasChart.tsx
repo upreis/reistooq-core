@@ -595,7 +595,7 @@ export function TendenciaVendasChart({
           {/* Tooltip multi-conta customizado */}
           {tooltip && tooltip.accounts.length > 0 && (
             <div 
-              className="absolute z-50 pointer-events-none bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl py-2 px-3"
+              className="absolute z-50 pointer-events-none bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl py-1.5 px-2"
               style={{
                 left: `${tooltip.xPercent}%`,
                 top: '50%',
@@ -603,19 +603,19 @@ export function TendenciaVendasChart({
               }}
             >
               {/* Label do eixo X destacado */}
-              <div className="text-white font-medium text-sm mb-2 text-center">
+              <div className="text-white font-medium text-xs mb-1.5 text-center whitespace-nowrap">
                 {tooltip.xLabel}
               </div>
               
               {/* Dados de cada conta */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {tooltip.accounts.map((acc, i) => (
-                  <div key={i} className="flex items-center gap-2">
+                  <div key={i} className="flex items-center gap-1.5">
                     <div 
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                      className="w-2 h-2 rounded-full flex-shrink-0" 
                       style={{ backgroundColor: acc.color }}
                     />
-                    <span className="text-zinc-300 text-sm">
+                    <span className="text-zinc-300 text-xs whitespace-nowrap">
                       {formatCurrency(acc.valor)}
                     </span>
                   </div>
