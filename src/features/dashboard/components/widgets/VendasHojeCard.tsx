@@ -111,7 +111,7 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
       </div>
 
       {/* Título e Valor na mesma linha */}
-      <div className="flex items-baseline gap-4">
+      <div className="flex items-baseline justify-between">
         <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm whitespace-nowrap">
           Vendas de hoje ao vivo
         </h2>
