@@ -123,8 +123,8 @@ export function FeaturesBentoGrid() {
 
       {/* Layout: Vendas + Produtos | Gráfico */}
       <div className="flex gap-4">
-        {/* Coluna esquerda: Card de Vendas em cima + Produtos abaixo - 30% da largura */}
-        <div className="flex flex-col gap-3 w-[30%]">
+        {/* Coluna esquerda: Card de Vendas em cima + Produtos abaixo - 35% da largura */}
+        <div className="flex flex-col gap-3 w-[35%]">
           <VendasHojeCard 
             selectedAccount={selectedAccount} 
             dateRange={dateRange}
@@ -135,13 +135,8 @@ export function FeaturesBentoGrid() {
           </div>
         </div>
         
-        {/* Mapa do Brasil - 25% da largura */}
-        <div className="w-[25%]">
-          <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
-        </div>
-        
-        {/* Gráfico de Tendência ao lado - 45% da largura */}
-        <div className="w-[45%]">
+        {/* Gráfico de Tendência ao lado - 65% da largura */}
+        <div className="w-[65%]">
           <TendenciaVendasChart 
             selectedAccount={selectedAccount}
             selectedDate={selectedDate}
@@ -150,6 +145,11 @@ export function FeaturesBentoGrid() {
             setViewMode={setViewMode}
           />
         </div>
+      </div>
+
+      {/* Mapa do Brasil - Seção separada com altura maior */}
+      <div className="h-[500px]">
+        <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
       </div>
     </div>
   );
