@@ -382,7 +382,7 @@ export function TendenciaVendasChart({
   const yLabels = [maxValue, maxValue * 0.75, maxValue * 0.5, maxValue * 0.25, 0];
 
   return (
-    <div className="h-full bg-background border border-border rounded-xl p-3 overflow-hidden">
+    <div className="h-full bg-background border border-muted-foreground/30 rounded-xl p-3 overflow-hidden">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-serif text-sm text-foreground font-medium flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-primary" />

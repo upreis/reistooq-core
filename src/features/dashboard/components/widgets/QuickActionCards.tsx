@@ -171,7 +171,7 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
     <div 
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="bg-background border border-border rounded-xl p-2 h-full flex items-center relative"
+      className="bg-background border border-muted-foreground/30 rounded-xl p-2 h-full flex items-center relative"
     >
       {/* Imagem flutuante ampliada */}
       <div

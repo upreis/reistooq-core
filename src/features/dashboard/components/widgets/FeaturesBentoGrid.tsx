@@ -95,7 +95,7 @@ export function FeaturesBentoGrid() {
   return (
     <div className="space-y-4">
       {/* Barra de Filtros */}
-      <div className="flex gap-2 items-center flex-wrap py-3 px-4 bg-background/50 rounded-lg border border-border">
+      <div className="flex gap-2 items-center flex-wrap py-3 px-4 bg-background/50 rounded-lg border border-muted-foreground/30">
         <span className="text-xs text-muted-foreground font-medium">Filtrar por:</span>
         <button
           onClick={() => setSelectedAccount("todas")}
