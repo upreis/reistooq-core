@@ -114,10 +114,10 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
           topProducts.map((product, index) => (
             <div
               key={product.item_id}
-              className="flex items-center justify-center p-1 bg-muted/20 rounded-lg hover:bg-accent/10 transition-all group flex-1"
+              className="flex flex-col items-center justify-start gap-1 p-1.5 bg-muted/20 rounded-lg hover:bg-accent/10 transition-all group flex-1"
             >
               {/* Imagem do produto */}
-              <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+              <div className="relative w-14 h-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
                 {product.item_thumbnail ? (
                   <img
                     src={product.item_thumbnail}
@@ -126,7 +126,7 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Package className="h-8 w-8 text-muted-foreground" />
+                    <Package className="h-6 w-6 text-muted-foreground" />
                   </div>
                 )}
                 {/* Badge de ranking */}
@@ -138,6 +138,11 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
                   {product.vendas}x
                 </div>
               </div>
+              
+              {/* Nome do produto */}
+              <span className="text-[9px] font-medium text-foreground text-center leading-tight line-clamp-2 w-full px-0.5">
+                {truncateTitle(product.item_title, 30)}
+              </span>
             </div>
           ))
         )}
