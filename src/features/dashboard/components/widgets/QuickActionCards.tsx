@@ -87,70 +87,72 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
   };
 
   return (
-    <div className="flex gap-2">
-      {isLoading ? (
-        // Skeleton loading - 5 cards
-        Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex flex-col items-center gap-1.5 p-2 bg-background border border-border rounded-xl animate-pulse w-[100px]"
-          >
-            <div className="w-14 h-14 bg-muted rounded-lg" />
-            <div className="w-full h-2.5 bg-muted rounded" />
-          </div>
-        ))
-      ) : topProducts.length === 0 ? (
-        // Estado vazio - 5 cards
-        Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex flex-col items-center gap-1.5 p-2 bg-background border border-border rounded-xl w-[100px]"
-          >
-            <div className="p-2 rounded-lg bg-muted/50">
-              <Package className="h-8 w-8 text-muted-foreground" />
+    <div className="bg-background border border-border rounded-xl p-3 h-full flex flex-col">
+      <span className="text-xs font-medium text-muted-foreground mb-2">Mais Vendidos Hoje</span>
+      <div className="flex flex-col gap-2 flex-1 justify-between">
+        {isLoading ? (
+          // Skeleton loading - 5 cards
+          Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 p-1.5 bg-muted/30 rounded-lg animate-pulse"
+            >
+              <div className="w-10 h-10 bg-muted rounded-md flex-shrink-0" />
+              <div className="flex-1 h-3 bg-muted rounded" />
             </div>
-            <span className="text-[10px] text-muted-foreground text-center">
-              Sem vendas
-            </span>
-          </div>
-        ))
-      ) : (
-        // Produtos mais vendidos
-        topProducts.map((product, index) => (
-          <div
-            key={product.item_id}
-            className="flex flex-col items-center gap-1.5 p-2 bg-background border border-border rounded-xl hover:bg-accent/10 transition-all group w-[100px]"
-          >
-            {/* Imagem do produto */}
-            <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-              {product.item_thumbnail ? (
-                <img
-                  src={product.item_thumbnail}
-                  alt={product.item_title || "Produto"}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Package className="h-6 w-6 text-muted-foreground" />
-                </div>
-              )}
-              {/* Badge de ranking */}
-              <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[8px] font-bold px-1 py-0.5 rounded-br-md">
-                #{index + 1}
+          ))
+        ) : topProducts.length === 0 ? (
+          // Estado vazio - 5 cards
+          Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 p-1.5 bg-muted/20 rounded-lg"
+            >
+              <div className="w-10 h-10 rounded-md bg-muted/50 flex items-center justify-center flex-shrink-0">
+                <Package className="h-5 w-5 text-muted-foreground" />
               </div>
+              <span className="text-[10px] text-muted-foreground">Sem vendas</span>
+            </div>
+          ))
+        ) : (
+          // Produtos mais vendidos - layout vertical
+          topProducts.map((product, index) => (
+            <div
+              key={product.item_id}
+              className="flex items-center gap-2 p-1.5 bg-muted/20 rounded-lg hover:bg-accent/10 transition-all group"
+            >
+              {/* Imagem do produto */}
+              <div className="relative w-10 h-10 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                {product.item_thumbnail ? (
+                  <img
+                    src={product.item_thumbnail}
+                    alt={product.item_title || "Produto"}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
+                {/* Badge de ranking */}
+                <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[7px] font-bold px-0.5 rounded-br">
+                  #{index + 1}
+                </div>
+              </div>
+              
+              {/* Nome do produto */}
+              <span className="text-[10px] font-medium text-foreground leading-tight line-clamp-2 flex-1">
+                {truncateTitle(product.item_title, 30)}
+              </span>
+              
               {/* Badge de vendas */}
-              <div className="absolute bottom-0 right-0 bg-green-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-tl-md">
+              <div className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex-shrink-0">
                 {product.vendas}x
               </div>
             </div>
-            
-            {/* Nome do produto */}
-            <span className="text-[9px] font-medium text-foreground text-center leading-tight line-clamp-2 w-full">
-              {truncateTitle(product.item_title, 25)}
-            </span>
-          </div>
-        ))
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }
