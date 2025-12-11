@@ -446,7 +446,7 @@ export function TendenciaVendasChart({
           {/* Grid horizontal */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
             {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="border-t border-border/30 w-full" />
+              <div key={i} className="border-t border-border/50 w-full" />
             ))}
           </div>
           
