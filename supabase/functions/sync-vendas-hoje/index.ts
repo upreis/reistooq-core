@@ -255,7 +255,7 @@ async function fetchMLOrders(
   dateTo: string,
   cid: string
 ): Promise<any> {
-const MAX_ORDERS = 10000; // Limite aumentado para cobrir contas com alto volume
+const MAX_ORDERS = 25000; // Limite aumentado para cobrir contas com alto volume (15k+ em 2 meses)
   const PAGE_SIZE = 50;
   
   // Buscar TODOS os status de pedidos (paid, shipped, delivered são vendas válidas)
