@@ -162,30 +162,40 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 </p>
               </div>
 
-              {/* Lista de Top Estados - Grid 2 colunas */}
+              {/* Lista de Top Estados */}
               <div className="flex-1 overflow-hidden">
                 <p className="text-sm font-semibold text-muted-foreground mb-2">Top Estados</p>
-                <div className="grid grid-cols-2 gap-1.5">
+                
+                {/* Cabeçalho */}
+                <div className="grid grid-cols-[24px_32px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
+                  <span>#</span>
+                  <span>UF</span>
+                  <span>Qtd</span>
+                  <span>Valor</span>
+                </div>
+                
+                {/* Lista */}
+                <div className="space-y-1">
                   {salesByState
                     .sort((a, b) => b.vendas - a.vendas)
-                    .slice(0, 10)
+                    .slice(0, 8)
                     .map((state, index) => {
-                      const stateName = BRAZIL_STATES_SVG[state.uf]?.name || state.uf;
                       const isSelected = selectedState === state.uf;
                       
                       return (
                         <div
                           key={state.uf}
-                          className={`flex items-center gap-2 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                          className={`grid grid-cols-[24px_32px_40px_1fr] gap-1 items-center px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
                             isSelected 
                               ? "bg-primary/20 border border-primary/30" 
                               : "bg-muted/50 hover:bg-muted"
                           }`}
                           onClick={() => setSelectedState(selectedState === state.uf ? null : state.uf)}
                         >
-                          <span className="text-muted-foreground font-mono text-[10px]">#{index + 1}</span>
+                          <span className="text-muted-foreground font-mono text-[10px]">{index + 1}</span>
                           <span className="font-medium">{state.uf}</span>
                           <span className="font-semibold">{state.vendas}</span>
+                          <span className="text-muted-foreground truncate">{formatCurrency(state.valor)}</span>
                         </div>
                       );
                     })}
