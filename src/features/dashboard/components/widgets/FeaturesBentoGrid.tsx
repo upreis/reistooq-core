@@ -105,16 +105,18 @@ export function FeaturesBentoGrid() {
         ))}
       </div>
 
-      {/* Linha 1: Card de Vendas + Gráfico */}
+      {/* Coluna: Card de Vendas + Produtos Mais Vendidos abaixo */}
       <div className="flex gap-4">
-        <VendasHojeCard selectedAccount={selectedAccount} />
+        <div className="flex flex-col gap-3">
+          <VendasHojeCard selectedAccount={selectedAccount} />
+          <QuickActionCards selectedAccount={selectedAccount} />
+        </div>
+        
+        {/* Gráfico de Tendência ao lado */}
         <div className="flex-1">
           <TendenciaVendasChart selectedAccount={selectedAccount} />
         </div>
       </div>
-
-      {/* Linha 2: Produtos Mais Vendidos - largura total */}
-      <QuickActionCards selectedAccount={selectedAccount} />
     </div>
   );
 }

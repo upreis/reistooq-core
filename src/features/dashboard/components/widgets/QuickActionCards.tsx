@@ -87,16 +87,16 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
   };
 
   return (
-    <div className="flex gap-3 w-full">
+    <div className="flex gap-2">
       {isLoading ? (
         // Skeleton loading - 5 cards
         Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex-1 flex flex-col items-center gap-2 p-3 bg-background border border-border rounded-xl animate-pulse min-w-0"
+            className="flex flex-col items-center gap-1.5 p-2 bg-background border border-border rounded-xl animate-pulse w-[100px]"
           >
-            <div className="w-16 h-16 bg-muted rounded-lg" />
-            <div className="w-full h-3 bg-muted rounded" />
+            <div className="w-14 h-14 bg-muted rounded-lg" />
+            <div className="w-full h-2.5 bg-muted rounded" />
           </div>
         ))
       ) : topProducts.length === 0 ? (
@@ -104,12 +104,12 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
         Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex-1 flex flex-col items-center gap-2 p-3 bg-background border border-border rounded-xl min-w-0"
+            className="flex flex-col items-center gap-1.5 p-2 bg-background border border-border rounded-xl w-[100px]"
           >
-            <div className="p-3 rounded-lg bg-muted/50">
+            <div className="p-2 rounded-lg bg-muted/50">
               <Package className="h-8 w-8 text-muted-foreground" />
             </div>
-            <span className="text-xs text-muted-foreground text-center">
+            <span className="text-[10px] text-muted-foreground text-center">
               Sem vendas
             </span>
           </div>
@@ -119,10 +119,10 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
         topProducts.map((product, index) => (
           <div
             key={product.item_id}
-            className="flex-1 flex flex-col items-center gap-2 p-3 bg-background border border-border rounded-xl hover:bg-accent/10 transition-all group min-w-0"
+            className="flex flex-col items-center gap-1.5 p-2 bg-background border border-border rounded-xl hover:bg-accent/10 transition-all group w-[100px]"
           >
             {/* Imagem do produto */}
-            <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+            <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
               {product.item_thumbnail ? (
                 <img
                   src={product.item_thumbnail}
@@ -135,18 +135,18 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
                 </div>
               )}
               {/* Badge de ranking */}
-              <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-br-md">
+              <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[8px] font-bold px-1 py-0.5 rounded-br-md">
                 #{index + 1}
               </div>
               {/* Badge de vendas */}
-              <div className="absolute bottom-0 right-0 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-tl-md">
+              <div className="absolute bottom-0 right-0 bg-green-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-tl-md">
                 {product.vendas}x
               </div>
             </div>
             
             {/* Nome do produto */}
-            <span className="text-[10px] font-medium text-foreground text-center leading-tight line-clamp-2 w-full">
-              {truncateTitle(product.item_title, 30)}
+            <span className="text-[9px] font-medium text-foreground text-center leading-tight line-clamp-2 w-full">
+              {truncateTitle(product.item_title, 25)}
             </span>
           </div>
         ))
