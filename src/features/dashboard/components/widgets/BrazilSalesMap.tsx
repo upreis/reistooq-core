@@ -3,6 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { formatInTimeZone } from "date-fns-tz";
+
+const TIMEZONE = 'America/Sao_Paulo';
 
 import { BRAZIL_STATES_SVG } from "./brazil-states-svg";
 
@@ -31,9 +34,13 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
   const [hoveredState, setHoveredState] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
 
+  // Formatar datas com timezone correto
+  const dateStartISO = formatInTimeZone(dateRange.start, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ssXXX");
+  const dateEndISO = formatInTimeZone(dateRange.end, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ssXXX");
+
   // Buscar dados de vendas por estado
   const { data: salesByState = [], isLoading } = useQuery({
-    queryKey: ["vendas-por-estado", selectedAccount, dateRange.start.toISOString(), dateRange.end.toISOString()],
+    queryKey: ["vendas-por-estado", selectedAccount, dateStartISO, dateEndISO],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -51,8 +58,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         .from("vendas_hoje_realtime")
         .select("order_id, total_amount, shipping_state, account_name")
         .eq("organization_id", profile.organizacao_id)
-        .gte("date_created", dateRange.start.toISOString())
-        .lte("date_created", dateRange.end.toISOString());
+        .gte("date_created", dateStartISO)
+        .lte("date_created", dateEndISO);
 
       if (selectedAccount !== "todas") {
         query = query.eq("account_name", selectedAccount);
