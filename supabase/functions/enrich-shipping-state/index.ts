@@ -69,18 +69,10 @@ serve(async (req) => {
         if (stateId) {
           states[orderId] = stateId;
           
-          // Atualizar no banco de dados
+          // Atualizar no banco de dados - usando a nova coluna shipping_state
           await supabase
             .from("vendas_hoje_realtime")
-            .update({ 
-              order_data: supabase.sql`
-                jsonb_set(
-                  COALESCE(order_data, '{}'::jsonb), 
-                  '{shipping,receiver_address,state}', 
-                  '{"id": "${stateId}"}'::jsonb
-                )
-              `
-            })
+            .update({ shipping_state: stateId })
             .eq("order_id", orderId);
         }
       } catch (err) {
