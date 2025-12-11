@@ -77,11 +77,15 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
     [dateRange.end]
   );
 
-  const { data: topProducts = [], isLoading } = useQuery({
+  // Estado para armazenar thumbnails enriquecidos
+  const [enrichedThumbnails, setEnrichedThumbnails] = useState<Record<string, string>>({});
+  const enrichingRef = useRef<Set<string>>(new Set());
+
+  const { data: topProducts = [], isLoading, refetch } = useQuery({
     queryKey: ["top-products-periodo", selectedAccount, dateStartISO, dateEndISO],
     queryFn: async () => {
       // Buscar TODOS os registros com paginação para evitar limite de 1000
-      const allData: Array<{ item_id: string; item_thumbnail: string | null; item_title: string | null; account_name: string | null; total_amount: number | null }> = [];
+      const allData: Array<{ item_id: string; item_thumbnail: string | null; item_title: string | null; account_name: string | null; total_amount: number | null; integration_account_id: string | null }> = [];
       let offset = 0;
       const pageSize = 1000;
       let hasMore = true;
@@ -89,7 +93,7 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
       while (hasMore) {
         let query = supabase
           .from("vendas_hoje_realtime")
-          .select("item_id, item_thumbnail, item_title, account_name, total_amount")
+          .select("item_id, item_thumbnail, item_title, account_name, total_amount, integration_account_id")
           .gte("date_created", dateStartISO)
           .lte("date_created", dateEndISO)
           .range(offset, offset + pageSize - 1);
@@ -112,20 +116,25 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
       }
 
       // Agrupar por item_id e contar vendas + somar valor
-      const productCounts = new Map<string, TopProduct>();
+      const productCounts = new Map<string, TopProduct & { integration_account_id: string | null }>();
       
       allData.forEach((item) => {
         const existing = productCounts.get(item.item_id);
         if (existing) {
           existing.vendas += 1;
           existing.valorTotal += item.total_amount || 0;
+          // Manter o primeiro thumbnail encontrado se existir
+          if (!existing.item_thumbnail && item.item_thumbnail) {
+            existing.item_thumbnail = item.item_thumbnail;
+          }
         } else {
           productCounts.set(item.item_id, {
             item_id: item.item_id,
             item_thumbnail: item.item_thumbnail,
             item_title: item.item_title,
             vendas: 1,
-            valorTotal: item.total_amount || 0
+            valorTotal: item.total_amount || 0,
+            integration_account_id: item.integration_account_id
           });
         }
       });
@@ -137,6 +146,52 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
     },
     refetchInterval: 60000,
   });
+
+  // Enriquecer thumbnails faltantes
+  useEffect(() => {
+    const enrichMissingThumbnails = async () => {
+      const itemsWithoutThumbnail = topProducts.filter(
+        (p) => !p.item_thumbnail && !enrichedThumbnails[p.item_id] && !enrichingRef.current.has(p.item_id)
+      );
+
+      if (itemsWithoutThumbnail.length === 0) return;
+
+      // Agrupar por integration_account_id
+      const byAccount = new Map<string, string[]>();
+      itemsWithoutThumbnail.forEach((item) => {
+        const accountId = (item as any).integration_account_id;
+        if (accountId) {
+          const existing = byAccount.get(accountId) || [];
+          existing.push(item.item_id);
+          byAccount.set(accountId, existing);
+          enrichingRef.current.add(item.item_id);
+        }
+      });
+
+      // Chamar Edge Function para cada conta
+      for (const [accountId, itemIds] of byAccount) {
+        try {
+          const { data, error } = await supabase.functions.invoke('enrich-thumbnails', {
+            body: { item_ids: itemIds, integration_account_id: accountId }
+          });
+
+          if (!error && data?.thumbnails) {
+            setEnrichedThumbnails((prev) => ({ ...prev, ...data.thumbnails }));
+            // Refetch para atualizar os dados do banco
+            setTimeout(() => refetch(), 1000);
+          }
+        } catch (err) {
+          console.error('Error enriching thumbnails:', err);
+        } finally {
+          itemIds.forEach((id) => enrichingRef.current.delete(id));
+        }
+      }
+    };
+
+    if (topProducts.length > 0) {
+      enrichMissingThumbnails();
+    }
+  }, [topProducts, enrichedThumbnails, refetch]);
 
   // Truncar título do produto
   const truncateTitle = (title: string | null, maxLength: number = 40) => {
@@ -155,11 +210,15 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
   };
 
   // Converter thumbnail para versão de alta qualidade do ML
-  const getHighQualityImage = (thumbnailUrl: string | null) => {
-    if (!thumbnailUrl) return "/placeholder.svg";
+  const getHighQualityImage = (thumbnailUrl: string | null, itemId?: string) => {
+    // Primeiro verifica se temos um thumbnail enriquecido
+    const enrichedUrl = itemId ? enrichedThumbnails[itemId] : null;
+    const url = enrichedUrl || thumbnailUrl;
+    
+    if (!url) return "/placeholder.svg";
     // ML thumbnails podem ter sufixos como -I.jpg, -O.jpg, -F.webp
     // Substituir para pegar versão maior (-O ou sem sufixo de tamanho)
-    return thumbnailUrl
+    return url
       .replace(/-I\.jpg/g, '-O.jpg')
       .replace(/-I\.webp/g, '-O.webp')
       .replace(/-F\.jpg/g, '-O.jpg')
@@ -189,7 +248,7 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
           {topProducts.map((product, index) => (
             <img
               key={product.item_id}
-              src={getHighQualityImage(product.item_thumbnail)}
+              src={getHighQualityImage(product.item_thumbnail, product.item_id)}
               alt={product.item_title || "Produto"}
               className="absolute inset-0 w-full h-full object-contain bg-white transition-all duration-500 ease-out"
               style={{
@@ -235,9 +294,9 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
             >
               {/* Imagem do produto */}
               <div className="relative w-14 h-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                {product.item_thumbnail ? (
+                {(product.item_thumbnail || enrichedThumbnails[product.item_id]) ? (
                   <img
-                    src={product.item_thumbnail}
+                    src={getHighQualityImage(product.item_thumbnail, product.item_id)}
                     alt={product.item_title || "Produto"}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                   />
