@@ -1,14 +1,37 @@
 /**
  * 🔴 SYNC VENDAS HOJE - Edge Function
  * 
- * PADRÃO DE SINCRONIZAÇÃO:
- * - CRON (cada 5 min): Busca últimos 7 dias para capturar mudanças de status (cancelamentos, estornos)
- * - OAuth Callback: Busca últimos 60 dias para backfill inicial
- * - Dados mantidos por 6 meses, depois excluídos automaticamente
+ * ══════════════════════════════════════════════════════════════════════════════
+ * PADRÃO DE SINCRONIZAÇÃO OTIMIZADO (v2.0)
+ * ══════════════════════════════════════════════════════════════════════════════
  * 
- * ✅ Padrão idêntico a get-vendas-comenvio (tokens via integration_secrets)
- * ✅ Paginação completa para buscar todas as vendas
- * ✅ UPSERT para não duplicar e atualizar status
+ * 📅 CRON (cada 5 min):
+ *    - Busca: Últimos 7 DIAS (rolling window)
+ *    - Motivo: Captura mudanças de status (cancelamentos, estornos, devoluções)
+ *    - Frequência ideal para detectar alterações sem sobrecarregar API
+ * 
+ * 🔐 OAuth Callback (conta nova):
+ *    - Busca: Últimos 60 DIAS (backfill inicial único)
+ *    - Motivo: Popular histórico completo quando conta é autorizada
+ *    - Executado via EdgeRuntime.waitUntil() em background
+ * 
+ * 🗑️ Cleanup Diário (03:00 UTC):
+ *    - Remove: Dados com mais de 180 dias (6 meses)
+ *    - Edge Function: cleanup-vendas-antigas
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════
+ * PROTEÇÃO CONTRA DUPLICAÇÃO
+ * ══════════════════════════════════════════════════════════════════════════════
+ * - UPSERT com onConflict: 'organization_id,order_id'
+ * - Mesma venda nunca é duplicada, apenas atualizada
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════
+ * USO DE API/EGRESS
+ * ══════════════════════════════════════════════════════════════════════════════
+ * - CRON 7 dias: ~90% menos dados que 60 dias = economia significativa
+ * - Backfill 60 dias: Executado apenas 1x por conta
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
@@ -87,9 +110,11 @@ Deno.serve(async (req) => {
 
     console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${accounts.length} contas encontradas`);
 
-    // 2. Definir período: últimos 60 dias por padrão para garantir histórico completo
-    // Use days_back para customizar se necessário
-    const daysBack = params.days_back || 60;
+    // 2. Definir período: 
+    // - CRON padrão: 7 dias (rolling window para capturar mudanças de status)
+    // - OAuth backfill: 60 dias (passado como parâmetro days_back: 60)
+    const CRON_DEFAULT_DAYS = 7;
+    const daysBack = params.days_back || CRON_DEFAULT_DAYS;
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - daysBack);
     dateFrom.setHours(0, 0, 0, 0);
