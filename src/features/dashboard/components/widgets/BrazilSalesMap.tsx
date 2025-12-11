@@ -176,20 +176,16 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                       return (
                         <div
                           key={state.uf}
-                          className={`flex items-center justify-between px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${
+                          className={`flex items-center gap-2 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
                             isSelected 
                               ? "bg-primary/20 border border-primary/30" 
                               : "bg-muted/50 hover:bg-muted"
                           }`}
                           onClick={() => setSelectedState(selectedState === state.uf ? null : state.uf)}
                         >
-                          <div className="flex items-center gap-1 min-w-0">
-                            <span className="text-muted-foreground font-mono text-[10px]">#{index + 1}</span>
-                            <span className="font-medium">{state.uf}</span>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="font-semibold">{state.vendas}</div>
-                          </div>
+                          <span className="text-muted-foreground font-mono text-[10px]">#{index + 1}</span>
+                          <span className="font-medium">{state.uf}</span>
+                          <span className="font-semibold">{state.vendas}</span>
                         </div>
                       );
                     })}
