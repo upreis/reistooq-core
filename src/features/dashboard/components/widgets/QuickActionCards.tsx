@@ -80,25 +80,41 @@ export function QuickActionCards({ selectedAccount, dateRange }: QuickActionCard
   const { data: topProducts = [], isLoading } = useQuery({
     queryKey: ["top-products-periodo", selectedAccount, dateStartISO, dateEndISO],
     queryFn: async () => {
-      
-      let query = supabase
-        .from("vendas_hoje_realtime")
-        .select("item_id, item_thumbnail, item_title, account_name, total_amount")
-        .gte("date_created", dateStartISO)
-        .lte("date_created", dateEndISO);
+      // Buscar TODOS os registros com paginação para evitar limite de 1000
+      const allData: Array<{ item_id: string; item_thumbnail: string | null; item_title: string | null; account_name: string | null; total_amount: number | null }> = [];
+      let offset = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-      if (selectedAccount !== "todas") {
-        query = query.eq("account_name", selectedAccount);
+      while (hasMore) {
+        let query = supabase
+          .from("vendas_hoje_realtime")
+          .select("item_id, item_thumbnail, item_title, account_name, total_amount")
+          .gte("date_created", dateStartISO)
+          .lte("date_created", dateEndISO)
+          .range(offset, offset + pageSize - 1);
+
+        if (selectedAccount !== "todas") {
+          query = query.eq("account_name", selectedAccount);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allData.push(...data);
+          offset += pageSize;
+          hasMore = data.length === pageSize;
+        } else {
+          hasMore = false;
+        }
       }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
 
       // Agrupar por item_id e contar vendas + somar valor
       const productCounts = new Map<string, TopProduct>();
       
-      (data || []).forEach((item) => {
+      allData.forEach((item) => {
         const existing = productCounts.get(item.item_id);
         if (existing) {
           existing.vendas += 1;
