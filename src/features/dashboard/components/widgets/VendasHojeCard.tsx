@@ -42,7 +42,8 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
   const dateStartISO = formatInTimeZone(dateRange.start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX");
   const dateEndISO = formatInTimeZone(dateRange.end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX");
 
-  // Buscar total de vendas do período selecionado
+  // Buscar total de vendas do período selecionado usando agregação no servidor
+  // IMPORTANTE: Supabase tem limite de 1000 rows, então usamos múltiplas páginas ou COUNT
   useEffect(() => {
     let isCancelled = false;
     
@@ -66,48 +67,76 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
           return;
         }
 
-        // Buscar vendas do período selecionado
-        let query = supabase
-          .from('vendas_hoje_realtime')
-          .select('total_amount, account_name')
-          .eq('organization_id', profile.organizacao_id)
-          .gte('date_created', dateStartISO)
-          .lte('date_created', dateEndISO);
+        // Buscar vendas do período selecionado - usando paginação para evitar limite de 1000
+        let total = 0;
+        let offset = 0;
+        const pageSize = 1000;
+        let hasMore = true;
 
-        if (selectedAccount !== "todas") {
-          query = query.eq('account_name', selectedAccount);
+        while (hasMore && !isCancelled) {
+          let query = supabase
+            .from('vendas_hoje_realtime')
+            .select('total_amount')
+            .eq('organization_id', profile.organizacao_id)
+            .gte('date_created', dateStartISO)
+            .lte('date_created', dateEndISO)
+            .range(offset, offset + pageSize - 1);
+
+          if (selectedAccount !== "todas") {
+            query = query.eq('account_name', selectedAccount);
+          }
+
+          const { data, error } = await query;
+
+          if (error || isCancelled) {
+            if (error) console.error('[VendasHojeCard] Erro na query:', error);
+            break;
+          }
+
+          const pageTotal = (data || []).reduce((acc, v) => acc + (v.total_amount || 0), 0);
+          total += pageTotal;
+
+          hasMore = (data?.length || 0) === pageSize;
+          offset += pageSize;
         }
 
-        const { data, error } = await query;
-
-        if (error || isCancelled) {
-          if (error) console.error('[VendasHojeCard] Erro na query:', error);
-          return;
-        }
-
-        const total = (data || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
         if (!isCancelled) setTotalVendas(total);
 
-        // Buscar vendas do mês atual (sempre - para comparação)
+        // Buscar vendas do mês atual (sempre - para comparação) - também com paginação
         const monthStartISO = formatInTimeZone(currentMonthRange.start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX");
         const monthEndISO = formatInTimeZone(currentMonthRange.end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX");
         
-        let queryMes = supabase
-          .from('vendas_hoje_realtime')
-          .select('total_amount, account_name')
-          .eq('organization_id', profile.organizacao_id)
-          .gte('date_created', monthStartISO)
-          .lte('date_created', monthEndISO);
+        let totalMes = 0;
+        offset = 0;
+        hasMore = true;
 
-        if (selectedAccount !== "todas") {
-          queryMes = queryMes.eq('account_name', selectedAccount);
+        while (hasMore && !isCancelled) {
+          let queryMes = supabase
+            .from('vendas_hoje_realtime')
+            .select('total_amount')
+            .eq('organization_id', profile.organizacao_id)
+            .gte('date_created', monthStartISO)
+            .lte('date_created', monthEndISO)
+            .range(offset, offset + pageSize - 1);
+
+          if (selectedAccount !== "todas") {
+            queryMes = queryMes.eq('account_name', selectedAccount);
+          }
+
+          const { data: dataMes, error: errorMes } = await queryMes;
+
+          if (errorMes || isCancelled) {
+            if (errorMes) console.error('[VendasHojeCard] Erro na query mês:', errorMes);
+            break;
+          }
+
+          const pageTotalMes = (dataMes || []).reduce((acc, v) => acc + (v.total_amount || 0), 0);
+          totalMes += pageTotalMes;
+
+          hasMore = (dataMes?.length || 0) === pageSize;
+          offset += pageSize;
         }
 
-        const { data: dataMes, error: errorMes } = await queryMes;
-
-        if (errorMes) throw errorMes;
-
-        const totalMes = (dataMes || []).reduce((acc: number, v: VendaHoje) => acc + (v.total_amount || 0), 0);
         if (!isCancelled) setTotalVendasMes(totalMes);
       } catch (error) {
         if (!isCancelled) console.error('[VendasHojeCard] Erro ao buscar vendas:', error);
