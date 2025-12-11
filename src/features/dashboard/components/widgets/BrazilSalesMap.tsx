@@ -207,26 +207,6 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                   </p>
                 )}
               </div>
-              
-              {/* Detalhes do estado selecionado */}
-              {selectedStateData && (
-                <div className="mt-3 pt-3 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        {BRAZIL_STATES_SVG[selectedState!]?.name || selectedState}
-                      </p>
-                      <p className="text-lg font-bold">{selectedStateData.vendas} vendas</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Faturamento</p>
-                      <p className="text-sm font-semibold text-primary">
-                        {formatCurrency(selectedStateData.valor)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
