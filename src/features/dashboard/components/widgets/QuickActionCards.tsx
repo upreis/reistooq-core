@@ -149,6 +149,19 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
     }).format(value);
   };
 
+  // Converter thumbnail para versão de alta qualidade do ML
+  const getHighQualityImage = (thumbnailUrl: string | null) => {
+    if (!thumbnailUrl) return "/placeholder.svg";
+    // ML thumbnails podem ter sufixos como -I.jpg, -O.jpg, -F.webp
+    // Substituir para pegar versão maior (-O ou sem sufixo de tamanho)
+    return thumbnailUrl
+      .replace(/-I\.jpg/g, '-O.jpg')
+      .replace(/-I\.webp/g, '-O.webp')
+      .replace(/-F\.jpg/g, '-O.jpg')
+      .replace(/-F\.webp/g, '-O.webp')
+      .replace(/http:\/\//g, 'https://');
+  };
+
   return (
     <div 
       ref={containerRef}
@@ -167,13 +180,13 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
           transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), scale 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
-        <div className="relative w-[200px] h-[200px] bg-secondary rounded-xl overflow-hidden">
+        <div className="relative w-[280px] h-[280px] bg-secondary rounded-xl overflow-hidden">
           {topProducts.map((product, index) => (
             <img
               key={product.item_id}
-              src={product.item_thumbnail || "/placeholder.svg"}
+              src={getHighQualityImage(product.item_thumbnail)}
               alt={product.item_title || "Produto"}
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out"
+              className="absolute inset-0 w-full h-full object-contain bg-white transition-all duration-500 ease-out"
               style={{
                 opacity: hoveredIndex === index ? 1 : 0,
                 scale: hoveredIndex === index ? 1 : 1.1,
@@ -181,7 +194,7 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
               }}
             />
           ))}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent" />
         </div>
       </div>
 
