@@ -4,6 +4,7 @@ import { TendenciaVendasChart } from "./TendenciaVendasChart";
 import { QuickActionCards } from "./QuickActionCards";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
 
 const ACCOUNT_COLORS: Record<string, string> = {
   "BRCR20240514161447": "border-blue-500 bg-blue-500",
@@ -14,46 +15,27 @@ const ACCOUNT_COLORS: Record<string, string> = {
   "LUTHORSHOPLTDA": "border-cyan-500 bg-cyan-500",
 };
 
-// Helper para obter início e fim do dia em São Paulo (UTC-3)
-const getHojeRangeSaoPaulo = () => {
-  const now = new Date();
-  // São Paulo é UTC-3
-  const offsetHours = 3;
-  
-  // Início do dia em São Paulo (00:00 SP = 03:00 UTC)
-  const startOfDaySP = new Date(now);
-  startOfDaySP.setUTCHours(offsetHours, 0, 0, 0);
-  
-  // Se a hora atual UTC for antes das 03:00, estamos ainda no dia anterior em SP
-  if (now.getUTCHours() < offsetHours) {
-    startOfDaySP.setUTCDate(startOfDaySP.getUTCDate() - 1);
-  }
-  
-  // Fim do dia em São Paulo (23:59:59 SP = 02:59:59 UTC do dia seguinte)
-  const endOfDaySP = new Date(startOfDaySP);
-  endOfDaySP.setUTCDate(endOfDaySP.getUTCDate() + 1);
-  endOfDaySP.setUTCMilliseconds(-1);
-  
-  return {
-    start: startOfDaySP.toISOString(),
-    end: endOfDaySP.toISOString()
-  };
-};
+export type ViewMode = "day" | "month";
 
 export function FeaturesBentoGrid() {
   const [selectedAccount, setSelectedAccount] = useState<string>("todas");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>("day");
+
+  // Calcular range de datas baseado no viewMode
+  const dateRange = viewMode === "day" 
+    ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) }
+    : { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
 
   // Fetch available accounts from vendas_hoje_realtime
   const { data: accounts = [] } = useQuery({
-    queryKey: ["vendas-hoje-accounts"],
+    queryKey: ["vendas-accounts", dateRange.start.toISOString(), dateRange.end.toISOString()],
     queryFn: async () => {
-      const { start, end } = getHojeRangeSaoPaulo();
-      
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("account_name")
-        .gte("date_created", start)
-        .lte("date_created", end);
+        .gte("date_created", dateRange.start.toISOString())
+        .lte("date_created", dateRange.end.toISOString());
 
       if (error) throw error;
       
@@ -109,7 +91,11 @@ export function FeaturesBentoGrid() {
       <div className="flex gap-4">
         {/* Coluna esquerda: Card de Vendas em cima + Produtos abaixo - 40% da largura */}
         <div className="flex flex-col gap-3 w-[40%]">
-          <VendasHojeCard selectedAccount={selectedAccount} />
+          <VendasHojeCard 
+            selectedAccount={selectedAccount} 
+            dateRange={dateRange}
+            viewMode={viewMode}
+          />
           <div className="flex-1">
             <QuickActionCards selectedAccount={selectedAccount} />
           </div>
@@ -117,7 +103,13 @@ export function FeaturesBentoGrid() {
         
         {/* Gráfico de Tendência ao lado - 60% da largura */}
         <div className="w-[60%]">
-          <TendenciaVendasChart selectedAccount={selectedAccount} />
+          <TendenciaVendasChart 
+            selectedAccount={selectedAccount}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+          />
         </div>
       </div>
     </div>
