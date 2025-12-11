@@ -28,11 +28,14 @@ export function FeaturesBentoGrid() {
   const { data: accounts = [] } = useQuery({
     queryKey: ["vendas-hoje-accounts"],
     queryFn: async () => {
-      const hoje = getHojeSaoPaulo();
+      // Buscar últimas 24h para garantir que pegamos todas as vendas de hoje
+      const ontem = new Date();
+      ontem.setDate(ontem.getDate() - 1);
+      
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("account_name")
-        .gte("date_created", hoje);
+        .gte("date_created", ontem.toISOString());
 
       if (error) throw error;
       
