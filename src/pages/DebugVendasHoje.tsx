@@ -28,6 +28,7 @@ interface VendaHoje {
   item_unit_price: number;
   item_sku: string;
   synced_at: string;
+  shipping_state: string | null;
 }
 
 export default function DebugVendasHoje() {
@@ -286,6 +287,7 @@ export default function DebugVendasHoje() {
                   <TableHead>Produto</TableHead>
                   <TableHead>Qtd</TableHead>
                   <TableHead>Comprador</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead>Data</TableHead>
                 </TableRow>
@@ -318,6 +320,13 @@ export default function DebugVendasHoje() {
                     </TableCell>
                     <TableCell>{venda.item_quantity}</TableCell>
                     <TableCell>{venda.buyer_nickname}</TableCell>
+                    <TableCell>
+                      {venda.shipping_state ? (
+                        <Badge variant="outline">{venda.shipping_state}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right font-medium text-green-600">
                       R$ {venda.total_amount?.toFixed(2)}
                     </TableCell>
@@ -328,7 +337,7 @@ export default function DebugVendasHoje() {
                 ))}
                 {vendas.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nenhuma venda encontrada. Clique em "Sincronizar Vendas" para buscar dados do ML.
                     </TableCell>
                   </TableRow>
