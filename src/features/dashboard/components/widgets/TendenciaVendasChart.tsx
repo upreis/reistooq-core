@@ -182,7 +182,11 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
 
     keys.forEach((key) => {
       const valor = agrupados.get(key) || 0;
-      const x = (key / maxXValue) * 100;
+      // Para modo mês: dia 1 = 0%, último dia = 100%
+      // Para modo dia: usa intervalos de 2h
+      const x = viewMode === "month" 
+        ? ((key - 1) / Math.max(daysInMonth - 1, 1)) * 100
+        : (key / maxXValue) * 100;
       const y = Math.max(10, 100 - (valor / maxValue) * 80);
       points.push({ x, y });
     });
@@ -272,11 +276,16 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     if (viewMode === "day") {
       return [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22].map(h => `${h}h`);
     } else {
-      // Para mês, mostrar dias espaçados
-      const days = [];
-      const step = daysInMonth <= 15 ? 1 : Math.ceil(daysInMonth / 10);
+      // Para mês, mostrar todos os dias com step apropriado
+      const days: string[] = [];
+      // Mostrar ~10 labels espaçados uniformemente
+      const step = Math.ceil(daysInMonth / 10);
       for (let i = 1; i <= daysInMonth; i += step) {
         days.push(i.toString());
+      }
+      // Garantir que o último dia está incluído
+      if (!days.includes(daysInMonth.toString())) {
+        days.push(daysInMonth.toString());
       }
       return days;
     }
@@ -449,7 +458,9 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
             }
             
             return Array.from(agrupados.entries()).map(([key, valor]) => {
-              const xPercent = (key / maxXValue) * 100;
+              const xPercent = viewMode === "month" 
+                ? ((key - 1) / Math.max(daysInMonth - 1, 1)) * 100
+                : (key / maxXValue) * 100;
               const yPercent = Math.max(10, 100 - (valor / maxValue) * 80);
               const color = getAccountColor(account, accIndex);
               const label = viewMode === "day" ? `${key}h - ${key + 2}h` : `Dia ${key}`;
