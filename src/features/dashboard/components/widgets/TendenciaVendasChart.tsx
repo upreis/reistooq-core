@@ -94,14 +94,34 @@ export function TendenciaVendasChart({
   const { data: vendas = [] } = useQuery({
     queryKey: ["vendas-tendencia", startDate.toISOString(), endDate.toISOString()],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendas_hoje_realtime")
-        .select("*")
-        .gte("date_created", startDate.toISOString())
-        .lte("date_created", endDate.toISOString());
+      // Buscar TODOS os registros (Supabase tem limite de 1000 por default)
+      // Usando paginação para pegar todos os dados
+      const allData: VendaRealtime[] = [];
+      let offset = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
-      return (data || []) as VendaRealtime[];
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("vendas_hoje_realtime")
+          .select("id, integration_account_id, account_name, order_id, total_amount, date_created, created_at")
+          .gte("date_created", startDate.toISOString())
+          .lte("date_created", endDate.toISOString())
+          .range(offset, offset + pageSize - 1);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allData.push(...(data as VendaRealtime[]));
+          offset += pageSize;
+          hasMore = data.length === pageSize;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      console.log(`[TendenciaVendasChart] Total de vendas carregadas: ${allData.length}`);
+      return allData;
     },
     refetchInterval: 60000,
   });
