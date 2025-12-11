@@ -119,10 +119,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         ) : (
           <div className="flex gap-4 h-full">
             {/* Mapa SVG - Esquerda */}
-            <div className="relative w-[320px] flex-shrink-0">
+            <div className="relative w-[320px] flex-shrink-0 flex flex-col">
               <svg
                 viewBox="0 0 612 640"
-                className="w-full h-full max-h-[460px]"
+                className="w-full flex-1 max-h-[420px]"
                 preserveAspectRatio="xMidYMid meet"
               >
                 {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
@@ -147,6 +147,11 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 })}
               </svg>
               
+              {/* Total de vendas abaixo do mapa */}
+              <p className="text-xs text-muted-foreground mt-2">
+                {totalVendas} vendas no período
+              </p>
+              
               {/* Tooltip customizado */}
               {hoveredState && (
                 <div className="absolute top-2 left-2 bg-popover border border-border rounded-md px-2 py-1 shadow-md text-xs pointer-events-none z-10">
@@ -161,15 +166,12 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
 
             {/* Conteúdo - Direita */}
             <div className="flex-1 flex flex-col min-w-0">
-              {/* Título e Total */}
-              <div className="mb-4">
+              {/* Título */}
+              <div className="mb-2">
                 <div className="flex items-center gap-2 text-base font-semibold">
                   <MapPin className="h-4 w-4 text-primary" />
                   Vendas por Estado
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {totalVendas} vendas no período
-                </p>
               </div>
 
               {/* Lista de Estados */}
