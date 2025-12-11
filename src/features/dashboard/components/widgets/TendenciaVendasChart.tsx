@@ -431,7 +431,7 @@ export function TendenciaVendasChart({
       
       <div className="flex">
         {/* Eixo Y */}
-        <div className="flex flex-col justify-between h-[210px] pr-2 text-[10px] text-muted-foreground">
+        <div className="flex flex-col justify-between h-[210px] pr-2 text-xs text-muted-foreground">
           {yLabels.map((val, i) => (
             <span key={i}>{formatCurrency(val)}</span>
           ))}
@@ -620,7 +620,7 @@ export function TendenciaVendasChart({
       </div>
       
       {/* Eixo X dinâmico com destaque ao hover */}
-      <div className="flex justify-between mt-2 ml-12 text-[10px] text-muted-foreground">
+      <div className="flex justify-between mt-2 ml-12 text-xs text-muted-foreground">
         {xAxisLabels.map((label, i) => {
           let xKey: number;
           if (viewMode === "day") {
