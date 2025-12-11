@@ -111,7 +111,7 @@ export function FeaturesBentoGrid() {
         <VendasHojeCard selectedAccount={selectedAccount} />
 
         {/* 2. Quick Action Cards - 4 cards pequenos */}
-        <QuickActionCards />
+        <QuickActionCards selectedAccount={selectedAccount} />
 
         {/* 3. Tendência de Vendas */}
         <TendenciaVendasChart selectedAccount={selectedAccount} />
