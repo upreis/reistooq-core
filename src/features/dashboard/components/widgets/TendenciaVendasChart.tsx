@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { TrendingUp, Calendar } from "lucide-react";
+import { TrendingUp, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth, getDaysInMonth, startOfDay, endOfDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, getDaysInMonth, startOfDay, endOfDay, setMonth, setYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,6 +34,11 @@ interface TooltipData {
 
 type ViewMode = "day" | "month";
 
+const MONTHS_PT = [
+  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+];
+
 // Cores alinhadas com os filtros em FeaturesBentoGrid.tsx
 const ACCOUNT_COLORS: Record<string, string> = {
   "BRCR20240514161447": "#3b82f6", // blue-500
@@ -62,6 +67,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
 
   const { startDate, endDate } = useMemo(() => {
     if (viewMode === "day") {
@@ -213,10 +219,53 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     }
   };
 
-  const handleMonthChange = (date: Date) => {
-    setSelectedDate(date);
+  const handleMonthSelect = (monthIndex: number) => {
+    const newDate = setMonth(setYear(new Date(), pickerYear), monthIndex);
+    setSelectedDate(newDate);
     setViewMode("month");
+    setCalendarOpen(false);
   };
+
+  // Componente de seletor de mês
+  const MonthPicker = () => (
+    <div className="p-3">
+      <div className="flex items-center justify-between mb-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7"
+          onClick={() => setPickerYear(prev => prev - 1)}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="font-medium text-sm">{pickerYear}</span>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7"
+          onClick={() => setPickerYear(prev => prev + 1)}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {MONTHS_PT.map((month, index) => {
+          const isSelected = selectedDate.getMonth() === index && selectedDate.getFullYear() === pickerYear;
+          return (
+            <Button
+              key={month}
+              variant={isSelected ? "default" : "outline"}
+              size="sm"
+              className="text-xs"
+              onClick={() => handleMonthSelect(index)}
+            >
+              {month}/{pickerYear.toString().slice(-2)}
+            </Button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   // Gerar labels do eixo X
   const xAxisLabels = useMemo(() => {
@@ -268,14 +317,17 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
                   Mês
                 </Button>
               </div>
-              <CalendarComponent
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDateSelect}
-                onMonthChange={handleMonthChange}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
+              {viewMode === "day" ? (
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              ) : (
+                <MonthPicker />
+              )}
             </PopoverContent>
           </Popover>
         </div>
@@ -320,14 +372,17 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
                   Mês
                 </Button>
               </div>
-              <CalendarComponent
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDateSelect}
-                onMonthChange={handleMonthChange}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
+              {viewMode === "day" ? (
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              ) : (
+                <MonthPicker />
+              )}
             </PopoverContent>
           </Popover>
         </div>
