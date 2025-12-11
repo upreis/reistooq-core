@@ -322,19 +322,11 @@ export default function DebugVendasHoje() {
                     <TableCell>{venda.item_quantity}</TableCell>
                     <TableCell>{venda.buyer_nickname}</TableCell>
                     <TableCell>
-                      {(() => {
-                        // Extrair estado de order_data como /vendas-com-envio faz
-                        const orderData = venda.order_data;
-                        const stateFromOrderData = orderData?.shipping?.receiver_address?.state?.id 
-                          || orderData?.shipping?.receiver_address?.state?.name;
-                        const state = stateFromOrderData || venda.shipping_state;
-                        
-                        return state ? (
-                          <Badge variant="outline">{state}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        );
-                      })()}
+                      {venda.shipping_state ? (
+                        <Badge variant="outline">{venda.shipping_state}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-medium text-green-600">
                       R$ {venda.total_amount?.toFixed(2)}
