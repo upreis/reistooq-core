@@ -161,6 +161,11 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
               <span className="text-[10px] font-bold text-[#FFE600] text-center">
                 {formatCurrency(product.valorTotal)}
               </span>
+              
+              {/* Quantidade vendida */}
+              <span className="text-[8px] text-muted-foreground text-center">
+                {product.vendas} {product.vendas === 1 ? 'vendido' : 'vendidos'}
+              </span>
             </div>
           ))
         )}
