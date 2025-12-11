@@ -98,31 +98,31 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
 
   return (
     <motion.div
-      className="bg-card border border-border rounded-2xl p-4 hover:bg-accent/30 transition-all w-[200px] flex-shrink-0"
+      className="bg-card border border-border rounded-2xl p-5 hover:bg-accent/30 transition-all w-[280px] flex-shrink-0"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
     >
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full justify-between">
         {/* Título */}
-        <h2 className="text-lg font-bold text-[#FFE600] drop-shadow-sm mb-2">
+        <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm mb-3">
           Vendas de hoje ao vivo
         </h2>
         
         {/* Badge de data */}
-        <div className="mb-3">
-          <span className="bg-[#FFE600] text-black px-3 py-1 rounded-full text-xs font-medium">
+        <div className="mb-4">
+          <span className="bg-[#FFE600] text-black px-3 py-1.5 rounded-full text-sm font-medium">
             {formattedDate}
           </span>
         </div>
 
         {/* Valor */}
-        <div className="flex-1 flex items-center">
+        <div className="mt-auto">
           {isLoading ? (
-            <div className="h-8 w-full bg-foreground/10 rounded animate-pulse" />
+            <div className="h-10 w-full bg-foreground/10 rounded animate-pulse" />
           ) : (
             <motion.span
-              className="text-2xl font-bold text-foreground tracking-tight"
+              className="text-3xl font-bold text-foreground tracking-tight"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
