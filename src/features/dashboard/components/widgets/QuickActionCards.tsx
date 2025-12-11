@@ -93,7 +93,7 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
         Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex flex-col items-center gap-2 p-3 bg-card border border-border rounded-2xl animate-pulse w-[150px]"
+            className="flex flex-col items-center gap-2 p-3 bg-background border border-border rounded-xl animate-pulse w-[150px]"
           >
             <div className="w-20 h-20 bg-muted rounded-xl" />
             <div className="w-full h-3 bg-muted rounded" />
@@ -104,7 +104,7 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
         Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex flex-col items-center gap-2 p-3 bg-card border border-border rounded-2xl w-[150px]"
+            className="flex flex-col items-center gap-2 p-3 bg-background border border-border rounded-xl w-[150px]"
           >
             <div className="p-4 rounded-xl bg-muted/50">
               <Package className="h-10 w-10 text-muted-foreground" />
@@ -119,7 +119,7 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
         topProducts.map((product, index) => (
           <div
             key={product.item_id}
-            className="flex flex-col items-center gap-2 p-3 bg-card border border-border rounded-2xl hover:bg-accent/30 transition-all group w-[150px]"
+            className="flex flex-col items-center gap-2 p-3 bg-background border border-border rounded-xl hover:bg-accent/10 transition-all group w-[150px]"
           >
             {/* Imagem do produto */}
             <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0">
