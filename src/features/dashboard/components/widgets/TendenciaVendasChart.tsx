@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { format, startOfMonth, endOfMonth, getDaysInMonth, startOfDay, endOfDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface VendaRealtime {
   id: string;
@@ -20,11 +26,13 @@ interface TendenciaVendasChartProps {
 interface TooltipData {
   account: string;
   valor: number;
-  hora: number;
+  label: string;
   x: number;
   y: number;
   color: string;
 }
+
+type ViewMode = "day" | "month";
 
 // Cores alinhadas com os filtros em FeaturesBentoGrid.tsx
 const ACCOUNT_COLORS: Record<string, string> = {
@@ -51,25 +59,41 @@ const getAccountColor = (accountName: string, index: number): string => {
 
 export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVendasChartProps) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>("day");
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const { startDate, endDate } = useMemo(() => {
+    if (viewMode === "day") {
+      return {
+        startDate: startOfDay(selectedDate),
+        endDate: endOfDay(selectedDate)
+      };
+    } else {
+      return {
+        startDate: startOfMonth(selectedDate),
+        endDate: endOfMonth(selectedDate)
+      };
+    }
+  }, [selectedDate, viewMode]);
+
   const { data: vendas = [] } = useQuery({
-    queryKey: ["vendas-hoje-tendencia"],
+    queryKey: ["vendas-tendencia", startDate.toISOString(), endDate.toISOString()],
     queryFn: async () => {
-      // Início de hoje em UTC (São Paulo é UTC-3)
-      const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("*")
-        .gte("date_created", startOfToday.toISOString())
-        .lte("date_created", endOfToday.toISOString());
+        .gte("date_created", startDate.toISOString())
+        .lte("date_created", endDate.toISOString());
 
       if (error) throw error;
       return (data || []) as VendaRealtime[];
     },
     refetchInterval: 60000,
   });
+
+  const daysInMonth = getDaysInMonth(selectedDate);
+  const maxXValue = viewMode === "day" ? 22 : daysInMonth;
 
   const { chartData, maxValue, accounts } = useMemo(() => {
     if (!vendas || vendas.length === 0) {
@@ -87,7 +111,8 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       if (!dateStr) return;
       
       const date = new Date(dateStr);
-      const hora = date.getHours();
+      // Para modo "day", agrupa por hora. Para modo "month", agrupa por dia
+      const groupKey = viewMode === "day" ? date.getHours() : date.getDate();
       const valor = Number(venda.total_amount) || 0;
 
       if (!chartData.has(accountName)) {
@@ -95,8 +120,8 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       }
       
       const accountData = chartData.get(accountName)!;
-      const current = accountData.get(hora) || 0;
-      accountData.set(hora, current + valor);
+      const current = accountData.get(groupKey) || 0;
+      accountData.set(groupKey, current + valor);
     });
 
     const accounts = Array.from(accountsSet);
@@ -109,7 +134,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     });
 
     return { chartData, maxValue, accounts };
-  }, [vendas]);
+  }, [vendas, viewMode]);
 
   const filteredAccounts = selectedAccount === "todas" 
     ? accounts 
@@ -122,28 +147,37 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     return `R$ ${value.toFixed(0)}`;
   };
 
-  // Gerar path SVG com curvas suaves (bezier) - intervalos de 2h
+  // Gerar path SVG com curvas suaves
   const generatePath = (accountName: string): string => {
     const accountData = chartData.get(accountName);
     if (!accountData || accountData.size === 0) return "";
 
-    // Agrupar por intervalos de 2 horas
-    const horasAgrupadas = new Map<number, number>();
-    accountData.forEach((valor, hora) => {
-      const intervalo = Math.floor(hora / 2) * 2; // 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22
-      const atual = horasAgrupadas.get(intervalo) || 0;
-      horasAgrupadas.set(intervalo, atual + valor);
-    });
+    // Agrupar dados
+    const agrupados = new Map<number, number>();
+    
+    if (viewMode === "day") {
+      // Agrupar por intervalos de 2 horas
+      accountData.forEach((valor, hora) => {
+        const intervalo = Math.floor(hora / 2) * 2;
+        const atual = agrupados.get(intervalo) || 0;
+        agrupados.set(intervalo, atual + valor);
+      });
+    } else {
+      // Usar dias diretamente
+      accountData.forEach((valor, dia) => {
+        agrupados.set(dia, valor);
+      });
+    }
 
-    const intervalos = Array.from(horasAgrupadas.keys()).sort((a, b) => a - b);
-    if (intervalos.length === 0) return "";
+    const keys = Array.from(agrupados.keys()).sort((a, b) => a - b);
+    if (keys.length === 0) return "";
 
     const points: { x: number; y: number }[] = [];
 
-    intervalos.forEach((intervalo) => {
-      const valor = horasAgrupadas.get(intervalo) || 0;
-      const x = (intervalo / 22) * 100; // 22 é o último intervalo (22h-24h)
-      const y = Math.max(10, 100 - (valor / maxValue) * 80); // Mais margem no topo
+    keys.forEach((key) => {
+      const valor = agrupados.get(key) || 0;
+      const x = (key / maxXValue) * 100;
+      const y = Math.max(10, 100 - (valor / maxValue) * 80);
       points.push({ x, y });
     });
 
@@ -151,7 +185,6 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       return `M ${points[0].x} ${points[0].y} L ${points[0].x + 1} ${points[0].y}`;
     }
 
-    // Criar curva suave usando cubic bezier
     let path = `M ${points[0].x} ${points[0].y}`;
     
     for (let i = 0; i < points.length - 1; i++) {
@@ -160,7 +193,6 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
       const p2 = points[i + 1];
       const p3 = points[Math.min(points.length - 1, i + 2)];
       
-      // Calcular pontos de controle para curva suave (Catmull-Rom to Bezier)
       const tension = 0.3;
       const cp1x = p1.x + (p2.x - p0.x) * tension;
       const cp1y = p1.y + (p2.y - p0.y) * tension;
@@ -173,29 +205,133 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
     return path;
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setViewMode("day");
+      setCalendarOpen(false);
+    }
+  };
+
+  const handleMonthChange = (date: Date) => {
+    setSelectedDate(date);
+    setViewMode("month");
+  };
+
+  // Gerar labels do eixo X
+  const xAxisLabels = useMemo(() => {
+    if (viewMode === "day") {
+      return [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22].map(h => `${h}h`);
+    } else {
+      // Para mês, mostrar dias espaçados
+      const days = [];
+      const step = daysInMonth <= 15 ? 1 : Math.ceil(daysInMonth / 10);
+      for (let i = 1; i <= daysInMonth; i += step) {
+        days.push(i.toString());
+      }
+      return days;
+    }
+  }, [viewMode, daysInMonth]);
+
+  const dateLabel = viewMode === "day" 
+    ? format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
+    : format(selectedDate, "MMMM yyyy", { locale: ptBR });
+
   if (accounts.length === 0) {
     return (
       <div className="h-full bg-background border border-border rounded-xl p-3 overflow-hidden">
-        <h3 className="font-serif text-sm text-foreground font-medium mb-2 flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-primary" />
-          Tendência de vendas por hora
-        </h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-serif text-sm text-foreground font-medium flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Tendência de vendas {viewMode === "day" ? "por hora" : "por dia"}
+          </h3>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Calendar className="h-4 w-4 text-primary" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="flex gap-2 p-2 border-b">
+                <Button 
+                  size="sm" 
+                  variant={viewMode === "day" ? "default" : "outline"}
+                  onClick={() => setViewMode("day")}
+                >
+                  Dia
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={viewMode === "month" ? "default" : "outline"}
+                  onClick={() => setViewMode("month")}
+                >
+                  Mês
+                </Button>
+              </div>
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                onMonthChange={handleMonthChange}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
         <div className="flex items-center justify-center h-[100px] text-muted-foreground text-sm">
-          Nenhuma venda hoje ainda
+          Nenhuma venda em {dateLabel}
         </div>
       </div>
     );
   }
 
-  // Gerar labels do eixo Y (usar spread para não mutar)
   const yLabels = [maxValue, maxValue * 0.75, maxValue * 0.5, maxValue * 0.25, 0];
 
   return (
     <div className="h-full bg-background border border-border rounded-xl p-3 overflow-hidden">
-      <h3 className="font-serif text-sm text-foreground font-medium mb-2 flex items-center gap-2">
-        <TrendingUp className="h-4 w-4 text-primary" />
-        Tendência de vendas por hora
-      </h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-serif text-sm text-foreground font-medium flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          Tendência de vendas {viewMode === "day" ? "por hora" : "por dia"}
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{dateLabel}</span>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Calendar className="h-4 w-4 text-primary" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="flex gap-2 p-2 border-b">
+                <Button 
+                  size="sm" 
+                  variant={viewMode === "day" ? "default" : "outline"}
+                  onClick={() => setViewMode("day")}
+                >
+                  Dia
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={viewMode === "month" ? "default" : "outline"}
+                  onClick={() => setViewMode("month")}
+                >
+                  Mês
+                </Button>
+              </div>
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                onMonthChange={handleMonthChange}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
       
       <div className="flex">
         {/* Eixo Y */}
@@ -238,27 +374,34 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
             ))}
           </svg>
           
-          {/* Pontos interativos - agrupados por 2h */}
+          {/* Pontos interativos */}
           {filteredAccounts.map((account, accIndex) => {
             const accountData = chartData.get(account);
             if (!accountData) return null;
             
-            // Agrupar por intervalos de 2 horas para os pontos também
-            const horasAgrupadas = new Map<number, number>();
-            accountData.forEach((valor, hora) => {
-              const intervalo = Math.floor(hora / 2) * 2;
-              const atual = horasAgrupadas.get(intervalo) || 0;
-              horasAgrupadas.set(intervalo, atual + valor);
-            });
+            const agrupados = new Map<number, number>();
             
-            return Array.from(horasAgrupadas.entries()).map(([intervalo, valor]) => {
-              const xPercent = (intervalo / 22) * 100;
-              const yPercent = Math.max(10, 100 - (valor / maxValue) * 80); // Mesma fórmula do path
+            if (viewMode === "day") {
+              accountData.forEach((valor, hora) => {
+                const intervalo = Math.floor(hora / 2) * 2;
+                const atual = agrupados.get(intervalo) || 0;
+                agrupados.set(intervalo, atual + valor);
+              });
+            } else {
+              accountData.forEach((valor, dia) => {
+                agrupados.set(dia, valor);
+              });
+            }
+            
+            return Array.from(agrupados.entries()).map(([key, valor]) => {
+              const xPercent = (key / maxXValue) * 100;
+              const yPercent = Math.max(10, 100 - (valor / maxValue) * 80);
               const color = getAccountColor(account, accIndex);
+              const label = viewMode === "day" ? `${key}h - ${key + 2}h` : `Dia ${key}`;
               
               return (
                 <div
-                  key={`${account}-${intervalo}`}
+                  key={`${account}-${key}`}
                   className="absolute w-3 h-3 rounded-full cursor-pointer hover:scale-150 transition-transform -translate-x-1/2 -translate-y-1/2 z-10"
                   style={{ 
                     left: `${xPercent}%`, 
@@ -271,7 +414,7 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
                       setTooltip({
                         account,
                         valor,
-                        hora: intervalo,
+                        label,
                         x: e.clientX - rect.left,
                         y: e.clientY - rect.top,
                         color
@@ -304,17 +447,17 @@ export function TendenciaVendasChart({ selectedAccount = "todas" }: TendenciaVen
                 </span>
               </div>
               <div className="text-muted-foreground">
-                {formatCurrency(tooltip.valor)} ({tooltip.hora}h - {tooltip.hora + 2}h)
+                {formatCurrency(tooltip.valor)} ({tooltip.label})
               </div>
             </div>
           )}
         </div>
       </div>
       
-      {/* Eixo X - intervalos de 2h */}
+      {/* Eixo X dinâmico */}
       <div className="flex justify-between mt-2 ml-12 text-[10px] text-muted-foreground">
-        {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22].map((hora) => (
-          <span key={hora}>{hora}h</span>
+        {xAxisLabels.map((label, i) => (
+          <span key={i}>{label}</span>
         ))}
       </div>
     </div>
