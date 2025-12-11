@@ -65,20 +65,39 @@ serve(async (req) => {
     let totalUpdated = 0;
 
     for (const [accountId, vendas] of byAccount) {
-      // Buscar token de acesso
+      // Buscar token de acesso da tabela integration_secrets
       const { data: secrets } = await supabase
         .from("integration_secrets")
-        .select("secret_value")
+        .select("simple_tokens, use_simple")
         .eq("integration_account_id", accountId)
-        .eq("secret_key", `SALT2024::${accountId}`)
         .single();
 
-      if (!secrets?.secret_value) {
+      if (!secrets?.simple_tokens) {
         console.log(`[BACKFILL] No token for account ${accountId}, skipping ${vendas.length} sales`);
         continue;
       }
 
-      const accessToken = secrets.secret_value;
+      // Extrair access_token do simple_tokens (formato: SALT2024::base64_json)
+      let accessToken: string | null = null;
+      try {
+        const tokenParts = secrets.simple_tokens.split("::");
+        if (tokenParts.length >= 2) {
+          const base64Data = tokenParts.slice(1).join("::");
+          const jsonStr = atob(base64Data);
+          const tokenData = JSON.parse(jsonStr);
+          accessToken = tokenData.access_token;
+        }
+      } catch (parseErr) {
+        console.error(`[BACKFILL] Error parsing token for account ${accountId}:`, parseErr);
+        continue;
+      }
+
+      if (!accessToken) {
+        console.log(`[BACKFILL] No valid access_token for account ${accountId}, skipping ${vendas.length} sales`);
+        continue;
+      }
+
+      console.log(`[BACKFILL] Processing ${vendas.length} sales for account ${accountId}`);
 
       // Processar cada venda
       for (const venda of vendas) {
