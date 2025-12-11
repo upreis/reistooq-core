@@ -76,10 +76,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
 
       if (!profile?.organizacao_id) return [];
 
-      // Buscar vendas do período com shipping_state
+      // Buscar vendas do período com order_data para extrair estado
       let query = supabase
         .from("vendas_hoje_realtime")
-        .select("order_id, total_amount, shipping_state, account_name, integration_account_id")
+        .select("order_id, total_amount, shipping_state, order_data, account_name")
         .eq("organization_id", profile.organizacao_id)
         .gte("date_created", dateRange.start.toISOString())
         .lte("date_created", dateRange.end.toISOString());
@@ -91,23 +91,19 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       const { data, error } = await query;
       if (error) throw error;
 
-      // Agregar por estado
+      // Agregar por estado - extraindo de order_data como /vendas-com-envio faz
       const stateMap = new Map<string, { vendas: number; valor: number }>();
-      const ordersWithoutState: { order_id: string; integration_account_id: string }[] = [];
       
       (data || []).forEach((order: any) => {
-        const state = order.shipping_state;
+        // Tentar extrair estado de order_data (como vendas-com-envio faz)
+        const orderData = order.order_data as any;
+        const stateFromOrderData = orderData?.shipping?.receiver_address?.state?.id 
+          || orderData?.shipping?.receiver_address?.state?.name;
         
-        if (!state) {
-          // Registrar para enriquecimento posterior
-          if (order.integration_account_id) {
-            ordersWithoutState.push({
-              order_id: order.order_id,
-              integration_account_id: order.integration_account_id
-            });
-          }
-          return;
-        }
+        // Fallback para coluna shipping_state se existir
+        const state = stateFromOrderData || order.shipping_state;
+        
+        if (!state) return;
         
         const current = stateMap.get(state) || { vendas: 0, valor: 0 };
         stateMap.set(state, {
@@ -115,23 +111,6 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
           valor: current.valor + (order.total_amount || 0),
         });
       });
-
-      // Enriquecer pedidos sem estado (em background, max 20 por vez)
-      if (ordersWithoutState.length > 0) {
-        const byAccount = new Map<string, string[]>();
-        ordersWithoutState.slice(0, 20).forEach(o => {
-          const list = byAccount.get(o.integration_account_id) || [];
-          list.push(o.order_id);
-          byAccount.set(o.integration_account_id, list);
-        });
-
-        // Chamar edge function em background (não bloquear)
-        byAccount.forEach((orderIds, accountId) => {
-          supabase.functions.invoke("enrich-shipping-state", {
-            body: { order_ids: orderIds, integration_account_id: accountId }
-          }).catch(() => {});
-        });
-      }
 
       return Array.from(stateMap.entries()).map(([uf, data]) => ({
         uf,
