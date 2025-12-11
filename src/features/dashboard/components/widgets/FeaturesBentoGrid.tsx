@@ -31,9 +31,22 @@ export function FeaturesBentoGrid() {
   const { data: accounts = [] } = useQuery({
     queryKey: ["vendas-accounts", dateRange.start.toISOString(), dateRange.end.toISOString()],
     queryFn: async () => {
+      // Buscar organization_id do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.organizacao_id) return [];
+
       const { data, error } = await supabase
         .from("vendas_hoje_realtime")
         .select("account_name")
+        .eq("organization_id", profile.organizacao_id)
         .gte("date_created", dateRange.start.toISOString())
         .lte("date_created", dateRange.end.toISOString());
 
