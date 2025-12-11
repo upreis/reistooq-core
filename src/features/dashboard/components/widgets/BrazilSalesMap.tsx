@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
+import { MapPin, Package } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatInTimeZone } from "date-fns-tz";
@@ -18,6 +18,14 @@ interface StateData {
   uf: string;
   vendas: number;
   valor: number;
+}
+
+interface TopProduct {
+  item_id: string;
+  item_thumbnail: string | null;
+  item_title: string | null;
+  vendas: number;
+  valorTotal: number;
 }
 
 // Função para calcular cor baseada na intensidade de vendas
@@ -89,7 +97,65 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       }));
     },
     staleTime: 60 * 1000,
-    refetchInterval: 2 * 60 * 1000, // Refetch a cada 2 min para pegar estados enriquecidos
+    refetchInterval: 2 * 60 * 1000,
+  });
+
+  // Buscar top 5 produtos do estado selecionado
+  const { data: topProductsByState = [], isLoading: isLoadingProducts } = useQuery({
+    queryKey: ["top-products-estado", selectedAccount, selectedState, dateStartISO, dateEndISO],
+    queryFn: async () => {
+      if (!selectedState) return [];
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.organizacao_id) return [];
+
+      let query = supabase
+        .from("vendas_hoje_realtime")
+        .select("item_id, item_thumbnail, item_title, total_amount")
+        .eq("organization_id", profile.organizacao_id)
+        .eq("shipping_state", selectedState)
+        .gte("date_created", dateStartISO)
+        .lte("date_created", dateEndISO);
+
+      if (selectedAccount !== "todas") {
+        query = query.eq("account_name", selectedAccount);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Agrupar por item_id
+      const productMap = new Map<string, TopProduct>();
+      (data || []).forEach((item: any) => {
+        const existing = productMap.get(item.item_id);
+        if (existing) {
+          existing.vendas += 1;
+          existing.valorTotal += item.total_amount || 0;
+        } else {
+          productMap.set(item.item_id, {
+            item_id: item.item_id,
+            item_thumbnail: item.item_thumbnail,
+            item_title: item.item_title,
+            vendas: 1,
+            valorTotal: item.total_amount || 0,
+          });
+        }
+      });
+
+      return Array.from(productMap.values())
+        .sort((a, b) => b.vendas - a.vendas)
+        .slice(0, 5);
+    },
+    enabled: !!selectedState,
+    staleTime: 60 * 1000,
   });
 
   const maxVendas = useMemo(() => {
@@ -107,7 +173,26 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
   const formatCurrency = (value: number) =>
     value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  const selectedStateData = selectedState ? getStateData(selectedState) : null;
+  const formatCurrencyShort = (value: number) =>
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+
+  const truncateTitle = (title: string | null, maxLength: number = 30) => {
+    if (!title) return "Produto";
+    return title.length > maxLength ? title.slice(0, maxLength) + "..." : title;
+  };
+
+  const getHighQualityImage = (thumbnailUrl: string | null) => {
+    if (!thumbnailUrl) return "/placeholder.svg";
+    return thumbnailUrl
+      .replace(/-I\.jpg/g, '-O.jpg')
+      .replace(/-I\.webp/g, '-O.webp')
+      .replace(/http:\/\//g, 'https://');
+  };
 
   return (
     <Card className="border-muted-foreground/30 h-full flex flex-col">
@@ -122,7 +207,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
             <div className="relative w-[320px] flex-shrink-0 flex flex-col">
               <svg
                 viewBox="0 0 612 640"
-                className="w-full flex-1 max-h-[580px]"
+                className="w-full flex-1 max-h-[480px]"
                 preserveAspectRatio="xMidYMid meet"
               >
                 {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
@@ -164,8 +249,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
               )}
             </div>
 
-            {/* Conteúdo - Direita */}
-            <div className="flex-1 flex flex-col min-w-0">
+            {/* Conteúdo - Centro (Lista de Estados) */}
+            <div className="w-[200px] flex flex-col min-w-0 flex-shrink-0">
               {/* Título */}
               <div className="mb-2">
                 <div className="flex items-center gap-2 text-base font-semibold">
@@ -185,7 +270,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 </div>
                 
                 {/* Lista - compacta */}
-                <div className="flex-1 pr-1">
+                <div className="flex-1 pr-1 overflow-y-auto">
                   {[...salesByState]
                     .sort((a, b) => b.vendas - a.vendas)
                     .map((state, index) => {
@@ -214,6 +299,82 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Nenhuma venda no período
                   </p>
+                )}
+              </div>
+            </div>
+
+            {/* Top 5 Produtos do Estado - Direita */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <div className="mb-2">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Package className="h-4 w-4 text-primary" />
+                  {selectedState ? (
+                    <span>Top 5 em {BRAZIL_STATES_SVG[selectedState]?.name || selectedState}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Selecione um estado</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col gap-1.5">
+                {!selectedState ? (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-xs">
+                    Clique em um estado para ver os produtos mais vendidos
+                  </div>
+                ) : isLoadingProducts ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg animate-pulse">
+                      <div className="w-10 h-10 bg-muted rounded" />
+                      <div className="flex-1 space-y-1">
+                        <div className="h-3 bg-muted rounded w-3/4" />
+                        <div className="h-2 bg-muted rounded w-1/2" />
+                      </div>
+                    </div>
+                  ))
+                ) : topProductsByState.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-xs">
+                    Nenhum produto encontrado
+                  </div>
+                ) : (
+                  topProductsByState.map((product, index) => (
+                    <div
+                      key={product.item_id}
+                      className="flex items-center gap-2 p-1.5 bg-muted/20 rounded-lg hover:bg-accent/10 transition-colors"
+                    >
+                      {/* Imagem */}
+                      <div className="relative w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
+                        {product.item_thumbnail ? (
+                          <img
+                            src={getHighQualityImage(product.item_thumbnail)}
+                            alt={product.item_title || "Produto"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[8px] font-bold px-1 rounded-br">
+                          #{index + 1}
+                        </div>
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-medium leading-tight line-clamp-2">
+                          {truncateTitle(product.item_title)}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] font-bold text-[#22c55e]">
+                            {product.vendas} {product.vendas === 1 ? 'venda' : 'vendas'}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground">
+                            {formatCurrencyShort(product.valorTotal)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
