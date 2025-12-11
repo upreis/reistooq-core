@@ -72,10 +72,10 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
         }
       });
 
-      // Ordenar por vendas e pegar top 4
+      // Ordenar por vendas e pegar top 5
       return Array.from(productCounts.values())
         .sort((a, b) => b.vendas - a.vendas)
-        .slice(0, 4);
+        .slice(0, 5);
     },
     refetchInterval: 60000,
   });
@@ -87,72 +87,70 @@ export function QuickActionCards({ selectedAccount }: QuickActionCardsProps) {
   };
 
   return (
-    <div className="h-full bg-background border border-border rounded-xl p-3">
-      <div className="grid grid-cols-2 gap-2 h-full">
-        {isLoading ? (
-          // Skeleton loading
-          Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center justify-center gap-1.5 p-2 bg-card border border-border rounded-lg animate-pulse"
-            >
-              <div className="w-14 h-14 bg-muted rounded-lg" />
-              <div className="w-full h-2.5 bg-muted rounded" />
+    <div className="flex flex-wrap gap-4 justify-start">
+      {isLoading ? (
+        // Skeleton loading - 5 cards
+        Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col items-center gap-3 p-4 bg-card border border-border rounded-2xl animate-pulse w-[180px]"
+          >
+            <div className="w-24 h-24 bg-muted rounded-xl" />
+            <div className="w-full h-4 bg-muted rounded" />
+          </div>
+        ))
+      ) : topProducts.length === 0 ? (
+        // Estado vazio - 5 cards
+        Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col items-center gap-3 p-4 bg-card border border-border rounded-2xl w-[180px]"
+          >
+            <div className="p-6 rounded-xl bg-muted/50">
+              <Package className="h-12 w-12 text-muted-foreground" />
             </div>
-          ))
-        ) : topProducts.length === 0 ? (
-          // Estado vazio
-          Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center justify-center gap-1.5 p-2 bg-card border border-border rounded-lg"
-            >
-              <div className="p-2 rounded-lg bg-muted/50">
-                <Package className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <span className="text-[10px] text-muted-foreground text-center">
-                Sem vendas
-              </span>
-            </div>
-          ))
-        ) : (
-          // Produtos mais vendidos
-          topProducts.map((product, index) => (
-            <div
-              key={product.item_id}
-              className="flex flex-col items-center justify-center gap-1.5 p-2 bg-card border border-border rounded-lg hover:bg-accent/30 transition-all group"
-            >
-              {/* Imagem do produto */}
-              <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                {product.item_thumbnail ? (
-                  <img
-                    src={product.item_thumbnail}
-                    alt={product.item_title || "Produto"}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
-                {/* Badge de ranking */}
-                <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[8px] font-bold px-1 py-0.5 rounded-br-md">
-                  #{index + 1}
+            <span className="text-sm text-muted-foreground text-center">
+              Sem vendas
+            </span>
+          </div>
+        ))
+      ) : (
+        // Produtos mais vendidos
+        topProducts.map((product, index) => (
+          <div
+            key={product.item_id}
+            className="flex flex-col items-center gap-3 p-4 bg-card border border-border rounded-2xl hover:bg-accent/30 transition-all group w-[180px]"
+          >
+            {/* Imagem do produto */}
+            <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-muted flex-shrink-0">
+              {product.item_thumbnail ? (
+                <img
+                  src={product.item_thumbnail}
+                  alt={product.item_title || "Produto"}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Package className="h-10 w-10 text-muted-foreground" />
                 </div>
-                {/* Badge de vendas */}
-                <div className="absolute bottom-0 right-0 bg-green-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-tl-md">
-                  {product.vendas}x
-                </div>
+              )}
+              {/* Badge de ranking */}
+              <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-br-xl">
+                #{index + 1}
               </div>
-              
-              {/* Nome do produto */}
-              <span className="text-[9px] font-medium text-foreground text-center leading-tight line-clamp-2 w-full">
-                {truncateTitle(product.item_title, 30)}
-              </span>
+              {/* Badge de vendas */}
+              <div className="absolute bottom-0 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-tl-xl">
+                {product.vendas}x
+              </div>
             </div>
-          ))
-        )}
-      </div>
+            
+            {/* Nome do produto */}
+            <span className="text-sm font-medium text-foreground text-center leading-tight line-clamp-2 w-full">
+              {truncateTitle(product.item_title, 35)}
+            </span>
+          </div>
+        ))
+      )}
     </div>
   );
 }
