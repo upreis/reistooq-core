@@ -57,25 +57,19 @@ serve(async (req) => {
     // Buscar access token da conta
     const { data: secretData, error: secretError } = await supabase
       .from("integration_secrets")
-      .select("encrypted_value")
+      .select("access_token")
       .eq("integration_account_id", integration_account_id)
       .single();
 
-    if (secretError || !secretData?.encrypted_value) {
-      console.error(`[enrich-thumbnails] No token found for account ${integration_account_id}`);
-      return new Response(JSON.stringify({ error: "Token not found" }), {
+    if (secretError || !secretData?.access_token) {
+      console.error(`[enrich-thumbnails] No token found for account ${integration_account_id}`, secretError);
+      return new Response(JSON.stringify({ error: "Token not found", details: secretError?.message }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    // Descriptografar token
-    const encryptedValue = secretData.encrypted_value;
-    const salt = "SALT2024::";
-    let accessToken = encryptedValue;
-    if (encryptedValue.startsWith(salt)) {
-      accessToken = encryptedValue.substring(salt.length);
-    }
+    const accessToken = secretData.access_token;
 
     // Buscar thumbnails em paralelo
     const thumbnailPromises = limitedItemIds.map(async (itemId) => {

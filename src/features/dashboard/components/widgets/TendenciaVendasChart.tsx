@@ -79,6 +79,8 @@ export function TendenciaVendasChart({
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(selectedDate.getFullYear());
+  // Estado interno para controlar qual picker mostrar (evita flickering)
+  const [pickerMode, setPickerMode] = useState<ViewMode>(viewMode);
 
   const { startDate, endDate, startDateISO, endDateISO } = useMemo(() => {
     const start = viewMode === "day" ? startOfDay(selectedDate) : startOfMonth(selectedDate);
@@ -261,6 +263,7 @@ export function TendenciaVendasChart({
     if (date) {
       setSelectedDate(date);
       setViewMode("day");
+      setPickerMode("day");
       setCalendarOpen(false);
     }
   };
@@ -269,7 +272,17 @@ export function TendenciaVendasChart({
     const newDate = setMonth(setYear(new Date(), pickerYear), monthIndex);
     setSelectedDate(newDate);
     setViewMode("month");
+    setPickerMode("month");
     setCalendarOpen(false);
+  };
+
+  // Sincroniza pickerMode quando abre o calendário
+  const handleCalendarOpenChange = (open: boolean) => {
+    if (open) {
+      setPickerMode(viewMode);
+      setPickerYear(selectedDate.getFullYear());
+    }
+    setCalendarOpen(open);
   };
 
   // Componente de seletor de mês
@@ -335,7 +348,7 @@ export function TendenciaVendasChart({
             <TrendingUp className="h-4 w-4 text-primary" />
             Tendência de vendas {viewMode === "day" ? "por hora" : "por dia"}
           </h3>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <Popover open={calendarOpen} onOpenChange={handleCalendarOpenChange}>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7">
                 <Calendar className="h-4 w-4 text-primary" />
@@ -345,20 +358,20 @@ export function TendenciaVendasChart({
               <div className="flex gap-2 p-2 border-b">
                 <Button 
                   size="sm" 
-                  variant={viewMode === "day" ? "default" : "outline"}
-                  onClick={() => setViewMode("day")}
+                  variant={pickerMode === "day" ? "default" : "outline"}
+                  onClick={() => setPickerMode("day")}
                 >
                   Dia
                 </Button>
                 <Button 
                   size="sm" 
-                  variant={viewMode === "month" ? "default" : "outline"}
-                  onClick={() => setViewMode("month")}
+                  variant={pickerMode === "month" ? "default" : "outline"}
+                  onClick={() => setPickerMode("month")}
                 >
                   Mês
                 </Button>
               </div>
-              {viewMode === "day" ? (
+              {pickerMode === "day" ? (
                 <CalendarComponent
                   mode="single"
                   selected={selectedDate}
@@ -390,7 +403,7 @@ export function TendenciaVendasChart({
         </h3>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{dateLabel}</span>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <Popover open={calendarOpen} onOpenChange={handleCalendarOpenChange}>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7">
                 <Calendar className="h-4 w-4 text-primary" />
@@ -400,20 +413,20 @@ export function TendenciaVendasChart({
               <div className="flex gap-2 p-2 border-b">
                 <Button 
                   size="sm" 
-                  variant={viewMode === "day" ? "default" : "outline"}
-                  onClick={() => setViewMode("day")}
+                  variant={pickerMode === "day" ? "default" : "outline"}
+                  onClick={() => setPickerMode("day")}
                 >
                   Dia
                 </Button>
                 <Button 
                   size="sm" 
-                  variant={viewMode === "month" ? "default" : "outline"}
-                  onClick={() => setViewMode("month")}
+                  variant={pickerMode === "month" ? "default" : "outline"}
+                  onClick={() => setPickerMode("month")}
                 >
                   Mês
                 </Button>
               </div>
-              {viewMode === "day" ? (
+              {pickerMode === "day" ? (
                 <CalendarComponent
                   mode="single"
                   selected={selectedDate}
