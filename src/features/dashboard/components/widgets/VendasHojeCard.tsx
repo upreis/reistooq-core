@@ -98,37 +98,35 @@ export function VendasHojeCard({ selectedAccount = "todas" }: VendasHojeCardProp
 
   return (
     <motion.div
-      className="bg-card border border-border rounded-2xl p-5 hover:bg-accent/30 transition-all flex-shrink-0"
+      className="bg-card border border-border rounded-2xl p-5 pt-8 hover:bg-accent/30 transition-all flex-shrink-0 relative mt-4"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
     >
-      <div className="flex flex-col gap-3">
-        {/* Título e Valor na mesma linha */}
-        <div className="flex items-baseline gap-4">
-          <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm whitespace-nowrap">
-            Vendas de hoje ao vivo
-          </h2>
-          {isLoading ? (
-            <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
-          ) : (
-            <motion.span
-              className="text-3xl font-bold text-foreground tracking-tight"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            >
-              {formatCurrency(totalVendas)}
-            </motion.span>
-          )}
-        </div>
-        
-        {/* Badge de data */}
-        <div>
-          <span className="bg-[#FFE600] text-black px-3 py-1.5 rounded-full text-sm font-medium">
-            {formattedDate}
-          </span>
-        </div>
+      {/* Badge de data - posicionado no topo, metade dentro/fora */}
+      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+        <span className="bg-[#FFE600] text-black px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap shadow-md">
+          {formattedDate}
+        </span>
+      </div>
+
+      {/* Título e Valor na mesma linha */}
+      <div className="flex items-baseline gap-4">
+        <h2 className="text-xl font-bold text-[#FFE600] drop-shadow-sm whitespace-nowrap">
+          Vendas de hoje ao vivo
+        </h2>
+        {isLoading ? (
+          <div className="h-8 w-32 bg-foreground/10 rounded animate-pulse" />
+        ) : (
+          <motion.span
+            className="text-3xl font-bold text-foreground tracking-tight"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          >
+            {formatCurrency(totalVendas)}
+          </motion.span>
+        )}
       </div>
     </motion.div>
   );
