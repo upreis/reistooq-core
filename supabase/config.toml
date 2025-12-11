@@ -140,3 +140,6 @@ verify_jwt = false
 
 [functions.sync-vendas-hoje]
 verify_jwt = false
+
+[functions.backfill-vendas-historico]
+verify_jwt = false
