@@ -127,8 +127,8 @@ export function ProductStockMorphingCard({
 
       {/* Cards Container */}
       <LayoutGroup>
-        {layout === "stack" && (
-          <div className="relative h-[420px] w-[180px] mx-auto">
+      {layout === "stack" && (
+          <div className="relative h-[280px] w-[240px] mx-auto">
             <AnimatePresence mode="popLayout">
               {displayCards.map((product) => {
                 const styles = getLayoutStyles(product.stackPosition)
@@ -158,13 +158,13 @@ export function ProductStockMorphingCard({
                     onDragEnd={handleDragEnd}
                     whileDrag={{ scale: 1.02, cursor: "grabbing" }}
                     className={cn(
-                      "absolute w-[160px] h-[380px] rounded-xl border bg-card overflow-hidden",
+                      "absolute w-[200px] h-[240px] rounded-2xl border-2 bg-card overflow-hidden shadow-lg",
                       borderColor,
                       isTopCard && "cursor-grab active:cursor-grabbing",
                     )}
                   >
-                    {/* Imagem do produto */}
-                    <div className="h-[280px] w-full bg-muted flex items-center justify-center overflow-hidden">
+                    {/* Imagem do produto - quadrada */}
+                    <div className="h-[140px] w-full bg-muted flex items-center justify-center overflow-hidden">
                       {product.url_imagem ? (
                         <img 
                           src={product.url_imagem} 
@@ -172,16 +172,16 @@ export function ProductStockMorphingCard({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Package className="h-16 w-16 text-muted-foreground" />
+                        <Package className="h-12 w-12 text-muted-foreground" />
                       )}
                     </div>
                     
                     {/* Info do produto */}
                     <div className="p-3">
-                      <p className="text-xs text-muted-foreground truncate">{product.sku_interno}</p>
-                      <h4 className="text-sm font-medium text-card-foreground line-clamp-2 mt-1">{product.nome}</h4>
+                      <p className="text-[10px] text-muted-foreground truncate">{product.sku_interno}</p>
+                      <h4 className="text-xs font-medium text-card-foreground line-clamp-2 mt-1">{product.nome}</h4>
                       <p className={cn(
-                        "text-lg font-bold mt-2",
+                        "text-base font-bold mt-1",
                         type === 'high' ? 'text-green-500' : 'text-red-500'
                       )}>
                         {product.quantidade} un
@@ -202,8 +202,8 @@ export function ProductStockMorphingCard({
 
         {layout === "grid" && (
           <div className={cn(
-            "grid grid-cols-2 gap-2 w-[180px] mx-auto",
-            needsScroll && "h-[420px] overflow-y-auto pr-1"
+            "grid grid-cols-2 gap-2 w-[240px] mx-auto",
+            needsScroll && "h-[280px] overflow-y-auto pr-1"
           )}>
             <AnimatePresence mode="popLayout">
               {displayCards.map((product) => (
@@ -216,14 +216,14 @@ export function ProductStockMorphingCard({
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   onClick={() => setExpandedCard(expandedCard === product.id ? null : product.id)}
                   className={cn(
-                    "cursor-pointer rounded-lg border bg-card overflow-hidden aspect-square",
+                    "cursor-pointer rounded-xl border-2 bg-card overflow-hidden aspect-square shadow-md",
                     borderColor,
                     "hover:border-primary/50 transition-colors",
                     expandedCard === product.id && "ring-2 ring-primary",
                   )}
                 >
                   {/* Imagem */}
-                  <div className="h-[60%] w-full bg-muted flex items-center justify-center overflow-hidden">
+                  <div className="h-[65%] w-full bg-muted flex items-center justify-center overflow-hidden">
                     {product.url_imagem ? (
                       <img 
                         src={product.url_imagem} 
@@ -231,18 +231,18 @@ export function ProductStockMorphingCard({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Package className="h-6 w-6 text-muted-foreground" />
+                      <Package className="h-8 w-8 text-muted-foreground" />
                     )}
                   </div>
                   
                   {/* Info */}
-                  <div className="p-1.5">
-                    <p className="text-[10px] text-muted-foreground truncate">{product.sku_interno}</p>
+                  <div className="p-2">
+                    <p className="text-[9px] text-muted-foreground truncate">{product.sku_interno}</p>
                     <p className={cn(
                       "text-sm font-bold",
                       type === 'high' ? 'text-green-500' : 'text-red-500'
                     )}>
-                      {product.quantidade}
+                      {product.quantidade} un
                     </p>
                   </div>
                 </motion.div>
@@ -253,8 +253,8 @@ export function ProductStockMorphingCard({
 
         {layout === "list" && (
           <div className={cn(
-            "flex flex-col gap-2 w-[180px] mx-auto",
-            needsScroll && "h-[420px] overflow-y-auto pr-1"
+            "flex flex-col gap-2 w-[240px] mx-auto",
+            needsScroll && "h-[280px] overflow-y-auto pr-1"
           )}>
             <AnimatePresence mode="popLayout">
               {displayCards.map((product) => (
@@ -267,7 +267,7 @@ export function ProductStockMorphingCard({
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   onClick={() => setExpandedCard(expandedCard === product.id ? null : product.id)}
                   className={cn(
-                    "cursor-pointer rounded-lg border bg-card overflow-hidden",
+                    "cursor-pointer rounded-xl border-2 bg-card overflow-hidden shadow-md",
                     borderColor,
                     "hover:border-primary/50 transition-colors",
                     expandedCard === product.id && "ring-2 ring-primary",
