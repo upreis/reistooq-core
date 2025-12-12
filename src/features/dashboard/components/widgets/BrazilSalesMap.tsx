@@ -149,8 +149,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         valor: data.valor,
       }));
     },
-    staleTime: 60 * 1000,
-    refetchInterval: 2 * 60 * 1000,
+    staleTime: 0,  // Sempre buscar dados frescos ao mudar filtros
+    gcTime: 0,     // Não manter cache antigo
   });
 
   // Buscar top produtos do estado selecionado
