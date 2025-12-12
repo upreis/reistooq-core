@@ -257,6 +257,38 @@ Deno.serve(async (req) => {
           totalSynced += count;
           results.push({ account: account.name, count });
           console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${count} vendas sincronizadas para ${account.name}`);
+          
+          // 🖼️ SINCRONIZAR IMAGENS COM ESTOQUE
+          // Para cada venda com SKU e thumbnail, atualizar produtos SEM imagem
+          const vendasComImagem = vendas.filter(v => v.item_sku && v.item_thumbnail);
+          if (vendasComImagem.length > 0) {
+            console.log(`[sync-vendas-hoje:${correlationId}] 🖼️ Sincronizando ${vendasComImagem.length} imagens com estoque...`);
+            
+            let imagensAtualizadas = 0;
+            for (const venda of vendasComImagem) {
+              try {
+                // Atualiza APENAS produtos que NÃO têm url_imagem definida
+                const { data: updateData, error: updateError } = await supabase
+                  .from('produtos')
+                  .update({ url_imagem: venda.item_thumbnail })
+                  .eq('sku_interno', venda.item_sku)
+                  .eq('organization_id', params.organization_id)
+                  .is('url_imagem', null)
+                  .select('id');
+                
+                if (!updateError && updateData?.length > 0) {
+                  imagensAtualizadas++;
+                  console.log(`[sync-vendas-hoje:${correlationId}] 🖼️ Imagem atualizada para SKU: ${venda.item_sku}`);
+                }
+              } catch (imgError) {
+                console.warn(`[sync-vendas-hoje:${correlationId}] ⚠️ Erro ao atualizar imagem SKU ${venda.item_sku}:`, imgError);
+              }
+            }
+            
+            if (imagensAtualizadas > 0) {
+              console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${imagensAtualizadas} imagens sincronizadas com estoque`);
+            }
+          }
         }
 
       } catch (accountError) {
