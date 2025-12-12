@@ -33,10 +33,10 @@ export const useDevolucaoCalendarData = () => {
       // Buscar últimos 60 dias de ml_claims (devoluções/claims)
       const sixtyDaysAgo = subDays(new Date(), 60).toISOString();
       
-      // ✅ OTIMIZADO: Busca apenas colunas leves (sem claim_data JSONB pesado)
+      // ✅ OTIMIZADO: Busca apenas colunas leves que EXISTEM (sem claim_data JSONB pesado)
       const { data: claims, error: fetchError } = await supabase
         .from('ml_claims')
-        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed, product_title, seller_sku')
+        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed')
         .gte('date_created', sixtyDaysAgo)
         .order('date_created', { ascending: false });
 
@@ -76,8 +76,7 @@ export const useDevolucaoCalendarData = () => {
               dateType: 'delivery',
               order_id: claim.order_id || claim.claim_id,
               status_devolucao: claim.status,
-              produto_titulo: claim.product_title || 'Produto',
-              sku: claim.seller_sku || '',
+              produto_titulo: 'Devolução',
               reason_id: claim.reason_id
             });
           } catch (e) {
@@ -103,8 +102,7 @@ export const useDevolucaoCalendarData = () => {
               dateType: 'review',
               order_id: claim.order_id || claim.claim_id,
               status_devolucao: claim.status,
-              produto_titulo: claim.product_title || 'Produto',
-              sku: claim.seller_sku || ''
+              produto_titulo: 'Devolução'
             });
           } catch (e) {
             // Ignorar data inválida
