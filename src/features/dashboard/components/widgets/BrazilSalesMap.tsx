@@ -342,13 +342,25 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                       className="flex items-center gap-2 p-1.5 bg-muted/20 rounded-lg hover:bg-accent/10 transition-colors"
                     >
                       {/* Imagem */}
-                      <div className="relative w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
+                      <div className="relative w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0 group/img">
                         {product.item_thumbnail ? (
-                          <img
-                            src={getHighQualityImage(product.item_thumbnail)}
-                            alt={product.item_title || "Produto"}
-                            className="w-full h-full object-cover"
-                          />
+                          <>
+                            <img
+                              src={getHighQualityImage(product.item_thumbnail)}
+                              alt={product.item_title || "Produto"}
+                              className="w-full h-full object-cover transition-transform duration-200 group-hover/img:scale-110"
+                            />
+                            {/* Tooltip ampliado ao hover */}
+                            <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
+                              <div className="w-28 h-28 rounded-lg shadow-xl border border-border bg-background overflow-hidden">
+                                <img 
+                                  src={getHighQualityImage(product.item_thumbnail)} 
+                                  alt={product.item_title || "Produto"}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </div>
+                          </>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Package className="h-4 w-4 text-muted-foreground" />
