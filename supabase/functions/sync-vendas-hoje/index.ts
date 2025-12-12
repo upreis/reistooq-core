@@ -258,16 +258,19 @@ Deno.serve(async (req) => {
           results.push({ account: account.name, count });
           console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${count} vendas sincronizadas para ${account.name}`);
           
-          // 🖼️ SINCRONIZAR IMAGENS COM ESTOQUE
+          // 🖼️ SINCRONIZAR IMAGENS COM ESTOQUE (COM FALLBACK DE/PARA)
           // Para cada venda com SKU e thumbnail, atualizar produtos SEM imagem
+          // Se SKU da venda não encontrar produto, busca no mapeamento de/para
           const vendasComImagem = vendas.filter(v => v.item_sku && v.item_thumbnail);
           if (vendasComImagem.length > 0) {
             console.log(`[sync-vendas-hoje:${correlationId}] 🖼️ Sincronizando ${vendasComImagem.length} imagens com estoque...`);
             
             let imagensAtualizadas = 0;
+            let imagensViaDePara = 0;
+            
             for (const venda of vendasComImagem) {
               try {
-                // Atualiza APENAS produtos que NÃO têm url_imagem definida
+                // 1️⃣ TENTATIVA DIRETA: Atualiza produto onde sku_interno = item_sku
                 const { data: updateData, error: updateError } = await supabase
                   .from('produtos')
                   .update({ url_imagem: venda.item_thumbnail })
@@ -278,15 +281,45 @@ Deno.serve(async (req) => {
                 
                 if (!updateError && updateData?.length > 0) {
                   imagensAtualizadas++;
-                  console.log(`[sync-vendas-hoje:${correlationId}] 🖼️ Imagem atualizada para SKU: ${venda.item_sku}`);
+                  console.log(`[sync-vendas-hoje:${correlationId}] 🖼️ Imagem atualizada para SKU direto: ${venda.item_sku}`);
+                  continue; // Encontrou direto, próximo item
+                }
+                
+                // 2️⃣ FALLBACK DE/PARA: Se não encontrou direto, buscar no mapeamento
+                const { data: mapeamento } = await supabase
+                  .from('mapeamentos_depara')
+                  .select('sku_correspondente, sku_simples')
+                  .eq('sku_pedido', venda.item_sku)
+                  .eq('ativo', true)
+                  .maybeSingle();
+                
+                if (mapeamento) {
+                  // Usa sku_correspondente ou sku_simples (fallback)
+                  const skuEstoque = mapeamento.sku_correspondente || mapeamento.sku_simples;
+                  
+                  if (skuEstoque) {
+                    const { data: updateViaDePara, error: errorDePara } = await supabase
+                      .from('produtos')
+                      .update({ url_imagem: venda.item_thumbnail })
+                      .eq('sku_interno', skuEstoque)
+                      .eq('organization_id', params.organization_id)
+                      .is('url_imagem', null)
+                      .select('id');
+                    
+                    if (!errorDePara && updateViaDePara?.length > 0) {
+                      imagensViaDePara++;
+                      console.log(`[sync-vendas-hoje:${correlationId}] 🖼️ Imagem via De/Para: ${venda.item_sku} → ${skuEstoque}`);
+                    }
+                  }
                 }
               } catch (imgError) {
                 console.warn(`[sync-vendas-hoje:${correlationId}] ⚠️ Erro ao atualizar imagem SKU ${venda.item_sku}:`, imgError);
               }
             }
             
-            if (imagensAtualizadas > 0) {
-              console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${imagensAtualizadas} imagens sincronizadas com estoque`);
+            const totalImagens = imagensAtualizadas + imagensViaDePara;
+            if (totalImagens > 0) {
+              console.log(`[sync-vendas-hoje:${correlationId}] ✅ ${totalImagens} imagens sincronizadas (${imagensAtualizadas} diretas, ${imagensViaDePara} via De/Para)`);
             }
           }
         }
