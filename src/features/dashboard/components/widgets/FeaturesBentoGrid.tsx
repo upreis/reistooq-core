@@ -147,8 +147,8 @@ export function FeaturesBentoGrid() {
         </div>
       </div>
 
-      {/* Mapa do Brasil - Seção separada com altura para 27 estados */}
-      <div className="h-[580px]">
+      {/* Mapa do Brasil - Seção separada com altura para 27 estados + 10 produtos */}
+      <div className="h-[680px]">
         <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
       </div>
     </div>
