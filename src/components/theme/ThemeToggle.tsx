@@ -204,9 +204,9 @@ export function ThemeToggle({ className }: ThemeToggleProps = {}) {
         />
 
         {/* Background Icons */}
-        <div className="absolute inset-0 flex items-center justify-between px-4">
-          <Sun size={20} className={isDark ? 'text-yellow-100' : 'text-amber-600'} />
-          <Moon size={20} className={isDark ? 'text-yellow-100' : 'text-slate-700'} />
+        <div className="absolute inset-0 flex items-center justify-between px-3">
+          <Sun size={14} className={isDark ? 'text-yellow-100' : 'text-amber-600'} />
+          <Moon size={14} className={isDark ? 'text-yellow-100' : 'text-slate-700'} />
         </div>
 
         {/* Circular Thumb with Bouncy Spring Physics */}
@@ -296,9 +296,9 @@ export function ThemeToggle({ className }: ThemeToggleProps = {}) {
           {/* Icon */}
           <div className="relative z-10">
             {isDark ? (
-              <Moon size={20} className="text-yellow-200" />
+              <Moon size={14} className="text-yellow-200" />
             ) : (
-              <Sun size={20} className="text-amber-500" />
+              <Sun size={14} className="text-amber-500" />
             )}
           </div>
         </motion.div>
