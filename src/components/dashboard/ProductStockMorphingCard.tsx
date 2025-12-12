@@ -43,6 +43,7 @@ export function ProductStockMorphingCard({
   const [smoothPosition, setSmoothPosition] = useState({ x: 0, y: 0 })
   const [isImageVisible, setIsImageVisible] = useState(false)
   const gridContainerRef = useRef<HTMLDivElement>(null)
+  const listContainerRef = useRef<HTMLDivElement>(null)
   const animationRef = useRef<number | null>(null)
 
   // Animação suave para seguir o mouse
@@ -68,9 +69,19 @@ export function ProductStockMorphingCard({
     }
   }, [mousePosition])
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleGridMouseMove = (e: React.MouseEvent) => {
     if (gridContainerRef.current) {
       const rect = gridContainerRef.current.getBoundingClientRect()
+      setMousePosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      })
+    }
+  }
+
+  const handleListMouseMove = (e: React.MouseEvent) => {
+    if (listContainerRef.current) {
+      const rect = listContainerRef.current.getBoundingClientRect()
       setMousePosition({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
@@ -254,7 +265,7 @@ export function ProductStockMorphingCard({
         {layout === "grid" && (
           <div 
             ref={gridContainerRef}
-            onMouseMove={handleMouseMove}
+            onMouseMove={handleGridMouseMove}
             className={cn(
               "relative grid grid-cols-4 gap-3 w-full",
               needsScroll && "max-h-[280px] overflow-y-auto pr-1"
@@ -340,12 +351,16 @@ export function ProductStockMorphingCard({
         )}
 
         {layout === "list" && (
-          <div className={cn(
-            "flex flex-col gap-2 w-full",
-            needsScroll && "max-h-[320px] overflow-y-auto pr-1"
-          )}>
+          <div 
+            ref={listContainerRef}
+            onMouseMove={handleListMouseMove}
+            className={cn(
+              "relative flex flex-col gap-2 w-full",
+              needsScroll && "max-h-[320px] overflow-y-auto pr-1"
+            )}
+          >
             <AnimatePresence mode="popLayout">
-              {displayCards.map((product) => (
+              {displayCards.map((product, index) => (
                 <motion.div
                   key={product.id}
                   layoutId={product.id}
@@ -354,6 +369,8 @@ export function ProductStockMorphingCard({
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   onClick={() => setExpandedCard(expandedCard === product.id ? null : product.id)}
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseLeave={handleMouseLeave}
                   className={cn(
                     "cursor-pointer rounded-lg border bg-card/50 overflow-hidden min-h-[80px]",
                     borderColor,
@@ -395,6 +412,34 @@ export function ProductStockMorphingCard({
                 </motion.div>
               ))}
             </AnimatePresence>
+
+            {/* Floating Image - List Mode */}
+            {isImageVisible && hoveredProductIndex !== null && (
+              <div
+                className="pointer-events-none absolute z-50 transition-opacity duration-300"
+                style={{
+                  left: `${smoothPosition.x + 20}px`,
+                  top: `${smoothPosition.y - 100}px`,
+                  opacity: isImageVisible ? 1 : 0,
+                }}
+              >
+                <div className="relative w-[200px] h-[200px] bg-white rounded-xl overflow-hidden shadow-xl">
+                  {products.map((product, index) => (
+                    <img
+                      key={product.id}
+                      src={product.url_imagem || "/placeholder.svg"}
+                      alt={product.nome}
+                      className="absolute inset-0 w-full h-full object-contain bg-white transition-all duration-500 ease-out"
+                      style={{
+                        opacity: hoveredProductIndex === index ? 1 : 0,
+                        scale: hoveredProductIndex === index ? 1 : 1.1,
+                        filter: hoveredProductIndex === index ? "none" : "blur(10px)",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </LayoutGroup>
