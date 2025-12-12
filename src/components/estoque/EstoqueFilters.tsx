@@ -83,8 +83,7 @@ export function EstoqueFilters({
   onCreateParent,
   onCreateChild,
 }: EstoqueFiltersProps) {
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [stockRange, setStockRange] = useState({ min: "", max: "" });
+  // Removido: priceRange e stockRange eram estados locais não utilizados na filtragem real
   const isMobile = useIsMobile();
 
   const statusOptions = [
