@@ -33,10 +33,10 @@ export const useDevolucaoCalendarData = () => {
       // Buscar últimos 60 dias de ml_claims (devoluções/claims)
       const sixtyDaysAgo = subDays(new Date(), 60).toISOString();
       
-      // ✅ COMBO 2.1: Busca de ml_claims (fonte única de dados do CRON)
+      // ✅ OTIMIZADO: Busca apenas colunas leves (sem claim_data JSONB pesado)
       const { data: claims, error: fetchError } = await supabase
         .from('ml_claims')
-        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed, claim_data, last_synced_at')
+        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed, product_title, seller_sku')
         .gte('date_created', sixtyDaysAgo)
         .order('date_created', { ascending: false });
 
@@ -58,8 +58,6 @@ export const useDevolucaoCalendarData = () => {
 
       // Agrupar devoluções por data
       const groupedByDate = claims.reduce((acc: Record<string, ContributionDay>, claim: any) => {
-        const claimData = claim.claim_data || {};
-        
         // Processar data de criação (delivery - quando foi criada a devolução)
         if (claim.date_created) {
           try {
@@ -76,11 +74,11 @@ export const useDevolucaoCalendarData = () => {
             acc[dateStr].count += 1;
             acc[dateStr].returns!.push({
               dateType: 'delivery',
-              order_id: claim.order_id || claimData.resource_id || claim.claim_id,
-              status_devolucao: claim.status || claimData.status,
-              produto_titulo: claimData.items?.[0]?.title || claimData.product_info?.title || 'Produto',
-              sku: claimData.items?.[0]?.seller_sku || '',
-              reason_id: claim.reason_id || claimData.reason_id
+              order_id: claim.order_id || claim.claim_id,
+              status_devolucao: claim.status,
+              produto_titulo: claim.product_title || 'Produto',
+              sku: claim.seller_sku || '',
+              reason_id: claim.reason_id
             });
           } catch (e) {
             // Ignorar data inválida
@@ -88,10 +86,9 @@ export const useDevolucaoCalendarData = () => {
         }
         
         // Processar data de fechamento/resolução (review)
-        const closedDate = claimData.date_closed || claimData.resolution?.date_created;
-        if (closedDate && claim.status === 'closed') {
+        if (claim.date_closed && claim.status === 'closed') {
           try {
-            const dateStr = format(parseISO(closedDate), 'yyyy-MM-dd');
+            const dateStr = format(parseISO(claim.date_closed), 'yyyy-MM-dd');
             
             if (!acc[dateStr]) {
               acc[dateStr] = {
@@ -104,10 +101,10 @@ export const useDevolucaoCalendarData = () => {
             acc[dateStr].count += 1;
             acc[dateStr].returns!.push({
               dateType: 'review',
-              order_id: claim.order_id || claimData.resource_id || claim.claim_id,
-              status_devolucao: claim.status || claimData.status,
-              produto_titulo: claimData.items?.[0]?.title || claimData.product_info?.title || 'Produto',
-              sku: claimData.items?.[0]?.seller_sku || ''
+              order_id: claim.order_id || claim.claim_id,
+              status_devolucao: claim.status,
+              produto_titulo: claim.product_title || 'Produto',
+              sku: claim.seller_sku || ''
             });
           } catch (e) {
             // Ignorar data inválida

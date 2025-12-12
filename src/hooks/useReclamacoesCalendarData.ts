@@ -36,10 +36,10 @@ export const useReclamacoesCalendarData = () => {
       // Buscar últimos 60 dias de ml_claims (reclamações)
       const sixtyDaysAgo = subDays(new Date(), 60).toISOString();
       
-      // ✅ COMBO 2.1: Busca de ml_claims (fonte única de dados do CRON)
+      // ✅ OTIMIZADO: Busca apenas colunas leves (sem claim_data JSONB pesado)
       const { data: claims, error: fetchError } = await supabase
         .from('ml_claims')
-        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed, claim_data, last_synced_at')
+        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed, buyer_nickname')
         .gte('date_created', sixtyDaysAgo)
         .order('date_created', { ascending: false });
 
@@ -61,8 +61,6 @@ export const useReclamacoesCalendarData = () => {
 
       // Agrupar reclamações por data (criação e prazo de análise)
       const groupedByDate = claims.reduce((acc: Record<string, ReclamacaoCalendarDay>, claim: any) => {
-        const claimData = claim.claim_data || {};
-        
         // Processar data de criação
         if (claim.date_created) {
           try {
@@ -80,11 +78,11 @@ export const useReclamacoesCalendarData = () => {
             acc[dateStr].claims!.push({
               dateType: 'created',
               claim_id: claim.claim_id,
-              type: claim.stage || claimData.type,
-              status: claim.status || claimData.status,
-              resource_id: claim.order_id || claimData.resource_id,
-              buyer_nickname: claim.buyer_nickname || claimData.players?.complainant?.nickname || '',
-              reason_id: claim.reason_id || claimData.reason_id
+              type: claim.stage,
+              status: claim.status,
+              resource_id: claim.order_id,
+              buyer_nickname: claim.buyer_nickname || '',
+              reason_id: claim.reason_id
             });
           } catch (e) {
             // Ignorar data inválida
@@ -111,11 +109,11 @@ export const useReclamacoesCalendarData = () => {
               acc[dateStr].claims!.push({
                 dateType: 'deadline',
                 claim_id: claim.claim_id,
-                type: claim.stage || claimData.type,
-                status: claim.status || claimData.status,
-                resource_id: claim.order_id || claimData.resource_id,
-                buyer_nickname: claim.buyer_nickname || claimData.players?.complainant?.nickname || '',
-                reason_id: claim.reason_id || claimData.reason_id
+                type: claim.stage,
+                status: claim.status,
+                resource_id: claim.order_id,
+                buyer_nickname: claim.buyer_nickname || '',
+                reason_id: claim.reason_id
               });
             } catch (e) {
               // Ignorar data inválida
