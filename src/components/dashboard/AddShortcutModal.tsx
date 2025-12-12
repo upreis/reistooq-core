@@ -8,45 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  ShoppingCart,
-  Package,
-  TrendingUp,
-  TrendingDown,
-  AlertCircle,
-  Settings,
-  BarChart3,
-  FileText,
-  Users,
-  Store,
-  Truck,
-  DollarSign,
-  Box,
-  ClipboardList,
-  MessageSquare,
-  Bell,
-  Calendar,
-  Search,
-  Shield,
-  Link,
-  StickyNote,
-  Scan,
-  ArrowLeftRight,
-  History,
-  Plus,
-  List,
-  Edit,
-  Upload,
-  Home,
-  Activity,
-  Layers,
-  PieChart,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import pedidosIcon from "@/assets/pedidos-cart-icon.png";
+import { Search } from "lucide-react";
 import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-new-icon.png";
 import canceladasComEnvioIcon from "@/assets/icons/canceladas-com-envio-icon.png";
-import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
 import adminIcon from "@/assets/admin.png";
@@ -55,10 +19,8 @@ import anunciosIcon from "@/assets/anuncios.png";
 import auditoriaIcon from "@/assets/auditoria.png";
 import calendarioIcon from "@/assets/calendario.png";
 import cargosIcon from "@/assets/cargos.png";
-import clientesIcon from "@/assets/clientes.png";
 import clientesNewIcon from "@/assets/oms-clientes-icon-v2.png";
 import composicoesIcon from "@/assets/composicoes.png";
-import configuracoesOmsIcon from "@/assets/configuracoes_oms.png";
 import configuracoesOmsNewIcon from "@/assets/oms-configuracoes-icon-v2.png";
 import convitesIcon from "@/assets/convites.png";
 import cotacoesIcon from "@/assets/cotacoes.png";
@@ -66,12 +28,8 @@ import dashboardAnalisesIcon from "@/assets/dashboard_analises.png";
 import dashboardEstoqueIcon from "@/assets/dashboard_estoque.png";
 import dashboardVendasIcon from "@/assets/dashboard_vendas.png";
 import deParaIcon from "@/assets/de_para.png";
-import devolucoesIcon from "@/assets/devolucoes.png";
 import devolucoesDevendaNewIcon from "@/assets/icons/devolucoes-venda-icon-new.png";
-import fornecedoresIcon from "@/assets/fornecedores.png";
 import fornecedoresNewIcon from "@/assets/fornecedores-new-icon.png";
-import historicoFerramentasIcon from "@/assets/historico_ferramentas.png";
-import estoqueHistoricoIcon from "@/assets/estoque-historico-icon.png";
 import estoqueHistoricoNewIcon from "@/assets/historico-estoque-icon-v2.png";
 import historicoIcon from "@/assets/historico.png";
 import importacaoIcon from "@/assets/icons/compras-importacao-new-icon.png";
@@ -80,16 +38,13 @@ import integracoesIcon from "@/assets/integracoes.png";
 import listaProdutosIcon from "@/assets/lista_produtos.png";
 import lojaIcon from "@/assets/loja.png";
 import notasIcon from "@/assets/notas.png";
-import pedidosCompraIcon from "@/assets/pedidos_compra.png";
 import pedidosCompraNewIcon from "@/assets/pedidos-compra-icon-v2.png";
-import pedidosOmsIcon from "@/assets/pedidos_oms.png";
 import pedidosOmsNewIcon from "@/assets/oms-pedidos-icon-v2.png";
 import perfilAdminIcon from "@/assets/perfil_admin.png";
 import reclamacoesIcon from "@/assets/icons/reclamacoes-new-icon.png";
 import scannerIcon from "@/assets/icons/scanner-icon.png";
 import segurancaIcon from "@/assets/seguranca.png";
 import usuariosIcon from "@/assets/usuarios.png";
-import vendedoresIcon from "@/assets/vendedores.png";
 import vendedoresNewIcon from "@/assets/oms-vendedores-icon-v2.png";
 import visaoGeralIcon from "@/assets/icons/visao-geral-icon.png";
 
@@ -98,6 +53,7 @@ interface PageOption {
   label: string;
   route: string;
   icon: React.ReactNode;
+  imageUrl: string;
   category: string;
   gradient: string;
 }
@@ -116,6 +72,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Visão Geral',
     route: '/dashboardinicial/visao-geral',
     icon: <img src={visaoGeralIcon} alt="Visão Geral" className="w-16 h-16 object-contain" />,
+    imageUrl: visaoGeralIcon,
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-cyan-500 to-cyan-700'
   },
@@ -124,6 +81,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Dashboard Vendas',
     route: '/dashboardinicial/vendas',
     icon: <img src={dashboardVendasIcon} alt="Dashboard Vendas" className="w-16 h-16 object-contain" />,
+    imageUrl: dashboardVendasIcon,
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-green-500 to-green-700'
   },
@@ -132,6 +90,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Dashboard Estoque',
     route: '/dashboardinicial/estoque',
     icon: <img src={dashboardEstoqueIcon} alt="Dashboard Estoque" className="w-16 h-16 object-contain" />,
+    imageUrl: dashboardEstoqueIcon,
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
@@ -140,6 +99,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Dashboard Análises',
     route: '/dashboardinicial/analises',
     icon: <img src={dashboardAnalisesIcon} alt="Dashboard Análises" className="w-16 h-16 object-contain" />,
+    imageUrl: dashboardAnalisesIcon,
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
@@ -150,14 +110,16 @@ const ALL_PAGES: PageOption[] = [
     label: 'Pedidos',
     route: '/pedidos',
     icon: <img src={pedidosNewIcon} alt="Pedidos" className="w-16 h-16 object-contain" />,
+    imageUrl: pedidosNewIcon,
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
-{
+  {
     id: 'vendas-com-envio',
     label: 'Canceladas com Envio',
     route: '/vendas-com-envio',
     icon: <img src={canceladasComEnvioIcon} alt="Canceladas com Envio" className="w-16 h-16 object-contain" />,
+    imageUrl: canceladasComEnvioIcon,
     category: 'Vendas & Pedidos',
     gradient: 'bg-gradient-to-br from-rose-500 to-rose-700'
   },
@@ -168,6 +130,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'OMS Pedidos',
     route: '/oms/pedidos',
     icon: <img src={pedidosOmsNewIcon} alt="OMS Pedidos" className="w-16 h-16 object-contain" />,
+    imageUrl: pedidosOmsNewIcon,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-indigo-500 to-indigo-700'
   },
@@ -176,6 +139,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'OMS Clientes',
     route: '/oms/clientes',
     icon: <img src={clientesNewIcon} alt="Clientes" className="w-16 h-16 object-contain" />,
+    imageUrl: clientesNewIcon,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-pink-500 to-pink-700'
   },
@@ -184,6 +148,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'OMS Vendedores',
     route: '/oms/vendedores',
     icon: <img src={vendedoresNewIcon} alt="Vendedores" className="w-16 h-16 object-contain" />,
+    imageUrl: vendedoresNewIcon,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-violet-500 to-violet-700'
   },
@@ -192,6 +157,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'OMS Configurações',
     route: '/oms/configuracoes',
     icon: <img src={configuracoesOmsNewIcon} alt="Configurações" className="w-16 h-16 object-contain" />,
+    imageUrl: configuracoesOmsNewIcon,
     category: 'OMS',
     gradient: 'bg-gradient-to-br from-slate-500 to-slate-700'
   },
@@ -202,6 +168,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Estoque',
     route: '/estoque',
     icon: <img src={estoqueNewIcon} alt="Estoque" className="w-16 h-16 object-contain" />,
+    imageUrl: estoqueNewIcon,
     category: 'Estoque',
     gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
   },
@@ -210,6 +177,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Composições',
     route: '/estoque/composicoes',
     icon: <img src={composicoesIcon} alt="Composições" className="w-16 h-16 object-contain" />,
+    imageUrl: composicoesIcon,
     category: 'Estoque',
     gradient: 'bg-gradient-to-br from-emerald-500 to-emerald-700'
   },
@@ -218,6 +186,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Histórico',
     route: '/estoque/historico',
     icon: <img src={estoqueHistoricoNewIcon} alt="Histórico" className="w-16 h-16 object-contain" />,
+    imageUrl: estoqueHistoricoNewIcon,
     category: 'Estoque',
     gradient: 'bg-gradient-to-br from-teal-500 to-teal-700'
   },
@@ -228,6 +197,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Devoluções',
     route: '/devolucoesdevenda',
     icon: <img src={devolucoesDevendaNewIcon} alt="Devoluções" className="w-16 h-16 object-contain" />,
+    imageUrl: devolucoesDevendaNewIcon,
     category: 'Devoluções & Reclamações',
     gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
   },
@@ -236,6 +206,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Reclamações',
     route: '/reclamacoes',
     icon: <img src={reclamacoesIcon} alt="Reclamações" className="w-16 h-16 object-contain" />,
+    imageUrl: reclamacoesIcon,
     category: 'Devoluções & Reclamações',
     gradient: 'bg-gradient-to-br from-red-500 to-red-700'
   },
@@ -246,6 +217,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Compras',
     route: '/compras/pedidos',
     icon: <img src={pedidosCompraNewIcon} alt="Compras" className="w-16 h-16 object-contain" />,
+    imageUrl: pedidosCompraNewIcon,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-blue-600 to-blue-800'
   },
@@ -254,6 +226,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Cotações',
     route: '/compras/cotacoes',
     icon: <img src={cotacoesIcon} alt="Cotações" className="w-16 h-16 object-contain" />,
+    imageUrl: cotacoesIcon,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-indigo-600 to-indigo-800'
   },
@@ -262,6 +235,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Fornecedores',
     route: '/compras/fornecedores',
     icon: <img src={fornecedoresNewIcon} alt="Fornecedores" className="w-16 h-16 object-contain" />,
+    imageUrl: fornecedoresNewIcon,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-teal-600 to-teal-800'
   },
@@ -270,6 +244,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Importação',
     route: '/compras/importacao',
     icon: <img src={importacaoIcon} alt="Importação" className="w-16 h-16 object-contain" />,
+    imageUrl: importacaoIcon,
     category: 'Compras',
     gradient: 'bg-gradient-to-br from-cyan-600 to-cyan-800'
   },
@@ -280,6 +255,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Calendário',
     route: '/aplicativos/calendario',
     icon: <img src={calendarioIcon} alt="Calendário" className="w-16 h-16 object-contain" />,
+    imageUrl: calendarioIcon,
     category: 'Aplicativos',
     gradient: 'bg-gradient-to-br from-red-500 to-red-700'
   },
@@ -288,6 +264,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Notas',
     route: '/aplicativos/notas',
     icon: <img src={notasIcon} alt="Notas" className="w-16 h-16 object-contain" />,
+    imageUrl: notasIcon,
     category: 'Aplicativos',
     gradient: 'bg-gradient-to-br from-yellow-500 to-yellow-700'
   },
@@ -298,6 +275,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Loja',
     route: '/apps/ecommerce/shop',
     icon: <img src={lojaIcon} alt="Loja" className="w-16 h-16 object-contain" />,
+    imageUrl: lojaIcon,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-purple-600 to-purple-800'
   },
@@ -306,6 +284,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Lista Produtos',
     route: '/apps/ecommerce/list',
     icon: <img src={listaProdutosIcon} alt="Lista Produtos" className="w-16 h-16 object-contain" />,
+    imageUrl: listaProdutosIcon,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-violet-600 to-violet-800'
   },
@@ -314,6 +293,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Adicionar Produto',
     route: '/apps/ecommerce/addproduct',
     icon: <img src={adicionarProdutoIcon} alt="Adicionar Produto" className="w-16 h-16 object-contain" />,
+    imageUrl: adicionarProdutoIcon,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
   },
@@ -322,6 +302,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Importar Produtos',
     route: '/apps/ecommerce/import',
     icon: <img src={importarProdutosIcon} alt="Importar Produtos" className="w-16 h-16 object-contain" />,
+    imageUrl: importarProdutosIcon,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-pink-600 to-pink-800'
   },
@@ -332,6 +313,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Integrações',
     route: '/configuracoes/integracoes',
     icon: <img src={integracoesIcon} alt="Integrações" className="w-16 h-16 object-contain" />,
+    imageUrl: integracoesIcon,
     category: 'Configurações',
     gradient: 'bg-gradient-to-br from-gray-500 to-gray-700'
   },
@@ -340,6 +322,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Anúncios',
     route: '/configuracoes/anuncios',
     icon: <img src={anunciosIcon} alt="Anúncios" className="w-16 h-16 object-contain" />,
+    imageUrl: anunciosIcon,
     category: 'Configurações',
     gradient: 'bg-gradient-to-br from-pink-500 to-pink-700'
   },
@@ -350,6 +333,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Administração',
     route: '/admin',
     icon: <img src={adminIcon} alt="Administração" className="w-16 h-16 object-contain" />,
+    imageUrl: adminIcon,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
   },
@@ -358,6 +342,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Usuários',
     route: '/admin/usuarios',
     icon: <img src={usuariosIcon} alt="Usuários" className="w-16 h-16 object-contain" />,
+    imageUrl: usuariosIcon,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
@@ -366,6 +351,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Cargos',
     route: '/admin/cargos',
     icon: <img src={cargosIcon} alt="Cargos" className="w-16 h-16 object-contain" />,
+    imageUrl: cargosIcon,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
   },
@@ -374,6 +360,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Convites',
     route: '/admin/convites',
     icon: <img src={convitesIcon} alt="Convites" className="w-16 h-16 object-contain" />,
+    imageUrl: convitesIcon,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-fuchsia-600 to-fuchsia-800'
   },
@@ -382,6 +369,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Alertas',
     route: '/admin/alertas',
     icon: <img src={alertasIcon} alt="Alertas" className="w-16 h-16 object-contain" />,
+    imageUrl: alertasIcon,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
   },
@@ -390,6 +378,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Segurança',
     route: '/admin/seguranca',
     icon: <img src={segurancaIcon} alt="Segurança" className="w-16 h-16 object-contain" />,
+    imageUrl: segurancaIcon,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-green-500 to-green-700'
   },
@@ -398,6 +387,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Auditoria',
     route: '/admin/auditoria',
     icon: <img src={auditoriaIcon} alt="Auditoria" className="w-16 h-16 object-contain" />,
+    imageUrl: auditoriaIcon,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-teal-500 to-teal-700'
   },
@@ -406,6 +396,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Administração Perfil',
     route: '/admin/perfil',
     icon: <img src={perfilAdminIcon} alt="Administração Perfil" className="w-16 h-16 object-contain" />,
+    imageUrl: perfilAdminIcon,
     category: 'Administração',
     gradient: 'bg-gradient-to-br from-yellow-600 to-yellow-800'
   },
@@ -414,24 +405,27 @@ const ALL_PAGES: PageOption[] = [
   {
     id: 'scanner',
     label: 'Scanner',
-    route: '/scanner',
+    route: '/aplicativos/scanner',
     icon: <img src={scannerIcon} alt="Scanner" className="w-16 h-16 object-contain" />,
+    imageUrl: scannerIcon,
     category: 'Ferramentas',
     gradient: 'bg-gradient-to-br from-cyan-500 to-cyan-700'
   },
   {
     id: 'de-para',
     label: 'De-Para',
-    route: '/de-para',
+    route: '/estoque/de-para',
     icon: <img src={deParaIcon} alt="De-Para" className="w-16 h-16 object-contain" />,
+    imageUrl: deParaIcon,
     category: 'Ferramentas',
     gradient: 'bg-gradient-to-br from-green-600 to-green-800'
   },
   {
     id: 'alertas',
     label: 'Alertas',
-    route: '/alertas',
+    route: '/configuracoes/alertas',
     icon: <img src={alertasIcon} alt="Alertas" className="w-16 h-16 object-contain" />,
+    imageUrl: alertasIcon,
     category: 'Ferramentas',
     gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
   },
@@ -440,6 +434,7 @@ const ALL_PAGES: PageOption[] = [
     label: 'Histórico',
     route: '/historico',
     icon: <img src={historicoIcon} alt="Histórico" className="w-16 h-16 object-contain" />,
+    imageUrl: historicoIcon,
     category: 'Ferramentas',
     gradient: 'bg-gradient-to-br from-stone-500 to-stone-700'
   },
@@ -494,6 +489,7 @@ export const AddShortcutModal = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
+            autoComplete="off"
           />
         </div>
 
