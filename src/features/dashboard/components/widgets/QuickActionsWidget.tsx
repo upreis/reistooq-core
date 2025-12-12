@@ -4,6 +4,11 @@ import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import { X, Plus } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-new-icon.png";
+import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
+import canceladasComEnvioIcon from "@/assets/icons/canceladas-com-envio-icon.png";
+import listaProdutosIcon from "@/assets/lista_produtos.png";
+import clientesNewIcon from "@/assets/oms-clientes-icon-v2.png";
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
@@ -18,31 +23,31 @@ interface Service {
 const DEFAULT_SHORTCUTS: Service[] = [
   {
     name: 'Pedidos',
-    imageUrl: 'https://img.icons8.com/fluency/96/shopping-cart.png',
+    imageUrl: pedidosNewIcon,
     href: '/pedidos',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-600'
   },
   {
     name: 'Estoque',
-    imageUrl: 'https://img.icons8.com/fluency/96/warehouse.png',
+    imageUrl: estoqueNewIcon,
     href: '/estoque',
     gradient: 'bg-gradient-to-br from-amber-500 to-orange-600'
   },
-{
+  {
     name: 'Canceladas com Envio',
-    imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
+    imageUrl: canceladasComEnvioIcon,
     href: '/vendas-com-envio',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
   },
   {
     name: 'Produtos',
-    imageUrl: 'https://img.icons8.com/fluency/96/product.png',
+    imageUrl: listaProdutosIcon,
     href: '/apps/ecommerce/list',
     gradient: 'bg-gradient-to-br from-green-500 to-emerald-600'
   },
   {
     name: 'Clientes',
-    imageUrl: 'https://img.icons8.com/fluency/96/customer.png',
+    imageUrl: clientesNewIcon,
     href: '/oms/clientes',
     gradient: 'bg-gradient-to-br from-pink-500 to-rose-600'
   }
