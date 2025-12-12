@@ -158,11 +158,11 @@ export function FeaturesBentoGrid() {
           <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
         </div>
 
-        {/* Cards de Estoque com 3 modos de exibição */}
-        <div className="flex gap-4">
+        {/* Cards de Estoque com 3 modos de exibição - um abaixo do outro */}
+        <div className="flex flex-col gap-4">
           {/* Estoque Alto */}
           {stockLoading ? (
-            <div className="flex items-center justify-center w-[200px] h-[480px] bg-background rounded-lg border border-muted-foreground/30">
+            <div className="flex items-center justify-center w-[200px] h-[240px] bg-background rounded-lg border border-muted-foreground/30">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
@@ -175,7 +175,7 @@ export function FeaturesBentoGrid() {
 
           {/* Estoque Baixo */}
           {stockLoading ? (
-            <div className="flex items-center justify-center w-[200px] h-[480px] bg-background rounded-lg border border-muted-foreground/30">
+            <div className="flex items-center justify-center w-[200px] h-[240px] bg-background rounded-lg border border-muted-foreground/30">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
