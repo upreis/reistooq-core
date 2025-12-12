@@ -143,7 +143,7 @@ export function TendenciaVendasChart({
   });
 
   const daysInMonth = getDaysInMonth(selectedDate);
-  const maxXValue = viewMode === "day" ? 22 : daysInMonth;
+  const maxXValue = viewMode === "day" ? 23 : daysInMonth;
 
   const { chartData, maxValue, accounts } = useMemo(() => {
     if (!vendas || vendas.length === 0) {
@@ -206,11 +206,10 @@ export function TendenciaVendasChart({
     const agrupados = new Map<number, number>();
     
     if (viewMode === "day") {
-      // Agrupar por intervalos de 2 horas
+      // Usar horas diretamente (0-23)
       accountData.forEach((valor, hora) => {
-        const intervalo = Math.floor(hora / 2) * 2;
-        const atual = agrupados.get(intervalo) || 0;
-        agrupados.set(intervalo, atual + valor);
+        const atual = agrupados.get(hora) || 0;
+        agrupados.set(hora, atual + valor);
       });
     } else {
       // Usar dias diretamente
@@ -329,7 +328,7 @@ export function TendenciaVendasChart({
   // Gerar labels do eixo X
   const xAxisLabels = useMemo(() => {
     if (viewMode === "day") {
-      return [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22].map(h => `${h}h`);
+      return Array.from({ length: 24 }, (_, i) => `${i}h`);
     } else {
       // Para mês, mostrar todos os dias de 1 até o último dia do mês
       return Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
@@ -507,9 +506,8 @@ export function TendenciaVendasChart({
             
             if (viewMode === "day") {
               accountData.forEach((valor, hora) => {
-                const intervalo = Math.floor(hora / 2) * 2;
-                const atual = agrupados.get(intervalo) || 0;
-                agrupados.set(intervalo, atual + valor);
+                const atual = agrupados.get(hora) || 0;
+                agrupados.set(hora, atual + valor);
               });
             } else {
               accountData.forEach((valor, dia) => {
@@ -549,7 +547,7 @@ export function TendenciaVendasChart({
             let xPercent: number;
             
             if (viewMode === "day") {
-              xKey = index * 2; // 0, 2, 4, 6...
+              xKey = index; // 0, 1, 2, 3... 23
               xPercent = (xKey / maxXValue) * 100;
             } else {
               xKey = index + 1; // 1, 2, 3...
@@ -564,11 +562,8 @@ export function TendenciaVendasChart({
                 
                 let valor = 0;
                 if (viewMode === "day") {
-                  // Agregar por intervalo de 2h
-                  accountMap.forEach((v, hora) => {
-                    const intervalo = Math.floor(hora / 2) * 2;
-                    if (intervalo === xKey) valor += v;
-                  });
+                  // Valor direto da hora
+                  valor = accountMap.get(xKey) || 0;
                 } else {
                   valor = accountMap.get(xKey) || 0;
                 }
