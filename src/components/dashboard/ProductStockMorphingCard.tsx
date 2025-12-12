@@ -361,9 +361,9 @@ export function ProductStockMorphingCard({
                     expandedCard === product.id && "ring-2 ring-primary",
                   )}
                 >
-                  <div className="flex items-center gap-3 p-3">
+                  <div className="flex items-center gap-4 p-4">
                     {/* Thumbnail */}
-                    <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-white flex items-center justify-center overflow-hidden">
+                    <div className="h-16 w-16 flex-shrink-0 rounded-lg bg-white flex items-center justify-center overflow-hidden">
                       {product.url_imagem ? (
                         <img 
                           src={product.url_imagem} 
