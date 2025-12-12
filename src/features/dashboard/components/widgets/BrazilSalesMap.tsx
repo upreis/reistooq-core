@@ -113,25 +113,37 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
 
       if (!profile?.organizacao_id) return [];
 
-      // Buscar vendas do período com shipping_state
-      let query = supabase
-        .from("vendas_hoje_realtime")
-        .select("order_id, total_amount, shipping_state, account_name, item_quantity")
-        .eq("organization_id", profile.organizacao_id)
-        .gte("date_created", dateStartISO)
-        .lte("date_created", dateEndISO);
+      // Buscar TODAS as vendas do período com paginação
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let offset = 0;
+      let hasMore = true;
+      
+      while (hasMore) {
+        let query = supabase
+          .from("vendas_hoje_realtime")
+          .select("order_id, total_amount, shipping_state, account_name, item_quantity")
+          .eq("organization_id", profile.organizacao_id)
+          .gte("date_created", dateStartISO)
+          .lte("date_created", dateEndISO)
+          .range(offset, offset + PAGE_SIZE - 1);
 
-      if (selectedAccount !== "todas") {
-        query = query.eq("account_name", selectedAccount);
+        if (selectedAccount !== "todas") {
+          query = query.eq("account_name", selectedAccount);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        allData = [...allData, ...(data || [])];
+        hasMore = (data?.length || 0) === PAGE_SIZE;
+        offset += PAGE_SIZE;
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
 
       // Agregar por estado usando coluna shipping_state
       const stateMap = new Map<string, { orderIds: Set<string>; produtos: number; valor: number }>();
       
-      (data || []).forEach((order: any) => {
+      allData.forEach((order: any) => {
         const state = order.shipping_state;
         if (!state) return;
         
@@ -170,29 +182,40 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
 
       if (!profile?.organizacao_id) return [];
 
-      let query = supabase
-        .from("vendas_hoje_realtime")
-        .select("item_id, item_thumbnail, item_title, total_amount, item_quantity")
-        .eq("organization_id", profile.organizacao_id)
-        .eq("shipping_state", selectedState)
-        .gte("date_created", dateStartISO)
-        .lte("date_created", dateEndISO);
+      // Buscar TODAS as vendas do estado com paginação
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let offset = 0;
+      let hasMore = true;
+      
+      while (hasMore) {
+        let query = supabase
+          .from("vendas_hoje_realtime")
+          .select("item_id, item_thumbnail, item_title, total_amount, item_quantity")
+          .eq("organization_id", profile.organizacao_id)
+          .eq("shipping_state", selectedState)
+          .gte("date_created", dateStartISO)
+          .lte("date_created", dateEndISO)
+          .range(offset, offset + PAGE_SIZE - 1);
 
-      if (selectedAccount !== "todas") {
-        query = query.eq("account_name", selectedAccount);
+        if (selectedAccount !== "todas") {
+          query = query.eq("account_name", selectedAccount);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        allData = [...allData, ...(data || [])];
+        hasMore = (data?.length || 0) === PAGE_SIZE;
+        offset += PAGE_SIZE;
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
 
       // Agrupar por item_id e somar quantidade de itens
       const productMap = new Map<string, TopProduct>();
-      let totalProdutosEstado = 0;
       
-      (data || []).forEach((item: any) => {
+      allData.forEach((item: any) => {
         const existing = productMap.get(item.item_id);
         const qty = item.item_quantity || 1;
-        totalProdutosEstado += qty;
         
         if (existing) {
           existing.vendas += qty;  // Soma quantidade de itens
@@ -208,10 +231,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         }
       });
 
-      // Ordenar por quantidade vendida e limitar ao total real de produtos do estado
+      // Ordenar por quantidade vendida e limitar a 10
       const sortedProducts = Array.from(productMap.values())
         .sort((a, b) => b.vendas - a.vendas)
-        .slice(0, Math.min(10, totalProdutosEstado));
+        .slice(0, 10);
       
       return sortedProducts;
     },
