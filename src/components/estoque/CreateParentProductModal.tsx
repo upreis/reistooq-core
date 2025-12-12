@@ -334,8 +334,8 @@ export function CreateParentProductModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
             {editProduct ? 'Editar Produto Pai' : 'Criar Produto Pai'}
@@ -350,7 +350,7 @@ export function CreateParentProductModal({
 
         {/* Alerta de permissão */}
         {!permissionsLoading && !editProduct && !hasPermission('estoque:create') && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="flex-shrink-0">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               Você não tem permissão para criar produtos. Entre em contato com o administrador para solicitar a permissão "estoque:create".
@@ -358,7 +358,7 @@ export function CreateParentProductModal({
           </Alert>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 pr-2">
           <div className="space-y-2">
             <Label htmlFor="parent-sku">SKU Interno *</Label>
             <Input
