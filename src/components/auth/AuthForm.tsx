@@ -96,6 +96,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
                     value={nomeCompleto}
                     onChange={(e) => setNomeCompleto(e.target.value)}
                     className="pl-10"
+                    autoComplete="name"
                     required
                   />
                 </div>
@@ -112,6 +113,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
                     value={nomeEmpresa}
                     onChange={(e) => setNomeEmpresa(e.target.value)}
                     className="pl-10"
+                    autoComplete="organization"
                   />
                 </div>
               </div>
@@ -129,6 +131,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10"
+                autoComplete="email"
                 required
               />
             </div>
@@ -145,6 +148,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10 pr-10"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 required
                 minLength={mode === "signup" ? 6 : undefined}
               />
@@ -176,6 +180,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-10"
+                  autoComplete="new-password"
                   required
                 />
               </div>

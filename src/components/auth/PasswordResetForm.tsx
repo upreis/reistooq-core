@@ -131,6 +131,7 @@ export function PasswordResetForm({ mode = 'request', onBack }: PasswordResetFor
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
                 disabled={loading}
               />
@@ -198,6 +199,7 @@ export function PasswordResetForm({ mode = 'request', onBack }: PasswordResetFor
               placeholder="Digite sua nova senha"
               value={newPassword}
               onChange={(e) => handlePasswordChange(e.target.value)}
+              autoComplete="new-password"
               required
               disabled={loading}
             />
@@ -234,6 +236,7 @@ export function PasswordResetForm({ mode = 'request', onBack }: PasswordResetFor
               placeholder="Confirme sua nova senha"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
               required
               disabled={loading}
             />
