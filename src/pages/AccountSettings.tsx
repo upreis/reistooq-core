@@ -104,15 +104,15 @@ const AccountSettings = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Senha Atual</Label>
-                  <Input id="currentPassword" type="password" />
+                  <Input id="currentPassword" type="password" autoComplete="current-password" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">Nova Senha</Label>
-                  <Input id="newPassword" type="password" />
+                  <Input id="newPassword" type="password" autoComplete="new-password" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                  <Input id="confirmPassword" type="password" />
+                  <Input id="confirmPassword" type="password" autoComplete="new-password" />
                 </div>
                 <Button className="w-full">Atualizar Senha</Button>
               </CardContent>
@@ -129,11 +129,11 @@ const AccountSettings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="yourName">Seu Nome</Label>
-                  <Input id="yourName" defaultValue="João Silva" />
+                  <Input id="yourName" defaultValue="João Silva" autoComplete="name" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="storeName">Nome da Loja</Label>
-                  <Input id="storeName" defaultValue="Minha Empresa" />
+                  <Input id="storeName" defaultValue="Minha Empresa" autoComplete="organization" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Localização</Label>
@@ -163,11 +163,11 @@ const AccountSettings = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" type="email" defaultValue="usuario@reistoq.com" />
+                  <Input id="email" type="email" defaultValue="usuario@reistoq.com" autoComplete="email" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Telefone</Label>
-                  <Input id="phone" defaultValue="+55 11 99999-9999" />
+                  <Input id="phone" defaultValue="+55 11 99999-9999" autoComplete="tel" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="address">Endereço</Label>

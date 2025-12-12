@@ -109,7 +109,7 @@ function App() {
           <AuthProvider>
             <MobileProvider>
               <SidebarUIProvider>
-                <BrowserRouter>
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                   <MobileRedirect />
                   <InactivityTracker />
                   <AIChatBubble />
