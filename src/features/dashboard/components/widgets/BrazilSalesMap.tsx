@@ -29,13 +29,16 @@ interface TopProduct {
 }
 
 // Função para calcular cor baseada na intensidade de vendas
+// Gradiente: Vermelho (menor) -> Amarelo (médio) -> Verde (maior)
 function getStateColor(vendas: number, maxVendas: number): string {
   if (vendas === 0 || maxVendas === 0) return "hsl(var(--muted) / 0.4)";
   
   const intensity = Math.min(vendas / maxVendas, 1);
-  // Gradiente de verde claro para verde escuro
-  const lightness = 70 - (intensity * 40); // 70% -> 30%
-  return `hsl(142, 76%, ${lightness}%)`;
+  // Hue: 0 (vermelho) -> 60 (amarelo) -> 120 (verde)
+  const hue = intensity * 120;
+  const saturation = 70;
+  const lightness = 45;
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
 export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapProps) {
