@@ -1,21 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart3, ShoppingCart, TrendingUp } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { HorizontalSemesterCalendar } from '@/components/dashboard/HorizontalSemesterCalendar';
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
 import { FeaturesBentoGrid } from '@/features/dashboard/components/widgets/FeaturesBentoGrid';
-import { ProductStockCard } from '@/components/dashboard/ProductStockCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
 import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
-import { useEstoqueProducts } from '@/hooks/useEstoqueProducts';
 
 export default function DashboardVisaoGeral() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  
-  // Buscar dados de estoque
-  const { highStockProducts, lowStockProducts, loading: stockLoading } = useEstoqueProducts();
   
   // Buscar dados reais de devoluções para o calendário
   const { data: calendarDataDevolucoes, loading: calendarLoadingDevolucoes, error: calendarErrorDevolucoes, refresh: refreshDevolucoes } = useDevolucaoCalendarData();
@@ -58,7 +53,7 @@ export default function DashboardVisaoGeral() {
       <FeaturesBentoGrid />
 
       {/* Cards Analíticos */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-[0.7fr_1.5fr_auto]">
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Card 1: Vendas */}
         <Card className="bg-background border-border overflow-hidden">
           <CardContent className="p-6">
@@ -150,45 +145,6 @@ export default function DashboardVisaoGeral() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Cards de Estoque Agrupados */}
-        <div className="flex gap-1 self-start justify-end">
-          {/* Card 3: Produtos com Maior Estoque */}
-          <div className="relative">
-            <h3 className="absolute -top-1 left-0 right-0 text-sm font-semibold text-green-500 text-center z-10">Estoque Alto</h3>
-            {stockLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <ProductStockCard 
-                products={highStockProducts}
-                title="Maior Estoque"
-                type="high"
-                cardWidth={220}
-                cardHeight={380}
-              />
-            )}
-          </div>
-
-          {/* Card 4: Produtos com Menor Estoque */}
-          <div className="relative">
-            <h3 className="absolute -top-1 left-0 right-0 text-sm font-semibold text-red-500 text-center z-10">Estoque Baixo</h3>
-            {stockLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <ProductStockCard 
-                products={lowStockProducts}
-                title="Baixo Estoque"
-                type="low"
-                cardWidth={220}
-                cardHeight={380}
-              />
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Atalhos Rápidos */}

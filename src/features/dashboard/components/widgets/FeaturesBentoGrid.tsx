@@ -3,9 +3,11 @@ import { VendasHojeCard } from "./VendasHojeCard";
 import { TendenciaVendasChart } from "./TendenciaVendasChart";
 import { QuickActionCards } from "./QuickActionCards";
 import { BrazilSalesMap } from "./BrazilSalesMap";
+import { ProductStockCard } from "@/components/dashboard/ProductStockCard";
+import { useEstoqueProducts } from "@/hooks/useEstoqueProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { startOfDay, endOfDay, startOfMonth, endOfMonth, getYear, getMonth } from "date-fns";
+import { startOfDay, endOfDay, getYear, getMonth } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
 const TIMEZONE = 'America/Sao_Paulo';
@@ -25,6 +27,8 @@ export function FeaturesBentoGrid() {
   const [selectedAccount, setSelectedAccount] = useState<string>("todas");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
+
+  const { highStockProducts, lowStockProducts, loading: stockLoading } = useEstoqueProducts();
 
   // Calcular range de datas baseado no viewMode - memoizado para evitar re-renders
   // IMPORTANTE: usar timezone São Paulo para calcular início/fim do mês corretamente
@@ -147,9 +151,51 @@ export function FeaturesBentoGrid() {
         </div>
       </div>
 
-      {/* Mapa do Brasil - Seção compacta */}
-      <div className="h-[520px]">
-        <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
+      {/* Mapa do Brasil + Cards de Estoque */}
+      <div className="flex gap-4">
+        {/* Mapa do Brasil - Seção compacta */}
+        <div className="flex-1 h-[520px]">
+          <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
+        </div>
+
+        {/* Cards de Estoque */}
+        <div className="flex gap-2">
+          {/* Estoque Alto */}
+          <div className="relative">
+            <h3 className="absolute -top-1 left-0 right-0 text-sm font-semibold text-green-500 text-center z-10">Estoque Alto</h3>
+            {stockLoading ? (
+              <div className="flex items-center justify-center w-[200px] h-[520px] bg-background rounded-lg border border-muted-foreground/30">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ProductStockCard 
+                products={highStockProducts}
+                title="Maior Estoque"
+                type="high"
+                cardWidth={200}
+                cardHeight={500}
+              />
+            )}
+          </div>
+
+          {/* Estoque Baixo */}
+          <div className="relative">
+            <h3 className="absolute -top-1 left-0 right-0 text-sm font-semibold text-red-500 text-center z-10">Estoque Baixo</h3>
+            {stockLoading ? (
+              <div className="flex items-center justify-center w-[200px] h-[520px] bg-background rounded-lg border border-muted-foreground/30">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ProductStockCard 
+                products={lowStockProducts}
+                title="Baixo Estoque"
+                type="low"
+                cardWidth={200}
+                cardHeight={500}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
