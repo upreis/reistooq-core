@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence, LayoutGroup, type PanInfo } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Grid3X3, Layers, LayoutList, Package } from "lucide-react"
@@ -36,6 +36,57 @@ export function ProductStockMorphingCard({
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
+
+  // Estados para imagem flutuante ampliada
+  const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [smoothPosition, setSmoothPosition] = useState({ x: 0, y: 0 })
+  const [isImageVisible, setIsImageVisible] = useState(false)
+  const gridContainerRef = useRef<HTMLDivElement>(null)
+  const animationRef = useRef<number | null>(null)
+
+  // Animação suave para seguir o mouse
+  useEffect(() => {
+    const lerp = (start: number, end: number, factor: number) => {
+      return start + (end - start) * factor
+    }
+
+    const animate = () => {
+      setSmoothPosition((prev) => ({
+        x: lerp(prev.x, mousePosition.x, 0.15),
+        y: lerp(prev.y, mousePosition.y, 0.15),
+      }))
+      animationRef.current = requestAnimationFrame(animate)
+    }
+
+    animationRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+    }
+  }, [mousePosition])
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (gridContainerRef.current) {
+      const rect = gridContainerRef.current.getBoundingClientRect()
+      setMousePosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      })
+    }
+  }
+
+  const handleMouseEnter = (index: number) => {
+    setHoveredProductIndex(index)
+    setIsImageVisible(true)
+  }
+
+  const handleMouseLeave = () => {
+    setHoveredProductIndex(null)
+    setIsImageVisible(false)
+  }
 
   if (!products || products.length === 0) {
     return (
@@ -201,12 +252,16 @@ export function ProductStockMorphingCard({
         )}
 
         {layout === "grid" && (
-          <div className={cn(
-            "grid grid-cols-4 gap-3 w-full",
-            needsScroll && "max-h-[280px] overflow-y-auto pr-1"
-          )}>
+          <div 
+            ref={gridContainerRef}
+            onMouseMove={handleMouseMove}
+            className={cn(
+              "relative grid grid-cols-4 gap-3 w-full",
+              needsScroll && "max-h-[280px] overflow-y-auto pr-1"
+            )}
+          >
             <AnimatePresence mode="popLayout">
-              {displayCards.map((product) => (
+              {displayCards.map((product, index) => (
                 <motion.div
                   key={product.id}
                   layoutId={product.id}
@@ -215,6 +270,8 @@ export function ProductStockMorphingCard({
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   onClick={() => setExpandedCard(expandedCard === product.id ? null : product.id)}
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseLeave={handleMouseLeave}
                   className={cn(
                     "cursor-pointer rounded-xl border-2 bg-card overflow-hidden shadow-md",
                     borderColor,
@@ -248,6 +305,51 @@ export function ProductStockMorphingCard({
                 </motion.div>
               ))}
             </AnimatePresence>
+
+            {/* Floating Image - aparece ao hover */}
+            {products.length > 0 && (
+              <div
+                className="pointer-events-none fixed z-50 overflow-hidden rounded-xl shadow-2xl"
+                style={{
+                  left: gridContainerRef.current?.getBoundingClientRect().left ?? 0,
+                  top: gridContainerRef.current?.getBoundingClientRect().top ?? 0,
+                  transform: `translate3d(${smoothPosition.x + 20}px, ${smoothPosition.y - 100}px, 0)`,
+                  opacity: isImageVisible ? 1 : 0,
+                  scale: isImageVisible ? 1 : 0.8,
+                  transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), scale 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                }}
+              >
+                <div className="relative w-[200px] h-[200px] bg-secondary rounded-xl overflow-hidden">
+                  {products.map((product, index) => (
+                    <img
+                      key={product.id}
+                      src={product.url_imagem || "/placeholder.svg"}
+                      alt={product.nome}
+                      className="absolute inset-0 w-full h-full object-contain bg-white transition-all duration-500 ease-out"
+                      style={{
+                        opacity: hoveredProductIndex === index ? 1 : 0,
+                        scale: hoveredProductIndex === index ? 1 : 1.1,
+                        filter: hoveredProductIndex === index ? "none" : "blur(10px)",
+                      }}
+                    />
+                  ))}
+                  {/* Nome do produto */}
+                  {hoveredProductIndex !== null && products[hoveredProductIndex] && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                      <p className="text-white text-xs font-medium line-clamp-2">
+                        {products[hoveredProductIndex].nome}
+                      </p>
+                      <p className={cn(
+                        "text-sm font-bold mt-1",
+                        type === 'high' ? 'text-green-400' : 'text-red-400'
+                      )}>
+                        {products[hoveredProductIndex].quantidade} un
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
