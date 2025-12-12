@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Package } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -41,6 +41,57 @@ function getStateColor(vendas: number, maxVendas: number): string {
 export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapProps) {
   const [hoveredState, setHoveredState] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState<string | null>(null);
+  
+  // Estados para imagem flutuante ampliada (mesmo padrão do QuickActionCards)
+  const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [smoothPosition, setSmoothPosition] = useState({ x: 0, y: 0 });
+  const [isImageVisible, setIsImageVisible] = useState(false);
+  const productsContainerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number | null>(null);
+
+  // Animação suave para seguir o mouse
+  useEffect(() => {
+    const lerp = (start: number, end: number, factor: number) => {
+      return start + (end - start) * factor;
+    };
+
+    const animate = () => {
+      setSmoothPosition((prev) => ({
+        x: lerp(prev.x, mousePosition.x, 0.15),
+        y: lerp(prev.y, mousePosition.y, 0.15),
+      }));
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [mousePosition]);
+
+  const handleProductMouseMove = (e: React.MouseEvent) => {
+    if (productsContainerRef.current) {
+      const rect = productsContainerRef.current.getBoundingClientRect();
+      setMousePosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+  };
+
+  const handleProductMouseEnter = (index: number) => {
+    setHoveredProductIndex(index);
+    setIsImageVisible(true);
+  };
+
+  const handleProductMouseLeave = () => {
+    setHoveredProductIndex(null);
+    setIsImageVisible(false);
+  };
 
   // Formatar datas com timezone correto
   const dateStartISO = formatInTimeZone(dateRange.start, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ssXXX");
@@ -304,7 +355,43 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
             </div>
 
             {/* Top 5 Produtos do Estado - Direita */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div 
+              ref={productsContainerRef}
+              onMouseMove={handleProductMouseMove}
+              className="flex-1 flex flex-col min-w-0 relative"
+            >
+              {/* Imagem flutuante ampliada - igual ao QuickActionCards */}
+              {topProductsByState.length > 0 && (
+                <div
+                  className="pointer-events-none fixed z-50 overflow-hidden rounded-xl shadow-2xl"
+                  style={{
+                    left: productsContainerRef.current?.getBoundingClientRect().left ?? 0,
+                    top: productsContainerRef.current?.getBoundingClientRect().top ?? 0,
+                    transform: `translate3d(${smoothPosition.x + 20}px, ${smoothPosition.y - 140}px, 0)`,
+                    opacity: isImageVisible ? 1 : 0,
+                    scale: isImageVisible ? 1 : 0.8,
+                    transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), scale 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                >
+                  <div className="relative w-[280px] h-[280px] bg-secondary rounded-xl overflow-hidden">
+                    {topProductsByState.map((product, index) => (
+                      <img
+                        key={product.item_id}
+                        src={getHighQualityImage(product.item_thumbnail)}
+                        alt={product.item_title || "Produto"}
+                        className="absolute inset-0 w-full h-full object-contain bg-white transition-all duration-500 ease-out"
+                        style={{
+                          opacity: hoveredProductIndex === index ? 1 : 0,
+                          scale: hoveredProductIndex === index ? 1 : 1.1,
+                          filter: hoveredProductIndex === index ? "none" : "blur(10px)",
+                        }}
+                      />
+                    ))}
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent" />
+                  </div>
+                </div>
+              )}
+
               <div className="mb-2">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Package className="h-4 w-4 text-primary" />
@@ -339,7 +426,9 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                   topProductsByState.map((product, index) => (
                     <div
                       key={product.item_id}
-                      className="flex items-center gap-2 p-1.5 bg-muted/20 rounded-lg hover:bg-accent/10 transition-colors relative group/card"
+                      className="flex items-center gap-2 p-1.5 bg-muted/20 rounded-lg hover:bg-accent/10 transition-colors cursor-pointer"
+                      onMouseEnter={() => handleProductMouseEnter(index)}
+                      onMouseLeave={handleProductMouseLeave}
                     >
                       {/* Imagem */}
                       <div className="relative w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
@@ -347,7 +436,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                           <img
                             src={getHighQualityImage(product.item_thumbnail)}
                             alt={product.item_title || "Produto"}
-                            className="w-full h-full object-cover transition-transform duration-200 group-hover/card:scale-110"
+                            className="w-full h-full object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -358,19 +447,6 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                           #{index + 1}
                         </div>
                       </div>
-                      
-                      {/* Tooltip ampliado - fora do overflow-hidden */}
-                      {product.item_thumbnail && (
-                        <div className="absolute left-12 top-1/2 -translate-y-1/2 z-[100] opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 pointer-events-none">
-                          <div className="w-32 h-32 rounded-lg shadow-xl border border-border bg-background overflow-hidden">
-                            <img 
-                              src={getHighQualityImage(product.item_thumbnail)} 
-                              alt={product.item_title || "Produto"}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        </div>
-                      )}
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
