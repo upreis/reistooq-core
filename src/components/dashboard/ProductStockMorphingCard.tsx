@@ -202,8 +202,8 @@ export function ProductStockMorphingCard({
 
         {layout === "grid" && (
           <div className={cn(
-            "grid grid-cols-2 gap-2 w-[240px] mx-auto",
-            needsScroll && "h-[280px] overflow-y-auto pr-1"
+            "grid grid-cols-2 gap-4 w-full",
+            needsScroll && "max-h-[320px] overflow-y-auto pr-1"
           )}>
             <AnimatePresence mode="popLayout">
               {displayCards.map((product) => (
@@ -216,14 +216,14 @@ export function ProductStockMorphingCard({
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   onClick={() => setExpandedCard(expandedCard === product.id ? null : product.id)}
                   className={cn(
-                    "cursor-pointer rounded-xl border-2 bg-card overflow-hidden aspect-square shadow-md",
+                    "cursor-pointer rounded-xl border-2 bg-card overflow-hidden shadow-md",
                     borderColor,
                     "hover:border-primary/50 transition-colors",
                     expandedCard === product.id && "ring-2 ring-primary",
                   )}
                 >
                   {/* Imagem */}
-                  <div className="h-[65%] w-full bg-muted flex items-center justify-center overflow-hidden">
+                  <div className="h-24 w-full bg-muted flex items-center justify-center overflow-hidden">
                     {product.url_imagem ? (
                       <img 
                         src={product.url_imagem} 
@@ -253,8 +253,8 @@ export function ProductStockMorphingCard({
 
         {layout === "list" && (
           <div className={cn(
-            "flex flex-col gap-2 w-[240px] mx-auto",
-            needsScroll && "h-[280px] overflow-y-auto pr-1"
+            "flex flex-col gap-3 w-full",
+            needsScroll && "max-h-[320px] overflow-y-auto pr-1"
           )}>
             <AnimatePresence mode="popLayout">
               {displayCards.map((product) => (
