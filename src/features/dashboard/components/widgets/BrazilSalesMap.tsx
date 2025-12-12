@@ -232,7 +232,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       maximumFractionDigits: 0,
     }).format(value);
 
-  const truncateTitle = (title: string | null, maxLength: number = 50) => {
+  const truncateTitle = (title: string | null, maxLength: number = 70) => {
     if (!title) return "Produto";
     return title.length > maxLength ? title.slice(0, maxLength) + "..." : title;
   };
