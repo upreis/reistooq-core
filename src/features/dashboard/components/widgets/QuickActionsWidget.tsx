@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import { X, Plus } from 'lucide-react';
@@ -9,8 +9,38 @@ import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
 import canceladasComEnvioIcon from "@/assets/icons/canceladas-com-envio-icon.png";
 import listaProdutosIcon from "@/assets/lista_produtos.png";
 import clientesNewIcon from "@/assets/oms-clientes-icon-v2.png";
+import reclamacoesIcon from "@/assets/icons/reclamacoes-icon.png";
+import devolucoesIcon from "@/assets/icons/devolucoes-devenda-icon.png";
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
+
+// Mapeamento de rotas para ícones locais - fallback para URLs externas quebradas
+const ROUTE_TO_ICON: Record<string, string> = {
+  '/pedidos': pedidosNewIcon,
+  '/estoque': estoqueNewIcon,
+  '/vendas-com-envio': canceladasComEnvioIcon,
+  '/apps/ecommerce/list': listaProdutosIcon,
+  '/oms/clientes': clientesNewIcon,
+  '/reclamacoes': reclamacoesIcon,
+  '/devolucoesdevenda': devolucoesIcon,
+};
+
+// Função para obter ícone válido - prioriza local assets
+function getValidIconUrl(shortcut: Service): string {
+  // Se já é um asset local (começa com /src ou é importado), usar diretamente
+  if (shortcut.imageUrl && !shortcut.imageUrl.includes('icons8.com') && !shortcut.imageUrl.startsWith('http')) {
+    return shortcut.imageUrl;
+  }
+  
+  // Tentar mapear pela rota
+  const localIcon = ROUTE_TO_ICON[shortcut.href];
+  if (localIcon) {
+    return localIcon;
+  }
+  
+  // Fallback: usar URL original (pode não funcionar se for externa)
+  return shortcut.imageUrl;
+}
 
 interface Service {
   name: string;
@@ -117,7 +147,7 @@ function DockIcon({ item, mouseX, onRemove, onClick }: DockIconProps) {
         </button>
 
         <img
-          src={item.imageUrl}
+          src={getValidIconUrl(item)}
           alt={item.name}
           className="w-full h-full object-contain rounded-2xl"
         />
