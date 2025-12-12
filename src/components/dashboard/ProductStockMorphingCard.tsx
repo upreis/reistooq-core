@@ -202,8 +202,8 @@ export function ProductStockMorphingCard({
 
         {layout === "grid" && (
           <div className={cn(
-            "grid grid-cols-2 gap-4 w-full",
-            needsScroll && "max-h-[320px] overflow-y-auto pr-1"
+            "grid grid-cols-4 gap-3 w-full",
+            needsScroll && "max-h-[280px] overflow-y-auto pr-1"
           )}>
             <AnimatePresence mode="popLayout">
               {displayCards.map((product) => (
