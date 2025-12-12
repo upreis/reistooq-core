@@ -154,7 +154,7 @@ export function FeaturesBentoGrid() {
       {/* Mapa do Brasil + Cards de Estoque */}
       <div className="flex gap-4">
         {/* Mapa do Brasil - Seção compacta */}
-        <div className="flex-1 h-[620px]">
+        <div className="flex-1 h-[520px]">
           <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
         </div>
 
