@@ -339,28 +339,16 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                   topProductsByState.map((product, index) => (
                     <div
                       key={product.item_id}
-                      className="flex items-center gap-2 p-1.5 bg-muted/20 rounded-lg hover:bg-accent/10 transition-colors"
+                      className="flex items-center gap-2 p-1.5 bg-muted/20 rounded-lg hover:bg-accent/10 transition-colors relative group/card"
                     >
                       {/* Imagem */}
-                      <div className="relative w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0 group/img">
+                      <div className="relative w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0">
                         {product.item_thumbnail ? (
-                          <>
-                            <img
-                              src={getHighQualityImage(product.item_thumbnail)}
-                              alt={product.item_title || "Produto"}
-                              className="w-full h-full object-cover transition-transform duration-200 group-hover/img:scale-110"
-                            />
-                            {/* Tooltip ampliado ao hover */}
-                            <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 pointer-events-none">
-                              <div className="w-28 h-28 rounded-lg shadow-xl border border-border bg-background overflow-hidden">
-                                <img 
-                                  src={getHighQualityImage(product.item_thumbnail)} 
-                                  alt={product.item_title || "Produto"}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            </div>
-                          </>
+                          <img
+                            src={getHighQualityImage(product.item_thumbnail)}
+                            alt={product.item_title || "Produto"}
+                            className="w-full h-full object-cover transition-transform duration-200 group-hover/card:scale-110"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Package className="h-4 w-4 text-muted-foreground" />
@@ -370,6 +358,19 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                           #{index + 1}
                         </div>
                       </div>
+                      
+                      {/* Tooltip ampliado - fora do overflow-hidden */}
+                      {product.item_thumbnail && (
+                        <div className="absolute left-12 top-1/2 -translate-y-1/2 z-[100] opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 pointer-events-none">
+                          <div className="w-32 h-32 rounded-lg shadow-xl border border-border bg-background overflow-hidden">
+                            <img 
+                              src={getHighQualityImage(product.item_thumbnail)} 
+                              alt={product.item_title || "Produto"}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
