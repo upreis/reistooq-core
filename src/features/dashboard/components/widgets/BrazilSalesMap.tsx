@@ -201,9 +201,12 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         }
       });
 
-      return Array.from(productMap.values())
-        .sort((a, b) => b.vendas - a.vendas)
-        .slice(0, 10);
+      // Ordenar por vendas e limitar ao máximo de produtos únicos (não pode ter mais produtos que vendas)
+      const sortedProducts = Array.from(productMap.values())
+        .sort((a, b) => b.vendas - a.vendas);
+      
+      // Retornar no máximo 10 produtos OU o total de produtos únicos (o que for menor)
+      return sortedProducts.slice(0, Math.min(10, sortedProducts.length));
     },
     enabled: !!selectedState,
     staleTime: 60 * 1000,
@@ -396,7 +399,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Package className="h-4 w-4 text-primary" />
                   {selectedState ? (
-                    <span>Top 10 em {BRAZIL_STATES_SVG[selectedState]?.name || selectedState}</span>
+                    <span>Top {Math.min(topProductsByState.length, 10)} em {BRAZIL_STATES_SVG[selectedState]?.name || selectedState}</span>
                   ) : (
                     <span className="text-muted-foreground">Selecione um estado</span>
                   )}
