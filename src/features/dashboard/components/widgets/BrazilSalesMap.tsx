@@ -223,6 +223,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
     return salesByState.reduce((sum, s) => sum + s.vendas, 0);
   }, [salesByState]);
 
+  const totalProdutos = useMemo(() => {
+    return salesByState.reduce((sum, s) => sum + s.produtos, 0);
+  }, [salesByState]);
+
   const getStateData = (uf: string): StateData | undefined => {
     return salesByState.find(s => s.uf === uf);
   };
@@ -291,7 +295,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
               
               {/* Total abaixo do mapa */}
               <p className="text-xs text-muted-foreground mt-2">
-                {totalVendas} vendas no período
+                {totalVendas} vendas no período<br />
+                {totalProdutos} produtos vendidos
               </p>
               
               {/* Tooltip customizado */}
