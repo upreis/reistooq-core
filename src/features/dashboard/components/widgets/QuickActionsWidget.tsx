@@ -236,13 +236,13 @@ export const QuickActionsWidget = () => {
   const handleAddShortcut = async (page: any) => {
     const newShortcut: Service = {
       name: page.label,
-      imageUrl: page.icon?.props?.src || 'https://img.icons8.com/fluency/96/documents.png',
+      imageUrl: page.imageUrl || 'https://img.icons8.com/fluency/96/documents.png',
       href: page.route,
       gradient: page.gradient,
       badge: page.badge
     };
     await setShortcuts([...shortcuts, newShortcut]);
-    console.log('[QuickActionsWidget] ✅ Atalho adicionado:', newShortcut.name);
+    console.log('[QuickActionsWidget] ✅ Atalho adicionado:', newShortcut.name, 'imageUrl:', newShortcut.imageUrl);
   };
 
   const handleRemoveShortcut = async (index: number) => {
