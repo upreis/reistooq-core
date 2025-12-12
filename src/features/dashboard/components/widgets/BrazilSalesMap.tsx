@@ -301,7 +301,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
             </div>
 
             {/* Conteúdo - Centro (Lista de Estados) */}
-            <div className="w-[200px] flex flex-col min-w-0 flex-shrink-0">
+            <div className="w-[240px] flex flex-col min-w-0 flex-shrink-0">
               {/* Título */}
               <div className="mb-2">
                 <div className="flex items-center gap-2 text-base font-semibold">
@@ -340,7 +340,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                           <span className="text-muted-foreground font-mono text-[10px]">{index + 1}</span>
                           <span className="font-medium">{state.uf}</span>
                           <span className="font-semibold">{state.vendas}</span>
-                          <span className="text-muted-foreground truncate">{formatCurrency(state.valor)}</span>
+                          <span className="text-muted-foreground whitespace-nowrap">{formatCurrency(state.valor)}</span>
                         </div>
                       );
                     })}
