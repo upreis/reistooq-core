@@ -319,7 +319,7 @@ export function ProductStockMorphingCard({
                   transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), scale 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               >
-                <div className="relative w-[200px] h-[200px] bg-secondary rounded-xl overflow-hidden">
+                <div className="relative w-[200px] h-[200px] bg-white rounded-xl overflow-hidden shadow-xl">
                   {products.map((product, index) => (
                     <img
                       key={product.id}
@@ -333,20 +333,6 @@ export function ProductStockMorphingCard({
                       }}
                     />
                   ))}
-                  {/* Nome do produto */}
-                  {hoveredProductIndex !== null && products[hoveredProductIndex] && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <p className="text-white text-xs font-medium line-clamp-2">
-                        {products[hoveredProductIndex].nome}
-                      </p>
-                      <p className={cn(
-                        "text-sm font-bold mt-1",
-                        type === 'high' ? 'text-green-400' : 'text-red-400'
-                      )}>
-                        {products[hoveredProductIndex].quantidade} un
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
