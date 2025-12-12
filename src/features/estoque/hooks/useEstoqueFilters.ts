@@ -1,7 +1,13 @@
 import { useState, useMemo } from 'react';
-import { EstoqueFilterState } from '@/components/estoque/EstoqueIntelligentFilters';
 import { Product } from '@/hooks/useProducts';
 
+// Tipo movido de EstoqueIntelligentFilters.tsx (componente removido por não ser utilizado)
+export interface EstoqueFilterState {
+  orderBy: 'recent' | 'price-desc' | 'price-asc' | 'name-asc' | 'stock-desc' | 'stock-asc';
+  statusFilter: 'all' | 'no-stock' | 'low-stock' | 'in-stock' | 'over-stock';
+  priceRange: 'all' | '0-50' | '50-100' | '100-200' | '200+';
+  stockRange: 'all' | '0' | '1-10' | '11-50' | '50+';
+}
 export function useEstoqueFilters(products: Product[] = []) {
   const [filters, setFilters] = useState<EstoqueFilterState>({
     orderBy: 'recent',
