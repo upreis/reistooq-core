@@ -208,7 +208,7 @@ export function CreateParentProductModal({
       if (editProduct) {
         // Modo edição
         await updateProduct(editProduct.id, {
-          sku_interno: skuInterno.trim().toUpperCase(),
+          sku_interno: skuInterno.trim(),
           nome: nome.trim(),
           codigo_barras: codigoBarras.trim() || null,
           url_imagem: uploadedImageUrl,
@@ -234,7 +234,7 @@ export function CreateParentProductModal({
         }
 
         const newProduct = {
-          sku_interno: skuInterno.trim().toUpperCase(),
+          sku_interno: skuInterno.trim(),
           nome: nome.trim(),
           quantidade_atual: 0,
           estoque_minimo: 0,
@@ -365,7 +365,7 @@ export function CreateParentProductModal({
               id="parent-sku"
               placeholder="Ex: CAMISETA-BASICA"
               value={skuInterno}
-              onChange={(e) => setSkuInterno(e.target.value.toUpperCase())}
+              onChange={(e) => setSkuInterno(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handleCreateParent();
