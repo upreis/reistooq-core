@@ -286,7 +286,7 @@ export function CreateChildProductModal({
         }
         
         await createProduct({
-          sku_interno: variation.suffix.trim().toUpperCase(),
+          sku_interno: variation.suffix.trim(),
           nome: variation.nome.trim(),
           quantidade_atual: variation.quantity || 0,
           estoque_minimo: variation.estoque_minimo || 0,
@@ -516,7 +516,7 @@ export function CreateChildProductModal({
                     <Input
                       placeholder="Ex: CMD-23333"
                       value={variation.suffix}
-                      onChange={(e) => handleVariationChange(index, 'suffix', e.target.value.toUpperCase())}
+                      onChange={(e) => handleVariationChange(index, 'suffix', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
