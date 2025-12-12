@@ -64,7 +64,7 @@ export default function ComposicoesUnificadasPage() {
       {!isMobile && (
         <div className="flex items-center justify-between gap-4 pb-4 border-b">
           <div className="flex items-center gap-3">
-            <LocalEstoqueSelector key={`selector-${Date.now()}`} />
+            <LocalEstoqueSelector />
             {localAtivo && (
               <span className="text-sm text-muted-foreground">
                 📍 Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
