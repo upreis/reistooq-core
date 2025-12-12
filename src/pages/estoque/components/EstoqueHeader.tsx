@@ -15,7 +15,7 @@ export function EstoqueHeader({ onLocalChange, onTransferClick, selectedProducts
   
   return (
     <div className="flex items-center justify-between gap-4 pb-4 border-b">
-      {!isMobile && <LocalEstoqueSelector showActions={true} key={`selector-${Date.now()}`} />}
+      {!isMobile && <LocalEstoqueSelector showActions={true} />}
       {!isMobile && (
         <div className="flex items-center gap-2">
           <Button
