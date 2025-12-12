@@ -17,6 +17,7 @@ interface BrazilSalesMapProps {
 interface StateData {
   uf: string;
   vendas: number;  // Quantidade de vendas (orders únicos)
+  produtos: number; // Quantidade de produtos (soma de item_quantity)
   valor: number;
 }
 
@@ -115,7 +116,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       // Buscar vendas do período com shipping_state
       let query = supabase
         .from("vendas_hoje_realtime")
-        .select("order_id, total_amount, shipping_state, account_name")
+        .select("order_id, total_amount, shipping_state, account_name, item_quantity")
         .eq("organization_id", profile.organizacao_id)
         .gte("date_created", dateStartISO)
         .lte("date_created", dateEndISO);
@@ -127,15 +128,16 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       const { data, error } = await query;
       if (error) throw error;
 
-      // Agregar por estado usando coluna shipping_state - contar vendas únicas
-      const stateMap = new Map<string, { orderIds: Set<string>; valor: number }>();
+      // Agregar por estado usando coluna shipping_state
+      const stateMap = new Map<string, { orderIds: Set<string>; produtos: number; valor: number }>();
       
       (data || []).forEach((order: any) => {
         const state = order.shipping_state;
         if (!state) return;
         
-        const current = stateMap.get(state) || { orderIds: new Set<string>(), valor: 0 };
+        const current = stateMap.get(state) || { orderIds: new Set<string>(), produtos: 0, valor: 0 };
         current.orderIds.add(order.order_id);
+        current.produtos += (order.item_quantity || 1);
         current.valor += (order.total_amount || 0);
         stateMap.set(state, current);
       });
@@ -143,6 +145,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       return Array.from(stateMap.entries()).map(([uf, data]) => ({
         uf,
         vendas: data.orderIds.size,  // Quantidade de vendas únicas
+        produtos: data.produtos,      // Quantidade de produtos
         valor: data.valor,
       }));
     },
@@ -316,10 +319,11 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
               {/* Lista de Estados */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Cabeçalho */}
-                <div className="grid grid-cols-[24px_32px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
+                <div className="grid grid-cols-[24px_32px_36px_36px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
                   <span>#</span>
                   <span>UF</span>
                   <span>Qtd</span>
+                  <span>Prod</span>
                   <span>Valor</span>
                 </div>
                 
@@ -333,7 +337,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                       return (
                         <div
                           key={state.uf}
-                          className={`grid grid-cols-[24px_32px_40px_1fr] gap-1 items-center px-2 py-0.5 rounded text-xs cursor-pointer transition-colors ${
+                          className={`grid grid-cols-[24px_32px_36px_36px_1fr] gap-1 items-center px-2 py-0.5 rounded text-xs cursor-pointer transition-colors ${
                             isSelected 
                               ? "bg-primary/20 border border-primary/30" 
                               : "hover:bg-muted/50"
@@ -343,6 +347,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                           <span className="text-muted-foreground font-mono text-[10px]">{index + 1}</span>
                           <span className="font-medium">{state.uf}</span>
                           <span className="font-semibold">{state.vendas}</span>
+                          <span className="text-muted-foreground">{state.produtos}</span>
                           <span className="text-muted-foreground whitespace-nowrap">{formatCurrency(state.valor)}</span>
                         </div>
                       );
