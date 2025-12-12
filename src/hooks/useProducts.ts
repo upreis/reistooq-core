@@ -2,75 +2,9 @@ import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Base product interface matching database columns
-export interface BaseProduct {
-  id: string;
-  sku_interno: string;
-  nome: string;
-  categoria: string | null;
-  descricao: string | null;
-  codigo_barras: string | null;
-  quantidade_atual: number;
-  estoque_minimo: number;
-  estoque_maximo: number;
-  preco_custo: number | null;
-  preco_venda: number | null;
-  localizacao: string | null;
-  unidade_medida_id: string | null;
-  status: string;
-  ativo: boolean;
-  url_imagem: string | null;
-  created_at: string;
-  updated_at: string;
-  ultima_movimentacao: string | null;
-  organization_id: string | null;
-  integration_account_id: string | null;
-  sku_pai: string | null;
-  eh_produto_pai?: boolean | null;
-}
-
-// Extended interface with additional fields for template import
-export interface Product extends BaseProduct {
-  // Additional fields from import template (optional for backwards compatibility)
-  material?: string | null;
-  cor?: string | null;
-  peso_unitario_g?: number | null;
-  peso_cx_master_kg?: number | null;
-  comprimento_cm?: number | null;
-  largura_cm?: number | null;
-  altura_cm?: number | null;
-  cbm_cubagem?: number | null;
-  cubagem_cm3?: number | null;
-  ncm?: string | null;
-  pis?: number | null;
-  cofins?: number | null;
-  imposto_importacao?: number | null;
-  ipi?: number | null;
-  icms?: number | null;
-  url_imagem_fornecedor?: string | null;
-  package?: string | null;
-  package_info?: string | null;
-  observacoes?: string | null;
-  unidade?: string | null;
-  pcs_ctn?: number | null;
-  // Novos campos adicionados via migration
-  peso_bruto_kg?: number | null;
-  peso_liquido_kg?: number | null;
-  dias_preparacao?: number | null;
-  tipo_embalagem?: string | null;
-  codigo_cest?: string | null;
-  origem?: number | null;
-  sob_encomenda?: boolean | null;
-  numero_volumes?: number | null;
-  // Campos de categoria hierárquica
-  categoria_principal?: string | null;
-  categoria_nivel2?: string | null;
-  subcategoria?: string | null;
-  // Aliases para compatibilidade com código existente
-  largura?: number | null; // Alias para largura_cm
-  altura?: number | null; // Alias para altura_cm
-  comprimento?: number | null; // Alias para comprimento_cm
-}
+// Re-export types from centralized location for backwards compatibility
+export type { BaseProduct, Product } from "@/types/product";
+import type { BaseProduct, Product } from "@/types/product";
 
 export const useProducts = () => {
   const { user } = useAuth();
@@ -92,8 +26,7 @@ export const useProducts = () => {
     ativo?: boolean | 'all';
     local_id?: string;
   }) => {
-    console.log('🔍 Buscando produtos no banco... Filtros:', filters);
-    console.log('🏢 Local ID recebido:', filters?.local_id);
+    // Buscar produtos com filtros aplicados
 
     // Se filtro por local_id, buscar de estoque_por_local
     if (filters?.local_id) {
@@ -111,7 +44,7 @@ export const useProducts = () => {
 
       const { data: estoqueData, error } = await query;
       
-      console.log('📦 Dados brutos de estoque_por_local:', estoqueData?.slice(0, 3));
+      
       
       if (error) {
         console.error('Error fetching products from estoque_por_local:', error);
@@ -128,7 +61,7 @@ export const useProducts = () => {
         console.error('Error fetching all products:', allProductsError);
       }
 
-      console.log('📦 Total de produtos no banco:', allProductsData?.length || 0);
+      
 
       // Mapear dados para formato Product com quantidade do local
       const productsWithLocalStock = (estoqueData || [])
@@ -175,9 +108,6 @@ export const useProducts = () => {
           return true;
         });
 
-      console.log(`✅ Total de produtos (com e sem estoque local): ${allProducts.length}`);
-      console.log(`📦 Com estoque local: ${productsWithLocalStock.length}`);
-      console.log(`📦 Sem estoque local: ${productsWithoutLocalStock.length}`);
       
       return allProducts;
     }
@@ -223,7 +153,7 @@ export const useProducts = () => {
       throw error;
     }
     
-    console.log(`✅ Produtos encontrados: ${data?.length || 0}`);
+    
     return data as unknown as Product[];
   }, []);
 
@@ -243,14 +173,9 @@ export const useProducts = () => {
   }, []);
 
   const createProduct = useCallback(async (product: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'> & Partial<Product>) => {
-    console.log('🔨 [createProduct] Iniciando criação:', {
-      sku: product.sku_interno,
-      nome: product.nome,
-      quantidade: product.quantidade_atual
-    });
     
     const orgId = await getCurrentOrgId();
-    console.log('🏢 [createProduct] Organization ID:', orgId);
+    
 
     // Verificar se já existe um produto com o mesmo SKU na organização (ativo ou inativo)
     const { data: existingProduct } = await supabase
@@ -283,7 +208,7 @@ export const useProducts = () => {
 
     if (existingProduct) {
       // Se o produto já existe (ativo ou inativo), atualizar com os novos dados (apenas campos permitidos)
-      console.log(`🔄 Atualizando produto existente: ${product.sku_interno} (${existingProduct.ativo ? 'ativo' : 'inativo'})`);
+      // Produto já existe, atualizar com novos dados
       
       const filteredUpdates = Object.keys(product).reduce((acc, key) => {
         if (allowedColumns.includes(key)) {
@@ -308,10 +233,6 @@ export const useProducts = () => {
       unidade_medida_id: filteredProduct.unidade_medida_id || unidadePadrao?.id || null,
     };
 
-    console.log('💾 [createProduct] Inserindo produto:', {
-      sku: payload.sku_interno,
-      organization_id: payload.organization_id
-    });
     
     const { data, error } = await supabase
       .from('produtos')
@@ -336,11 +257,11 @@ export const useProducts = () => {
       throw error;
     }
     
-    console.log('✅ [createProduct] Produto criado com sucesso:', data.id);
+    
 
     // ✅ Criar registro de estoque APENAS NO ESTOQUE PRINCIPAL
     try {
-      console.log('🏪 [createProduct] Buscando local principal...');
+      // Buscar local principal
       const { data: localPrincipal, error: localError } = await supabase
         .from('locais_estoque')
         .select('id, nome, tipo')
@@ -354,18 +275,7 @@ export const useProducts = () => {
       }
 
       if (localPrincipal) {
-        console.log('✅ [createProduct] Local principal encontrado:', {
-          id: localPrincipal.id,
-          nome: localPrincipal.nome,
-          tipo: localPrincipal.tipo
-        });
-        
-        console.log('📦 [createProduct] Criando estoque_por_local:', {
-          produto_id: data.id,
-          local_id: localPrincipal.id,
-          quantidade: product.quantidade_atual || 0,
-          organization_id: orgId
-        });
+        // Criar estoque no local principal
         
         const { error: estoqueError } = await supabase
           .from('estoque_por_local')
@@ -385,10 +295,10 @@ export const useProducts = () => {
           });
           // Não falha a criação do produto, apenas registra o erro
         } else {
-          console.log(`✅ [createProduct] Estoque criado no local "${localPrincipal.nome}": ${product.quantidade_atual || 0} unidades`);
+          // Estoque criado com sucesso
         }
       } else {
-        console.warn('⚠️ [createProduct] NENHUM local principal encontrado. Produto criado sem estoque_por_local.');
+        // Nenhum local principal encontrado
       }
     } catch (estoqueError) {
       console.error('❌ [createProduct] Exceção ao criar estoque_por_local:', estoqueError);
@@ -447,7 +357,7 @@ export const useProducts = () => {
 
     // Se falhou (provavelmente produto órfão), tentar fallback
     if (error && error.code === 'PGRST116') {
-      console.warn('🔄 Produto órfão detectado, aplicando fallback...');
+      // Produto órfão detectado, aplicando fallback
       
       // Fallback: atualizar produto órfão e setar organization_id
       const { data: fallbackData, error: fallbackError } = await supabase
@@ -463,7 +373,7 @@ export const useProducts = () => {
         throw fallbackError;
       }
 
-      console.log('✅ Produto órfão corrigido e atualizado');
+      // Produto órfão corrigido
       data = fallbackData;
     }
 
@@ -524,9 +434,8 @@ export const useProducts = () => {
 
           if (estoqueError) {
             console.error('⚠️ Erro ao atualizar estoque_por_local:', estoqueError);
-          } else {
-            console.log(`✅ Estoque atualizado no local ${localNome}: ${filteredUpdates.quantidade_atual}`);
           }
+          // Estoque atualizado com sucesso
         } else {
           // Criar novo registro
           const { error: estoqueError } = await supabase
@@ -540,9 +449,8 @@ export const useProducts = () => {
 
           if (estoqueError) {
             console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
-          } else {
-            console.log(`✅ Estoque criado no local ${localNome}: ${filteredUpdates.quantidade_atual}`);
           }
+          // Estoque criado com sucesso
         }
       }
     }
@@ -568,7 +476,7 @@ export const useProducts = () => {
       throw error;
     }
 
-    console.log('✅ Produto excluído permanentemente do banco:', id);
+    
     return data as unknown as Product;
   }, [getCurrentOrgId]);
 
