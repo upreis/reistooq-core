@@ -341,7 +341,7 @@ export function ProductStockMorphingCard({
 
         {layout === "list" && (
           <div className={cn(
-            "flex flex-col gap-3 w-full",
+            "flex flex-col gap-2 w-full",
             needsScroll && "max-h-[320px] overflow-y-auto pr-1"
           )}>
             <AnimatePresence mode="popLayout">
@@ -355,39 +355,42 @@ export function ProductStockMorphingCard({
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   onClick={() => setExpandedCard(expandedCard === product.id ? null : product.id)}
                   className={cn(
-                    "cursor-pointer rounded-xl border-2 bg-card overflow-hidden shadow-md",
+                    "cursor-pointer rounded-lg border bg-card/50 overflow-hidden",
                     borderColor,
-                    "hover:border-primary/50 transition-colors",
+                    "hover:bg-card hover:border-primary/50 transition-all",
                     expandedCard === product.id && "ring-2 ring-primary",
                   )}
                 >
-                  <div className="flex items-center gap-2 p-2">
+                  <div className="flex items-center gap-3 p-3">
                     {/* Thumbnail */}
-                    <div className="h-12 w-12 flex-shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden">
+                    <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-white flex items-center justify-center overflow-hidden">
                       {product.url_imagem ? (
                         <img 
                           src={product.url_imagem} 
                           alt={product.nome}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                       ) : (
-                        <Package className="h-5 w-5 text-muted-foreground" />
+                        <Package className="h-6 w-6 text-muted-foreground" />
                       )}
                     </div>
                     
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-muted-foreground truncate">{product.sku_interno}</p>
-                      <h4 className="text-xs font-medium text-card-foreground truncate">{product.nome}</h4>
+                      <p className="text-xs text-muted-foreground truncate mb-0.5">{product.sku_interno}</p>
+                      <h4 className="text-sm font-medium text-card-foreground line-clamp-2">{product.nome}</h4>
                     </div>
                     
                     {/* Quantidade */}
-                    <p className={cn(
-                      "text-sm font-bold flex-shrink-0",
-                      type === 'high' ? 'text-green-500' : 'text-red-500'
-                    )}>
-                      {product.quantidade}
-                    </p>
+                    <div className="flex-shrink-0 text-right">
+                      <p className={cn(
+                        "text-lg font-bold",
+                        type === 'high' ? 'text-green-500' : 'text-red-500'
+                      )}>
+                        {product.quantidade}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">unidades</p>
+                    </div>
                   </div>
                 </motion.div>
               ))}
