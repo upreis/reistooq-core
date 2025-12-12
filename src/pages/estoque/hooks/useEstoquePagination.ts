@@ -153,6 +153,10 @@ export function useEstoquePagination(products: Product[]) {
     // Combinar produtos da página + relacionados
     const allProducts = [...pageSlice, ...relatedProducts];
     
+    // 🔧 OTIMIZAÇÃO: Pre-calcular mapa de índices para evitar O(N²)
+    const indexMap = new Map<string, number>();
+    finalFilteredProducts.forEach((p, idx) => indexMap.set(p.id, idx));
+    
     // Ordenar mantendo hierarquia pai-filho mas preservando ordem cronológica
     return allProducts.sort((a, b) => {
       // Se A é pai de B, A vem primeiro
@@ -164,9 +168,9 @@ export function useEstoquePagination(products: Product[]) {
         return a.sku_interno.localeCompare(b.sku_interno);
       }
       
-      // Para produtos sem relação pai-filho, manter ordem original (created_at DESC)
-      const indexA = finalFilteredProducts.findIndex(p => p.id === a.id);
-      const indexB = finalFilteredProducts.findIndex(p => p.id === b.id);
+      // Para produtos sem relação pai-filho, usar mapa O(1) ao invés de findIndex O(N)
+      const indexA = indexMap.get(a.id) ?? -1;
+      const indexB = indexMap.get(b.id) ?? -1;
       
       if (indexA !== -1 && indexB !== -1) return indexA - indexB;
       if (indexA !== -1) return -1;
