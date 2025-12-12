@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { formatInTimeZone } from "date-fns-tz";
 import { ViewMode } from "./FeaturesBentoGrid";
-
-interface VendaHoje {
-  total_amount: number;
-  account_name: string | null;
-}
 
 interface VendasHojeCardProps {
   selectedAccount?: string;
@@ -20,66 +15,99 @@ interface VendasHojeCardProps {
 export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode }: VendasHojeCardProps) {
   const [totalVendas, setTotalVendas] = useState(0);
   const [totalVendasMes, setTotalVendasMes] = useState(0);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // ✅ FASE 2.1: Refs para debounce e controle de fetch
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isFetchingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Range do mês atual (dia 1 até hoje) - usado apenas quando viewMode é "day"
+  // Range do mês atual (dia 1 até hoje) - usado para comparação
   const currentMonthRange = React.useMemo(() => ({
     start: startOfMonth(new Date()),
     end: endOfDay(new Date())
   }), []);
 
-  // Atualizar relógio a cada segundo
+  // ✅ FASE 2.2: Montar após hidratação para evitar React Error #419
   useEffect(() => {
+    setIsMounted(true);
+    setCurrentTime(new Date());
+  }, []);
+
+  // Atualizar relógio a cada segundo (apenas após montagem)
+  useEffect(() => {
+    if (!isMounted) return;
+    
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isMounted]);
 
-  // Converter datas para strings com timezone São Paulo (evita problemas de UTC)
-  // Formato: YYYY-MM-DDTHH:mm:ss-03:00
+  // Converter datas para strings com timezone São Paulo
   const dateStartISO = formatInTimeZone(dateRange.start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX");
   const dateEndISO = formatInTimeZone(dateRange.end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX");
 
-  // Buscar total de vendas do período selecionado usando agregação no servidor
-  // IMPORTANTE: Supabase tem limite de 1000 rows, então usamos múltiplas páginas ou COUNT
-  useEffect(() => {
-    let isCancelled = false;
+  // ✅ FASE 2.1: Função de fetch otimizada com debounce interno
+  const fetchTotalVendas = useCallback(async () => {
+    // Evitar múltiplas chamadas concorrentes
+    if (isFetchingRef.current) {
+      return;
+    }
     
-    const fetchTotalVendas = async () => {
-      setIsLoading(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || isCancelled) {
-          setIsLoading(false);
-          return;
-        }
+    // Cancelar requisição anterior se existir
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    abortControllerRef.current = new AbortController();
+    isFetchingRef.current = true;
+    setIsLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsLoading(false);
+        isFetchingRef.current = false;
+        return;
+      }
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('organizacao_id')
-          .eq('id', user.id)
-          .single();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', user.id)
+        .maybeSingle();
 
-        if (!profile?.organizacao_id || isCancelled) {
-          setIsLoading(false);
-          return;
-        }
+      if (!profile?.organizacao_id) {
+        setIsLoading(false);
+        isFetchingRef.current = false;
+        return;
+      }
 
-        // Buscar vendas do período selecionado - usando paginação para evitar limite de 1000
+      const organizationId = profile.organizacao_id;
+
+      // ✅ OTIMIZAÇÃO: Buscar em paralelo período selecionado + mês atual
+      const monthStartISO = formatInTimeZone(currentMonthRange.start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX");
+      const monthEndISO = formatInTimeZone(currentMonthRange.end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX");
+
+      // Função auxiliar para somar todas as páginas
+      const fetchAllPages = async (startDate: string, endDate: string): Promise<number> => {
         let total = 0;
         let offset = 0;
         const pageSize = 1000;
         let hasMore = true;
+        const maxPages = 50; // Limite de segurança
+        let pageCount = 0;
 
-        while (hasMore && !isCancelled) {
+        while (hasMore && pageCount < maxPages) {
           let query = supabase
             .from('vendas_hoje_realtime')
             .select('total_amount')
-            .eq('organization_id', profile.organizacao_id)
-            .gte('date_created', dateStartISO)
-            .lte('date_created', dateEndISO)
+            .eq('organization_id', organizationId)
+            .gte('date_created', startDate)
+            .lte('date_created', endDate)
             .range(offset, offset + pageSize - 1);
 
           if (selectedAccount !== "todas") {
@@ -88,8 +116,8 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
 
           const { data, error } = await query;
 
-          if (error || isCancelled) {
-            if (error) console.error('[VendasHojeCard] Erro na query:', error);
+          if (error) {
+            console.error('[VendasHojeCard] Erro na query:', error);
             break;
           }
 
@@ -98,76 +126,71 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
 
           hasMore = (data?.length || 0) === pageSize;
           offset += pageSize;
+          pageCount++;
         }
 
-        if (!isCancelled) setTotalVendas(total);
+        return total;
+      };
 
-        // Buscar vendas do mês atual (sempre - para comparação) - também com paginação
-        const monthStartISO = formatInTimeZone(currentMonthRange.start, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00XXX");
-        const monthEndISO = formatInTimeZone(currentMonthRange.end, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59XXX");
-        
-        let totalMes = 0;
-        offset = 0;
-        hasMore = true;
+      // Executar ambas queries em paralelo
+      const [periodoTotal, mesTotal] = await Promise.all([
+        fetchAllPages(dateStartISO, dateEndISO),
+        fetchAllPages(monthStartISO, monthEndISO)
+      ]);
 
-        while (hasMore && !isCancelled) {
-          let queryMes = supabase
-            .from('vendas_hoje_realtime')
-            .select('total_amount')
-            .eq('organization_id', profile.organizacao_id)
-            .gte('date_created', monthStartISO)
-            .lte('date_created', monthEndISO)
-            .range(offset, offset + pageSize - 1);
-
-          if (selectedAccount !== "todas") {
-            queryMes = queryMes.eq('account_name', selectedAccount);
-          }
-
-          const { data: dataMes, error: errorMes } = await queryMes;
-
-          if (errorMes || isCancelled) {
-            if (errorMes) console.error('[VendasHojeCard] Erro na query mês:', errorMes);
-            break;
-          }
-
-          const pageTotalMes = (dataMes || []).reduce((acc, v) => acc + (v.total_amount || 0), 0);
-          totalMes += pageTotalMes;
-
-          hasMore = (dataMes?.length || 0) === pageSize;
-          offset += pageSize;
-        }
-
-        if (!isCancelled) setTotalVendasMes(totalMes);
-      } catch (error) {
-        if (!isCancelled) console.error('[VendasHojeCard] Erro ao buscar vendas:', error);
-      } finally {
-        if (!isCancelled) setIsLoading(false);
+      setTotalVendas(periodoTotal);
+      setTotalVendasMes(mesTotal);
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('[VendasHojeCard] Erro ao buscar vendas:', error);
       }
-    };
+    } finally {
+      setIsLoading(false);
+      isFetchingRef.current = false;
+    }
+  }, [selectedAccount, dateStartISO, dateEndISO, currentMonthRange]);
 
+  // ✅ FASE 2.1: Função de debounce para Realtime
+  const debouncedFetch = useCallback(() => {
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchTotalVendas();
+    }, 500); // 500ms debounce
+  }, [fetchTotalVendas]);
+
+  // Effect principal para fetch inicial e subscription
+  useEffect(() => {
     fetchTotalVendas();
 
-    // Subscription Realtime para atualizações instantâneas
+    // ✅ FASE 2.1: Realtime com debounce para evitar fetch storm
     const channel = supabase
       .channel('vendas-hoje-realtime-card')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT', // ✅ Apenas INSERT, não UPDATE (evita duplicatas)
           schema: 'public',
           table: 'vendas_hoje_realtime'
         },
         () => {
-          fetchTotalVendas();
+          debouncedFetch();
         }
       )
       .subscribe();
 
     return () => {
-      isCancelled = true;
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       supabase.removeChannel(channel);
     };
-  }, [selectedAccount, dateStartISO, dateEndISO, currentMonthRange]);
+  }, [fetchTotalVendas, debouncedFetch]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -180,7 +203,9 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
   // Título dinâmico baseado no período
   const getTitle = () => {
     if (viewMode === "day") {
-      const isToday = dateRange.start.toDateString() === new Date().toDateString();
+      // ✅ FASE 2.2: Usar currentTime apenas se montado
+      const today = isMounted && currentTime ? currentTime : new Date();
+      const isToday = dateRange.start.toDateString() === today.toDateString();
       return isToday ? "Vendas de hoje ao vivo" : `Vendas do dia`;
     }
     return `Vendas do mês`;
@@ -188,8 +213,13 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
 
   // Badge com data/período selecionado
   const getBadgeText = () => {
+    // ✅ FASE 2.2: Não renderizar tempo dinâmico até montar (evita Error #419)
+    if (!isMounted || !currentTime) {
+      return format(dateRange.start, "d 'de' MMMM, yyyy", { locale: ptBR });
+    }
+    
     if (viewMode === "day") {
-      const isToday = dateRange.start.toDateString() === new Date().toDateString();
+      const isToday = dateRange.start.toDateString() === currentTime.toDateString();
       if (isToday) {
         return format(currentTime, "d 'de' MMMM, HH:mm:ss", { locale: ptBR });
       }
