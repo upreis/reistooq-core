@@ -454,10 +454,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                           {truncateTitle(product.item_title)}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] font-bold text-[#22c55e]">
+                          <span className="text-xs font-bold text-[#22c55e]">
                             {product.vendas} {product.vendas === 1 ? 'venda' : 'vendas'}
                           </span>
-                          <span className="text-[9px] text-muted-foreground">
+                          <span className="text-[11px] text-muted-foreground">
                             {formatCurrencyShort(product.valorTotal)}
                           </span>
                         </div>
