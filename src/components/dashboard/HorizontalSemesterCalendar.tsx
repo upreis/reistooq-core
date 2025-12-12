@@ -1,4 +1,4 @@
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, addDays, subDays, isSameDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -42,10 +42,10 @@ export function HorizontalSemesterCalendar({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'delivery' | 'review' | 'claim_created' | 'claim_deadline'>('all');
   
-  // Calcular intervalo: hoje -2m15d até hoje +2m15d
+  // Calcular intervalo: 5 meses fixos (2 antes, mês atual, 2 depois)
   const today = new Date();
-  const startDate = subDays(subMonths(today, 2), 15);
-  const endDate = addDays(addMonths(today, 2), 15);
+  const startDate = startOfMonth(subMonths(today, 2));
+  const endDate = endOfMonth(addMonths(today, 2));
 
   const getDayContribution = (date: Date): ContributionDay | undefined => {
     const dateStr = format(date, "yyyy-MM-dd");
