@@ -143,3 +143,18 @@ verify_jwt = false
 
 [functions.backfill-vendas-historico]
 verify_jwt = false
+
+[functions.backfill-thumbnails]
+verify_jwt = false
+
+[functions.enrich-thumbnails]
+verify_jwt = false
+
+[functions.backfill-shipping-states]
+verify_jwt = false
+
+[functions.enrich-shipping-state]
+verify_jwt = false
+
+[functions.cleanup-vendas-antigas]
+verify_jwt = false
