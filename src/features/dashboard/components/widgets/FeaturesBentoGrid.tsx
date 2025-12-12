@@ -3,7 +3,7 @@ import { VendasHojeCard } from "./VendasHojeCard";
 import { TendenciaVendasChart } from "./TendenciaVendasChart";
 import { QuickActionCards } from "./QuickActionCards";
 import { BrazilSalesMap } from "./BrazilSalesMap";
-import { ProductStockCard } from "@/components/dashboard/ProductStockCard";
+import { ProductStockMorphingCard } from "@/components/dashboard/ProductStockMorphingCard";
 import { useEstoqueProducts } from "@/hooks/useEstoqueProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -158,43 +158,33 @@ export function FeaturesBentoGrid() {
           <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
         </div>
 
-        {/* Cards de Estoque */}
-        <div className="flex gap-2">
+        {/* Cards de Estoque com 3 modos de exibição */}
+        <div className="flex gap-4">
           {/* Estoque Alto */}
-          <div className="relative">
-            <h3 className="absolute -top-1 left-0 right-0 text-sm font-semibold text-green-500 text-center z-10">Estoque Alto</h3>
-            {stockLoading ? (
-              <div className="flex items-center justify-center w-[200px] h-[520px] bg-background rounded-lg border border-muted-foreground/30">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <ProductStockCard 
-                products={highStockProducts}
-                title="Maior Estoque"
-                type="high"
-                cardWidth={200}
-                cardHeight={500}
-              />
-            )}
-          </div>
+          {stockLoading ? (
+            <div className="flex items-center justify-center w-[200px] h-[480px] bg-background rounded-lg border border-muted-foreground/30">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <ProductStockMorphingCard 
+              products={highStockProducts}
+              title="Estoque Alto"
+              type="high"
+            />
+          )}
 
           {/* Estoque Baixo */}
-          <div className="relative">
-            <h3 className="absolute -top-1 left-0 right-0 text-sm font-semibold text-red-500 text-center z-10">Estoque Baixo</h3>
-            {stockLoading ? (
-              <div className="flex items-center justify-center w-[200px] h-[520px] bg-background rounded-lg border border-muted-foreground/30">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <ProductStockCard 
-                products={lowStockProducts}
-                title="Baixo Estoque"
-                type="low"
-                cardWidth={200}
-                cardHeight={500}
-              />
-            )}
-          </div>
+          {stockLoading ? (
+            <div className="flex items-center justify-center w-[200px] h-[480px] bg-background rounded-lg border border-muted-foreground/30">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <ProductStockMorphingCard 
+              products={lowStockProducts}
+              title="Estoque Baixo"
+              type="low"
+            />
+          )}
         </div>
       </div>
     </div>
