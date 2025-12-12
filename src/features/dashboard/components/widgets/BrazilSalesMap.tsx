@@ -203,7 +203,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
 
       return Array.from(productMap.values())
         .sort((a, b) => b.vendas - a.vendas)
-        .slice(0, 5);
+        .slice(0, 10);
     },
     enabled: !!selectedState,
     staleTime: 60 * 1000,
@@ -396,7 +396,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Package className="h-4 w-4 text-primary" />
                   {selectedState ? (
-                    <span>Top 5 em {BRAZIL_STATES_SVG[selectedState]?.name || selectedState}</span>
+                    <span>Top 10 em {BRAZIL_STATES_SVG[selectedState]?.name || selectedState}</span>
                   ) : (
                     <span className="text-muted-foreground">Selecione um estado</span>
                   )}
