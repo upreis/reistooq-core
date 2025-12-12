@@ -246,7 +246,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
   };
 
   return (
-    <Card className="border-muted-foreground/30 h-full flex flex-col">
+    <Card className="border-muted-foreground/30 h-full flex flex-col bg-background">
       <CardContent className="p-4 flex-1">
         {isLoading ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
