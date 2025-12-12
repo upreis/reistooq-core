@@ -158,33 +158,37 @@ export function FeaturesBentoGrid() {
           <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
         </div>
 
-        {/* Cards de Estoque com 3 modos de exibição - um abaixo do outro */}
-        <div className="flex-1 flex flex-col gap-4">
-          {/* Estoque Alto */}
-          {stockLoading ? (
-            <div className="flex items-center justify-center w-[200px] h-[240px] bg-background rounded-lg border border-muted-foreground/30">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <ProductStockMorphingCard 
-              products={highStockProducts}
-              title="Estoque Alto"
-              type="high"
-            />
-          )}
+        {/* Card container para Estoque */}
+        <div className="flex-1 rounded-xl border border-muted-foreground/30 bg-card p-4">
+          <h2 className="text-base font-semibold text-card-foreground mb-4 text-center">Níveis de Estoque</h2>
+          
+          <div className="flex flex-col gap-6">
+            {/* Estoque Alto */}
+            {stockLoading ? (
+              <div className="flex items-center justify-center h-[280px] bg-background rounded-lg border border-muted-foreground/20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ProductStockMorphingCard 
+                products={highStockProducts}
+                title="Estoque Alto"
+                type="high"
+              />
+            )}
 
-          {/* Estoque Baixo */}
-          {stockLoading ? (
-            <div className="flex items-center justify-center w-[200px] h-[240px] bg-background rounded-lg border border-muted-foreground/30">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <ProductStockMorphingCard 
-              products={lowStockProducts}
-              title="Estoque Baixo"
-              type="low"
-            />
-          )}
+            {/* Estoque Baixo */}
+            {stockLoading ? (
+              <div className="flex items-center justify-center h-[280px] bg-background rounded-lg border border-muted-foreground/20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ProductStockMorphingCard 
+                products={lowStockProducts}
+                title="Estoque Baixo"
+                type="low"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
