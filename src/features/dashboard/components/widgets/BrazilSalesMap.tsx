@@ -116,7 +116,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       // Buscar vendas do período com shipping_state
       let query = supabase
         .from("vendas_hoje_realtime")
-        .select("order_id, total_amount, shipping_state, account_name")
+        .select("order_id, total_amount, shipping_state, account_name, item_quantity")
         .eq("organization_id", profile.organizacao_id)
         .gte("date_created", dateStartISO)
         .lte("date_created", dateEndISO);
@@ -137,7 +137,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         
         const current = stateMap.get(state) || { orderIds: new Set<string>(), itens: 0, valor: 0 };
         current.orderIds.add(order.order_id);
-        current.itens += 1;
+        current.itens += (order.item_quantity || 1);  // Usar item_quantity
         current.valor += (order.total_amount || 0);
         stateMap.set(state, current);
       });
