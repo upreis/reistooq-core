@@ -203,12 +203,14 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
   // Título dinâmico baseado no período
   const getTitle = () => {
     if (viewMode === "day") {
-      // ✅ FASE 2.2: Usar currentTime apenas se montado
-      const today = isMounted && currentTime ? currentTime : new Date();
-      const isToday = dateRange.start.toDateString() === today.toDateString();
-      return isToday ? "Vendas de hoje ao vivo" : `Vendas do dia`;
+      // ✅ FASE 2.2: Só verificar "hoje" após montagem (evita mismatch)
+      if (!isMounted || !currentTime) {
+        return "Vendas do dia"; // Título seguro antes de montar
+      }
+      const isToday = dateRange.start.toDateString() === currentTime.toDateString();
+      return isToday ? "Vendas de hoje ao vivo" : "Vendas do dia";
     }
-    return `Vendas do mês`;
+    return "Vendas do mês";
   };
 
   // Badge com data/período selecionado
