@@ -95,7 +95,7 @@ export default function DashboardVisaoGeral() {
               <div className="h-6 w-40 bg-muted animate-pulse rounded" />
             </div>
             
-            <div className="text-center text-sm text-muted-foreground mt-4">
+            <div className="text-center text-xs text-muted-foreground mt-4">
               Carregando dados de atividades...
             </div>
           </div>
