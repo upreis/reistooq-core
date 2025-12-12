@@ -10,7 +10,7 @@ import canceladasComEnvioIcon from "@/assets/icons/canceladas-com-envio-icon.png
 import listaProdutosIcon from "@/assets/lista_produtos.png";
 import clientesNewIcon from "@/assets/oms-clientes-icon-v2.png";
 import reclamacoesIcon from "@/assets/icons/reclamacoes-icon.png";
-import devolucoesIcon from "@/assets/icons/devolucoes-devenda-icon.png";
+import devolucoesIcon from "@/assets/icons/devolucoes-venda-icon.png";
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
