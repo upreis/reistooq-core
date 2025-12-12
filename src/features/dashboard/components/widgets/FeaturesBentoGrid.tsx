@@ -153,13 +153,13 @@ export function FeaturesBentoGrid() {
 
       {/* Mapa do Brasil + Cards de Estoque */}
       <div className="flex gap-4">
-        {/* Mapa do Brasil - Seção compacta */}
-        <div className="flex-1 h-[520px]">
+        {/* Mapa do Brasil - Largura fixa menor */}
+        <div className="w-[55%] h-[620px]">
           <BrazilSalesMap selectedAccount={selectedAccount} dateRange={dateRange} />
         </div>
 
         {/* Cards de Estoque com 3 modos de exibição - um abaixo do outro */}
-        <div className="flex flex-col gap-4">
+        <div className="flex-1 flex flex-col gap-4">
           {/* Estoque Alto */}
           {stockLoading ? (
             <div className="flex items-center justify-center w-[200px] h-[240px] bg-background rounded-lg border border-muted-foreground/30">
