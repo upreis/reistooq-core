@@ -355,15 +355,15 @@ export function ProductStockMorphingCard({
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   onClick={() => setExpandedCard(expandedCard === product.id ? null : product.id)}
                   className={cn(
-                    "cursor-pointer rounded-lg border bg-card/50 overflow-hidden",
+                    "cursor-pointer rounded-lg border bg-card/50 overflow-hidden min-h-[80px]",
                     borderColor,
                     "hover:bg-card hover:border-primary/50 transition-all",
                     expandedCard === product.id && "ring-2 ring-primary",
                   )}
                 >
-                  <div className="flex items-center gap-4 p-4">
+                  <div className="flex items-center gap-4 p-4 h-full">
                     {/* Thumbnail */}
-                    <div className="h-16 w-16 flex-shrink-0 rounded-lg bg-white flex items-center justify-center overflow-hidden">
+                    <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-white flex items-center justify-center overflow-hidden">
                       {product.url_imagem ? (
                         <img 
                           src={product.url_imagem} 
