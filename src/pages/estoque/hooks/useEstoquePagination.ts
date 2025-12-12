@@ -97,7 +97,13 @@ export function useEstoquePagination(products: Product[]) {
       });
     }
 
-    if (selectedStatus && selectedStatus !== "all" && selectedStatus !== "active_only" && selectedStatus !== "inactive_only") {
+    // Filtro de status de ativo/inativo
+    if (selectedStatus === "active_only") {
+      filtered = filtered.filter(product => product.ativo === true);
+    } else if (selectedStatus === "inactive_only") {
+      filtered = filtered.filter(product => product.ativo === false);
+    } else if (selectedStatus && selectedStatus !== "all") {
+      // Filtros de estoque
       filtered = filtered.filter(product => {
         switch (selectedStatus) {
           case "low":

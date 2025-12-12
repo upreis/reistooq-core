@@ -35,9 +35,7 @@ export default function ControleEstoquePage() {
     categories,
     loading,
     selectedCategory,
-    selectedStatus: dataSelectedStatus,
     setSelectedCategory,
-    setSelectedStatus: setDataSelectedStatus,
     loadProducts,
     localAtivo
   } = useEstoqueData();
@@ -81,7 +79,6 @@ export default function ControleEstoquePage() {
   const handleClearFilters = () => {
     setSearchTerm("");
     setSelectedCategory("all");
-    setDataSelectedStatus("all");
     setPaginationSelectedStatus("all");
     setSelectedProductType("all");
     setSelectedProducts([]);

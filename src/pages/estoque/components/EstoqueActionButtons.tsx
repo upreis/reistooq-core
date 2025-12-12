@@ -76,8 +76,6 @@ export function EstoqueActionButtons({
   onSearchChange
 }: EstoqueActionButtonsProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [stockRange, setStockRange] = useState({ min: "", max: "" });
   const isMobile = useIsMobile();
 
   const statusOptions = [
@@ -276,47 +274,7 @@ export function EstoqueActionButtons({
                   </Select>
                 </div>
 
-                {/* Faixa de Preço */}
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Faixa de Preço (Custo)</h4>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Mín"
-                      value={priceRange.min}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                      type="number"
-                      step="0.01"
-                    />
-                    <span className="text-muted-foreground">até</span>
-                    <Input
-                      placeholder="Máx"
-                      value={priceRange.max}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                      type="number"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-
-                {/* Faixa de Estoque */}
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Faixa de Estoque</h4>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Mín"
-                      value={stockRange.min}
-                      onChange={(e) => setStockRange(prev => ({ ...prev, min: e.target.value }))}
-                      type="number"
-                    />
-                    <span className="text-muted-foreground">até</span>
-                    <Input
-                      placeholder="Máx"
-                      value={stockRange.max}
-                      onChange={(e) => setStockRange(prev => ({ ...prev, max: e.target.value }))}
-                      type="number"
-                    />
-                  </div>
-                </div>
+                {/* TODO: Implementar filtros de Faixa de Preço e Estoque quando houver integração com a lógica de filtragem */}
 
                 <div className="flex justify-between">
                   <Button variant="outline" size="sm" onClick={onClearFilters}>
