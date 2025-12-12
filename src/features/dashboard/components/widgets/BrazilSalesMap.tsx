@@ -208,10 +208,10 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         }
       });
 
-      // Ordenar por quantidade vendida e limitar a 10
+      // Ordenar por quantidade vendida e limitar ao total real de produtos do estado
       const sortedProducts = Array.from(productMap.values())
         .sort((a, b) => b.vendas - a.vendas)
-        .slice(0, 10);
+        .slice(0, Math.min(10, totalProdutosEstado));
       
       return sortedProducts;
     },
