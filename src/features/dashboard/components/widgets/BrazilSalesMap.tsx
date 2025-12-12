@@ -16,7 +16,8 @@ interface BrazilSalesMapProps {
 
 interface StateData {
   uf: string;
-  vendas: number;
+  pedidos: number;  // Quantidade de orders únicos
+  itens: number;    // Quantidade de itens/linhas
   valor: number;
 }
 
@@ -128,22 +129,23 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
       if (error) throw error;
 
       // Agregar por estado usando coluna shipping_state
-      const stateMap = new Map<string, { vendas: number; valor: number }>();
+      const stateMap = new Map<string, { orderIds: Set<string>; itens: number; valor: number }>();
       
       (data || []).forEach((order: any) => {
         const state = order.shipping_state;
         if (!state) return;
         
-        const current = stateMap.get(state) || { vendas: 0, valor: 0 };
-        stateMap.set(state, {
-          vendas: current.vendas + 1,
-          valor: current.valor + (order.total_amount || 0),
-        });
+        const current = stateMap.get(state) || { orderIds: new Set<string>(), itens: 0, valor: 0 };
+        current.orderIds.add(order.order_id);
+        current.itens += 1;
+        current.valor += (order.total_amount || 0);
+        stateMap.set(state, current);
       });
 
       return Array.from(stateMap.entries()).map(([uf, data]) => ({
         uf,
-        vendas: data.vendas,
+        pedidos: data.orderIds.size,  // Quantidade de orders únicos
+        itens: data.itens,            // Quantidade de itens
         valor: data.valor,
       }));
     },
@@ -212,12 +214,16 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
     staleTime: 60 * 1000,
   });
 
-  const maxVendas = useMemo(() => {
-    return Math.max(...salesByState.map(s => s.vendas), 1);
+  const maxItens = useMemo(() => {
+    return Math.max(...salesByState.map(s => s.itens), 1);
   }, [salesByState]);
 
-  const totalVendas = useMemo(() => {
-    return salesByState.reduce((sum, s) => sum + s.vendas, 0);
+  const totalPedidos = useMemo(() => {
+    return salesByState.reduce((sum, s) => sum + s.pedidos, 0);
+  }, [salesByState]);
+
+  const totalItens = useMemo(() => {
+    return salesByState.reduce((sum, s) => sum + s.itens, 0);
   }, [salesByState]);
 
   const getStateData = (uf: string): StateData | undefined => {
@@ -266,7 +272,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
               >
                 {Object.entries(BRAZIL_STATES_SVG).map(([uf, { name, path }]) => {
                   const stateData = getStateData(uf);
-                  const vendas = stateData?.vendas || 0;
+                  const itens = stateData?.itens || 0;
                   const isHovered = hoveredState === uf;
                   const isSelected = selectedState === uf;
                   
@@ -274,9 +280,9 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                     <path
                       key={uf}
                       d={path}
-                      fill={getStateColor(vendas, maxVendas)}
-                      stroke={isSelected ? "#000000" : isHovered ? "#000000" : vendas > 0 ? "#000000" : "hsl(var(--primary))"}
-                      strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : vendas > 0 ? 1 : 0.5}
+                      fill={getStateColor(itens, maxItens)}
+                      stroke={isSelected ? "#000000" : isHovered ? "#000000" : itens > 0 ? "#000000" : "hsl(var(--primary))"}
+                      strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : itens > 0 ? 1 : 0.5}
                       className="cursor-pointer transition-all duration-200"
                       onMouseEnter={() => setHoveredState(uf)}
                       onMouseLeave={() => setHoveredState(null)}
@@ -286,16 +292,16 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                 })}
               </svg>
               
-              {/* Total de vendas abaixo do mapa */}
+              {/* Total abaixo do mapa */}
               <p className="text-xs text-muted-foreground mt-2">
-                {totalVendas} vendas no período
+                {totalPedidos} pedidos · {totalItens} itens no período
               </p>
               
               {/* Tooltip customizado */}
               {hoveredState && (
                 <div className="absolute top-2 left-2 bg-popover border border-border rounded-md px-2 py-1 shadow-md text-xs pointer-events-none z-10">
                   <div className="font-semibold">{BRAZIL_STATES_SVG[hoveredState]?.name} ({hoveredState})</div>
-                  <div>{getStateData(hoveredState)?.vendas || 0} vendas</div>
+                  <div>{getStateData(hoveredState)?.pedidos || 0} pedidos · {getStateData(hoveredState)?.itens || 0} itens</div>
                   {getStateData(hoveredState) && (
                     <div>{formatCurrency(getStateData(hoveredState)!.valor)}</div>
                   )}
@@ -316,24 +322,25 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
               {/* Lista de Estados */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Cabeçalho */}
-                <div className="grid grid-cols-[24px_32px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
+                <div className="grid grid-cols-[24px_32px_36px_36px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
                   <span>#</span>
                   <span>UF</span>
-                  <span>Qtd</span>
+                  <span>Ped</span>
+                  <span>Itens</span>
                   <span>Valor</span>
                 </div>
                 
                 {/* Lista - compacta */}
                 <div className="flex-1 pr-1 overflow-y-auto">
                   {[...salesByState]
-                    .sort((a, b) => b.vendas - a.vendas)
+                    .sort((a, b) => b.itens - a.itens)
                     .map((state, index) => {
                       const isSelected = selectedState === state.uf;
                       
                       return (
                         <div
                           key={state.uf}
-                          className={`grid grid-cols-[24px_32px_40px_1fr] gap-1 items-center px-2 py-0.5 rounded text-xs cursor-pointer transition-colors ${
+                          className={`grid grid-cols-[24px_32px_36px_36px_1fr] gap-1 items-center px-2 py-0.5 rounded text-xs cursor-pointer transition-colors ${
                             isSelected 
                               ? "bg-primary/20 border border-primary/30" 
                               : "hover:bg-muted/50"
@@ -342,7 +349,8 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
                         >
                           <span className="text-muted-foreground font-mono text-[10px]">{index + 1}</span>
                           <span className="font-medium">{state.uf}</span>
-                          <span className="font-semibold">{state.vendas}</span>
+                          <span className="text-muted-foreground">{state.pedidos}</span>
+                          <span className="font-semibold">{state.itens}</span>
                           <span className="text-muted-foreground whitespace-nowrap">{formatCurrency(state.valor)}</span>
                         </div>
                       );
