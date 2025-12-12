@@ -153,7 +153,7 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
     refetchInterval: 2 * 60 * 1000,
   });
 
-  // Buscar top 5 produtos do estado selecionado
+  // Buscar top produtos do estado selecionado
   const { data: topProductsByState = [], isLoading: isLoadingProducts } = useQuery({
     queryKey: ["top-products-estado", selectedAccount, selectedState, dateStartISO, dateEndISO],
     queryFn: async () => {
@@ -187,9 +187,13 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
 
       // Agrupar por item_id e somar quantidade de itens
       const productMap = new Map<string, TopProduct>();
+      let totalProdutosEstado = 0;
+      
       (data || []).forEach((item: any) => {
         const existing = productMap.get(item.item_id);
         const qty = item.item_quantity || 1;
+        totalProdutosEstado += qty;
+        
         if (existing) {
           existing.vendas += qty;  // Soma quantidade de itens
           existing.valorTotal += item.total_amount || 0;
@@ -204,15 +208,16 @@ export function BrazilSalesMap({ selectedAccount, dateRange }: BrazilSalesMapPro
         }
       });
 
-      // Ordenar por vendas e limitar ao máximo de produtos únicos (não pode ter mais produtos que vendas)
+      // Ordenar por quantidade vendida e limitar a 10
       const sortedProducts = Array.from(productMap.values())
-        .sort((a, b) => b.vendas - a.vendas);
+        .sort((a, b) => b.vendas - a.vendas)
+        .slice(0, 10);
       
-      // Retornar no máximo 10 produtos OU o total de produtos únicos (o que for menor)
-      return sortedProducts.slice(0, Math.min(10, sortedProducts.length));
+      return sortedProducts;
     },
     enabled: !!selectedState,
-    staleTime: 60 * 1000,
+    staleTime: 0, // Sempre buscar dados frescos
+    gcTime: 0,    // Não manter cache
   });
 
   const maxVendas = useMemo(() => {
