@@ -111,17 +111,24 @@ export default function ControleEstoquePage() {
   };
 
   const handleParentProductSuccess = () => {
+    setParentProductModalOpen(false);
+    setEditingParentProduct(null);
     setCurrentPage(1);
-    setTimeout(() => {
-      loadProducts();
-    }, 100);
+    loadProducts();
+    toast({
+      title: "Produto pai criado",
+      description: "Produto pai criado com sucesso!",
+    });
   };
 
   const handleChildProductSuccess = () => {
+    setChildProductModalOpen(false);
     setCurrentPage(1);
-    setTimeout(() => {
-      loadProducts();
-    }, 100);
+    loadProducts();
+    toast({
+      title: "Produto filho criado",
+      description: "Produto filho criado com sucesso!",
+    });
   };
   
   const handleRefresh = () => loadProducts();
