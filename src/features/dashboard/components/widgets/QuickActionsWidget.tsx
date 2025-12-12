@@ -25,21 +25,21 @@ const ROUTE_TO_ICON: Record<string, string> = {
   '/devolucoesdevenda': devolucoesIcon,
 };
 
-// Função para obter ícone válido - prioriza local assets
+// Função para obter ícone válido - SEMPRE prioriza mapeamento por rota
 function getValidIconUrl(shortcut: Service): string {
-  // Se já é um asset local (começa com /src ou é importado), usar diretamente
-  if (shortcut.imageUrl && !shortcut.imageUrl.includes('icons8.com') && !shortcut.imageUrl.startsWith('http')) {
-    return shortcut.imageUrl;
-  }
-  
-  // Tentar mapear pela rota
+  // PRIMEIRO: tentar mapear pela rota (sempre funciona com assets bundled)
   const localIcon = ROUTE_TO_ICON[shortcut.href];
   if (localIcon) {
     return localIcon;
   }
   
-  // Fallback: usar URL original (pode não funcionar se for externa)
-  return shortcut.imageUrl;
+  // SEGUNDO: se imageUrl é um asset bundled válido (começa com /assets/ em produção)
+  if (shortcut.imageUrl && shortcut.imageUrl.startsWith('/assets/')) {
+    return shortcut.imageUrl;
+  }
+  
+  // TERCEIRO: fallback para URL original (pode não funcionar)
+  return shortcut.imageUrl || '';
 }
 
 interface Service {
