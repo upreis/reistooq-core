@@ -1,9 +1,11 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { AddShortcutModal } from '@/components/dashboard/AddShortcutModal';
 import { X, Plus } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+
+// Importar TODOS os ícones usados no AddShortcutModal
 import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-new-icon.png";
 import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
 import canceladasComEnvioIcon from "@/assets/icons/canceladas-com-envio-icon.png";
@@ -11,18 +13,92 @@ import listaProdutosIcon from "@/assets/lista_produtos.png";
 import clientesNewIcon from "@/assets/oms-clientes-icon-v2.png";
 import reclamacoesIcon from "@/assets/icons/reclamacoes-new-icon.png";
 import devolucoesIcon from "@/assets/icons/devolucoes-venda-icon-new.png";
+import visaoGeralIcon from "@/assets/icons/visao-geral-icon.png";
+import dashboardVendasIcon from "@/assets/dashboard_vendas.png";
+import dashboardEstoqueIcon from "@/assets/dashboard_estoque.png";
+import dashboardAnalisesIcon from "@/assets/dashboard_analises.png";
+import pedidosOmsNewIcon from "@/assets/oms-pedidos-icon-v2.png";
+import vendedoresNewIcon from "@/assets/oms-vendedores-icon-v2.png";
+import configuracoesOmsNewIcon from "@/assets/oms-configuracoes-icon-v2.png";
+import composicoesIcon from "@/assets/composicoes.png";
+import estoqueHistoricoNewIcon from "@/assets/historico-estoque-icon-v2.png";
+import pedidosCompraNewIcon from "@/assets/pedidos-compra-icon-v2.png";
+import cotacoesIcon from "@/assets/cotacoes.png";
+import fornecedoresNewIcon from "@/assets/fornecedores-new-icon.png";
+import importacaoIcon from "@/assets/icons/compras-importacao-new-icon.png";
+import calendarioIcon from "@/assets/calendario.png";
+import notasIcon from "@/assets/notas.png";
+import lojaIcon from "@/assets/loja.png";
+import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
+import importarProdutosIcon from "@/assets/importar_produtos.png";
+import integracoesIcon from "@/assets/integracoes.png";
+import anunciosIcon from "@/assets/anuncios.png";
+import adminIcon from "@/assets/admin.png";
+import usuariosIcon from "@/assets/usuarios.png";
+import cargosIcon from "@/assets/cargos.png";
+import convitesIcon from "@/assets/convites.png";
+import alertasIcon from "@/assets/alertas.png";
+import segurancaIcon from "@/assets/seguranca.png";
+import auditoriaIcon from "@/assets/auditoria.png";
+import perfilAdminIcon from "@/assets/perfil_admin.png";
+import scannerIcon from "@/assets/icons/scanner-icon.png";
+import deParaIcon from "@/assets/de_para.png";
+import historicoIcon from "@/assets/historico.png";
 
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
 
-// Mapeamento de rotas para ícones locais - fallback para URLs externas quebradas
+// Mapeamento COMPLETO de rotas para ícones locais - cobre TODAS as páginas do AddShortcutModal
 const ROUTE_TO_ICON: Record<string, string> = {
+  // Dashboard
+  '/dashboardinicial/visao-geral': visaoGeralIcon,
+  '/dashboardinicial/vendas': dashboardVendasIcon,
+  '/dashboardinicial/estoque': dashboardEstoqueIcon,
+  '/dashboardinicial/analises': dashboardAnalisesIcon,
+  // Vendas & Pedidos
   '/pedidos': pedidosNewIcon,
-  '/estoque': estoqueNewIcon,
   '/vendas-com-envio': canceladasComEnvioIcon,
-  '/apps/ecommerce/list': listaProdutosIcon,
+  // OMS
+  '/oms/pedidos': pedidosOmsNewIcon,
   '/oms/clientes': clientesNewIcon,
-  '/reclamacoes': reclamacoesIcon,
+  '/oms/vendedores': vendedoresNewIcon,
+  '/oms/configuracoes': configuracoesOmsNewIcon,
+  // Estoque
+  '/estoque': estoqueNewIcon,
+  '/estoque/composicoes': composicoesIcon,
+  '/estoque/historico': estoqueHistoricoNewIcon,
+  '/estoque/de-para': deParaIcon,
+  // Devoluções & Reclamações
   '/devolucoesdevenda': devolucoesIcon,
+  '/reclamacoes': reclamacoesIcon,
+  // Compras
+  '/compras/pedidos': pedidosCompraNewIcon,
+  '/compras/cotacoes': cotacoesIcon,
+  '/compras/fornecedores': fornecedoresNewIcon,
+  '/compras/importacao': importacaoIcon,
+  // Aplicativos
+  '/aplicativos/calendario': calendarioIcon,
+  '/aplicativos/notas': notasIcon,
+  '/aplicativos/scanner': scannerIcon,
+  // E-commerce
+  '/apps/ecommerce/shop': lojaIcon,
+  '/apps/ecommerce/list': listaProdutosIcon,
+  '/apps/ecommerce/addproduct': adicionarProdutoIcon,
+  '/apps/ecommerce/import': importarProdutosIcon,
+  // Configurações
+  '/configuracoes/integracoes': integracoesIcon,
+  '/configuracoes/anuncios': anunciosIcon,
+  '/configuracoes/alertas': alertasIcon,
+  // Admin
+  '/admin': adminIcon,
+  '/admin/usuarios': usuariosIcon,
+  '/admin/cargos': cargosIcon,
+  '/admin/convites': convitesIcon,
+  '/admin/alertas': alertasIcon,
+  '/admin/seguranca': segurancaIcon,
+  '/admin/auditoria': auditoriaIcon,
+  '/admin/perfil': perfilAdminIcon,
+  // Ferramentas
+  '/historico': historicoIcon,
 };
 
 // Função para obter ícone válido - SEMPRE prioriza mapeamento por rota
@@ -33,13 +109,13 @@ function getValidIconUrl(shortcut: Service): string {
     return localIcon;
   }
   
-  // SEGUNDO: se imageUrl é um asset bundled válido (começa com /assets/ em produção)
-  if (shortcut.imageUrl && shortcut.imageUrl.startsWith('/assets/')) {
+  // SEGUNDO: usar imageUrl diretamente (já vem como asset bundled do modal)
+  if (shortcut.imageUrl) {
     return shortcut.imageUrl;
   }
   
-  // TERCEIRO: fallback para URL original (pode não funcionar)
-  return shortcut.imageUrl || '';
+  // TERCEIRO: fallback para ícone genérico
+  return visaoGeralIcon;
 }
 
 interface Service {
