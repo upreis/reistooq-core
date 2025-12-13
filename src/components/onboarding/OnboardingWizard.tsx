@@ -61,7 +61,7 @@ const STEP_CONFIG: Record<OnboardingStep, StepConfig> = {
     tips: [
       'Você pode importar produtos via planilha',
       'Configure SKUs para melhor organização',
-      'Adicione imagens para facilitar identificação'
+      'Não quer adicionar imagens? Use o mesmo SKU do Mercado Livre e o sistema salvará as imagens automaticamente após a primeira venda!'
     ]
   },
   'configure-stock': {
