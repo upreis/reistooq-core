@@ -130,95 +130,9 @@ export default function Shop() {
         </Button>
       </div>
 
-      <div className={`grid grid-cols-1 gap-6 ${sidebarCollapsed ? 'lg:grid-cols-[auto_1fr]' : 'lg:grid-cols-4'}`}>
-        {/* Filters Sidebar */}
-        <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-1'}>
-          <OptimizedCategorySidebar 
-            products={productsForSidebar}
-            hierarchicalFilters={hierarchicalFilters}
-            onHierarchicalFiltersChange={setHierarchicalFilters}
-            isCollapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-          
-          {/* Additional Filters - only show when sidebar is expanded */}
-          {!sidebarCollapsed && (
-            <div className="space-y-6 mt-6">
-              {/* Sort By */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <h3 className="font-semibold">Ordenar por</h3>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {sortOptions.map((option) => (
-                    <Button
-                      key={option.id}
-                      variant={selectedSort === option.id ? "default" : "ghost"}
-                      className={`w-full justify-start transition-colors ${
-                        selectedSort === option.id
-                          ? "bg-brand text-brand-active-foreground hover:bg-brand/90"
-                          : "text-foreground hover:bg-brand-hover hover:text-foreground"
-                      }`}
-                      onClick={() => setSelectedSort(option.id)}
-                    >
-                      {option.name}
-                    </Button>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Stock Status */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <h3 className="font-semibold">Status do Estoque</h3>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="text-sm text-muted-foreground">
-                    <div className="flex items-center justify-between">
-                      <span>Total de produtos:</span>
-                      <span className="font-medium">{total}</span>
-                    </div>
-                    {!isLoading && (
-                      <div className="mt-2 text-xs">
-                        {products?.length} produtos exibidos
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* By Pricing */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <h3 className="font-semibold">Filtrar por Preço</h3>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {priceRanges.map((range) => (
-                    <div key={range.id} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`price-${range.id}`}
-                        name="price"
-                        checked={selectedPriceRange === range.id}
-                        onChange={() => setSelectedPriceRange(range.id)}
-                        className="text-orange-500"
-                      />
-                      <label
-                        htmlFor={`price-${range.id}`}
-                        className="text-sm text-muted-foreground cursor-pointer"
-                      >
-                        {range.name}
-                      </label>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-
+      <div className="grid grid-cols-1 gap-6">
         {/* Products Grid */}
-        <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'}>
+        <div>
           {/* Search Bar */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Produtos</h2>
