@@ -4,10 +4,12 @@ import { HorizontalSemesterCalendar } from '@/components/dashboard/HorizontalSem
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
 import { FeaturesBentoGrid } from '@/features/dashboard/components/widgets/FeaturesBentoGrid';
 import { OnboardingWizard, OnboardingReminder } from '@/components/onboarding';
+import { OnboardingProvider } from '@/contexts/OnboardingContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
 import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
-export default function DashboardVisaoGeral() {
+
+function DashboardContent() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
@@ -124,5 +126,13 @@ export default function DashboardVisaoGeral() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardVisaoGeral() {
+  return (
+    <OnboardingProvider>
+      <DashboardContent />
+    </OnboardingProvider>
   );
 }
