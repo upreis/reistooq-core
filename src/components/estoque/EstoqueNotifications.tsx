@@ -58,9 +58,13 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   const generateNotifications = () => {
     const newNotifications: Notification[] = [];
 
-    // Produtos sem estoque
+    // Produtos sem estoque (exclui produtos pais, pois o estoque fica nos filhos)
     if (config.notifications.outOfStockAlert) {
-      const outOfStock = products.filter(p => p.quantidade_atual === 0 && p.ativo);
+      const outOfStock = products.filter(p => 
+        p.quantidade_atual === 0 && 
+        p.ativo && 
+        !p.eh_produto_pai // Não considerar produtos pais
+      );
       if (outOfStock.length > 0) {
         newNotifications.push({
           id: 'out-of-stock',
@@ -74,12 +78,13 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
       }
     }
 
-    // Estoque baixo
+    // Estoque baixo (exclui produtos pais, pois o estoque fica nos filhos)
     if (config.notifications.lowStockAlert) {
       const lowStock = products.filter(p => 
         p.quantidade_atual <= p.estoque_minimo && 
         p.quantidade_atual > 0 && 
-        p.ativo
+        p.ativo &&
+        !p.eh_produto_pai // Não considerar produtos pais
       );
       if (lowStock.length > 0) {
         newNotifications.push({
