@@ -378,13 +378,18 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
     try {
       setIsUploading(true);
       
-      let imageUrl = product?.url_imagem || null;
+      // Se imagePreview é null, significa que o usuário removeu a imagem
+      // Se tem imageFile, vai fazer upload de nova imagem
+      // Senão, mantém a imagePreview atual (pode ser a URL existente ou null)
+      let imageUrl: string | null = imagePreview;
 
       if (product) {
         // Atualizar produto existente
         if (imageFile) {
+          // Nova imagem selecionada - fazer upload
           imageUrl = await uploadImage(imageFile, product.id);
         }
+        // Se imagePreview é null e não tem imageFile, imageUrl será null (exclusão)
         
         await updateProduct(product.id, {
           ...data,
