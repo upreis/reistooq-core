@@ -87,8 +87,6 @@ const InnerLayout = () => {
             />
           )}
 
-          {/* Rail button when collapsed - desktop only */}
-          {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
           {/* Floating Quick Access Dock - desktop only */}
           {!isMobile && <FloatingQuickAccessDock isSidebarCollapsed={isSidebarCollapsed} />}
