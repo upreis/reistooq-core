@@ -2,24 +2,42 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Rocket, X, ArrowRight } from 'lucide-react';
+import { Rocket, X, ArrowRight, RotateCcw } from 'lucide-react';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { cn } from '@/lib/utils';
 
 interface OnboardingReminderProps {
   variant?: 'banner' | 'card';
   className?: string;
+  showRestartOption?: boolean;
 }
 
-export function OnboardingReminder({ variant = 'banner', className }: OnboardingReminderProps) {
+export function OnboardingReminder({ variant = 'banner', className, showRestartOption = true }: OnboardingReminderProps) {
   const {
     showReminder,
     openWizard,
     dismissBanner,
     completedCount,
     totalSteps,
-    progress
+    progress,
+    resetOnboarding,
+    isLoading
   } = useOnboarding();
+
+  // Show restart option when completed
+  if (progress.isCompleted && showRestartOption && !isLoading) {
+    return (
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={resetOnboarding}
+        className={cn("text-muted-foreground hover:text-foreground", className)}
+      >
+        <RotateCcw className="mr-2 h-4 w-4" />
+        Reiniciar Tutorial
+      </Button>
+    );
+  }
 
   if (!showReminder) return null;
 

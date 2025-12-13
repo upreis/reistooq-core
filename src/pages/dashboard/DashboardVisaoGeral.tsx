@@ -48,8 +48,8 @@ export default function DashboardVisaoGeral() {
 
   return (
     <div className="space-y-6 p-6 bg-card w-full">
-      {/* Lembrete de Onboarding */}
-      <OnboardingReminder variant="banner" />
+      {/* Lembrete de Onboarding (apenas banner, sem botão reiniciar) */}
+      <OnboardingReminder variant="banner" showRestartOption={false} />
       
       {/* Wizard de Onboarding */}
       <OnboardingWizard />
@@ -58,7 +58,13 @@ export default function DashboardVisaoGeral() {
       <FeaturesBentoGrid />
 
       {/* Atalhos Rápidos */}
-      <QuickActionsWidget />
+      <div className="space-y-2">
+        <QuickActionsWidget />
+        {/* Botão Reiniciar Tutorial - aparece abaixo dos atalhos quando onboarding completado */}
+        <div className="flex justify-end">
+          <OnboardingReminder showRestartOption={true} />
+        </div>
+      </div>
 
       {/* Calendário de Atividades */}
       {calendarLoading ? (
