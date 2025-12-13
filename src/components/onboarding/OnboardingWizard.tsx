@@ -16,7 +16,7 @@ import {
   X,
   ExternalLink
 } from 'lucide-react';
-import { useOnboarding, OnboardingStep } from '@/hooks/useOnboarding';
+import { useOnboarding, OnboardingStep } from '@/contexts/OnboardingContext';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
