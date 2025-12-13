@@ -8,6 +8,7 @@ export interface LocalEstoque {
   endereco?: string | null;
   descricao?: string | null;
   ativo: boolean;
+  is_system?: boolean;
   created_at: string;
   updated_at: string;
 }
