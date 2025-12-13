@@ -247,8 +247,8 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
       {/* Conteúdo baseado no viewMode */}
       <div className="flex gap-4 pt-2">
         {/* Card Vendas do Período Selecionado - sempre presente */}
-        <div className={`flex flex-col items-center justify-center text-center ${viewMode === "month" ? "flex-1" : "flex-1"}`}>
-          <h2 className="text-sm font-semibold text-primary mb-1">
+        <div className="flex-1 flex flex-col items-center text-center">
+          <h2 className="text-sm font-semibold text-primary mb-1 h-5">
             {getTitle()}
           </h2>
           {isLoading ? (
@@ -258,12 +258,16 @@ export function VendasHojeCard({ selectedAccount = "todas", dateRange, viewMode 
               {formatCurrency(totalVendas)}
             </span>
           )}
+          {/* Espaço reservado para manter alinhamento com a seção direita */}
+          <span className="text-xs text-transparent mt-1 select-none">
+            00/00 - 00/00
+          </span>
         </div>
 
         {/* Divisor e Card do Mês Atual - sempre visível para comparação */}
         <div className="w-px bg-border" />
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-1">
+        <div className="flex-1 flex flex-col items-center text-center">
+          <h2 className="text-sm font-semibold text-muted-foreground mb-1 h-5">
             Vendas deste mês
           </h2>
           {isLoading ? (
