@@ -31,7 +31,7 @@ export function AIChatBubble() {
           isOpen ? "scale-100 opacity-100" : "scale-0 opacity-0"
         )}
       >
-        <div className="bg-background border rounded-lg shadow-2xl h-full flex flex-col">
+        <div className="bg-background border rounded-lg shadow-2xl h-full flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-primary text-primary-foreground rounded-t-lg">
             <div className="flex items-center gap-2">

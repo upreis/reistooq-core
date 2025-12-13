@@ -168,9 +168,9 @@ export function AIChatWidget() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 min-h-0 p-4">
         <div className="space-y-4">
           {messages.map((message, i) => (
             <div
@@ -204,8 +204,8 @@ export function AIChatWidget() {
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-4 border-t bg-background">
+      {/* Input - Fixed at bottom */}
+      <div className="flex-shrink-0 p-4 border-t bg-background">
         <div className="flex gap-2">
           <Input
             value={input}
