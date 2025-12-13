@@ -44,7 +44,7 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Inicia oculto por padrão
   const hierarchy = useProductHierarchy(products);
   const { config } = useEstoqueSettings();
 
@@ -242,8 +242,13 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
           variant="ghost"
           size="sm"
           onClick={() => setIsCollapsed(false)}
-          className="h-8"
+          className="h-8 relative"
         >
+          {/* Bolinha piscando indicando notificações pendentes */}
+          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+          </span>
           <ChevronDown className="w-4 h-4 mr-2" />
           Mostrar Notificações
         </Button>
