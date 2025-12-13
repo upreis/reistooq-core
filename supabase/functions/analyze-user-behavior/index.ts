@@ -80,13 +80,23 @@ serve(async (req) => {
     console.log(`📊 Analisando ${sessions.length} sessões...`);
 
     // Preparar dados para análise da IA
-    const sessionsData = sessions.map(s => ({
-      id: s.id,
-      title: s.title,
-      route: s.metadata?.currentRoute || 'unknown',
-      events: JSON.parse(s.content || '[]'),
-      timestamp: s.metadata?.timestamp
-    }));
+    const sessionsData = sessions.map(s => {
+      let events: any[] = [];
+      try {
+        const parsed = JSON.parse(s.content || '[]');
+        events = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn(`⚠️ Erro ao parsear eventos da sessão ${s.id}:`, e);
+        events = [];
+      }
+      return {
+        id: s.id,
+        title: s.title,
+        route: s.metadata?.currentRoute || 'unknown',
+        events,
+        timestamp: s.metadata?.timestamp
+      };
+    });
 
     // Agrupar por rota
     const sessionsByRoute: Record<string, any[]> = {};
@@ -109,20 +119,25 @@ serve(async (req) => {
     for (const [route, routeSessions] of Object.entries(sessionsByRoute)) {
       console.log(`🔍 Analisando rota ${route} (${routeSessions.length} sessões)`);
 
-      // Contar ações por sessão
-      const sessionStats = routeSessions.map(s => ({
-        id: s.id,
-        eventCount: s.events.length,
-        clicks: s.events.filter((e: any) => e.type === 3 && e.data?.source === 2).length,
-        errors: s.events.filter((e: any) => 
-          e.data?.tag === 'error' || 
-          e.data?.message?.toLowerCase().includes('error')
-        ).length
-      }));
+      // Contar ações por sessão - garantir que events é sempre um array
+      const sessionStats = routeSessions.map(s => {
+        const events = Array.isArray(s.events) ? s.events : [];
+        return {
+          id: s.id,
+          eventCount: events.length,
+          clicks: events.filter((e: any) => e?.type === 3 && e?.data?.source === 2).length,
+          errors: events.filter((e: any) => 
+            e?.data?.tag === 'error' || 
+            (typeof e?.data?.message === 'string' && e.data.message.toLowerCase().includes('error'))
+          ).length
+        };
+      });
 
       const totalClicks = sessionStats.reduce((sum, s) => sum + s.clicks, 0);
       const totalErrors = sessionStats.reduce((sum, s) => sum + s.errors, 0);
-      const avgEvents = sessionStats.reduce((sum, s) => sum + s.eventCount, 0) / sessionStats.length;
+      const avgEvents = sessionStats.length > 0 
+        ? sessionStats.reduce((sum, s) => sum + s.eventCount, 0) / sessionStats.length 
+        : 0;
 
       // Solicitar análise da IA
       const analysisPrompt = `Analise o comportamento dos usuários nesta rota: ${route}
