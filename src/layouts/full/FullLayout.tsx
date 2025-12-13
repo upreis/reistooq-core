@@ -11,6 +11,7 @@ import AppMobileHeader from "@/components/layout/AppMobileHeader";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FloatingQuickAccessDock } from "@/components/sidebar/FloatingQuickAccessDock";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
 
 const CollapsedReopenTab: React.FC = () => {
   const { setIsSidebarCollapsed } = useSidebarUI();
@@ -131,9 +132,11 @@ export default function FullLayout() {
   // Instância primária (única) do layout
   return (
     <div ref={ref} data-layout-root={key}>
-      <AnnouncementProvider>
-        <InnerLayout />
-      </AnnouncementProvider>
+      <OnboardingProvider>
+        <AnnouncementProvider>
+          <InnerLayout />
+        </AnnouncementProvider>
+      </OnboardingProvider>
     </div>
   );
 }
