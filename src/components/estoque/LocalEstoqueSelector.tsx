@@ -343,18 +343,20 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
                   >
                     <Edit className="h-3 w-3" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLocalParaDeletar(local);
-                    }}
-                    title="Excluir local"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                  {!local.is_system && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocalParaDeletar(local);
+                      }}
+                      title="Excluir local"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
