@@ -1,18 +1,22 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Sparkles, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
 import { supabase } from "@/integrations/supabase/client";
+import { useAIChat } from "@/contexts/AIChatContext";
+import { Badge } from "@/components/ui/badge";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
+  isInsightContext?: boolean;
 }
 
 export function AIChatWidget() {
+  const { pendingInsight, clearPendingInsight } = useAIChat();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -22,12 +26,153 @@ export function AIChatWidget() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [insightProcessed, setInsightProcessed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { showError } = useToastFeedback();
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Processar insight automaticamente quando chegar
+  useEffect(() => {
+    if (pendingInsight && !insightProcessed) {
+      setInsightProcessed(true);
+      processInsight();
+    }
+  }, [pendingInsight]);
+
+  const processInsight = async () => {
+    if (!pendingInsight) return;
+
+    // Adicionar contexto do insight como mensagem do sistema
+    const insightMessage = `🎯 **Insight Aprovado para Implementação**
+
+**Problema:** ${pendingInsight.title}
+
+**Descrição:** ${pendingInsight.description}
+
+**Rota Afetada:** ${pendingInsight.affectedRoute || 'Não especificada'}
+
+**Sugestão de Melhoria:** ${pendingInsight.suggestedImprovement}
+
+---
+
+Vou analisar este problema e propor uma solução. Aguarde...`;
+
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: insightMessage,
+      isInsightContext: true
+    }]);
+
+    // Enviar automaticamente para a IA processar
+    setIsLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        showError('Por favor, faça login para usar o assistente.');
+        return;
+      }
+
+      const promptToProcess = `O usuário aprovou o seguinte insight para implementação:
+
+TÍTULO: ${pendingInsight.title}
+DESCRIÇÃO: ${pendingInsight.description}
+ROTA AFETADA: ${pendingInsight.affectedRoute || 'Não especificada'}
+SUGESTÃO: ${pendingInsight.suggestedImprovement}
+TIPO: ${pendingInsight.type}
+
+Por favor:
+1. Analise o problema detalhadamente
+2. Explique a causa raiz provável
+3. Proponha uma solução técnica passo a passo
+4. Indique os arquivos que provavelmente precisam ser modificados
+5. Forneça exemplos de código se aplicável
+
+Seja específico e prático na sua resposta.`;
+
+      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({
+          message: promptToProcess,
+          conversationId,
+          context: `Processando insight aprovado. Rota afetada: ${pendingInsight.affectedRoute || window.location.pathname}`
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(errorData.error || 'Erro ao chamar a função');
+      }
+
+      // Processar streaming SSE
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Não foi possível iniciar o streaming');
+      }
+
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+      let receivedConversationId: string | null = null;
+
+      // Adicionar mensagem vazia do assistente para atualizar progressivamente
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (!line.trim() || line.startsWith(':')) continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            
+            if (parsed.content) {
+              assistantContent += parsed.content;
+              
+              setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  role: 'assistant',
+                  content: assistantContent
+                };
+                return newMessages;
+              });
+            }
+
+            if (parsed.conversationId && !receivedConversationId) {
+              receivedConversationId = parsed.conversationId;
+              setConversationId(parsed.conversationId);
+            }
+          } catch (e) {
+            console.warn('Erro ao parsear chunk SSE:', e);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao processar insight:', error);
+      showError(error instanceof Error ? error.message : 'Falha ao processar insight');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -38,7 +183,6 @@ export function AIChatWidget() {
     setIsLoading(true);
 
     try {
-      // Verificar autenticação e obter token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         showError('Por favor, faça login para usar o assistente.');
@@ -46,9 +190,6 @@ export function AIChatWidget() {
         return;
       }
 
-      console.log('🔐 Enviando mensagem com token JWT');
-
-      // Fazer chamada à edge function com streaming
       const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -60,11 +201,11 @@ export function AIChatWidget() {
         body: JSON.stringify({
           message: userMessage,
           conversationId,
-          context: `Usuário está em: ${window.location.pathname}`
+          context: pendingInsight 
+            ? `Continuando resolução do insight: ${pendingInsight.title}. Rota: ${pendingInsight.affectedRoute || window.location.pathname}`
+            : `Usuário está em: ${window.location.pathname}`
         })
       });
-
-      console.log('📡 Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
@@ -88,7 +229,6 @@ export function AIChatWidget() {
         throw new Error(errorData.error || 'Erro ao chamar a função');
       }
 
-      // Processar streaming SSE
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error('Não foi possível iniciar o streaming');
@@ -98,57 +238,46 @@ export function AIChatWidget() {
       let assistantContent = '';
       let receivedConversationId: string | null = null;
 
-      // Adicionar mensagem vazia do assistente para atualizar progressivamente
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
 
-          for (const line of lines) {
-            if (!line.trim() || line.startsWith(':')) continue;
-            if (!line.startsWith('data: ')) continue;
+        for (const line of lines) {
+          if (!line.trim() || line.startsWith(':')) continue;
+          if (!line.startsWith('data: ')) continue;
 
-            const data = line.slice(6).trim();
-            if (data === '[DONE]') continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
 
-            try {
-              const parsed = JSON.parse(data);
+          try {
+            const parsed = JSON.parse(data);
+            
+            if (parsed.content) {
+              assistantContent += parsed.content;
               
-              if (parsed.content) {
-                assistantContent += parsed.content;
-                
-                // Atualizar a última mensagem (do assistente) progressivamente
-                setMessages(prev => {
-                  const newMessages = [...prev];
-                  newMessages[newMessages.length - 1] = {
-                    role: 'assistant',
-                    content: assistantContent
-                  };
-                  return newMessages;
-                });
-              }
-
-              if (parsed.conversationId && !receivedConversationId) {
-                receivedConversationId = parsed.conversationId;
-                setConversationId(parsed.conversationId);
-              }
-            } catch (e) {
-              // Ignorar JSON inválido
-              console.warn('Erro ao parsear chunk SSE:', e);
+              setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  role: 'assistant',
+                  content: assistantContent
+                };
+                return newMessages;
+              });
             }
+
+            if (parsed.conversationId && !receivedConversationId) {
+              receivedConversationId = parsed.conversationId;
+              setConversationId(parsed.conversationId);
+            }
+          } catch (e) {
+            console.warn('Erro ao parsear chunk SSE:', e);
           }
         }
-
-        console.log('✅ Streaming completo. Total de caracteres:', assistantContent.length);
-
-      } catch (streamError) {
-        console.error('❌ Erro durante streaming:', streamError);
-        throw streamError;
       }
 
     } catch (error) {
@@ -167,8 +296,41 @@ export function AIChatWidget() {
     }
   };
 
+  const handleMarkAsResolved = () => {
+    clearPendingInsight();
+    setInsightProcessed(false);
+    setMessages([{
+      role: 'assistant',
+      content: '✅ Insight marcado como resolvido! Posso ajudar com algo mais?'
+    }]);
+    setConversationId(null);
+  };
+
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
+      {/* Insight Context Banner */}
+      {pendingInsight && (
+        <div className="flex-shrink-0 p-3 bg-yellow-500/10 border-b border-yellow-500/20">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Sparkles className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+              <span className="text-sm font-medium truncate">
+                {pendingInsight.title}
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleMarkAsResolved}
+              className="flex-shrink-0 text-xs"
+            >
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Resolvido
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <ScrollArea className="flex-1 min-h-0 p-4">
         <div className="space-y-4">
@@ -182,12 +344,19 @@ export function AIChatWidget() {
             >
               <div
                 className={cn(
-                  "max-w-[80%] rounded-lg p-3",
+                  "max-w-[85%] rounded-lg p-3",
                   message.role === 'user'
                     ? 'bg-primary text-primary-foreground'
+                    : message.isInsightContext
+                    ? 'bg-yellow-500/10 border border-yellow-500/30 text-foreground'
                     : 'bg-muted text-muted-foreground'
                 )}
               >
+                {message.isInsightContext && (
+                  <Badge variant="outline" className="mb-2 text-xs border-yellow-500/50 text-yellow-600">
+                    Contexto do Insight
+                  </Badge>
+                )}
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               </div>
             </div>
@@ -196,7 +365,9 @@ export function AIChatWidget() {
             <div className="flex justify-start">
               <div className="bg-muted text-muted-foreground rounded-lg p-3 flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Pensando...</span>
+                <span className="text-sm">
+                  {pendingInsight ? 'Analisando problema...' : 'Pensando...'}
+                </span>
               </div>
             </div>
           )}
@@ -211,7 +382,7 @@ export function AIChatWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Digite sua mensagem..."
+            placeholder={pendingInsight ? "Pergunte sobre a solução..." : "Digite sua mensagem..."}
             disabled={isLoading}
             className="flex-1"
           />
