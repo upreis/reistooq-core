@@ -27,7 +27,7 @@ export function AIChatBubble() {
       <div
         className={cn(
           "fixed bottom-6 right-6 z-50 transition-all duration-300",
-          "w-[380px] h-[600px]",
+          "w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-48px)]",
           isOpen ? "scale-100 opacity-100" : "scale-0 opacity-0"
         )}
       >
