@@ -1143,7 +1143,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
               <FormLabel>Imagem do Produto</FormLabel>
               <div className="border-2 border-dashed border-border rounded-lg p-6 relative">
                 {imagePreview ? (
-                  <div className="relative">
+                  <div className="relative flex items-center justify-center">
                     <img
                       src={imagePreview}
                       alt="Preview"
@@ -1153,8 +1153,10 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                       type="button"
                       variant="destructive"
                       size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => {
+                      className="absolute top-2 right-2 z-10"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         setImageFile(null);
                         setImagePreview(null);
                       }}
@@ -1163,7 +1165,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-center">
+                  <div className="text-center relative">
                     <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">
                       Clique para selecionar uma imagem
@@ -1171,14 +1173,14 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                     <p className="text-xs text-muted-foreground">
                       PNG, JPG, GIF até 5MB
                     </p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
                   </div>
                 )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
               </div>
             </div>
 
