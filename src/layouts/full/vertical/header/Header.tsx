@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert } from "lucide-react";
+import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert, RotateCcw } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import visaoGeralIcon from "@/assets/dashboard-visao-geral-icon.png";
 import pedidosIcon from "@/assets/icons/pedidos-icon.png";
@@ -66,7 +66,7 @@ import { useAnnouncements } from "@/contexts/AnnouncementContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarUI } from "@/context/SidebarUIContext";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-// NotificacoesPanel removido temporariamente
+import { useOnboarding } from "@/contexts/OnboardingContext";
 
 export default function Header() {
   const location = useLocation();
@@ -74,9 +74,15 @@ export default function Header() {
   const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
   const { profile, displayName, fullName, initials } = useCurrentProfile();
+  const { resetOnboarding, openWizard } = useOnboarding();
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleRestartOnboarding = async () => {
+    await resetOnboarding();
+    openWizard();
   };
 
   // Função para obter o breadcrumb baseado na rota atual
@@ -322,6 +328,15 @@ export default function Header() {
                 <div>
                   <p className="text-sm font-medium">Minhas Tarefas</p>
                   <p className="text-xs text-muted-foreground">Lista de tarefas diárias</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleRestartOnboarding} className="flex items-center gap-3 cursor-pointer">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <RotateCcw className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Reiniciar Passo a Passo</p>
+                  <p className="text-xs text-muted-foreground">Ver tutorial novamente</p>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
