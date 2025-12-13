@@ -6704,6 +6704,84 @@ export type Database = {
           },
         ]
       }
+      vendas_agregadas_produto: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          integration_account_id: string
+          organization_id: string
+          quantidade_vendida: number
+          receita: number
+          sku: string | null
+          thumbnail: string | null
+          titulo: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+          integration_account_id: string
+          organization_id: string
+          quantidade_vendida?: number
+          receita?: number
+          sku?: string | null
+          thumbnail?: string | null
+          titulo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          integration_account_id?: string
+          organization_id?: string
+          quantidade_vendida?: number
+          receita?: number
+          sku?: string | null
+          thumbnail?: string | null
+          titulo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vendas_agregadas_totais: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          integration_account_id: string
+          organization_id: string
+          ticket_medio: number
+          total_pedidos: number
+          total_receita: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+          integration_account_id: string
+          organization_id: string
+          ticket_medio?: number
+          total_pedidos?: number
+          total_receita?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          integration_account_id?: string
+          organization_id?: string
+          ticket_medio?: number
+          total_pedidos?: number
+          total_receita?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vendas_hoje_realtime: {
         Row: {
           account_name: string | null
