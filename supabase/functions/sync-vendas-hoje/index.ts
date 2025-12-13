@@ -284,10 +284,13 @@ Deno.serve(async (req) => {
             
             for (const venda of vendasComImagem) {
               try {
+                // 🖼️ Garantir alta qualidade: -I (thumbnail) → -O (original)
+                const highQualityUrl = getHighQualityImageUrl(venda.item_thumbnail);
+                
                 // 1️⃣ TENTATIVA DIRETA: Atualiza produto onde sku_interno = item_sku
                 const { data: updateData, error: updateError } = await supabase
                   .from('produtos')
-                  .update({ url_imagem: venda.item_thumbnail })
+                  .update({ url_imagem: highQualityUrl })
                   .eq('sku_interno', venda.item_sku)
                   .eq('organization_id', params.organization_id)
                   .is('url_imagem', null)
@@ -314,7 +317,7 @@ Deno.serve(async (req) => {
                   if (skuEstoque) {
                     const { data: updateViaDePara, error: errorDePara } = await supabase
                       .from('produtos')
-                      .update({ url_imagem: venda.item_thumbnail })
+                      .update({ url_imagem: highQualityUrl })
                       .eq('sku_interno', skuEstoque)
                       .eq('organization_id', params.organization_id)
                       .is('url_imagem', null)
