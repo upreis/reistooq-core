@@ -3,10 +3,10 @@ import { Card } from '@/components/ui/card';
 import { HorizontalSemesterCalendar } from '@/components/dashboard/HorizontalSemesterCalendar';
 import { QuickActionsWidget } from '@/features/dashboard/components/widgets/QuickActionsWidget';
 import { FeaturesBentoGrid } from '@/features/dashboard/components/widgets/FeaturesBentoGrid';
+import { OnboardingWizard, OnboardingReminder } from '@/components/onboarding';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
 import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
-
 export default function DashboardVisaoGeral() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -48,6 +48,12 @@ export default function DashboardVisaoGeral() {
 
   return (
     <div className="space-y-6 p-6 bg-card w-full">
+      {/* Lembrete de Onboarding */}
+      <OnboardingReminder variant="banner" />
+      
+      {/* Wizard de Onboarding */}
+      <OnboardingWizard />
+
       {/* Features Bento Grid */}
       <FeaturesBentoGrid />
 
