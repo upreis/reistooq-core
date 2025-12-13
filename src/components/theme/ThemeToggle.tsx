@@ -66,7 +66,7 @@ export function ThemeToggle({ className }: ThemeToggleProps = {}) {
   if (!mounted) {
     return (
       <div className={cn("relative inline-block", className)}>
-        <div className="relative flex h-[64px] w-[104px] items-center rounded-full bg-muted p-1" />
+        <div className="relative flex h-[38px] w-[62px] items-center rounded-full bg-muted p-1" />
       </div>
     );
   }
@@ -122,7 +122,7 @@ export function ThemeToggle({ className }: ThemeToggleProps = {}) {
       <motion.button
         ref={toggleRef}
         onClick={handleToggle}
-        className="relative flex h-[64px] w-[104px] items-center rounded-full p-[6px] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative flex h-[38px] w-[62px] items-center rounded-full p-[4px] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         style={{
           background: isDark
             ? 'radial-gradient(ellipse at top left, #1e293b 0%, #0f172a 40%, #020617 100%)'
@@ -168,7 +168,7 @@ export function ThemeToggle({ className }: ThemeToggleProps = {}) {
       >
         {/* Deep inner groove/rim effect */}
         <div 
-          className="absolute inset-[3px] rounded-full pointer-events-none"
+          className="absolute inset-[2px] rounded-full pointer-events-none"
           style={{
             boxShadow: isDark
               ? 'inset 0 2px 6px rgba(0, 0, 0, 0.9), inset 0 -1px 3px rgba(71, 85, 105, 0.3)'
@@ -204,14 +204,14 @@ export function ThemeToggle({ className }: ThemeToggleProps = {}) {
         />
 
         {/* Background Icons */}
-        <div className="absolute inset-0 flex items-center justify-between px-3">
-          <Sun size={14} className={isDark ? 'text-yellow-100' : 'text-amber-600'} />
-          <Moon size={14} className={isDark ? 'text-yellow-100' : 'text-slate-700'} />
+        <div className="absolute inset-0 flex items-center justify-between px-2">
+          <Sun size={10} className={isDark ? 'text-yellow-100' : 'text-amber-600'} />
+          <Moon size={10} className={isDark ? 'text-yellow-100' : 'text-slate-700'} />
         </div>
 
         {/* Circular Thumb with Bouncy Spring Physics */}
         <motion.div
-          className="relative z-10 flex h-[44px] w-[44px] items-center justify-center rounded-full overflow-hidden"
+          className="relative z-10 flex h-[26px] w-[26px] items-center justify-center rounded-full overflow-hidden"
           style={{
             background: isDark
               ? 'linear-gradient(145deg, #64748b 0%, #475569 50%, #334155 100%)'
@@ -240,7 +240,7 @@ export function ThemeToggle({ className }: ThemeToggleProps = {}) {
               : '2px solid rgba(255, 255, 255, 0.9)',
           }}
           animate={{
-            x: isDark ? 46 : 0,
+            x: isDark ? 28 : 0,
           }}
           transition={{
             type: 'spring',
@@ -296,9 +296,9 @@ export function ThemeToggle({ className }: ThemeToggleProps = {}) {
           {/* Icon */}
           <div className="relative z-10">
             {isDark ? (
-              <Moon size={14} className="text-yellow-200" />
+              <Moon size={10} className="text-yellow-200" />
             ) : (
-              <Sun size={14} className="text-amber-500" />
+              <Sun size={10} className="text-amber-500" />
             )}
           </div>
         </motion.div>
