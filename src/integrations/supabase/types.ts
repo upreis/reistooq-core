@@ -2944,6 +2944,7 @@ export type Database = {
           descricao: string | null
           endereco: string | null
           id: string
+          is_system: boolean
           nome: string
           organization_id: string
           tipo: string
@@ -2955,6 +2956,7 @@ export type Database = {
           descricao?: string | null
           endereco?: string | null
           id?: string
+          is_system?: boolean
           nome: string
           organization_id: string
           tipo?: string
@@ -2966,6 +2968,7 @@ export type Database = {
           descricao?: string | null
           endereco?: string | null
           id?: string
+          is_system?: boolean
           nome?: string
           organization_id?: string
           tipo?: string
