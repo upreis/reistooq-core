@@ -43,6 +43,20 @@ const corsHeaders = {
 
 const cid = () => crypto.randomUUID().slice(0, 8);
 
+/**
+ * 🖼️ Converte URL de thumbnail do ML para alta qualidade
+ * Sufixos ML: -I (pequeno/thumbnail), -O (original/alta qualidade), -F (full)
+ */
+function getHighQualityImageUrl(url: string): string {
+  if (!url) return '';
+  return url
+    .replace(/-I\.jpg/g, '-O.jpg')
+    .replace(/-I\.webp/g, '-O.webp')
+    .replace(/-F\.jpg/g, '-O.jpg')
+    .replace(/-F\.webp/g, '-O.webp')
+    .replace(/http:\/\//g, 'https://');
+}
+
 interface SyncParams {
   organization_id?: string;
   integration_account_ids?: string[];
@@ -458,7 +472,10 @@ async function fetchProductInfo(itemId: string, accessToken: string, cid: string
     }
 
     const itemData = await response.json();
-    const thumbnail = itemData.thumbnail || itemData.pictures?.[0]?.url || '';
+    let thumbnail = itemData.thumbnail || itemData.pictures?.[0]?.url || '';
+    
+    // 🖼️ Converter para alta qualidade: -I (thumbnail) → -O (original/alta qualidade)
+    thumbnail = getHighQualityImageUrl(thumbnail);
     
     return { thumbnail };
   } catch (error) {
