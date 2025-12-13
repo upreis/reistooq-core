@@ -284,6 +284,32 @@ export function TendenciaVendasChart({
     setCalendarOpen(open);
   };
 
+  // Limites de período disponível (5 meses para trás)
+  const today = new Date();
+  const minDate = useMemo(() => {
+    const min = new Date(today);
+    min.setMonth(min.getMonth() - 5);
+    min.setDate(1);
+    return min;
+  }, []);
+  
+  const minYear = minDate.getFullYear();
+  const minMonth = minDate.getMonth();
+  const maxYear = today.getFullYear();
+  const maxMonth = today.getMonth();
+
+  // Verificar se um mês está disponível para seleção
+  const isMonthAvailable = (year: number, monthIndex: number): boolean => {
+    const monthDate = new Date(year, monthIndex, 1);
+    const minCheck = new Date(minYear, minMonth, 1);
+    const maxCheck = new Date(maxYear, maxMonth, 1);
+    return monthDate >= minCheck && monthDate <= maxCheck;
+  };
+
+  // Verificar se pode navegar para ano anterior/próximo
+  const canGoPrevYear = pickerYear > minYear;
+  const canGoNextYear = pickerYear < maxYear;
+
   // Componente de seletor de mês
   const MonthPicker = () => (
     <div className="p-3">
@@ -293,6 +319,7 @@ export function TendenciaVendasChart({
           size="icon" 
           className="h-7 w-7"
           onClick={() => setPickerYear(prev => prev - 1)}
+          disabled={!canGoPrevYear}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -302,6 +329,7 @@ export function TendenciaVendasChart({
           size="icon" 
           className="h-7 w-7"
           onClick={() => setPickerYear(prev => prev + 1)}
+          disabled={!canGoNextYear}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -309,6 +337,7 @@ export function TendenciaVendasChart({
       <div className="grid grid-cols-3 gap-2">
         {MONTHS_PT.map((month, index) => {
           const isSelected = selectedDate.getMonth() === index && selectedDate.getFullYear() === pickerYear;
+          const isAvailable = isMonthAvailable(pickerYear, index);
           return (
             <Button
               key={month}
@@ -316,6 +345,7 @@ export function TendenciaVendasChart({
               size="sm"
               className="text-xs"
               onClick={() => handleMonthSelect(index)}
+              disabled={!isAvailable}
             >
               {month}/{pickerYear.toString().slice(-2)}
             </Button>
@@ -377,6 +407,8 @@ export function TendenciaVendasChart({
                   onSelect={handleDateSelect}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
+                  fromDate={minDate}
+                  toDate={today}
                 />
               ) : (
                 <MonthPicker />
@@ -432,6 +464,8 @@ export function TendenciaVendasChart({
                   onSelect={handleDateSelect}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
+                  fromDate={minDate}
+                  toDate={today}
                 />
               ) : (
                 <MonthPicker />
