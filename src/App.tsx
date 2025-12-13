@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SidebarUIProvider } from "@/context/SidebarUIContext";
+import { AIChatProvider } from "@/contexts/AIChatContext";
 import { MobileProvider } from "@/contexts/MobileContext";
 import { InactivityTracker } from "@/components/auth/InactivityTracker";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -109,12 +110,13 @@ function App() {
           <AuthProvider>
             <MobileProvider>
               <SidebarUIProvider>
-                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                  <MobileRedirect />
-                  <InactivityTracker />
-                  <AIChatBubble />
-                  <Toaster />
-                  <Sonner />
+                <AIChatProvider>
+                  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <MobileRedirect />
+                    <InactivityTracker />
+                    <AIChatBubble />
+                    <Toaster />
+                    <Sonner />
                   <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
@@ -200,7 +202,8 @@ function App() {
                   {/* Rota 404 */}
                   <Route path="*" element={<NotFound />} />
                   </Routes>
-                </BrowserRouter>
+                  </BrowserRouter>
+                </AIChatProvider>
               </SidebarUIProvider>
             </MobileProvider>
           </AuthProvider>

@@ -16,10 +16,12 @@ import {
   RefreshCw,
   ArrowRight,
   Activity,
-  ShieldAlert
+  ShieldAlert,
+  MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAIChat } from "@/contexts/AIChatContext";
 
 type InsightStatus = 'pending' | 'approved' | 'rejected' | 'implemented' | 'archived';
 type InsightType = 'ui_improvement' | 'feature_request' | 'bug_pattern' | 'user_struggle' | 'workflow_optimization';
@@ -47,6 +49,7 @@ export default function AIInsights() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
   const queryClient = useQueryClient();
+  const { sendInsightToChat } = useAIChat();
 
   // Buscar insights
   const { data: insights, isLoading, error } = useQuery({
@@ -333,15 +336,27 @@ export default function AIInsights() {
                     {insight.status === 'pending' && (
                       <div className="flex gap-2 pt-2">
                         <Button
-                          onClick={() => updateInsightMutation.mutate({ 
-                            id: insight.id, 
-                            status: 'approved',
-                            notes: 'Aprovado para implementação'
-                          })}
+                          onClick={() => {
+                            // Atualizar status
+                            updateInsightMutation.mutate({ 
+                              id: insight.id, 
+                              status: 'approved',
+                              notes: 'Aprovado para implementação'
+                            });
+                            // Enviar para o chat para resolver
+                            sendInsightToChat({
+                              id: insight.id,
+                              title: insight.title,
+                              description: insight.description,
+                              suggestedImprovement: insight.suggested_improvement,
+                              affectedRoute: insight.affected_route,
+                              type: insight.insight_type
+                            });
+                          }}
                           className="flex-1"
                         >
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Aprovar
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Aprovar e Resolver
                         </Button>
                         <Button
                           onClick={() => updateInsightMutation.mutate({ 
