@@ -20,6 +20,33 @@ import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { cn } from '@/lib/utils';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 
+// 🔖 Versão para prova visual
+const DEBUG_VERSION = '2025-12-15-3';
+
+// Declaração global para debug
+declare global {
+  interface Window {
+    __StickyDebug?: {
+      mountedAt: string;
+      version: string;
+      href: string;
+      scrollEvents: Array<{ source: string; scrollTop: number; timestamp: number }>;
+      computedTH: {
+        position: string;
+        top: string;
+        zIndex: string;
+      } | null;
+      ancestors: Array<{
+        tag: string;
+        className: string;
+        overflow: string;
+        overflowY: string;
+        transform: string;
+        contain: string;
+      }>;
+    };
+  }
+}
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -53,6 +80,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [stickyTopPx, setStickyTopPx] = useState(0);
 
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
+  
+  // Flag de debug
+  const isDebugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debugSticky') === '1';
 
   // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
   const columns = useMemo(() => {
@@ -132,9 +162,57 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     window.addEventListener('resize', computeStickyTop);
 
     if (debugSticky) {
-      console.log('🧷 [StickyDebug] ReclamacoesTable mount: versão sticky-th-2025-12-15-2');
+      // 🔖 Inicializar variável global
+      window.__StickyDebug = {
+        mountedAt: new Date().toISOString(),
+        version: DEBUG_VERSION,
+        href: window.location.href,
+        scrollEvents: [],
+        computedTH: null,
+        ancestors: [],
+      };
+      
+      console.log(`🧷 [StickyDebug] mount ok | v${DEBUG_VERSION} | ${window.location.href} | ${new Date().toISOString()}`);
 
-      // 1) Descobrir quem está scrollando de verdade (captura scroll bubbling)
+      // Helper para registrar scroll events (limita a 50)
+      const logScrollEvent = (source: string, scrollTop: number) => {
+        if (!window.__StickyDebug) return;
+        const event = { source, scrollTop, timestamp: Date.now() };
+        window.__StickyDebug.scrollEvents.push(event);
+        if (window.__StickyDebug.scrollEvents.length > 50) {
+          window.__StickyDebug.scrollEvents.shift();
+        }
+        console.log('🧷 [StickyDebug] scroll:', event);
+      };
+
+      // Listener A: window scroll
+      const onWindowScroll = () => {
+        logScrollEvent('window', window.scrollY);
+      };
+      window.addEventListener('scroll', onWindowScroll, { passive: true });
+
+      // Listener B: document.scrollingElement
+      const scrollingEl = document.scrollingElement;
+      const onScrollingElScroll = () => {
+        if (scrollingEl) {
+          logScrollEvent('document.scrollingElement', scrollingEl.scrollTop);
+        }
+      };
+      if (scrollingEl) {
+        scrollingEl.addEventListener('scroll', onScrollingElScroll, { passive: true });
+      }
+
+      // Listener C: wrapper da tabela (overflow-x-auto)
+      const tableWrapper = tableContainerRef.current?.querySelector('.overflow-x-auto');
+      const onTableWrapperScroll = (e: Event) => {
+        const el = e.target as HTMLElement;
+        logScrollEvent(`tableWrapper(${el.className.slice(0, 30)})`, el.scrollTop);
+      };
+      if (tableWrapper) {
+        tableWrapper.addEventListener('scroll', onTableWrapperScroll, { passive: true });
+      }
+
+      // Listener D: Captura global (bubbling) para qualquer scroll
       const onAnyScroll = (e: Event) => {
         const target = e.target as any;
         const el = target?.nodeType === 1 ? (target as HTMLElement) : null;
@@ -144,20 +222,17 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         const info = {
           tag: el.tagName,
           id: el.id,
-          class: el.className,
+          class: el.className?.toString().slice(0, 50),
           scrollTop: (el as any).scrollTop,
           overflowY: style.overflowY,
-          overflowX: style.overflowX,
-          position: style.position,
         };
 
         // log compacto
         console.log('🧷 [StickyDebug] scroll event target:', info);
       };
-
       document.addEventListener('scroll', onAnyScroll, true);
 
-      // 2) Provar computed style do primeiro TH
+      // 2) Provar computed style do primeiro TH após timeout
       const t = window.setTimeout(() => {
         const container = tableContainerRef.current;
         const th = container?.querySelector('th');
@@ -167,35 +242,58 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         }
 
         const cs = window.getComputedStyle(th);
-        console.log('🧷 [StickyDebug] TH computed:', {
+        const computedTH = {
           position: cs.position,
           top: cs.top,
           zIndex: cs.zIndex,
-        });
+        };
+        
+        if (window.__StickyDebug) {
+          window.__StickyDebug.computedTH = computedTH;
+        }
+        
+        console.log('🧷 [StickyDebug] TH computed:', computedTH);
 
         // Cadeia de ancestrais até body (resumo)
-        const chain: any[] = [];
+        const ancestors: Array<{
+          tag: string;
+          className: string;
+          overflow: string;
+          overflowY: string;
+          transform: string;
+          contain: string;
+        }> = [];
+        
         let cur: HTMLElement | null = th as HTMLElement;
         for (let i = 0; i < 14 && cur; i++) {
           const st = window.getComputedStyle(cur);
-          chain.push({
+          ancestors.push({
             tag: cur.tagName,
-            id: cur.id,
-            class: cur.className,
+            className: cur.className?.toString().slice(0, 60) || '',
             overflow: st.overflow,
             overflowY: st.overflowY,
             transform: st.transform,
-            filter: st.filter,
-            contain: (st as any).contain,
-            position: st.position,
+            contain: (st as any).contain || 'none',
           });
           cur = cur.parentElement;
         }
-        console.log('🧷 [StickyDebug] cadeia ancestrais (th → ...):', chain);
+        
+        if (window.__StickyDebug) {
+          window.__StickyDebug.ancestors = ancestors;
+        }
+        
+        console.log('🧷 [StickyDebug] cadeia ancestrais (th → ...):', ancestors);
       }, 350);
 
       return () => {
         window.clearTimeout(t);
+        window.removeEventListener('scroll', onWindowScroll);
+        if (scrollingEl) {
+          scrollingEl.removeEventListener('scroll', onScrollingElScroll);
+        }
+        if (tableWrapper) {
+          tableWrapper.removeEventListener('scroll', onTableWrapperScroll);
+        }
         document.removeEventListener('scroll', onAnyScroll, true);
         window.removeEventListener('resize', computeStickyTop);
       };
@@ -238,6 +336,13 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full" ref={tableContainerRef}>
+      {/* 🔖 Badge de debug visual - prova que build está correta */}
+      {isDebugMode && (
+        <div className="fixed bottom-4 right-4 z-50 bg-yellow-500 text-yellow-900 text-xs font-mono px-3 py-1.5 rounded-full shadow-lg">
+          StickyDebug ON v{DEBUG_VERSION}
+        </div>
+      )}
+      
       {/* Wrapper único: apenas scroll horizontal. Scroll vertical continua no body/página. */}
       <div className="overflow-x-auto border rounded-md">
         <Table className="min-w-max">
