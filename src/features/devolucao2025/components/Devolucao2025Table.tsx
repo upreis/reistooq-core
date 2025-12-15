@@ -201,6 +201,7 @@ export const Devolucao2025Table = ({
                 status_devolucao: dev.status_devolucao,
                 status_return: dev.status_return,
                 destino: dev.destino_devolucao,
+                tipo_claim: dev.tipo_claim, // ✅ Adicionado para debug
                 review_stage: dev.dados_reviews?.stage,
                 review_status: dev.dados_reviews?.status,
                 product_condition: dev.dados_reviews?.product_condition,
