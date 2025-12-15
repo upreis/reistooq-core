@@ -1,299 +1,343 @@
 /**
- * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS
- * FASE 2.2: Usando utilities compartilhadas de @/core/filters
+ * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS - PADRÃO COMBO 2.1
+ * Usa startDate/endDate (Date objects) ao invés de periodo (string)
+ * Sincroniza com URL + localStorage
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useReclamacoesFiltersSync, ReclamacoesFilters } from './useReclamacoesFiltersSync';
-import { usePersistentReclamacoesState } from './usePersistentReclamacoesState';
-import {
-  updateSingleFilter,
-  updateMultipleFilters,
-  resetSearchFilters as resetSearchFiltersUtil,
-  hasActiveFilters as hasActiveFiltersUtil,
-  countActiveFilters as countActiveFiltersUtil,
-} from '@/core/filters';
+import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { useReclamacoesFiltersSync, ReclamacoesFilters, DEFAULT_FILTERS } from './useReclamacoesFiltersSync';
 
-const DEFAULT_FILTERS: ReclamacoesFilters = {
-  periodo: '7', // 🔥 CORREÇÃO 1: Alterado de '60' para '7' (padrão: Últimos 7 dias)
-  status: '',
-  type: '',
-  stage: '',
-  selectedAccounts: [],
-  currentPage: 1,
-  itemsPerPage: 50
-};
+const isDev = import.meta.env.DEV;
+const STORAGE_KEY = 'reclamacoes_filters_v3';
+
+interface UseReclamacoesFiltersUnifiedOptions {
+  onFiltersApply?: (filters: ReclamacoesFilters) => void;
+  enableURLSync?: boolean;
+}
 
 /**
- * Hook unificado para gestão de filtros com sincronização URL + cache
+ * Serializa filtros para localStorage (converte Date para ISO string)
  */
-export function useReclamacoesFiltersUnified() {
-  const persistentCache = usePersistentReclamacoesState();
-  const [searchParams] = useSearchParams();
+function serializeFilters(filters: ReclamacoesFilters): string {
+  return JSON.stringify({
+    ...filters,
+    startDate: filters.startDate?.toISOString() || null,
+    endDate: filters.endDate?.toISOString() || null,
+  });
+}
+
+/**
+ * Deserializa filtros do localStorage (converte ISO string para Date)
+ */
+function deserializeFilters(stored: string): ReclamacoesFilters {
+  const parsed = JSON.parse(stored);
+  return {
+    ...DEFAULT_FILTERS,
+    ...parsed,
+    startDate: parsed.startDate ? new Date(parsed.startDate) : DEFAULT_FILTERS.startDate,
+    endDate: parsed.endDate ? new Date(parsed.endDate) : DEFAULT_FILTERS.endDate,
+    selectedAccounts: Array.isArray(parsed.selectedAccounts) ? parsed.selectedAccounts : [],
+    status: parsed.status || '',
+    type: parsed.type || '',
+    stage: parsed.stage || '',
+    currentPage: typeof parsed.currentPage === 'number' ? parsed.currentPage : 1,
+    itemsPerPage: typeof parsed.itemsPerPage === 'number' ? parsed.itemsPerPage : 50,
+    activeTab: parsed.activeTab === 'historico' ? 'historico' : 'ativas',
+  };
+}
+
+export function useReclamacoesFiltersUnified(options: UseReclamacoesFiltersUnifiedOptions = {}) {
+  const { 
+    onFiltersApply, 
+    enableURLSync = true 
+  } = options;
   
-  // Estado dos filtros - iniciar com defaults
-  const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const isFirstRender = useRef(true); // 🔥 Rastrear primeira renderização
-  const isRestoringFromUrl = useRef(false); // 🔥 ERRO 5: Flag para evitar loop de re-renderização
+  // Hook de sincronização URL + localStorage
+  const filterSync = useReclamacoesFiltersSync({
+    enabled: enableURLSync
+  });
 
-  // 🔥 ERRO 5 CORRIGIDO: Restaurar filtros com prioridade URL > Cache > Defaults
-  // URL SEMPRE tem prioridade absoluta, mesmo quando cache falha
+  // Estados principais
+  const [draftFilters, setDraftFilters] = useState<ReclamacoesFilters>({ ...DEFAULT_FILTERS });
+  const [appliedFilters, setAppliedFilters] = useState<ReclamacoesFilters>({ ...DEFAULT_FILTERS });
+  const [isApplying, setIsApplying] = useState(false);
+  
+  // Flags de controle
+  const isInitializingRef = useRef(true);
+  const hasInitializedRef = useRef(false);
+  
+  /**
+   * INICIALIZAÇÃO - Carregar do localStorage/URL na montagem
+   */
   useEffect(() => {
-    if (!persistentCache.isStateLoaded) return;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
     
-    // 🔥 Marcar que estamos restaurando
-    isRestoringFromUrl.current = true;
-    
-    // 1. Parsear filtros da URL PRIMEIRO
-    const urlFilters: Partial<ReclamacoesFilters> = {};
-    const hasUrlParams = searchParams.toString().length > 0;
-    
-    // 🔧 CORREÇÃO CRÍTICA: Verificar se cache tem período diferente do default
-    const cachedPeriodo = persistentCache.persistedState?.filters?.periodo;
-    const urlPeriodo = searchParams.get('periodo');
-    
-    // 🔧 CORREÇÃO: CACHE tem prioridade sobre URL quando:
-    // - Cache existe com período diferente do default
-    // - URL só tem o período default (não foi alterado pelo usuário)
-    const cacheHasCustomPeriodo = cachedPeriodo && cachedPeriodo !== DEFAULT_FILTERS.periodo;
-    const urlHasDefaultPeriodo = urlPeriodo === DEFAULT_FILTERS.periodo || !urlPeriodo;
-    
-    // Usar período da URL APENAS se:
-    // - URL tem período NÃO-default (usuário explicitamente selecionou via URL compartilhada)
-    // - OU cache não tem período customizado
-    const shouldUseUrlPeriodo = urlPeriodo && !urlHasDefaultPeriodo;
-    
-    if (shouldUseUrlPeriodo) {
-      urlFilters.periodo = urlPeriodo;
-      console.log('🔗 [URL] Usando período da URL (não-default):', urlPeriodo);
-    } else if (cacheHasCustomPeriodo) {
-      // Cache tem período customizado e URL só tem default - NÃO capturar da URL
-      console.log('📦 [CACHE] Ignorando período default da URL, cache tem:', cachedPeriodo);
+    // Carregar do localStorage primeiro
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const validatedFilters = deserializeFilters(stored);
+        
+        setDraftFilters(validatedFilters);
+        setAppliedFilters(validatedFilters);
+        
+        if (isDev) console.log('📦 [RECLAMACOES-FILTROS] Carregados do localStorage:', validatedFilters);
+      } else if (enableURLSync && filterSync.hasActiveFilters) {
+        // Se não tem localStorage mas tem URL, usar URL
+        setDraftFilters(filterSync.filters);
+        setAppliedFilters(filterSync.filters);
+        
+        if (isDev) console.log('📦 [RECLAMACOES-FILTROS] Carregados da URL:', filterSync.filters);
+      }
+    } catch (error) {
+      console.error('❌ [RECLAMACOES-FILTROS] Erro ao carregar filtros:', error);
+      localStorage.removeItem(STORAGE_KEY);
     }
     
-    const status = searchParams.get('status');
-    if (status) urlFilters.status = status;
-    
-    const type = searchParams.get('type');
-    if (type) urlFilters.type = type;
-    
-    const stage = searchParams.get('stage');
-    if (stage) urlFilters.stage = stage;
-    
-    const accounts = searchParams.get('accounts');
-    if (accounts) urlFilters.selectedAccounts = accounts.split(',').filter(Boolean);
-    
-    const page = searchParams.get('page');
-    if (page) urlFilters.currentPage = parseInt(page, 10);
-    
-    const limit = searchParams.get('limit');
-    if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
-    
-    // 2. Carregar filtros do cache APENAS se:
-    //    - Não está inicializado ainda
-    //    - Cache existe e é válido
-    //    - Campo específico NÃO está na URL
-    const cachedFilters: Partial<ReclamacoesFilters> = {};
-    const cacheAvailable = !isInitialized && persistentCache.persistedState;
-    
-    if (cacheAvailable) {
-      console.log('📦 [CACHE] Cache disponível, restaurando campos não presentes na URL');
-      
-      // 🔧 Período do cache (se não foi capturado da URL)
-      if (!urlFilters.periodo && cachedPeriodo) {
-        cachedFilters.periodo = cachedPeriodo;
-        console.log('🔄 [CACHE] Restaurando período do cache:', cachedPeriodo);
-      }
-      if (!urlFilters.status && persistentCache.persistedState?.filters?.status) {
-        cachedFilters.status = persistentCache.persistedState.filters.status;
-      }
-      if (!urlFilters.type && persistentCache.persistedState?.filters?.type) {
-        cachedFilters.type = persistentCache.persistedState.filters.type;
-      }
-      if (!urlFilters.stage && persistentCache.persistedState?.filters?.stage) {
-        cachedFilters.stage = persistentCache.persistedState.filters.stage;
-      }
-      if (!urlFilters.selectedAccounts && persistentCache.persistedState?.selectedAccounts?.length) {
-        cachedFilters.selectedAccounts = persistentCache.persistedState.selectedAccounts;
-      }
-      if (!urlFilters.currentPage && persistentCache.persistedState?.currentPage) {
-        cachedFilters.currentPage = persistentCache.persistedState.currentPage;
-      }
-      if (!urlFilters.itemsPerPage && persistentCache.persistedState?.itemsPerPage) {
-        cachedFilters.itemsPerPage = persistentCache.persistedState.itemsPerPage;
-      }
-    } else if (!cacheAvailable && hasUrlParams) {
-      // 🔥 ERRO 5: Cache falhou mas URL tem parâmetros - usar URL!
-      console.log('⚠️ [ERRO 5] Cache indisponível, usando filtros da URL diretamente');
-    }
-    
-    // Limpar cache antigo duplicado (uma única vez)
-    const OLD_CACHE_KEY = 'RECLAMACOES_LOCAL_CACHE_V1';
-    if (localStorage.getItem(OLD_CACHE_KEY)) {
-      localStorage.removeItem(OLD_CACHE_KEY);
-      console.log('🗑️ Cache antigo removido:', OLD_CACHE_KEY);
-    }
-    
-    // 3. Merge: Defaults → Cache → URL (URL SEMPRE sobrescreve)
-    const mergedFilters: ReclamacoesFilters = {
-      ...DEFAULT_FILTERS,
-      ...cachedFilters,
-      ...urlFilters // 🔥 URL tem prioridade ABSOLUTA
-    };
-    
-    console.log('🔄 [FILTROS] Restauração completa:', {
-      hasUrlParams,
-      cacheAvailable: !!cacheAvailable,
-      urlFilters: Object.keys(urlFilters).length > 0 ? urlFilters : 'nenhum',
-      cacheFilters: Object.keys(cachedFilters).length > 0 ? cachedFilters : 'nenhum',
-      final: mergedFilters
-    });
-    
-    setFilters(mergedFilters);
-    setIsInitialized(true);
-
-    // Resetar flag após restauração completar
+    // Marcar como não inicializando após carregar
     setTimeout(() => {
-      isRestoringFromUrl.current = false;
-    }, 0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persistentCache.isStateLoaded]); // 🔧 CORREÇÃO: Remover searchParams para evitar re-execuções
+      isInitializingRef.current = false;
+    }, 100);
+  }, [enableURLSync, filterSync.filters, filterSync.hasActiveFilters]);
 
-  // 🔥 CORREÇÃO 1: Cleanup separado - só roda no unmount real do componente
+  /**
+   * SALVAR AUTOMATICAMENTE no localStorage quando appliedFilters mudar
+   */
   useEffect(() => {
-    return () => {
-      setIsInitialized(false);
-      console.log('🧹 [RECLAMACOES FILTERS] Limpando estado ao desmontar');
-    };
-  }, []); // Array vazio = só roda no mount/unmount
-
-  // 🚀 COMBO 2.1: Sincronizar com URL APENAS após inicialização completa
-  // 🔧 CORREÇÃO CRÍTICA: Passar isInitialized para bloquear sincronização até cache restaurar
-  const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
-    filters,
-    () => {}, // Não fazer nada quando URL mudar - restauração já foi feita acima
-    isInitialized // 🔧 CORREÇÃO: Só sincronizar após cache ser restaurado
-  );
-
-  // 🔥 CORREÇÃO: Salvar filtros automaticamente no cache quando mudarem (com debounce)
-  useEffect(() => {
-    // 🔥 ERRO 4 CORRIGIDO: Ignorar salvamento durante inicialização
-    if (!isInitialized || isFirstRender.current) {
-      if (isInitialized && isFirstRender.current) {
-        isFirstRender.current = false; // Marcar que inicialização terminou
-      }
-      return;
-    }
-
-    // 🔥 ERRO 5 CORRIGIDO: Não salvar se estamos restaurando da URL
-    if (isRestoringFromUrl.current) {
-      console.log('⏭️ [RECLAMACOES FILTERS] Ignorando salvamento durante restauração da URL');
+    if (isInitializingRef.current) {
+      if (isDev) console.log('⏭️ [RECLAMACOES-FILTROS] Pulando salvamento - ainda inicializando');
       return;
     }
     
-    const timer = setTimeout(() => {
-      // Salvar apenas os filtros (não os dados de reclamações)
-      persistentCache.saveState({
-        filters: {
-          periodo: filters.periodo,
-          status: filters.status,
-          type: filters.type,
-          stage: filters.stage
-        },
-        selectedAccounts: filters.selectedAccounts,
-        currentPage: filters.currentPage,
-        itemsPerPage: filters.itemsPerPage,
-        reclamacoes: persistentCache.persistedState?.reclamacoes || [], // Manter reclamações existentes
-        cachedAt: Date.now(),
-        version: 2
-      });
+    try {
+      localStorage.setItem(STORAGE_KEY, serializeFilters(appliedFilters));
+      if (isDev) console.log('💾 [RECLAMACOES-FILTROS] Salvos no localStorage:', appliedFilters);
       
-      console.log('💾 Filtros salvos automaticamente:', {
-        periodo: filters.periodo,
-        status: filters.status,
-        type: filters.type,
-        stage: filters.stage,
-        accounts: filters.selectedAccounts.length,
-        page: filters.currentPage
-      });
-    }, 300); // Debounce de 300ms
-    
-    return () => clearTimeout(timer);
-  }, [filters, isInitialized]); // 🔥 REMOVIDO persistentCache das dependências para evitar loop
+      // Sincronizar com URL também
+      if (enableURLSync) {
+        filterSync.writeFilters(appliedFilters);
+      }
+    } catch (error) {
+      console.error('❌ [RECLAMACOES-FILTROS] Erro ao salvar filtros:', error);
+    }
+  }, [appliedFilters, enableURLSync, filterSync]);
 
-  // 🔧 Helper para identificar keys de paginação
-  const isPaginationKey = useCallback((key: keyof ReclamacoesFilters) => {
-    return key === 'currentPage' || key === 'itemsPerPage';
-  }, []);
-
-  // Atualizar um filtro específico usando utility compartilhada
+  /**
+   * Atualizar filtro draft
+   */
   const updateFilter = useCallback(<K extends keyof ReclamacoesFilters>(
     key: K,
     value: ReclamacoesFilters[K]
   ) => {
-    setFilters(prev => 
-      updateSingleFilter(prev, key, value, isPaginationKey)
-    );
-    console.log(`🎯 Filtro atualizado: ${key} =`, value);
-  }, [isPaginationKey]);
-
-  // Atualizar múltiplos filtros de uma vez usando utility compartilhada
-  const updateFilters = useCallback((newFilters: Partial<ReclamacoesFilters>) => {
-    setFilters(prev => 
-      updateMultipleFilters(prev, newFilters, isPaginationKey)
-    );
-    console.log('🎯 Múltiplos filtros atualizados:', newFilters);
-  }, [isPaginationKey]);
-
-  // Resetar todos os filtros
-  const resetFilters = useCallback(() => {
-    console.log('🔄 Resetando todos os filtros');
-    setFilters(DEFAULT_FILTERS);
+    if (isDev) console.log('🔧 [RECLAMACOES-FILTROS] Atualizando filtro:', key, '=', value);
+    
+    setDraftFilters(prev => {
+      const newFilters = { ...prev, [key]: value };
+      return newFilters;
+    });
   }, []);
 
-  // Resetar apenas filtros de busca usando utility compartilhada
-  const resetSearchFilters = useCallback(() => {
-    console.log('🔄 Resetando filtros de busca');
-    const searchKeys: (keyof ReclamacoesFilters)[] = ['periodo', 'status', 'type', 'stage'];
-    setFilters(prev => ({
+  /**
+   * Atualizar datas (para o SimplifiedPeriodFilter)
+   */
+  const updateDateRange = useCallback((startDate?: Date, endDate?: Date) => {
+    if (isDev) console.log('📅 [RECLAMACOES-FILTROS] Atualizando datas:', { startDate, endDate });
+    
+    setDraftFilters(prev => ({
       ...prev,
-      ...resetSearchFiltersUtil(DEFAULT_FILTERS, searchKeys)
+      startDate,
+      endDate,
     }));
   }, []);
 
-  // Verificar se há filtros ativos usando utility compartilhada
-  const hasActiveFilters = useMemo(() => {
-    const excludeKeys: (keyof ReclamacoesFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage'];
-    return hasActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
-  }, [filters]);
+  /**
+   * Aplicar filtros manualmente
+   */
+  const applyFilters = useCallback(() => {
+    if (isDev) console.log('🔄 [RECLAMACOES-FILTROS] Aplicando filtros:', draftFilters);
+    
+    // Reset página para 1 ao aplicar novos filtros
+    const filtersToApply: ReclamacoesFilters = { 
+      ...draftFilters, 
+      currentPage: 1 
+    };
+    
+    setAppliedFilters(filtersToApply);
+    setIsApplying(true);
+    
+    // Disparar callback para busca
+    onFiltersApply?.(filtersToApply);
+    
+    // Finalizar estado após breve delay para UX
+    setTimeout(() => {
+      setIsApplying(false);
+      if (isDev) console.log('✅ [RECLAMACOES-FILTROS] Aplicação concluída');
+    }, 500);
+  }, [draftFilters, onFiltersApply]);
 
-  // Contar quantos filtros estão ativos usando utility compartilhada
-  const activeFilterCount = useMemo(() => {
-    const excludeKeys: (keyof ReclamacoesFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage'];
-    return countActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
-  }, [filters]);
+  /**
+   * Cancelar mudanças pendentes
+   */
+  const cancelChanges = useCallback(() => {
+    setDraftFilters({ ...appliedFilters });
+    if (isDev) console.log('↩️ [RECLAMACOES-FILTROS] Mudanças canceladas');
+  }, [appliedFilters]);
+
+  /**
+   * Limpar todos os filtros
+   */
+  const clearFilters = useCallback(() => {
+    const clearedFilters = { ...DEFAULT_FILTERS };
+    
+    setDraftFilters(clearedFilters);
+    setAppliedFilters(clearedFilters);
+    
+    localStorage.removeItem(STORAGE_KEY);
+    
+    if (enableURLSync) {
+      filterSync.clearFilters();
+    }
+    
+    onFiltersApply?.(clearedFilters);
+    
+    if (isDev) console.log('🗑️ [RECLAMACOES-FILTROS] Todos filtros limpos');
+  }, [enableURLSync, filterSync, onFiltersApply]);
+
+  /**
+   * Mudar página (aplicação imediata)
+   */
+  const changePage = useCallback((page: number) => {
+    const newFilters = { ...appliedFilters, currentPage: page };
+    setDraftFilters(newFilters);
+    setAppliedFilters(newFilters);
+    
+    if (isDev) console.log('📄 [RECLAMACOES-FILTROS] Página alterada:', page);
+  }, [appliedFilters]);
+
+  /**
+   * Mudar itens por página (aplicação imediata, reset para página 1)
+   */
+  const changeItemsPerPage = useCallback((itemsPerPage: number) => {
+    const newFilters = { ...appliedFilters, itemsPerPage, currentPage: 1 };
+    setDraftFilters(newFilters);
+    setAppliedFilters(newFilters);
+    
+    if (isDev) console.log('📊 [RECLAMACOES-FILTROS] Itens por página alterado:', itemsPerPage);
+  }, [appliedFilters]);
+
+  /**
+   * Mudar tab ativa (aplicação imediata, reset para página 1)
+   */
+  const changeTab = useCallback((tab: 'ativas' | 'historico') => {
+    const newFilters = { ...appliedFilters, activeTab: tab, currentPage: 1 };
+    setDraftFilters(newFilters);
+    setAppliedFilters(newFilters);
+    
+    if (isDev) console.log('📑 [RECLAMACOES-FILTROS] Tab alterada:', tab);
+  }, [appliedFilters]);
+
+  /**
+   * Verificar se há mudanças pendentes
+   */
+  const hasPendingChanges = useMemo(() => {
+    const draftKeys = Object.keys(draftFilters) as (keyof ReclamacoesFilters)[];
+    
+    return draftKeys.some(key => {
+      // Ignorar página na comparação de mudanças pendentes
+      if (key === 'currentPage') return false;
+      
+      const draftValue = draftFilters[key];
+      const appliedValue = appliedFilters[key];
+      
+      if (Array.isArray(draftValue) && Array.isArray(appliedValue)) {
+        return JSON.stringify([...draftValue].sort()) !== JSON.stringify([...appliedValue].sort());
+      }
+      
+      // Comparar datas
+      if (draftValue instanceof Date && appliedValue instanceof Date) {
+        return draftValue.getTime() !== appliedValue.getTime();
+      }
+      
+      // Se um é Date e outro não
+      if (draftValue instanceof Date || appliedValue instanceof Date) {
+        return true;
+      }
+      
+      return draftValue !== appliedValue;
+    });
+  }, [draftFilters, appliedFilters]);
+
+  /**
+   * Contar filtros ativos
+   */
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    
+    // Contar datas se diferentes do default
+    if (appliedFilters.startDate || appliedFilters.endDate) count++;
+    if (appliedFilters.selectedAccounts.length > 0) count++;
+    if (appliedFilters.status) count++;
+    if (appliedFilters.type) count++;
+    if (appliedFilters.stage) count++;
+    
+    return count;
+  }, [appliedFilters]);
+
+  const hasActiveFilters = activeFiltersCount > 0;
+  const needsManualApplication = hasPendingChanges;
+
+  /**
+   * Converter para parâmetros da API (com datas formatadas)
+   */
+  const apiParams = useMemo(() => {
+    return {
+      startDate: appliedFilters.startDate,
+      endDate: appliedFilters.endDate,
+      selectedAccounts: appliedFilters.selectedAccounts,
+      status: appliedFilters.status,
+      type: appliedFilters.type,
+      stage: appliedFilters.stage,
+      currentPage: appliedFilters.currentPage,
+      itemsPerPage: appliedFilters.itemsPerPage,
+      activeTab: appliedFilters.activeTab,
+    };
+  }, [appliedFilters]);
 
   return {
-    // Estado
-    filters,
+    // Estados
+    filters: draftFilters,
+    appliedFilters,
+    apiParams,
     
-    // Ações
-    updateFilter,
-    updateFilters,
-    resetFilters,
-    resetSearchFilters,
-    
-    // Computados
+    // Flags
+    hasPendingChanges,
     hasActiveFilters,
-    activeFilterCount,
+    activeFiltersCount,
+    needsManualApplication,
+    isApplying,
+    
+    // Ações de filtros
+    updateFilter,
+    updateDateRange,
+    applyFilters,
+    cancelChanges,
+    clearFilters,
+    
+    // Ações de navegação (aplicação imediata)
+    changePage,
+    changeItemsPerPage,
+    changeTab,
+    
+    // Defaults para referência
+    defaultFilters: DEFAULT_FILTERS,
     
     // Helpers
-    parseFiltersFromUrl,
-    encodeFiltersToUrl,
-    
-    // Cache management
-    persistentCache
+    parseFiltersFromUrl: filterSync.parseFiltersFromUrl,
+    encodeFiltersToUrl: filterSync.encodeFiltersToUrl,
   };
 }
+
+// Re-export types
+export type { ReclamacoesFilters } from './useReclamacoesFiltersSync';
