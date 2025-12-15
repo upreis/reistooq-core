@@ -49,10 +49,16 @@ export const Devolucao2025Page = () => {
   // FASE 3: Gerenciamento avançado de colunas
   // FASE 4: Polling automático e agregação de métricas
   const {
-    filters,
+    pendingFilters,
+    appliedFilters,
     updateFilter,
-    updateFilters,
-    persistentCache
+    updateDateRange,
+    applyFilters: applyFiltersInternal,
+    hasPendingChanges,
+    isApplying,
+    changePage,
+    changeItemsPerPage,
+    changeTab,
   } = useDevolucoesFiltersUnified();
   
   const columnManager = useDevolucoesColumnManager();
@@ -83,13 +89,12 @@ export const Devolucao2025Page = () => {
     removeDevolucao
   } = useDevolucaoStorage();
   
-  // Estados derivados dos filtros
-  const selectedAccounts = filters.selectedAccounts;
-  const periodo = filters.periodo;
-  const searchTerm = filters.searchTerm;
-  const currentPage = filters.currentPage;
-  const itemsPerPage = filters.itemsPerPage;
-  const activeTab = filters.activeTab;
+  // Estados derivados dos filtros (appliedFilters para busca, pendingFilters para UI)
+  const selectedAccounts = appliedFilters.selectedAccounts;
+  const searchTerm = pendingFilters.searchTerm;
+  const currentPage = appliedFilters.currentPage;
+  const itemsPerPage = appliedFilters.itemsPerPage;
+  const activeTab = appliedFilters.activeTab;
   
   // Estados locais não gerenciados por filtros
   const [dateRange, setDateRange] = useState({
@@ -104,27 +109,18 @@ export const Devolucao2025Page = () => {
   // ✅ CORREÇÃO 10+5: Lazy initializer para evitar race condition
   const [appliedAccounts, setAppliedAccounts] = useState<string[]>(() => selectedAccounts);
 
-  // ✅ CORREÇÃO: Calcular datas baseado no periodo selecionado (igual /vendas-online)
+  // ✅ COMBO 2.1: Calcular datas baseado em startDate/endDate (Date objects)
   const backendDateRange = useMemo(() => {
-    const hoje = new Date();
-    const inicio = new Date();
-    const dias = parseInt(periodo); // ✅ Usar periodo do filtro
-    inicio.setDate(hoje.getDate() - dias);
-    return { from: inicio, to: hoje };
-  }, [periodo]); // ✅ Recalcular quando periodo mudar
+    return { 
+      from: appliedFilters.startDate || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), 
+      to: appliedFilters.endDate || new Date() 
+    };
+  }, [appliedFilters.startDate, appliedFilters.endDate]);
   
-  // DateRange visual para filtro local (baseado em periodo do usuário)
+  // DateRange visual para filtro local
   useEffect(() => {
-    // ✅ Se periodo for 60, usar exatamente o mesmo range do backend
-    if (periodo === '60') {
-      setDateRange(backendDateRange);
-    } else {
-      const hoje = new Date();
-      const inicio = new Date();
-      inicio.setDate(hoje.getDate() - parseInt(periodo));
-      setDateRange({ from: inicio, to: hoje });
-    }
-  }, [periodo, backendDateRange]);
+    setDateRange(backendDateRange);
+  }, [backendDateRange]);
   
   // ✅ REMOVIDO: useColumnPreferences (substituído por columnManager FASE 3)
 
@@ -267,14 +263,13 @@ export const Devolucao2025Page = () => {
         devolucoes,
         {
           accounts: accountIds,
-          periodo,
           dateFrom: backendDateRange.from.toISOString(),
           dateTo: backendDateRange.to.toISOString()
         },
         totalCount
       );
     }
-  }, [cacheQuery.data, accountIds, periodo, backendDateRange, saveToCache, setDevolucoes]);
+  }, [cacheQuery.data, accountIds, backendDateRange, saveToCache, setDevolucoes]);
 
   // 📊 Log detalhado da fonte de dados (COMBO 2.1)
   useEffect(() => {
@@ -405,34 +400,25 @@ export const Devolucao2025Page = () => {
   // - Apenas restaura filtros do cache (linhas 64-74)
   // - Busca só ocorre quando usuário clica em "Aplicar Filtros"
 
-  // ✅ SALVAR METADADOS (não salva devoluções - cache gerenciado pelo Adapted Combo 2)
-  useEffect(() => {
-    if (devolucoesCompletas.length > 0 && persistentCache.isStateLoaded) {
-      const timer = setTimeout(() => {
-        persistentCache.saveDataCache(
-          selectedAccounts,
-          dateRange,
-          currentPage,
-          itemsPerPage,
-          Array.from(columnManager.state.visibleColumns),
-          periodo
-        );
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentPage, itemsPerPage, periodo, devolucoesCompletas.length, persistentCache.isStateLoaded]);
+  // ✅ COMBO 2.1: Metadados salvos automaticamente pelo hook unificado
 
   // Handler para aplicar filtros - força refetch com invalidação de cache
   const handleApplyFilters = useCallback(async () => {
+    // ✅ COMBO 2.1: Validar pendingFilters ANTES de aplicar
+    if (!pendingFilters.selectedAccounts?.length) {
+      toast.error('Selecione pelo menos uma conta ML');
+      return;
+    }
+    
     console.log('🔄 [COMBO 2.1] Aplicando filtros e buscando dados...', {
-      selectedAccounts: selectedAccounts.length,
+      pendingAccounts: pendingFilters.selectedAccounts.length,
       appliedAccounts: appliedAccounts.length
     });
     setIsManualSearching(true);
     
-    // ✅ COMBO 2.1: Aplicar filtros ANTES de habilitar busca
-    setAppliedAccounts(selectedAccounts);
+    // ✅ COMBO 2.1: Aplicar filtros (muda pendingFilters → appliedFilters)
+    applyFiltersInternal();
+    setAppliedAccounts(pendingFilters.selectedAccounts);
     
     // 🚀 COMBO 2.1: Habilitar busca (enabled: true)
     setShouldFetch(true);
@@ -455,7 +441,7 @@ export const Devolucao2025Page = () => {
     } finally {
       setIsManualSearching(false);
     }
-  }, [selectedAccounts, appliedAccounts, queryClient]);
+  }, [pendingFilters.selectedAccounts, appliedAccounts, queryClient, applyFiltersInternal]);
 
   const handleCancelSearch = useCallback(() => {
     console.log('🛑 Cancelando busca...');
@@ -501,20 +487,18 @@ export const Devolucao2025Page = () => {
           
           {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6 mt-8">
-            <Tabs value={activeTab} onValueChange={(v) => updateFilter('activeTab', v as 'ativas' | 'historico')}>
+            <Tabs value={activeTab} onValueChange={(v) => changeTab(v as 'ativas' | 'historico')}>
               <div className="flex items-center gap-3 flex-nowrap">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
                   <TabsTrigger 
                     value="ativas" 
                     className="h-10"
-                    onClick={() => updateFilter('activeTab', 'ativas')}
                   >
                     Ativas ({countAtivas})
                   </TabsTrigger>
                   <TabsTrigger 
                     value="historico" 
                     className="h-10"
-                    onClick={() => updateFilter('activeTab', 'historico')}
                   >
                     Histórico ({countHistorico})
                   </TabsTrigger>
@@ -523,20 +507,22 @@ export const Devolucao2025Page = () => {
                 {/* Filtros integrados */}
                 <div className="flex-1 min-w-0">
                   <Devolucao2025FilterBar
-                    accounts={accounts}
-                    selectedAccountIds={selectedAccounts}
-                    onAccountsChange={(accounts) => updateFilter('selectedAccounts', accounts)}
-                    periodo={periodo}
-                    onPeriodoChange={(p) => updateFilter('periodo', p)}
-                    searchTerm={searchTerm}
-                    onSearchChange={(term) => updateFilter('searchTerm', term)}
-                    onBuscar={handleApplyFilters}
-                    isLoading={isManualSearching}
-                    onCancel={handleCancelSearch}
-                    allColumns={COLUMNS_CONFIG}
-                    visibleColumns={Array.from(columnManager.state.visibleColumns)}
-                    onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
-                  />
+                      accounts={accounts}
+                      selectedAccountIds={pendingFilters.selectedAccounts}
+                      onAccountsChange={(accounts) => updateFilter('selectedAccounts', accounts)}
+                      startDate={pendingFilters.startDate}
+                      endDate={pendingFilters.endDate}
+                      onDateRangeChange={updateDateRange}
+                      searchTerm={searchTerm}
+                      onSearchChange={(term) => updateFilter('searchTerm', term)}
+                      onBuscar={handleApplyFilters}
+                      isLoading={isManualSearching || isApplying}
+                      onCancel={handleCancelSearch}
+                      hasPendingChanges={hasPendingChanges}
+                      allColumns={COLUMNS_CONFIG}
+                      visibleColumns={Array.from(columnManager.state.visibleColumns)}
+                      onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
+                    />
                 </div>
               </div>
             </Tabs>
@@ -631,8 +617,8 @@ export const Devolucao2025Page = () => {
                 totalItems={filteredCount}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
-                onPageChange={(page) => updateFilter('currentPage', page)}
-                onItemsPerPageChange={(items) => updateFilter('itemsPerPage', items)}
+                onPageChange={changePage}
+                onItemsPerPageChange={changeItemsPerPage}
                 showFirstLastButtons={true}
                 pageButtonLimit={5}
               />

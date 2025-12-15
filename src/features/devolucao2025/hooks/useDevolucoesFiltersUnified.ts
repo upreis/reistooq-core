@@ -1,135 +1,322 @@
 /**
  * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS - DEVOLUÇÕES
- * FASE 2.2: Usando utilities compartilhadas de @/core/filters
+ * COMBO 2.1: Draft/Applied pattern com busca manual obrigatória
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useDevolucoesFiltersSync, DevolucoesFilters } from './useDevolucoesFiltersSync';
-import { usePersistentDevolucoesStateV2 } from './usePersistentDevolucoesStateV2';
-import {
-  updateSingleFilter,
-  updateMultipleFilters,
-  resetSearchFilters as resetSearchFiltersUtil,
-  hasActiveFilters as hasActiveFiltersUtil,
-  countActiveFilters as countActiveFiltersUtil,
-} from '@/core/filters';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { 
+  useDevolucoesFiltersSync, 
+  DevolucoesFilters,
+  DEFAULT_FILTERS 
+} from './useDevolucoesFiltersSync';
 
-const DEFAULT_FILTERS: DevolucoesFilters = {
-  periodo: '60', // ✅ Período padrão: 60 dias
-  selectedAccounts: [],
-  searchTerm: '',
-  currentPage: 1,
-  itemsPerPage: 50,
-  activeTab: 'ativas'
-};
+const isDev = import.meta.env.DEV;
+const STORAGE_KEY = 'devolucoes_filters_v3';
+
+export interface UseDevolucoesFiltersUnifiedOptions {
+  onFiltersApply?: (filters: DevolucoesFilters) => void;
+  enableURLSync?: boolean;
+}
 
 /**
- * Hook unificado para gestão de filtros com sincronização URL + cache
+ * Serializa filtros para localStorage (converte Date para ISO string)
  */
-export function useDevolucoesFiltersUnified() {
-  const persistentCache = usePersistentDevolucoesStateV2();
-  const [searchParams] = useSearchParams();
-  
-  // ✅ CORREÇÃO CRÍTICA 2: Inicializar com DEFAULT, deixar useEffect carregar URL/cache
-  const [filters, setFilters] = useState<DevolucoesFilters>(DEFAULT_FILTERS);
+function serializeFilters(filters: DevolucoesFilters): string {
+  return JSON.stringify({
+    ...filters,
+    startDate: filters.startDate?.toISOString() || null,
+    endDate: filters.endDate?.toISOString() || null,
+  });
+}
 
-  // Sincronizar com URL (useEffect interno do hook vai aplicar filtros da URL automaticamente)
-  const { parseFiltersFromUrl, encodeFiltersToUrl } = useDevolucoesFiltersSync(
-    filters,
-    (urlFilters) => {
-      setFilters(prev => ({ ...prev, ...urlFilters }));
-    }
-  );
+/**
+ * Deserializa filtros do localStorage (converte ISO string para Date)
+ */
+function deserializeFilters(stored: string): DevolucoesFilters {
+  const parsed = JSON.parse(stored);
+  return {
+    ...DEFAULT_FILTERS,
+    ...parsed,
+    startDate: parsed.startDate ? new Date(parsed.startDate) : DEFAULT_FILTERS.startDate,
+    endDate: parsed.endDate ? new Date(parsed.endDate) : DEFAULT_FILTERS.endDate,
+    selectedAccounts: Array.isArray(parsed.selectedAccounts) ? parsed.selectedAccounts : [],
+    searchTerm: parsed.searchTerm || '',
+    currentPage: typeof parsed.currentPage === 'number' ? parsed.currentPage : 1,
+    itemsPerPage: typeof parsed.itemsPerPage === 'number' ? parsed.itemsPerPage : 50,
+    activeTab: parsed.activeTab === 'historico' ? 'historico' : 'ativas',
+  };
+}
+
+export function useDevolucoesFiltersUnified(options: UseDevolucoesFiltersUnifiedOptions = {}) {
+  const { 
+    onFiltersApply, 
+    enableURLSync = true 
+  } = options;
   
-  // ✅ CORREÇÃO 2: Carregar do cache APENAS se não houver URL params (SEM searchParams dependency)
+  // Hook de sincronização URL + localStorage
+  const filterSync = useDevolucoesFiltersSync({
+    enabled: enableURLSync
+  });
+
+  // Estados principais - COMBO 2.1 pattern
+  const [pendingFilters, setPendingFilters] = useState<DevolucoesFilters>({ ...DEFAULT_FILTERS });
+  const [appliedFilters, setAppliedFilters] = useState<DevolucoesFilters>({ ...DEFAULT_FILTERS });
+  const [isApplying, setIsApplying] = useState(false);
+  
+  // Flags de controle
+  const isInitializingRef = useRef(true);
+  const hasInitializedRef = useRef(false);
+  
+  /**
+   * INICIALIZAÇÃO - Carregar do localStorage/URL na montagem
+   */
   useEffect(() => {
-    // Só carrega cache se URL não tem parâmetros E cache está carregado
-    const hasUrlParams = searchParams.toString().length > 0;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
     
-    if (!hasUrlParams && persistentCache.isStateLoaded && persistentCache.persistedState) {
-      console.log('📦 Restaurando filtros do cache (sem URL params)');
-      setFilters(prev => ({
-        ...prev,
-        periodo: persistentCache.persistedState!.periodo || DEFAULT_FILTERS.periodo,
-        selectedAccounts: persistentCache.persistedState!.selectedAccounts || DEFAULT_FILTERS.selectedAccounts,
-        currentPage: persistentCache.persistedState!.currentPage || DEFAULT_FILTERS.currentPage,
-        itemsPerPage: persistentCache.persistedState!.itemsPerPage || DEFAULT_FILTERS.itemsPerPage,
-      }));
+    // Carregar do localStorage primeiro
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const validatedFilters = deserializeFilters(stored);
+        
+        setPendingFilters(validatedFilters);
+        setAppliedFilters(validatedFilters);
+        
+        if (isDev) console.log('📦 [DEVOLUCOES-FILTROS] Carregados do localStorage:', validatedFilters);
+      } else if (enableURLSync && filterSync.hasActiveFilters) {
+        // Se não tem localStorage mas tem URL, usar URL
+        setPendingFilters(filterSync.filters);
+        setAppliedFilters(filterSync.filters);
+        
+        if (isDev) console.log('📦 [DEVOLUCOES-FILTROS] Carregados da URL:', filterSync.filters);
+      }
+    } catch (error) {
+      console.error('❌ [DEVOLUCOES-FILTROS] Erro ao carregar filtros:', error);
+      localStorage.removeItem(STORAGE_KEY);
     }
-  }, [persistentCache.isStateLoaded]); // 🔥 REMOVIDO searchParams para evitar loop
+    
+    // Marcar como não inicializando após carregar
+    setTimeout(() => {
+      isInitializingRef.current = false;
+    }, 100);
+  }, [enableURLSync, filterSync.filters, filterSync.hasActiveFilters]);
 
-  // 🔧 Helper para identificar keys de paginação/tab
-  const isPaginationKey = useCallback((key: keyof DevolucoesFilters) => {
-    return key === 'currentPage' || key === 'itemsPerPage' || key === 'activeTab';
-  }, []);
+  /**
+   * SALVAR AUTOMATICAMENTE no localStorage quando appliedFilters mudar
+   */
+  useEffect(() => {
+    if (isInitializingRef.current) {
+      if (isDev) console.log('⏭️ [DEVOLUCOES-FILTROS] Pulando salvamento - ainda inicializando');
+      return;
+    }
+    
+    try {
+      localStorage.setItem(STORAGE_KEY, serializeFilters(appliedFilters));
+      if (isDev) console.log('💾 [DEVOLUCOES-FILTROS] Salvos no localStorage:', appliedFilters);
+      
+      // Sincronizar com URL também
+      if (enableURLSync) {
+        filterSync.writeFilters(appliedFilters);
+      }
+    } catch (error) {
+      console.error('❌ [DEVOLUCOES-FILTROS] Erro ao salvar filtros:', error);
+    }
+  }, [appliedFilters, enableURLSync, filterSync]);
 
-  // Atualizar um filtro específico usando utility compartilhada
+  /**
+   * Atualizar filtro draft
+   */
   const updateFilter = useCallback(<K extends keyof DevolucoesFilters>(
     key: K,
     value: DevolucoesFilters[K]
   ) => {
-    setFilters(prev => 
-      updateSingleFilter(prev, key, value, isPaginationKey)
-    );
-    console.log(`🎯 Filtro atualizado: ${key} =`, value);
-  }, [isPaginationKey]);
-
-  // Atualizar múltiplos filtros de uma vez usando utility compartilhada
-  const updateFilters = useCallback((newFilters: Partial<DevolucoesFilters>) => {
-    setFilters(prev => 
-      updateMultipleFilters(prev, newFilters, isPaginationKey)
-    );
-    console.log('🎯 Múltiplos filtros atualizados:', newFilters);
-  }, [isPaginationKey]);
-
-  // Resetar todos os filtros
-  const resetFilters = useCallback(() => {
-    console.log('🔄 Resetando todos os filtros');
-    setFilters(DEFAULT_FILTERS);
+    if (isDev) console.log('🔧 [DEVOLUCOES-FILTROS] Atualizando filtro:', key, '=', value);
+    
+    setPendingFilters(prev => {
+      const newFilters = { ...prev, [key]: value };
+      return newFilters;
+    });
   }, []);
 
-  // Resetar apenas filtros de busca usando utility compartilhada
-  const resetSearchFilters = useCallback(() => {
-    console.log('🔄 Resetando filtros de busca');
-    const searchKeys: (keyof DevolucoesFilters)[] = ['periodo', 'searchTerm'];
-    setFilters(prev => ({
+  /**
+   * Atualizar datas (para o SimplifiedPeriodFilter)
+   */
+  const updateDateRange = useCallback((startDate?: Date, endDate?: Date) => {
+    if (isDev) console.log('📅 [DEVOLUCOES-FILTROS] Atualizando datas:', { startDate, endDate });
+    
+    setPendingFilters(prev => ({
       ...prev,
-      ...resetSearchFiltersUtil(DEFAULT_FILTERS, searchKeys)
+      startDate,
+      endDate,
     }));
   }, []);
 
-  // Verificar se há filtros ativos usando utility compartilhada
-  const hasActiveFilters = useMemo(() => {
-    const excludeKeys: (keyof DevolucoesFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage', 'activeTab'];
-    return hasActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
-  }, [filters]);
+  /**
+   * Aplicar filtros manualmente
+   */
+  const applyFilters = useCallback(() => {
+    if (isDev) console.log('🔄 [DEVOLUCOES-FILTROS] Aplicando filtros:', pendingFilters);
+    
+    // Reset página para 1 ao aplicar novos filtros
+    const filtersToApply: DevolucoesFilters = { 
+      ...pendingFilters, 
+      currentPage: 1 
+    };
+    
+    setAppliedFilters(filtersToApply);
+    setIsApplying(true);
+    
+    // Disparar callback para busca
+    onFiltersApply?.(filtersToApply);
+    
+    // Finalizar estado após breve delay para UX
+    setTimeout(() => {
+      setIsApplying(false);
+      if (isDev) console.log('✅ [DEVOLUCOES-FILTROS] Aplicação concluída');
+    }, 500);
+  }, [pendingFilters, onFiltersApply]);
 
-  // Contar quantos filtros estão ativos usando utility compartilhada
-  const activeFilterCount = useMemo(() => {
-    const excludeKeys: (keyof DevolucoesFilters)[] = ['selectedAccounts', 'currentPage', 'itemsPerPage', 'activeTab'];
-    return countActiveFiltersUtil(filters, DEFAULT_FILTERS, excludeKeys);
-  }, [filters]);
+  /**
+   * Cancelar mudanças pendentes
+   */
+  const cancelChanges = useCallback(() => {
+    setPendingFilters({ ...appliedFilters });
+    if (isDev) console.log('↩️ [DEVOLUCOES-FILTROS] Mudanças canceladas');
+  }, [appliedFilters]);
+
+  /**
+   * Limpar todos os filtros
+   */
+  const clearFilters = useCallback(() => {
+    const clearedFilters = { ...DEFAULT_FILTERS };
+    
+    setPendingFilters(clearedFilters);
+    setAppliedFilters(clearedFilters);
+    
+    localStorage.removeItem(STORAGE_KEY);
+    
+    if (enableURLSync) {
+      filterSync.clearFilters();
+    }
+    
+    onFiltersApply?.(clearedFilters);
+    
+    if (isDev) console.log('🗑️ [DEVOLUCOES-FILTROS] Todos filtros limpos');
+  }, [enableURLSync, filterSync, onFiltersApply]);
+
+  /**
+   * Mudar página (aplicação imediata)
+   */
+  const changePage = useCallback((page: number) => {
+    const newFilters = { ...appliedFilters, currentPage: page };
+    setPendingFilters(newFilters);
+    setAppliedFilters(newFilters);
+    
+    if (isDev) console.log('📄 [DEVOLUCOES-FILTROS] Página alterada:', page);
+  }, [appliedFilters]);
+
+  /**
+   * Mudar itens por página (aplicação imediata, reset para página 1)
+   */
+  const changeItemsPerPage = useCallback((itemsPerPage: number) => {
+    const newFilters = { ...appliedFilters, itemsPerPage, currentPage: 1 };
+    setPendingFilters(newFilters);
+    setAppliedFilters(newFilters);
+    
+    if (isDev) console.log('📊 [DEVOLUCOES-FILTROS] Itens por página alterado:', itemsPerPage);
+  }, [appliedFilters]);
+
+  /**
+   * Mudar tab ativa (aplicação imediata, reset para página 1)
+   */
+  const changeTab = useCallback((tab: 'ativas' | 'historico') => {
+    const newFilters = { ...appliedFilters, activeTab: tab, currentPage: 1 };
+    setPendingFilters(newFilters);
+    setAppliedFilters(newFilters);
+    
+    if (isDev) console.log('📑 [DEVOLUCOES-FILTROS] Tab alterada:', tab);
+  }, [appliedFilters]);
+
+  /**
+   * Verificar se há mudanças pendentes
+   */
+  const hasPendingChanges = useMemo(() => {
+    const pendingKeys = Object.keys(pendingFilters) as (keyof DevolucoesFilters)[];
+    
+    return pendingKeys.some(key => {
+      // Ignorar página na comparação de mudanças pendentes
+      if (key === 'currentPage') return false;
+      
+      const pendingValue = pendingFilters[key];
+      const appliedValue = appliedFilters[key];
+      
+      if (Array.isArray(pendingValue) && Array.isArray(appliedValue)) {
+        return JSON.stringify([...pendingValue].sort()) !== JSON.stringify([...appliedValue].sort());
+      }
+      
+      // Comparar datas
+      if (pendingValue instanceof Date && appliedValue instanceof Date) {
+        return pendingValue.getTime() !== appliedValue.getTime();
+      }
+      
+      // Se um é Date e outro não
+      if (pendingValue instanceof Date || appliedValue instanceof Date) {
+        return true;
+      }
+      
+      return pendingValue !== appliedValue;
+    });
+  }, [pendingFilters, appliedFilters]);
+
+  /**
+   * Contar filtros ativos
+   */
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    
+    // Contar datas se diferentes do default
+    if (appliedFilters.startDate || appliedFilters.endDate) count++;
+    if (appliedFilters.selectedAccounts.length > 0) count++;
+    if (appliedFilters.searchTerm) count++;
+    
+    return count;
+  }, [appliedFilters]);
+
+  const hasActiveFilters = activeFiltersCount > 0;
 
   return {
-    // Estado
-    filters,
+    // Estados - COMBO 2.1 pattern
+    filters: pendingFilters, // Para compatibilidade
+    pendingFilters,
+    appliedFilters,
     
-    // Ações
-    updateFilter,
-    updateFilters,
-    resetFilters,
-    resetSearchFilters,
-    
-    // Computados
+    // Flags
+    hasPendingChanges,
     hasActiveFilters,
-    activeFilterCount,
+    activeFiltersCount,
+    isApplying,
+    
+    // Ações de filtros
+    updateFilter,
+    updateDateRange,
+    applyFilters,
+    cancelChanges,
+    clearFilters,
+    
+    // Ações de navegação (aplicação imediata)
+    changePage,
+    changeItemsPerPage,
+    changeTab,
+    
+    // Defaults para referência
+    defaultFilters: DEFAULT_FILTERS,
     
     // Helpers
-    parseFiltersFromUrl,
-    encodeFiltersToUrl,
-    
-    // Cache management
-    persistentCache
+    parseFiltersFromUrl: filterSync.parseFiltersFromUrl,
+    encodeFiltersToUrl: filterSync.encodeFiltersToUrl,
   };
 }
+
+// Re-export types
+export type { DevolucoesFilters } from './useDevolucoesFiltersSync';

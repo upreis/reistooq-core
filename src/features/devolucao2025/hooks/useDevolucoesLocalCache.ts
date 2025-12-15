@@ -12,7 +12,7 @@ import { useState, useCallback, useMemo } from 'react';
 
 interface CacheFilters {
   accounts: string[];
-  periodo: string;
+  periodo?: string; // Opcional para compatibilidade
   dateFrom: string;
   dateTo: string;
 }
