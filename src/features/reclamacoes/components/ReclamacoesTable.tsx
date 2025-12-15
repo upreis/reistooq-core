@@ -161,8 +161,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     <div className="w-full">
       {/* 🔧 DEBUG: Badge fixo no canto inferior direito */}
       {isDebugMode && (
-        <div className="fixed bottom-4 right-4 z-50 bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-mono">
-          StickyDebug ON — build: 2025-12-15T21:50
+        <div className="fixed bottom-4 right-4 z-[9999] bg-red-600 text-white px-4 py-3 rounded-lg shadow-2xl text-sm font-mono border-4 border-yellow-400">
+          🔴 StickyDebug ON — v2025-12-15-2152
         </div>
       )}
       
