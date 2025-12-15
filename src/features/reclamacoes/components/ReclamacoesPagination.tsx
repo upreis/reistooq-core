@@ -121,8 +121,8 @@ export const ReclamacoesPagination: React.FC<ReclamacoesPaginationProps> = ({
           <select
             value={itemsPerPage}
             onChange={(e) => {
+              // Apenas chama onItemsPerPageChange - ele já reseta a página para 1 internamente
               onItemsPerPageChange(Number(e.target.value));
-              onPageChange(1);
             }}
             className="text-sm border border-input bg-background px-3 py-1 rounded-md hover:bg-accent transition-colors"
           >
