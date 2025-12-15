@@ -237,7 +237,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       />
       
       {/* Tabela */}
-      <div ref={scrollWrapperRef} className="overflow-x-auto border rounded-md">
+      <div ref={scrollWrapperRef} className="overflow-x-auto">
         <Table ref={tableRef} className="min-w-max relative">
           <TableHeader className="bg-background shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
