@@ -144,3 +144,6 @@ export const VoiceCommandsWidget: React.FC = () => {
           </Card>
         </motion.div>
       )}
+    </div>
+  );
+};
