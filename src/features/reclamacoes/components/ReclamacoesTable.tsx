@@ -1,7 +1,7 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  * 🎯 FASE 3: Integrado com ColumnManager avançado
- * 📌 Sticky Header Real (position: sticky no THEAD)
+ * 📌 Sticky Header Clone implementado (igual /devolucoesdevenda)
  */
 
 import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
@@ -12,41 +12,20 @@ import {
   getSortedRowModel,
   flexRender,
   SortingState,
+  VisibilityState,
 } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
+import { ReclamacoesStickyHeaderClone } from './ReclamacoesStickyHeaderClone';
+import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 
-// 🔖 Versão para prova visual
-const DEBUG_VERSION = '2025-12-15-3';
-
-// Declaração global para debug
-declare global {
-  interface Window {
-    __StickyDebug?: {
-      mountedAt: string;
-      version: string;
-      href: string;
-      scrollEvents: Array<{ source: string; scrollTop: number; timestamp: number }>;
-      computedTH: {
-        position: string;
-        top: string;
-        zIndex: string;
-      } | null;
-      ancestors: Array<{
-        tag: string;
-        className: string;
-        overflow: string;
-        overflowY: string;
-        transform: string;
-        contain: string;
-      }>;
-    };
-  }
-}
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -57,7 +36,7 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
-  visibleColumnKeys?: string[];
+  visibleColumnKeys?: string[]; // 🎯 Array de keys de colunas visíveis
   onTableReady?: (table: any) => void;
 }
 
@@ -77,23 +56,27 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
-  const [stickyTopPx, setStickyTopPx] = useState(0);
-
-  const tableContainerRef = useRef<HTMLDivElement | null>(null);
   
-  // Flag de debug
-  const isDebugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debugSticky') === '1';
-
+  // 🔧 Hook de sticky header (igual /devolucoesdevenda)
+  const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
+  
+  // 📌 Refs para clone e scroll wrapper da tabela
+  const scrollWrapperRef = useRef<HTMLDivElement>(null);
+  const fixedHeaderRef = useRef<HTMLDivElement>(null);
+  
   // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
   const columns = useMemo(() => {
     const allColumns = reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab);
     
+    // Se não há filtro de colunas, retornar todas
     if (!visibleColumnKeys || visibleColumnKeys.length === 0) {
       console.log('🔍 [ReclamacoesTable] Sem filtro - retornando todas as colunas:', allColumns.length);
       return allColumns;
     }
     
+    // ✅ USAR ARRAY.INCLUDES ao invés de Set - força React detectar mudanças
     const filtered = allColumns.filter(col => {
+      // Colunas sem id são sempre visíveis (actions, etc)
       if (!col.id) return true;
       return visibleColumnKeys.includes(col.id as string);
     });
@@ -134,175 +117,82 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🧭 Sticky offset + diagnóstico runtime (ativar com ?debugSticky=1)
+  // 🔄 Sincronizar scroll horizontal (otimizado com useCallback)
+  const handleScrollSync = useCallback(() => {
+    if (fixedHeaderRef.current && scrollWrapperRef.current) {
+      requestAnimationFrame(() => {
+        if (fixedHeaderRef.current && scrollWrapperRef.current) {
+          fixedHeaderRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
+        }
+      });
+    }
+  }, []);
+
+  // 🔄 Efeito para sincronização de scroll quando sticky está ativo
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const debugSticky = params.get('debugSticky') === '1';
+    if (!isSticky || !scrollWrapperRef.current) return;
 
-    const computeStickyTop = () => {
-      // Header desktop do layout (sticky)
-      const headerEl = document.querySelector('div[data-layout-root] header');
-      if (!headerEl) {
-        setStickyTopPx(0);
-        return;
+    // Sincronizar imediatamente o scrollLeft atual quando sticky ativa
+    if (fixedHeaderRef.current && scrollWrapperRef.current) {
+      fixedHeaderRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
+      
+      // Ajustar position do clone para alinhar com tabela original
+      const wrapperRect = scrollWrapperRef.current.getBoundingClientRect();
+      fixedHeaderRef.current.style.left = `${wrapperRect.left}px`;
+      fixedHeaderRef.current.style.width = `${wrapperRect.width}px`;
+    }
+
+    const scrollWrapper = scrollWrapperRef.current;
+    scrollWrapper.addEventListener('scroll', handleScrollSync, { passive: true });
+    
+    return () => {
+      scrollWrapper.removeEventListener('scroll', handleScrollSync);
+    };
+  }, [isSticky, handleScrollSync]);
+
+  // 🔄 Sincronizar larguras das colunas
+  const syncColumnWidths = useCallback(() => {
+    const originalHeaders = tableRef.current?.querySelectorAll('thead th');
+    const cloneHeaders = fixedHeaderRef.current?.querySelectorAll('thead th');
+
+    if (!originalHeaders || !cloneHeaders) return;
+
+    originalHeaders.forEach((originalTh, index) => {
+      const cloneTh = cloneHeaders[index] as HTMLElement;
+      if (cloneTh) {
+        const width = originalTh.getBoundingClientRect().width;
+        cloneTh.style.width = `${width}px`;
+        cloneTh.style.minWidth = `${width}px`;
+        cloneTh.style.maxWidth = `${width}px`;
       }
+    });
+  }, []);
 
-      const rect = headerEl.getBoundingClientRect();
-      // Se estiver visível no topo, usamos sua altura como offset (header não é fixed)
-      const nextTop = rect.top <= 0 ? Math.round(rect.height) : 0;
-      setStickyTopPx(nextTop);
+  useEffect(() => {
+    if (!isSticky || !tableRef.current || !fixedHeaderRef.current) return;
 
-      if (debugSticky) {
-        console.log('🧷 [StickyDebug] headerEl:', headerEl);
-        console.log('🧷 [StickyDebug] header rect:', { top: rect.top, height: rect.height, nextTop });
-      }
+    // Aguardar próximo frame para garantir que clone está montado no DOM
+    requestAnimationFrame(() => {
+      syncColumnWidths();
+    });
+
+    // Debounce para ResizeObserver (performance)
+    let timeoutId: NodeJS.Timeout;
+    const debouncedSync = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(syncColumnWidths, 100);
     };
 
-    computeStickyTop();
-    window.addEventListener('resize', computeStickyTop);
-
-    if (debugSticky) {
-      // 🔖 Inicializar variável global
-      window.__StickyDebug = {
-        mountedAt: new Date().toISOString(),
-        version: DEBUG_VERSION,
-        href: window.location.href,
-        scrollEvents: [],
-        computedTH: null,
-        ancestors: [],
-      };
-      
-      console.log(`🧷 [StickyDebug] mount ok | v${DEBUG_VERSION} | ${window.location.href} | ${new Date().toISOString()}`);
-
-      // Helper para registrar scroll events (limita a 50)
-      const logScrollEvent = (source: string, scrollTop: number) => {
-        if (!window.__StickyDebug) return;
-        const event = { source, scrollTop, timestamp: Date.now() };
-        window.__StickyDebug.scrollEvents.push(event);
-        if (window.__StickyDebug.scrollEvents.length > 50) {
-          window.__StickyDebug.scrollEvents.shift();
-        }
-        console.log('🧷 [StickyDebug] scroll:', event);
-      };
-
-      // Listener A: window scroll
-      const onWindowScroll = () => {
-        logScrollEvent('window', window.scrollY);
-      };
-      window.addEventListener('scroll', onWindowScroll, { passive: true });
-
-      // Listener B: document.scrollingElement
-      const scrollingEl = document.scrollingElement;
-      const onScrollingElScroll = () => {
-        if (scrollingEl) {
-          logScrollEvent('document.scrollingElement', scrollingEl.scrollTop);
-        }
-      };
-      if (scrollingEl) {
-        scrollingEl.addEventListener('scroll', onScrollingElScroll, { passive: true });
-      }
-
-      // Listener C: wrapper da tabela (overflow-x-auto)
-      const tableWrapper = tableContainerRef.current?.querySelector('.overflow-x-auto');
-      const onTableWrapperScroll = (e: Event) => {
-        const el = e.target as HTMLElement;
-        logScrollEvent(`tableWrapper(${el.className.slice(0, 30)})`, el.scrollTop);
-      };
-      if (tableWrapper) {
-        tableWrapper.addEventListener('scroll', onTableWrapperScroll, { passive: true });
-      }
-
-      // Listener D: Captura global (bubbling) para qualquer scroll
-      const onAnyScroll = (e: Event) => {
-        const target = e.target as any;
-        const el = target?.nodeType === 1 ? (target as HTMLElement) : null;
-        if (!el) return;
-
-        const style = window.getComputedStyle(el);
-        const info = {
-          tag: el.tagName,
-          id: el.id,
-          class: el.className?.toString().slice(0, 50),
-          scrollTop: (el as any).scrollTop,
-          overflowY: style.overflowY,
-        };
-
-        // log compacto
-        console.log('🧷 [StickyDebug] scroll event target:', info);
-      };
-      document.addEventListener('scroll', onAnyScroll, true);
-
-      // 2) Provar computed style do primeiro TH após timeout
-      const t = window.setTimeout(() => {
-        const container = tableContainerRef.current;
-        const th = container?.querySelector('th');
-        if (!th) {
-          console.warn('🧷 [StickyDebug] Nenhum <th> encontrado');
-          return;
-        }
-
-        const cs = window.getComputedStyle(th);
-        const computedTH = {
-          position: cs.position,
-          top: cs.top,
-          zIndex: cs.zIndex,
-        };
-        
-        if (window.__StickyDebug) {
-          window.__StickyDebug.computedTH = computedTH;
-        }
-        
-        console.log('🧷 [StickyDebug] TH computed:', computedTH);
-
-        // Cadeia de ancestrais até body (resumo)
-        const ancestors: Array<{
-          tag: string;
-          className: string;
-          overflow: string;
-          overflowY: string;
-          transform: string;
-          contain: string;
-        }> = [];
-        
-        let cur: HTMLElement | null = th as HTMLElement;
-        for (let i = 0; i < 14 && cur; i++) {
-          const st = window.getComputedStyle(cur);
-          ancestors.push({
-            tag: cur.tagName,
-            className: cur.className?.toString().slice(0, 60) || '',
-            overflow: st.overflow,
-            overflowY: st.overflowY,
-            transform: st.transform,
-            contain: (st as any).contain || 'none',
-          });
-          cur = cur.parentElement;
-        }
-        
-        if (window.__StickyDebug) {
-          window.__StickyDebug.ancestors = ancestors;
-        }
-        
-        console.log('🧷 [StickyDebug] cadeia ancestrais (th → ...):', ancestors);
-      }, 350);
-
-      return () => {
-        window.clearTimeout(t);
-        window.removeEventListener('scroll', onWindowScroll);
-        if (scrollingEl) {
-          scrollingEl.removeEventListener('scroll', onScrollingElScroll);
-        }
-        if (tableWrapper) {
-          tableWrapper.removeEventListener('scroll', onTableWrapperScroll);
-        }
-        document.removeEventListener('scroll', onAnyScroll, true);
-        window.removeEventListener('resize', computeStickyTop);
-      };
+    const resizeObserver = new ResizeObserver(debouncedSync);
+    if (tableRef.current) {
+      resizeObserver.observe(tableRef.current);
     }
 
     return () => {
-      window.removeEventListener('resize', computeStickyTop);
+      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
     };
-  }, []);
+  }, [isSticky, syncColumnWidths]);
 
   if (isLoading) {
     return (
@@ -335,30 +225,32 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   }
 
   return (
-    <div className="w-full" ref={tableContainerRef}>
-      {/* 🔖 Badge de debug visual - prova que build está correta */}
-      {isDebugMode && (
-        <div className="fixed bottom-4 right-4 z-50 bg-yellow-500 text-yellow-900 text-xs font-mono px-3 py-1.5 rounded-full shadow-lg">
-          StickyDebug ON v{DEBUG_VERSION}
-        </div>
-      )}
+    <div className="w-full">
+      {/* 🎯 ELEMENTO SENTINELA - Detecta quando tabela rola para baixo */}
+      <div ref={sentinelRef} className="h-0" />
       
-      {/* Wrapper único: apenas scroll horizontal. Scroll vertical continua no body/página. */}
-      <div className="overflow-x-auto border rounded-md">
-        <Table className="min-w-max">
-          <TableHeader className={cn("bg-background", stickyTopPx > 0 && "sticky z-40")} style={stickyTopPx > 0 ? { top: stickyTopPx } : undefined}>
+      {/* 📌 CLONE FIXO DO CABEÇALHO - Aparece quando isSticky = true */}
+      <ReclamacoesStickyHeaderClone
+        isVisible={isSticky}
+        headerRef={fixedHeaderRef}
+        table={table}
+      />
+      
+      {/* Tabela */}
+      <div ref={scrollWrapperRef} className="overflow-x-auto border rounded-md">
+        <Table ref={tableRef} className="min-w-max relative">
+          <TableHeader className="bg-background shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
                   const meta = header.column.columnDef.meta as any;
                   return (
-                    <TableHead
-                      key={header.id}
+                    <TableHead 
+                      key={header.id} 
                       className={cn(
-                        "whitespace-nowrap sticky z-50 bg-background",
+                        "whitespace-nowrap",
                         meta?.headerClassName
                       )}
-                      style={{ top: stickyTopPx }}
                     >
                       {header.isPlaceholder
                         ? null
@@ -375,7 +267,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
-                const cells = row.getAllCells();
+                const cells = row.getAllCells(); // ✅ Cache de células
                 return (
                   <TableRow key={row.id} className="hover:bg-muted/50">
                     {cells.map((cell) => (
