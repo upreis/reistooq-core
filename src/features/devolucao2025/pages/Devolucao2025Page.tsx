@@ -296,6 +296,11 @@ export const Devolucao2025Page = () => {
     console.log(`🔍 [FILTRO LOCAL] Iniciando com ${devolucoesCompletas.length} devoluções completas`);
     let filtered = devolucoesCompletas;
     
+    // 🎯 FILTRO TIPO: Apenas devoluções (tipo_claim = 'returns')
+    const beforeTypeFilter = filtered.length;
+    filtered = filtered.filter(dev => dev.tipo_claim === 'returns');
+    console.log(`🏷️ [FILTRO TIPO] ${beforeTypeFilter} → ${filtered.length} (apenas tipo 'returns' - devoluções)`);
+    
     // 🔍 FILTRO CRÍTICO DE RETURN: Apenas aplicar se dados vierem da API (enriquecidos)
     // Dados do CACHE (Combo 2) não têm return_id/status_return, então pular este filtro
     if (dataSource === 'api') {
