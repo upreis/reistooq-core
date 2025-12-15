@@ -185,7 +185,7 @@ export const Devolucao2025Table = ({
         isVisibleColumn={isVisible}
       />
       
-      <div ref={scrollWrapperRef} className="overflow-x-auto border rounded-md">
+      <div ref={scrollWrapperRef} className="overflow-x-auto">
         <Table ref={tableRef} className="min-w-max relative">
           <TableHeader className="bg-background shadow-sm">
             <TableHeaderContent 
