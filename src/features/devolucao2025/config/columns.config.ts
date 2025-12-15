@@ -112,6 +112,16 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Status do return',
     width: 150
   },
+  {
+    key: 'tipo_claim',
+    label: 'Tipo de Reclamação',
+    category: 'status',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Tipo da reclamação (Reclamação ou Mediação)',
+    width: 140
+  },
 
   // ====== OPCIONAIS ======
   {

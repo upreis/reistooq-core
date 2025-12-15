@@ -22,6 +22,7 @@ export const COLUMNS_CONFIG: ColumnConfig[] = [
   // GRUPO 3: STATUS & CLASSIFICAÇÃO
   { id: 'status_dev', label: 'Status Dev', group: 'Status' },
   { id: 'status_return', label: 'Status Return', group: 'Status' },
+  { id: 'tipo_claim', label: 'Tipo de Reclamação', group: 'Status' },
   { id: 'status_entrega', label: 'Status Entrega', group: 'Status' },
   { id: 'destino', label: 'Destino', group: 'Status' },
   { id: 'resolucao', label: 'Resolução', group: 'Status' },
