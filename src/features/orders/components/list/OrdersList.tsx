@@ -136,7 +136,7 @@ export function OrdersList({
               position: 'relative'
             }}
           >
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="sync">
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const order = orders[virtualRow.index];
                 if (!order) return null;
@@ -189,7 +189,7 @@ export function OrdersList({
         animate="animate"
         className="space-y-3"
       >
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence mode="sync">
           {orderCards}
         </AnimatePresence>
       </motion.div>
