@@ -138,7 +138,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     <div className="w-full">
       {/* Tabela */}
       <div className="overflow-x-auto">
-        <Table ref={tableRef} className="min-w-max relative">
+        <Table ref={tableRef} className="min-w-max relative" disableOverflow>
           <TableHeader className="bg-background shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
