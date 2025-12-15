@@ -77,6 +77,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     return filtered;
   }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys]);
   
+  // Handler para abrir modal de mensagens (usado via props em columns)
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
@@ -148,7 +149,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
                     <TableHead 
                       key={header.id} 
                       className={cn(
-                        "sticky top-0 z-30 bg-background whitespace-nowrap",
+                        "sticky top-0 z-30 bg-background whitespace-nowrap border-b",
                         meta?.headerClassName
                       )}
                     >
