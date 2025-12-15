@@ -1,9 +1,10 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  * 🎯 FASE 3: Integrado com ColumnManager avançado
+ * 📌 Sticky Header Clone implementado (igual /devolucoesdevenda)
  */
 
-import { useState, useMemo, memo, useCallback, useEffect } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -17,6 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
+import { ReclamacoesStickyHeaderClone } from './ReclamacoesStickyHeaderClone';
+import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Search } from 'lucide-react';
@@ -53,6 +56,13 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
+  
+  // 🔧 Hook de sticky header (igual /devolucoesdevenda)
+  const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
+  
+  // 📌 Refs para clone e scroll wrapper da tabela
+  const scrollWrapperRef = useRef<HTMLDivElement>(null);
+  const fixedHeaderRef = useRef<HTMLDivElement>(null);
   
   // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
   const columns = useMemo(() => {
@@ -107,6 +117,83 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
+  // 🔄 Sincronizar scroll horizontal (otimizado com useCallback)
+  const handleScrollSync = useCallback(() => {
+    if (fixedHeaderRef.current && scrollWrapperRef.current) {
+      requestAnimationFrame(() => {
+        if (fixedHeaderRef.current && scrollWrapperRef.current) {
+          fixedHeaderRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
+        }
+      });
+    }
+  }, []);
+
+  // 🔄 Efeito para sincronização de scroll quando sticky está ativo
+  useEffect(() => {
+    if (!isSticky || !scrollWrapperRef.current) return;
+
+    // Sincronizar imediatamente o scrollLeft atual quando sticky ativa
+    if (fixedHeaderRef.current && scrollWrapperRef.current) {
+      fixedHeaderRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
+      
+      // Ajustar position do clone para alinhar com tabela original
+      const wrapperRect = scrollWrapperRef.current.getBoundingClientRect();
+      fixedHeaderRef.current.style.left = `${wrapperRect.left}px`;
+      fixedHeaderRef.current.style.width = `${wrapperRect.width}px`;
+    }
+
+    const scrollWrapper = scrollWrapperRef.current;
+    scrollWrapper.addEventListener('scroll', handleScrollSync, { passive: true });
+    
+    return () => {
+      scrollWrapper.removeEventListener('scroll', handleScrollSync);
+    };
+  }, [isSticky, handleScrollSync]);
+
+  // 🔄 Sincronizar larguras das colunas
+  const syncColumnWidths = useCallback(() => {
+    const originalHeaders = tableRef.current?.querySelectorAll('thead th');
+    const cloneHeaders = fixedHeaderRef.current?.querySelectorAll('thead th');
+
+    if (!originalHeaders || !cloneHeaders) return;
+
+    originalHeaders.forEach((originalTh, index) => {
+      const cloneTh = cloneHeaders[index] as HTMLElement;
+      if (cloneTh) {
+        const width = originalTh.getBoundingClientRect().width;
+        cloneTh.style.width = `${width}px`;
+        cloneTh.style.minWidth = `${width}px`;
+        cloneTh.style.maxWidth = `${width}px`;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isSticky || !tableRef.current || !fixedHeaderRef.current) return;
+
+    // Aguardar próximo frame para garantir que clone está montado no DOM
+    requestAnimationFrame(() => {
+      syncColumnWidths();
+    });
+
+    // Debounce para ResizeObserver (performance)
+    let timeoutId: NodeJS.Timeout;
+    const debouncedSync = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(syncColumnWidths, 100);
+    };
+
+    const resizeObserver = new ResizeObserver(debouncedSync);
+    if (tableRef.current) {
+      resizeObserver.observe(tableRef.current);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
+    };
+  }, [isSticky, syncColumnWidths]);
+
   if (isLoading) {
     return (
       <div className="p-12 text-center space-y-4">
@@ -138,63 +225,70 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="w-full">
+      {/* 🎯 ELEMENTO SENTINELA - Detecta quando tabela rola para baixo */}
+      <div ref={sentinelRef} className="h-0" />
+      
+      {/* 📌 CLONE FIXO DO CABEÇALHO - Aparece quando isSticky = true */}
+      <ReclamacoesStickyHeaderClone
+        isVisible={isSticky}
+        headerRef={fixedHeaderRef}
+        table={table}
+      />
+      
       {/* Tabela */}
-      <div className="w-full flex-1 flex flex-col min-h-0">
-        <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
-          <Table className="min-w-max relative">
-            <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
-                  {headerGroup.headers.map((header) => {
-                    const meta = header.column.columnDef.meta as any;
-                    return (
-                      <TableHead 
-                        key={header.id} 
-                        className={cn(
-                          "whitespace-nowrap",
-                          meta?.headerClassName
-                        )}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => {
-                  const cells = row.getAllCells(); // ✅ Cache de células
+      <div ref={scrollWrapperRef} className="overflow-x-auto border rounded-md">
+        <Table ref={tableRef} className="min-w-max relative">
+          <TableHeader className="bg-background shadow-sm">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as any;
                   return (
-                    <TableRow key={row.id} className="hover:bg-muted/50">
-                      {cells.map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
+                    <TableHead 
+                      key={header.id} 
+                      className={cn(
+                        "whitespace-nowrap",
+                        meta?.headerClassName
+                      )}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
-                    {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => {
+                const cells = row.getAllCells(); // ✅ Cache de células
+                return (
+                  <TableRow key={row.id} className="hover:bg-muted/50">
+                    {cells.map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
+                  {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-    
       {/* Modal de Mensagens */}
       {selectedClaim && (
         <ReclamacoesMensagensModal
