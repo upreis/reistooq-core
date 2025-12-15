@@ -23,12 +23,6 @@ export function useStickyTableHeader() {
       // Ativa sticky quando o sentinela está próximo ou passou do topo
       const shouldBeSticky = sentinelRect.top < 100;
       
-      console.log('📍 Sticky detection:', {
-        sentinelTop: sentinelRect.top,
-        shouldBeSticky,
-        currentIsSticky: isSticky
-      });
-      
       setIsSticky(shouldBeSticky);
     };
 
