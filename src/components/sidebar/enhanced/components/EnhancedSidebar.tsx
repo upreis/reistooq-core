@@ -11,7 +11,6 @@ import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { isRouteActive } from '../utils/sidebar-utils';
-import { isRouteActive } from '../utils/sidebar-utils';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 
 interface EnhancedSidebarProps {
