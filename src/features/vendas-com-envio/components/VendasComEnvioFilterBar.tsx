@@ -8,11 +8,11 @@ import { Search, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FlipButton } from '@/components/ui/flip-button';
 import type { UseColumnManagerReturn } from '@/core/columns';
 import { VendasComEnvioColumnManager } from './VendasComEnvioColumnManager';
+import { SimplifiedPeriodFilter } from '@/components/pedidos/SimplifiedPeriodFilter';
 
 interface MLAccount {
   id: string;
@@ -23,28 +23,32 @@ interface VendasComEnvioFilterBarProps {
   accounts: MLAccount[];
   selectedAccountIds: string[];
   onAccountsChange: (ids: string[]) => void;
-  periodo: number;
-  onPeriodoChange: (periodo: number) => void;
+  startDate?: Date;
+  endDate?: Date;
+  onDateRangeChange: (startDate?: Date, endDate?: Date) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onBuscar: () => void;
   isLoading?: boolean;
   onCancel?: () => void;
   columnManager?: UseColumnManagerReturn;
+  hasPendingChanges?: boolean;
 }
 
 export function VendasComEnvioFilterBar({
   accounts,
   selectedAccountIds,
   onAccountsChange,
-  periodo,
-  onPeriodoChange,
+  startDate,
+  endDate,
+  onDateRangeChange,
   searchTerm,
   onSearchChange,
   onBuscar,
   isLoading = false,
   onCancel,
-  columnManager
+  columnManager,
+  hasPendingChanges
 }: VendasComEnvioFilterBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
@@ -146,19 +150,15 @@ export function VendasComEnvioFilterBar({
         </Popover>
       </div>
 
-      {/* Período */}
+      {/* Período - SimplifiedPeriodFilter */}
       <div className="min-w-[180px] flex-shrink-0">
-        <Select value={periodo.toString()} onValueChange={(v) => onPeriodoChange(parseInt(v, 10))}>
-          <SelectTrigger className="h-10">
-            <SelectValue placeholder="Selecione o período" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">Últimos 7 dias</SelectItem>
-            <SelectItem value="15">Últimos 15 dias</SelectItem>
-            <SelectItem value="30">Últimos 30 dias</SelectItem>
-            <SelectItem value="60">Últimos 60 dias</SelectItem>
-          </SelectContent>
-        </Select>
+        <SimplifiedPeriodFilter
+          startDate={startDate}
+          endDate={endDate}
+          onDateRangeChange={onDateRangeChange}
+          hasPendingChanges={hasPendingChanges}
+          placeholder="Período"
+        />
       </div>
 
       {/* FlipButton */}

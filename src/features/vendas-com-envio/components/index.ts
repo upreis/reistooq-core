@@ -5,7 +5,7 @@
 
 export { VendasComEnvioPage } from './VendasComEnvioPage';
 export { VendasComEnvioStats } from './VendasComEnvioStats';
-export { VendasComEnvioFilters } from './VendasComEnvioFilters';
+// VendasComEnvioFilters removed - using VendasComEnvioFilterBar instead
 export { VendasComEnvioFilterBar } from './VendasComEnvioFilterBar';
 export { VendasComEnvioResumo } from './VendasComEnvioResumo';
 export { VendasComEnvioTable } from './VendasComEnvioTable';

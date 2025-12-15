@@ -61,7 +61,8 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
   // Construir query key estável
   const queryKey = [
     QUERY_KEY_BASE,
-    appliedFilters.periodo,
+    appliedFilters.startDate?.toISOString() || '',
+    appliedFilters.endDate?.toISOString() || '',
     appliedFilters.shippingStatus,
     appliedFilters.currentPage,
     appliedFilters.itemsPerPage,
@@ -80,17 +81,16 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
       return { orders: [], total: 0 };
     }
 
-    // Calcular datas
-    const now = new Date();
-    const dateFrom = new Date(now);
-    dateFrom.setDate(dateFrom.getDate() - appliedFilters.periodo);
-
-    const dateFromISO = dateFrom.toISOString().split('T')[0];
-    const dateToISO = now.toISOString().split('T')[0];
+    // Usar datas do filtro
+    const dateFromISO = appliedFilters.startDate 
+      ? appliedFilters.startDate.toISOString().split('T')[0]
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const dateToISO = appliedFilters.endDate 
+      ? appliedFilters.endDate.toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0];
 
     console.log('[useVendasComEnvioData] 🚀 Chamando get-vendas-comenvio:', {
       accounts: accountsToUse.length,
-      periodo: appliedFilters.periodo,
       dateFrom: dateFromISO,
       dateTo: dateToISO,
       shippingStatus: appliedFilters.shippingStatus,

@@ -59,6 +59,7 @@ export function VendasComEnvioPage() {
     filters: pendingFilters,
     appliedFilters,
     updateFilter: updatePendingFilter,
+    updateDateRange,
     applyFilters: applyFiltersInternal,
     changePage,
     changeItemsPerPage,
@@ -261,14 +262,16 @@ export function VendasComEnvioPage() {
                   accounts={accounts}
                   selectedAccountIds={pendingFilters.selectedAccounts}
                   onAccountsChange={(ids) => updatePendingFilter('selectedAccounts', ids)}
-                  periodo={pendingFilters.periodo}
-                  onPeriodoChange={(p) => updatePendingFilter('periodo', p)}
+                  startDate={pendingFilters.startDate}
+                  endDate={pendingFilters.endDate}
+                  onDateRangeChange={updateDateRange}
                   searchTerm={pendingFilters.searchTerm}
                   onSearchChange={(s) => updatePendingFilter('searchTerm', s)}
                   onBuscar={handleBuscar}
                   onCancel={handleCancelarBusca}
                   isLoading={isFetching || isApplying}
                   columnManager={columnManager}
+                  hasPendingChanges={hasPendingChanges}
                 />
               </div>
             </div>

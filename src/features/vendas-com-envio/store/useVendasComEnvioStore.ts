@@ -5,8 +5,9 @@
  */
 
 import { create } from 'zustand';
+import { subDays, startOfDay, endOfDay } from 'date-fns';
 import type { VendaComEnvio, VendasComEnvioFilters, VendasComEnvioStats } from '../types';
-import { STORAGE_KEYS, DEFAULT_PERIODO, DEFAULT_ITEMS_PER_PAGE } from '../config';
+import { STORAGE_KEYS, DEFAULT_ITEMS_PER_PAGE } from '../config';
 
 interface VendasComEnvioState {
   // Dados
@@ -49,43 +50,51 @@ interface VendasComEnvioState {
   reset: () => void;
 }
 
+// Defaults com datas
+const getDefaultFilters = (): VendasComEnvioFilters => ({
+  startDate: startOfDay(subDays(new Date(), 6)),
+  endDate: endOfDay(new Date()),
+  selectedAccounts: [],
+  shippingStatus: 'all',
+  searchTerm: '',
+  currentPage: 1,
+  itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
+  activeTab: 'ativas',
+});
+
 // Carregar filtros persistidos do localStorage (leve, apenas filtros)
 const loadPersistedFilters = (): VendasComEnvioFilters => {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.FILTERS);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (parsed && typeof parsed.periodo === 'number') {
-        return {
-          periodo: parsed.periodo || DEFAULT_PERIODO,
-          selectedAccounts: Array.isArray(parsed.selectedAccounts) ? parsed.selectedAccounts : [],
-          shippingStatus: parsed.shippingStatus || 'all',
-          searchTerm: parsed.searchTerm || '',
-          currentPage: parsed.currentPage || 1,
-          itemsPerPage: parsed.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
-          activeTab: parsed.activeTab || 'ativas',
-        };
-      }
+      return {
+        startDate: parsed.startDate ? new Date(parsed.startDate) : getDefaultFilters().startDate,
+        endDate: parsed.endDate ? new Date(parsed.endDate) : getDefaultFilters().endDate,
+        selectedAccounts: Array.isArray(parsed.selectedAccounts) ? parsed.selectedAccounts : [],
+        shippingStatus: parsed.shippingStatus || 'all',
+        searchTerm: parsed.searchTerm || '',
+        currentPage: parsed.currentPage || 1,
+        itemsPerPage: parsed.itemsPerPage || DEFAULT_ITEMS_PER_PAGE,
+        activeTab: parsed.activeTab || 'ativas',
+      };
     }
   } catch (e) {
     console.warn('[VendasComEnvioStore] Erro ao carregar filtros:', e);
   }
   
-  return {
-    periodo: DEFAULT_PERIODO,
-    selectedAccounts: [],
-    shippingStatus: 'all',
-    searchTerm: '',
-    currentPage: 1,
-    itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
-    activeTab: 'ativas',
-  };
+  return getDefaultFilters();
 };
 
 // Persistir apenas filtros no localStorage (leve)
 const persistFilters = (filters: VendasComEnvioFilters) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(filters));
+    const toSave = {
+      ...filters,
+      startDate: filters.startDate?.toISOString() || null,
+      endDate: filters.endDate?.toISOString() || null,
+    };
+    localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(toSave));
   } catch (e) {
     console.warn('[VendasComEnvioStore] Erro ao persistir filtros:', e);
   }
@@ -209,15 +218,7 @@ export const useVendasComEnvioStore = create<VendasComEnvioState>((set, get) => 
       isLoading: false,
       isFetching: false,
       error: null,
-      appliedFilters: {
-        periodo: DEFAULT_PERIODO,
-        selectedAccounts: [],
-        shippingStatus: 'all',
-        searchTerm: '',
-        currentPage: 1,
-        itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
-        activeTab: 'ativas',
-      },
+      appliedFilters: getDefaultFilters(),
       shouldFetch: false,
       hasFetchedFromAPI: false,
       stats: initialStats,
