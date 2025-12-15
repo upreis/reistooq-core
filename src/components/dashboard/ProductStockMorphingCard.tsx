@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Grid3X3, LayoutList, Package } from "lucide-react"
 import { ProductWithStock } from "@/hooks/useEstoqueProducts"
@@ -140,7 +140,7 @@ export function ProductStockMorphingCard({
       </div>
 
       {/* Cards Container */}
-      <LayoutGroup>
+      <>
         {layout === "grid" && (
           <div 
             ref={gridContainerRef}
@@ -154,7 +154,7 @@ export function ProductStockMorphingCard({
               {displayCards.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  layoutId={product.id}
+                  
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
@@ -242,7 +242,7 @@ export function ProductStockMorphingCard({
               {displayCards.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  layoutId={product.id}
+                  
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
@@ -321,7 +321,7 @@ export function ProductStockMorphingCard({
             )}
           </div>
         )}
-      </LayoutGroup>
+      </>
     </div>
   )
 }
