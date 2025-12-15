@@ -139,7 +139,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       {/* Tabela */}
       <div className="overflow-x-auto">
         <Table ref={tableRef} className="min-w-max relative" disableOverflow>
-          <TableHeader className="bg-background shadow-sm">
+          <TableHeader className="bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
@@ -148,7 +148,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
                     <TableHead 
                       key={header.id} 
                       className={cn(
-                        "whitespace-nowrap",
+                        "sticky top-0 z-30 bg-background whitespace-nowrap",
                         meta?.headerClassName
                       )}
                     >
