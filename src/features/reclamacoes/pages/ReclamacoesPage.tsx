@@ -110,7 +110,8 @@ export function ReclamacoesPage() {
   // Total derivado do store
   const totalCached = reclamacoesCached.length;
   
-  // Constantes derivadas dos filtros unificados (agora usando appliedFilters)
+  // Constantes derivadas dos filtros unificados
+  // selectedAccountIds para BUSCA usa appliedFilters (filtros já aplicados)
   const selectedAccountIds = appliedFilters.selectedAccounts;
   const currentPage = appliedFilters.currentPage || 1;
   const itemsPerPage = appliedFilters.itemsPerPage || 50;
@@ -249,7 +250,8 @@ export function ReclamacoesPage() {
 
   // 🚀 COMBO 2.1: Buscar reclamações (MANUAL - apenas ao clicar)
   const handleBuscarReclamacoes = async () => {
-    if (!selectedAccountIds?.length) {
+    // Validar pendingFilters (draft) antes de aplicar
+    if (!pendingFilters.selectedAccounts?.length) {
       toast({
         title: "Atenção",
         description: "Selecione pelo menos uma conta ML",
@@ -472,13 +474,13 @@ export function ReclamacoesPage() {
                   <div className="flex-1 min-w-0">
                     <ReclamacoesFilterBar
                       accounts={mlAccounts || []}
-                      selectedAccountIds={selectedAccountIds}
+                      selectedAccountIds={pendingFilters.selectedAccounts}
                       onAccountsChange={(ids) => updateFilter('selectedAccounts', ids)}
                       startDate={pendingFilters.startDate}
                       endDate={pendingFilters.endDate}
                       onDateRangeChange={updateDateRange}
-                      searchTerm={pendingFilters.status}
-                      onSearchChange={(term) => updateFilter('status', term)}
+                      searchTerm=""
+                      onSearchChange={() => {}}
                       onBuscar={handleBuscarReclamacoes}
                       isLoading={isManualSearching || isApplying}
                       onCancel={handleCancelarBusca}
@@ -553,8 +555,8 @@ export function ReclamacoesPage() {
                 totalItems={reclamacoesTab.length}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
-                onPageChange={(page) => updateFilter('currentPage', page)}
-                onItemsPerPageChange={(limit) => updateFilter('itemsPerPage', limit)}
+                onPageChange={changePage}
+                onItemsPerPageChange={changeItemsPerPage}
                 showFirstLastButtons={true}
                 pageButtonLimit={5}
               />
