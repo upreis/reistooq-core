@@ -160,6 +160,7 @@ export const Devolucao2025Page = () => {
   });
 
   // 🔄 CORREÇÃO 4+5: Sincronizar appliedAccounts quando selectedAccounts OU accounts mudarem
+  // ✅ COMBO 2.1: Sincronizar appliedAccounts E pendingFilters.selectedAccounts
   useEffect(() => {
     const newSerialized = selectedAccounts.slice().sort().join('|');
     const currentSerialized = appliedAccounts.slice().sort().join('|');
@@ -171,10 +172,17 @@ export const Devolucao2025Page = () => {
     }
     // FALLBACK: Se appliedAccounts está vazio mas accounts carregou, usar todas contas
     else if (appliedAccounts.length === 0 && accounts.length > 0) {
+      const allAccountIds = accounts.map(acc => acc.id);
       console.log('🔄 [SYNC FALLBACK] Inicializando appliedAccounts com todas contas:', accounts.length);
-      setAppliedAccounts(accounts.map(acc => acc.id));
+      setAppliedAccounts(allAccountIds);
+      
+      // ✅ AUDITORIA FIX: Sincronizar também pendingFilters para UI consistente
+      if (pendingFilters.selectedAccounts.length === 0) {
+        console.log('🔄 [SYNC FALLBACK] Sincronizando pendingFilters.selectedAccounts');
+        updateFilter('selectedAccounts', allAccountIds);
+      }
     }
-  }, [selectedAccounts, appliedAccounts, accounts]);
+  }, [selectedAccounts, appliedAccounts, accounts, pendingFilters.selectedAccounts.length, updateFilter]);
 
   // 🚀 COMBO 2.1 - IGUAL /vendas-online
   // Cache consulta SEMPRE se há contas, API só quando shouldFetch ou cache expirado
