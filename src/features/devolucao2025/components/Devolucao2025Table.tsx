@@ -279,9 +279,23 @@ export const Devolucao2025Table = ({
               )}
               {isVisible('tipo_claim') && (
                 <TableCell>
-                  <Badge variant={dev.tipo_claim === 'mediation' ? 'destructive' : 'default'}>
-                    {dev.tipo_claim === 'mediation' ? 'Mediação' : 'Reclamação'}
-                  </Badge>
+                  {(() => {
+                    const type = dev.tipo_claim;
+                    if (!type) return <span className="text-muted-foreground">-</span>;
+                    
+                    const typeConfig: Record<string, { variant: any; label: string; className?: string }> = {
+                      mediations: { variant: 'destructive', label: 'Mediação' },
+                      returns: { variant: 'outline', label: 'Devolução', className: 'bg-yellow-400 text-black border-yellow-500 font-semibold' },
+                      fulfillment: { variant: 'secondary', label: 'Full' },
+                      ml_case: { variant: 'outline', label: 'ML Case' },
+                      cancel_sale: { variant: 'outline', label: 'Cancelamento Vendedor' },
+                      cancel_purchase: { variant: 'outline', label: 'Cancelamento Comprador' },
+                      change: { variant: 'default', label: 'Troca' },
+                      service: { variant: 'secondary', label: 'Serviço' }
+                    };
+                    const config = typeConfig[type] || { variant: 'default', label: type, className: undefined };
+                    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
+                  })()}
                 </TableCell>
               )}
               {isVisible('status_entrega') && (
