@@ -150,7 +150,7 @@ export function ProductStockMorphingCard({
               needsScroll && "max-h-[280px] overflow-y-auto pr-1"
             )}
           >
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="sync">
               {displayCards.map((product, index) => (
                 <motion.div
                   key={product.id}
@@ -238,7 +238,7 @@ export function ProductStockMorphingCard({
               needsScroll && "max-h-[320px] overflow-y-auto pr-1"
             )}
           >
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="sync">
               {displayCards.map((product, index) => (
                 <motion.div
                   key={product.id}
