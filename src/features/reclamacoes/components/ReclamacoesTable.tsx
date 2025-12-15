@@ -4,7 +4,7 @@
  * 📌 Sticky Header Real (position: sticky no THEAD)
  */
 
-import { useState, useMemo, memo, useCallback, useEffect } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -50,7 +50,10 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
-  
+  const [stickyTopPx, setStickyTopPx] = useState(0);
+
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
+
   // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
   const columns = useMemo(() => {
     const allColumns = reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab);
@@ -101,6 +104,108 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
+  // 🧭 Sticky offset + diagnóstico runtime (ativar com ?debugSticky=1)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const debugSticky = params.get('debugSticky') === '1';
+
+    const computeStickyTop = () => {
+      // Header desktop do layout (sticky)
+      const headerEl = document.querySelector('div[data-layout-root] header');
+      if (!headerEl) {
+        setStickyTopPx(0);
+        return;
+      }
+
+      const rect = headerEl.getBoundingClientRect();
+      // Se estiver visível no topo, usamos sua altura como offset (header não é fixed)
+      const nextTop = rect.top <= 0 ? Math.round(rect.height) : 0;
+      setStickyTopPx(nextTop);
+
+      if (debugSticky) {
+        console.log('🧷 [StickyDebug] headerEl:', headerEl);
+        console.log('🧷 [StickyDebug] header rect:', { top: rect.top, height: rect.height, nextTop });
+      }
+    };
+
+    computeStickyTop();
+    window.addEventListener('resize', computeStickyTop);
+
+    if (debugSticky) {
+      console.log('🧷 [StickyDebug] ReclamacoesTable mount: versão sticky-th-2025-12-15-2');
+
+      // 1) Descobrir quem está scrollando de verdade (captura scroll bubbling)
+      const onAnyScroll = (e: Event) => {
+        const target = e.target as any;
+        const el = target?.nodeType === 1 ? (target as HTMLElement) : null;
+        if (!el) return;
+
+        const style = window.getComputedStyle(el);
+        const info = {
+          tag: el.tagName,
+          id: el.id,
+          class: el.className,
+          scrollTop: (el as any).scrollTop,
+          overflowY: style.overflowY,
+          overflowX: style.overflowX,
+          position: style.position,
+        };
+
+        // log compacto
+        console.log('🧷 [StickyDebug] scroll event target:', info);
+      };
+
+      document.addEventListener('scroll', onAnyScroll, true);
+
+      // 2) Provar computed style do primeiro TH
+      const t = window.setTimeout(() => {
+        const container = tableContainerRef.current;
+        const th = container?.querySelector('th');
+        if (!th) {
+          console.warn('🧷 [StickyDebug] Nenhum <th> encontrado');
+          return;
+        }
+
+        const cs = window.getComputedStyle(th);
+        console.log('🧷 [StickyDebug] TH computed:', {
+          position: cs.position,
+          top: cs.top,
+          zIndex: cs.zIndex,
+        });
+
+        // Cadeia de ancestrais até body (resumo)
+        const chain: any[] = [];
+        let cur: HTMLElement | null = th as HTMLElement;
+        for (let i = 0; i < 14 && cur; i++) {
+          const st = window.getComputedStyle(cur);
+          chain.push({
+            tag: cur.tagName,
+            id: cur.id,
+            class: cur.className,
+            overflow: st.overflow,
+            overflowY: st.overflowY,
+            transform: st.transform,
+            filter: st.filter,
+            contain: (st as any).contain,
+            position: st.position,
+          });
+          cur = cur.parentElement;
+        }
+        console.log('🧷 [StickyDebug] cadeia ancestrais (th → ...):', chain);
+      }, 350);
+
+      return () => {
+        window.clearTimeout(t);
+        document.removeEventListener('scroll', onAnyScroll, true);
+        window.removeEventListener('resize', computeStickyTop);
+      };
+    }
+
+    return () => {
+      window.removeEventListener('resize', computeStickyTop);
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="p-12 text-center space-y-4">
@@ -132,11 +237,11 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full" ref={tableContainerRef}>
       {/* Wrapper único: apenas scroll horizontal. Scroll vertical continua no body/página. */}
       <div className="overflow-x-auto border rounded-md">
         <Table className="min-w-max">
-          <TableHeader className="bg-background">
+          <TableHeader className={cn("bg-background", stickyTopPx > 0 && "sticky z-40")} style={stickyTopPx > 0 ? { top: stickyTopPx } : undefined}>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
@@ -145,9 +250,10 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "whitespace-nowrap sticky top-0 z-30 bg-background",
+                        "whitespace-nowrap sticky z-50 bg-background",
                         meta?.headerClassName
                       )}
+                      style={{ top: stickyTopPx }}
                     >
                       {header.isPlaceholder
                         ? null
