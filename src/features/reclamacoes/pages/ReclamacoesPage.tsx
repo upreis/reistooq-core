@@ -5,6 +5,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { differenceInBusinessDays } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
@@ -54,17 +55,26 @@ export function ReclamacoesPage() {
   const columnManager = useReclamacoesColumnManager();
   const [tableInstance, setTableInstance] = useState<any>(null);
   
-  // 🎯 FASE 2: Hook unificado de filtros (com URL sync + localStorage)
+  // 🎯 PADRÃO COMBO 2.1: Hook unificado de filtros (startDate/endDate)
   const {
-    filters: unifiedFilters,
+    filters: pendingFilters,
+    appliedFilters,
     updateFilter,
-    updateFilters,
-    resetFilters,
-    resetSearchFilters,
+    updateDateRange,
+    applyFilters: applyFiltersInternal,
+    changePage,
+    changeItemsPerPage,
+    changeTab,
+    hasPendingChanges,
     hasActiveFilters,
-    activeFilterCount,
-    persistentCache
-  } = useReclamacoesFiltersUnified();
+    activeFiltersCount,
+    isApplying,
+  } = useReclamacoesFiltersUnified({
+    onFiltersApply: () => {
+      setShouldFetch(true);
+    },
+    enableURLSync: true,
+  });
   
   // Estados locais adicionais (não relacionados a filtros)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
@@ -100,10 +110,10 @@ export function ReclamacoesPage() {
   // Total derivado do store
   const totalCached = reclamacoesCached.length;
   
-  // Constantes derivadas dos filtros unificados
-  const selectedAccountIds = unifiedFilters.selectedAccounts;
-  const currentPage = unifiedFilters.currentPage || 1;
-  const itemsPerPage = unifiedFilters.itemsPerPage || 50;
+  // Constantes derivadas dos filtros unificados (agora usando appliedFilters)
+  const selectedAccountIds = appliedFilters.selectedAccounts;
+  const currentPage = appliedFilters.currentPage || 1;
+  const itemsPerPage = appliedFilters.itemsPerPage || 50;
 
   // Buscar contas ML disponíveis
   const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
@@ -123,11 +133,7 @@ export function ReclamacoesPage() {
 
   // Auto-seleção de contas na primeira visita
   useEffect(() => {
-    if (persistentCache.isStateLoaded && mlAccounts && mlAccounts.length > 0) {
-      if (persistentCache.persistedState?.selectedAccounts?.length > 0) {
-        return;
-      }
-      
+    if (mlAccounts && mlAccounts.length > 0) {
       if (!selectedAccountIds || selectedAccountIds.length === 0) {
         const accountIds = mlAccounts.map(acc => acc.id);
         if (accountIds.length > 0) {
@@ -135,7 +141,7 @@ export function ReclamacoesPage() {
         }
       }
     }
-  }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState?.selectedAccounts, selectedAccountIds]);
+  }, [mlAccounts, selectedAccountIds, updateFilter]);
 
   // 🚀 COMBO 2.1: Resetar shouldFetch quando filtros mudam (força busca manual)
   const previousFiltersRef = React.useRef<string>('');
@@ -143,7 +149,8 @@ export function ReclamacoesPage() {
   useEffect(() => {
     const currentFiltersKey = JSON.stringify({
       accounts: selectedAccountIds,
-      periodo: unifiedFilters.periodo
+      startDate: appliedFilters.startDate?.toISOString(),
+      endDate: appliedFilters.endDate?.toISOString()
     });
     
     // Se filtros mudaram E já houve busca anterior, resetar shouldFetch
@@ -153,20 +160,24 @@ export function ReclamacoesPage() {
     }
     
     previousFiltersRef.current = currentFiltersKey;
-  }, [selectedAccountIds, unifiedFilters.periodo]);
+  }, [selectedAccountIds, appliedFilters.startDate, appliedFilters.endDate]);
   
-  // 🚀 COMBO 2: Calcular datas baseado no período
+  // 🚀 COMBO 2.1: Calcular datas baseado em startDate/endDate (Date objects)
   const { dateFrom, dateTo } = useMemo(() => {
-    const hoje = new Date();
-    const dias = parseInt(unifiedFilters.periodo) || 7;
-    const dataInicio = new Date();
-    dataInicio.setDate(hoje.getDate() - dias);
+    // Usar formatInTimeZone para evitar deslocamento de timezone
+    const dateFromStr = appliedFilters.startDate 
+      ? formatInTimeZone(appliedFilters.startDate, 'America/Sao_Paulo', "yyyy-MM-dd'T'00:00:00.000'Z'")
+      : undefined;
+    
+    const dateToStr = appliedFilters.endDate
+      ? formatInTimeZone(appliedFilters.endDate, 'America/Sao_Paulo', "yyyy-MM-dd'T'23:59:59.999'Z'")
+      : undefined;
     
     return {
-      dateFrom: dataInicio.toISOString(),
-      dateTo: hoje.toISOString()
+      dateFrom: dateFromStr,
+      dateTo: dateToStr
     };
-  }, [unifiedFilters.periodo]);
+  }, [appliedFilters.startDate, appliedFilters.endDate]);
 
   // 🚀 COMBO 2.1: Usar hook unificado que lê do cache ml_claims
   // MUDANÇA: enabled depende de shouldFetch (busca manual) ao invés de automático
@@ -249,8 +260,8 @@ export function ReclamacoesPage() {
 
     setIsManualSearching(true);
     
-    // ✅ COMBO 2.1: Ativar busca
-    setShouldFetch(true);
+    // ✅ COMBO 2.1: Aplicar filtros e ativar busca
+    applyFiltersInternal();
 
     try {
       // Invalidar cache para forçar nova busca
@@ -463,13 +474,15 @@ export function ReclamacoesPage() {
                       accounts={mlAccounts || []}
                       selectedAccountIds={selectedAccountIds}
                       onAccountsChange={(ids) => updateFilter('selectedAccounts', ids)}
-                      periodo={unifiedFilters.periodo}
-                      onPeriodoChange={(periodo) => updateFilter('periodo', periodo)}
-                      searchTerm={unifiedFilters.status}
+                      startDate={pendingFilters.startDate}
+                      endDate={pendingFilters.endDate}
+                      onDateRangeChange={updateDateRange}
+                      searchTerm={pendingFilters.status}
                       onSearchChange={(term) => updateFilter('status', term)}
                       onBuscar={handleBuscarReclamacoes}
-                      isLoading={isManualSearching}
+                      isLoading={isManualSearching || isApplying}
                       onCancel={handleCancelarBusca}
+                      hasPendingChanges={hasPendingChanges}
                       columnDefinitions={RECLAMACOES_COLUMN_DEFINITIONS}
                       visibleColumns={columnManager.visibleColumnKeys}
                       onVisibleColumnsChange={(keys) => {
