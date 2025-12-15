@@ -8,21 +8,24 @@
  * - Persistência híbrida: URL + localStorage
  * - Flags: hasPendingChanges, hasActiveFilters, needsManualApplication
  * - Callback onFiltersApply para disparo de busca
+ * - Suporte a datas flexíveis (startDate/endDate)
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { subDays, startOfDay, endOfDay } from 'date-fns';
 import type { VendasComEnvioFilters, ShippingStatus } from '../types';
-import { DEFAULT_PERIODO, DEFAULT_ITEMS_PER_PAGE } from '../config';
+import { DEFAULT_ITEMS_PER_PAGE } from '../config';
 import { useVendasComEnvioFiltersSync } from './useVendasComEnvioFiltersSync';
 
 const isDev = process.env.NODE_ENV === 'development';
 const STORAGE_KEY = 'vendas_com_envio_unified_filters';
 
 /**
- * Filtros padrão
+ * Filtros padrão - últimos 7 dias
  */
 export const DEFAULT_FILTERS: VendasComEnvioFilters = {
-  periodo: DEFAULT_PERIODO,
+  startDate: startOfDay(subDays(new Date(), 6)),
+  endDate: endOfDay(new Date()),
   selectedAccounts: [],
   shippingStatus: 'all',
   searchTerm: '',
@@ -34,6 +37,36 @@ export const DEFAULT_FILTERS: VendasComEnvioFilters = {
 interface UseVendasComEnvioFiltersUnifiedOptions {
   onFiltersApply?: (filters: VendasComEnvioFilters) => void;
   enableURLSync?: boolean;
+}
+
+/**
+ * Serializa filtros para localStorage (converte Date para ISO string)
+ */
+function serializeFilters(filters: VendasComEnvioFilters): string {
+  return JSON.stringify({
+    ...filters,
+    startDate: filters.startDate?.toISOString() || null,
+    endDate: filters.endDate?.toISOString() || null,
+  });
+}
+
+/**
+ * Deserializa filtros do localStorage (converte ISO string para Date)
+ */
+function deserializeFilters(stored: string): VendasComEnvioFilters {
+  const parsed = JSON.parse(stored);
+  return {
+    ...DEFAULT_FILTERS,
+    ...parsed,
+    startDate: parsed.startDate ? new Date(parsed.startDate) : DEFAULT_FILTERS.startDate,
+    endDate: parsed.endDate ? new Date(parsed.endDate) : DEFAULT_FILTERS.endDate,
+    selectedAccounts: Array.isArray(parsed.selectedAccounts) ? parsed.selectedAccounts : [],
+    shippingStatus: parsed.shippingStatus || 'all',
+    searchTerm: parsed.searchTerm || '',
+    currentPage: typeof parsed.currentPage === 'number' ? parsed.currentPage : 1,
+    itemsPerPage: typeof parsed.itemsPerPage === 'number' ? parsed.itemsPerPage : DEFAULT_ITEMS_PER_PAGE,
+    activeTab: parsed.activeTab === 'historico' ? 'historico' : 'ativas',
+  };
 }
 
 export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFiltersUnifiedOptions = {}) {
@@ -67,30 +100,12 @@ export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFilter
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored);
-        
-        // Validar e mesclar com defaults
-        const validatedFilters: VendasComEnvioFilters = {
-          ...DEFAULT_FILTERS,
-          periodo: typeof parsed.periodo === 'number' ? parsed.periodo : DEFAULT_PERIODO,
-          selectedAccounts: Array.isArray(parsed.selectedAccounts) ? parsed.selectedAccounts : [],
-          shippingStatus: parsed.shippingStatus || 'all',
-          searchTerm: parsed.searchTerm || '',
-          currentPage: typeof parsed.currentPage === 'number' ? parsed.currentPage : 1,
-          itemsPerPage: typeof parsed.itemsPerPage === 'number' ? parsed.itemsPerPage : DEFAULT_ITEMS_PER_PAGE,
-          activeTab: parsed.activeTab === 'historico' ? 'historico' : 'ativas',
-        };
+        const validatedFilters = deserializeFilters(stored);
         
         setDraftFilters(validatedFilters);
         setAppliedFilters(validatedFilters);
         
         if (isDev) console.log('📦 [VENDAS-ENVIO-FILTROS] Carregados do localStorage:', validatedFilters);
-      } else if (enableURLSync && filterSync.hasActiveFilters) {
-        // Se não tem localStorage mas tem URL, usar URL
-        setDraftFilters(filterSync.filters);
-        setAppliedFilters(filterSync.filters);
-        
-        if (isDev) console.log('📦 [VENDAS-ENVIO-FILTROS] Carregados da URL:', filterSync.filters);
       }
     } catch (error) {
       console.error('❌ [VENDAS-ENVIO-FILTROS] Erro ao carregar filtros:', error);
@@ -101,7 +116,7 @@ export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFilter
     setTimeout(() => {
       isInitializingRef.current = false;
     }, 100);
-  }, [enableURLSync, filterSync.filters, filterSync.hasActiveFilters]);
+  }, []);
 
   /**
    * SALVAR AUTOMATICAMENTE no localStorage quando appliedFilters mudar
@@ -112,22 +127,8 @@ export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFilter
       return;
     }
     
-    // Verificar se há filtros diferentes dos defaults
-    const hasFilters = Object.keys(appliedFilters).some(key => {
-      const val = appliedFilters[key as keyof VendasComEnvioFilters];
-      const def = DEFAULT_FILTERS[key as keyof VendasComEnvioFilters];
-      if (Array.isArray(val)) return val.length > 0;
-      return val !== def;
-    });
-    
-    if (!hasFilters) {
-      localStorage.removeItem(STORAGE_KEY);
-      if (isDev) console.log('🗑️ [VENDAS-ENVIO-FILTROS] localStorage limpo (sem filtros)');
-      return;
-    }
-    
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appliedFilters));
+      localStorage.setItem(STORAGE_KEY, serializeFilters(appliedFilters));
       if (isDev) console.log('💾 [VENDAS-ENVIO-FILTROS] Salvos no localStorage:', appliedFilters);
       
       // Sincronizar com URL também
@@ -244,6 +245,19 @@ export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFilter
   }, [appliedFilters, onFiltersApply]);
 
   /**
+   * Atualizar datas (para o SimplifiedPeriodFilter)
+   */
+  const updateDateRange = useCallback((startDate?: Date, endDate?: Date) => {
+    if (isDev) console.log('📅 [VENDAS-ENVIO-FILTROS] Atualizando datas:', { startDate, endDate });
+    
+    setDraftFilters(prev => ({
+      ...prev,
+      startDate,
+      endDate,
+    }));
+  }, []);
+
+  /**
    * Verificar se há mudanças pendentes
    */
   const hasPendingChanges = useMemo(() => {
@@ -260,6 +274,16 @@ export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFilter
         return JSON.stringify([...draftValue].sort()) !== JSON.stringify([...appliedValue].sort());
       }
       
+      // Comparar datas
+      if (draftValue instanceof Date && appliedValue instanceof Date) {
+        return draftValue.getTime() !== appliedValue.getTime();
+      }
+      
+      // Se um é Date e outro não
+      if (draftValue instanceof Date || appliedValue instanceof Date) {
+        return true;
+      }
+      
       return draftValue !== appliedValue;
     });
   }, [draftFilters, appliedFilters]);
@@ -268,16 +292,15 @@ export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFilter
    * Contar filtros ativos
    */
   const activeFiltersCount = useMemo(() => {
-    return Object.keys(appliedFilters).filter(key => {
-      // Ignorar página, itens por página e tab na contagem
-      if (key === 'currentPage' || key === 'itemsPerPage' || key === 'activeTab') return false;
-      
-      const value = appliedFilters[key as keyof VendasComEnvioFilters];
-      const defaultValue = DEFAULT_FILTERS[key as keyof VendasComEnvioFilters];
-      
-      if (Array.isArray(value)) return value.length > 0;
-      return value !== defaultValue;
-    }).length;
+    let count = 0;
+    
+    // Contar datas se diferentes do default
+    if (appliedFilters.startDate || appliedFilters.endDate) count++;
+    if (appliedFilters.selectedAccounts.length > 0) count++;
+    if (appliedFilters.shippingStatus !== 'all') count++;
+    if (appliedFilters.searchTerm) count++;
+    
+    return count;
   }, [appliedFilters]);
 
   const hasActiveFilters = activeFiltersCount > 0;
@@ -288,7 +311,8 @@ export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFilter
    */
   const apiParams = useMemo(() => {
     return {
-      periodo: appliedFilters.periodo,
+      startDate: appliedFilters.startDate,
+      endDate: appliedFilters.endDate,
       selectedAccounts: appliedFilters.selectedAccounts,
       shippingStatus: appliedFilters.shippingStatus,
       searchTerm: appliedFilters.searchTerm,
@@ -313,6 +337,7 @@ export function useVendasComEnvioFiltersUnified(options: UseVendasComEnvioFilter
     
     // Ações de filtros
     updateFilter: updateDraftFilter,
+    updateDateRange,
     applyFilters,
     cancelChanges,
     clearFilters,

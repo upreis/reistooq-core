@@ -104,7 +104,8 @@ export type StatusAnaliseEnvio = 'pendente' | 'em_analise' | 'enviado' | 'entreg
 
 // Filtros disponíveis
 export interface VendasComEnvioFilters {
-  periodo: number;
+  startDate?: Date;
+  endDate?: Date;
   selectedAccounts: string[];
   shippingStatus: ShippingStatus | 'all';
   searchTerm: string;
