@@ -32,6 +32,18 @@ interface ReclamacoesTableProps {
   onTableReady?: (table: any) => void;
 }
 
+// 🔧 DEBUG: Detectar modo debug via URL
+const useDebugSticky = () => {
+  const [isDebug, setIsDebug] = useState(false);
+  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsDebug(params.get('debugSticky') === '1');
+  }, []);
+  
+  return isDebug;
+};
+
 export const ReclamacoesTable = memo(function ReclamacoesTable({
   reclamacoes,
   isLoading,
@@ -48,8 +60,18 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
+  const [wrapperFound, setWrapperFound] = useState<boolean | null>(null);
   
   const tableRef = useRef<HTMLTableElement>(null);
+  const isDebugMode = useDebugSticky();
+
+  // 🔍 DEBUG: Verificar se shadcn wrapper existe
+  useEffect(() => {
+    if (isDebugMode) {
+      const wrapper = document.querySelector('[data-shadcn-table-wrapper="1"]');
+      setWrapperFound(!!wrapper);
+    }
+  }, [isDebugMode, reclamacoes]);
 
   // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
   const columns = useMemo(() => {
@@ -137,6 +159,20 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full">
+      {/* 🔧 DEBUG: Badge fixo no canto inferior direito */}
+      {isDebugMode && (
+        <div className="fixed bottom-4 right-4 z-50 bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-mono">
+          StickyDebug ON — build: 2025-12-15T21:50
+        </div>
+      )}
+      
+      {/* 🔧 DEBUG: Info do wrapper */}
+      {isDebugMode && (
+        <div className="mb-2 p-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100 rounded text-sm font-mono">
+          shadcn wrapper found: {wrapperFound === null ? 'CHECKING...' : wrapperFound ? 'YES ✅' : 'NO ❌'}
+        </div>
+      )}
+      
       {/* Tabela */}
       <div className="overflow-x-auto">
         <Table ref={tableRef} className="min-w-max relative" disableOverflow>
@@ -149,7 +185,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
                     <TableHead 
                       key={header.id} 
                       className={cn(
-                        "sticky top-0 z-30 bg-background whitespace-nowrap border-b",
+                        "sticky top-0 z-40 bg-background whitespace-nowrap border-b",
+                        // 🔧 DEBUG: Outline vermelho quando debugSticky=1
+                        isDebugMode && "outline outline-2 outline-red-500",
                         meta?.headerClassName
                       )}
                     >
