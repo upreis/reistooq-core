@@ -276,6 +276,13 @@ export const Devolucao2025Table = ({
                   </Badge>
                 </TableCell>
               )}
+              {isVisible('tipo_claim') && (
+                <TableCell>
+                  <Badge variant={dev.tipo_claim === 'mediation' ? 'destructive' : 'default'}>
+                    {dev.tipo_claim === 'mediation' ? 'Mediação' : 'Reclamação'}
+                  </Badge>
+                </TableCell>
+              )}
               {isVisible('status_entrega') && (
                 <TableCell>
                   <DeliveryStatusCell 

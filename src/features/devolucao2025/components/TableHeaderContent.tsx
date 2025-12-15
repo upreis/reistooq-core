@@ -35,6 +35,7 @@ export const TableHeaderContent = ({ visibleColumns, isVisible }: TableHeaderCon
       {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
       {isVisible('status_dev') && <TableHead>Status Dev</TableHead>}
       {isVisible('status_return') && <TableHead>Status Return</TableHead>}
+      {isVisible('tipo_claim') && <TableHead>Tipo de Reclamação</TableHead>}
       {isVisible('status_entrega') && <TableHead>Status Entrega</TableHead>}
       {isVisible('destino') && <TableHead>Destino</TableHead>}
       {isVisible('resolucao') && <TableHead>Resolução</TableHead>}
