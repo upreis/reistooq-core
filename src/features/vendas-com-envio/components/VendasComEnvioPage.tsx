@@ -18,6 +18,7 @@ import { VendasComEnvioTableNew } from './VendasComEnvioTableNew';
 import { VendasComEnvioPagination } from './VendasComEnvioPagination';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
+import { VendasComEnvioLoadingIndicator } from './VendasComEnvioLoadingIndicator';
 import { parseISO, differenceInBusinessDays } from 'date-fns';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
@@ -319,17 +320,11 @@ export function VendasComEnvioPage() {
           </Tabs>
         </div>
         
+        {/* Loading fullscreen padronizado */}
+        {(isFetching || isApplying) && <VendasComEnvioLoadingIndicator />}
+        
         {/* Tabela */}
         <div className="px-4 md:px-6 mt-4 relative">
-          {/* Overlay de loading - aparece SEMPRE que está buscando */}
-          {(isFetching || isApplying) && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md min-h-[200px]">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">Buscando vendas...</span>
-              </div>
-            </div>
-          )}
           
           <VendasComEnvioTableNew
             orders={paginatedVendas}
