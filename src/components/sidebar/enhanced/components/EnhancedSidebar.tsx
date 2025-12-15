@@ -10,7 +10,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { motion, AnimatePresence } from 'framer-motion';
+import { isRouteActive } from '../utils/sidebar-utils';
 import { isRouteActive } from '../utils/sidebar-utils';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 
@@ -36,21 +36,13 @@ const SidebarSection = memo(({
   return (
     <div key={section.id}>
       {/* Section Label */}
-      <AnimatePresence>
-        {(!isMobile && !isCollapsed) && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mb-3"
-          >
-            <h2 className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-              {section.group}
-            </h2>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {(!isMobile && !isCollapsed) && (
+        <div className="mb-3">
+          <h2 className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+            {section.group}
+          </h2>
+        </div>
+      )}
 
       {/* Section Items */}
       <div className="space-y-1 mt-2">
@@ -140,19 +132,12 @@ const SidebarContent = memo(({
             <div className="flex-shrink-0">
               <Logo size="md" />
             </div>
-            <AnimatePresence>
-              {(!isMobile && !isCollapsed) && (
-                <motion.div
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <h1 className="text-lg font-bold text-[hsl(var(--foreground))] truncate">REISTOQ</h1>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))] truncate whitespace-nowrap">Admin Dashboard</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {(!isMobile && !isCollapsed) && (
+              <div>
+                <h1 className="text-lg font-bold text-[hsl(var(--foreground))] truncate">REISTOQ</h1>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] truncate whitespace-nowrap">Admin Dashboard</p>
+              </div>
+            )}
             
             {/* Mobile close button */}
             {isMobile && onMobileClose && (
@@ -223,16 +208,11 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
   }, [setIsSidebarHovered]);
 
   return (
-    <motion.aside
+    <aside
       className={cn(
-        "fixed top-0 left-0 h-screen bg-[hsl(var(--background))] border-r border-[hsl(var(--border))] z-40 overflow-y-auto"
+        "fixed top-0 left-0 h-screen bg-[hsl(var(--background))] border-r border-[hsl(var(--border))] z-40 overflow-y-auto transition-[width] duration-300",
       )}
-      initial={{ width: effectiveWidth }}
-      animate={{ width: effectiveWidth }}
-      transition={{ 
-        duration: 0.3, 
-        ease: [0.4, 0, 0.2, 1]
-      }}
+      style={{ width: effectiveWidth }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -241,7 +221,7 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
         isMobile={false} 
         externalIsCollapsed={collapsed} 
       />
-    </motion.aside>
+    </aside>
   );
 });
 

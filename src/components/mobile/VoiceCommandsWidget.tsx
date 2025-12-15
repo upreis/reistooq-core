@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -72,16 +72,9 @@ export const VoiceCommandsWidget: React.FC = () => {
         </Button>
         
         {/* Listening indicator */}
-        <AnimatePresence>
-          {isListening && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-ping"
-            />
-          )}
-        </AnimatePresence>
+        {isListening && (
+          <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-ping" />
+        )}
       </motion.div>
 
       {/* Commands toggle button */}
@@ -104,57 +97,50 @@ export const VoiceCommandsWidget: React.FC = () => {
       </motion.div>
 
       {/* Transcript display */}
-      <AnimatePresence>
-        {transcript && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="absolute bottom-20 right-0 mb-4"
-          >
-            <Card className="p-3 max-w-64 bg-black/80 backdrop-blur-sm text-white">
-              <div className="text-sm font-medium mb-1">Ouvindo...</div>
-              <div className="text-xs opacity-80">{transcript}</div>
-              <div className="flex items-center justify-between mt-2">
-                <Badge variant="secondary" className="text-xs">
-                  Confiança: {Math.round(confidence * 100)}%
-                </Badge>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {transcript && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="absolute bottom-20 right-0 mb-4"
+        >
+          <Card className="p-3 max-w-64 bg-black/80 backdrop-blur-sm text-white">
+            <div className="text-sm font-medium mb-1">Ouvindo...</div>
+            <div className="text-xs opacity-80">{transcript}</div>
+            <div className="flex items-center justify-between mt-2">
+              <Badge variant="secondary" className="text-xs">
+                Confiança: {Math.round(confidence * 100)}%
+              </Badge>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Commands list */}
-      <AnimatePresence>
-        {showCommands && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="absolute bottom-0 right-20"
-          >
-            <Card className="p-4 w-72 bg-background/95 backdrop-blur-sm">
-              <h3 className="font-semibold mb-3 text-sm">Comandos de Voz</h3>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {commands.filter(cmd => cmd.enabled).map((command) => (
-                  <div key={command.id} className="flex flex-col space-y-1">
-                    <div className="text-xs font-medium text-primary">
-                      {command.description}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      "{command.phrases[0]}"
-                    </div>
+      {showCommands && (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          className="absolute bottom-0 right-20"
+        >
+          <Card className="p-4 w-72 bg-background/95 backdrop-blur-sm">
+            <h3 className="font-semibold mb-3 text-sm">Comandos de Voz</h3>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {commands.filter(cmd => cmd.enabled).map((command) => (
+                <div key={command.id} className="flex flex-col space-y-1">
+                  <div className="text-xs font-medium text-primary">
+                    {command.description}
                   </div>
-                ))}
-              </div>
-              <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-                Toque no microfone e fale um comando
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
+                  <div className="text-xs text-muted-foreground">
+                    "{command.phrases[0]}"
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+              Toque no microfone e fale um comando
+            </div>
+          </Card>
+        </motion.div>
+      )}
