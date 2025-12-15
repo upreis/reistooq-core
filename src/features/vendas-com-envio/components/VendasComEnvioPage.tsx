@@ -1,12 +1,12 @@
 /**
  * 📦 VENDAS COM ENVIO - Página Principal
- * ✅ Layout igual /vendas-canceladas com abas Ativas/Histórico
+ * ✅ Migrado para hook unificado (padrão /pedidos)
  */
 import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useVendasComEnvioStore } from '../store/useVendasComEnvioStore';
 import { 
-  useVendasComEnvioFilters, 
+  useVendasComEnvioFiltersUnified, 
   useVendasComEnvioData, 
   useVendasComEnvioPolling,
   useVendasComEnvioAccounts 
@@ -23,7 +23,7 @@ import { useSidebarUI } from '@/context/SidebarUIContext';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { StatusAnalise, STATUS_ATIVOS as STATUS_ANALISE_ATIVOS, STATUS_HISTORICO as STATUS_ANALISE_HISTORICO } from '../types/venda-analise.types';
 import { VendasComEnvioAnotacoesModal } from './VendasComEnvioAnotacoesModal';
-import type { VendaComEnvio } from '../types';
+import type { VendaComEnvio, VendasComEnvioFilters } from '../types';
 
 // Status de envio que indicam "ativas" (aguardando envio)
 const STATUS_ENVIO_ATIVOS = ['ready_to_ship', 'pending', 'handling'];
@@ -51,26 +51,37 @@ export function VendasComEnvioPage() {
     totalCount,
     stats,
     isFetching,
-    appliedFilters,
-    setAppliedFilters,
     setShouldFetch,
   } = useVendasComEnvioStore();
 
+  // ✅ Novo hook unificado (padrão /pedidos)
   const {
-    pendingFilters,
-    updatePendingFilter,
-    applyFilters,
+    filters: pendingFilters,
+    appliedFilters,
+    updateFilter: updatePendingFilter,
+    applyFilters: applyFiltersInternal,
     changePage,
     changeItemsPerPage,
-  } = useVendasComEnvioFilters();
+    changeTab,
+    hasPendingChanges,
+    hasActiveFilters,
+    activeFiltersCount,
+    isApplying,
+  } = useVendasComEnvioFiltersUnified({
+    onFiltersApply: (filters) => {
+      // Sincronizar com store e disparar busca
+      setShouldFetch(true);
+    },
+    enableURLSync: true,
+  });
 
   const { refetch } = useVendasComEnvioData({ accounts });
 
   // Polling automático após primeira busca
   useVendasComEnvioPolling({ enabled: true });
 
-  // Estado local para aba
-  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>(appliedFilters.activeTab || 'ativas');
+  // Estado local para aba (sincronizado com filtros)
+  const activeTab = appliedFilters.activeTab || 'ativas';
   
   // Estado para filtro de resumo
   const [filtroResumoAtivo, setFiltroResumoAtivo] = useState<FiltroResumoEnvio | null>(null);
@@ -132,13 +143,6 @@ export function VendasComEnvioPage() {
   const handleSaveAnotacao = useCallback((orderId: string, anotacao: string) => {
     setAnotacoes(prev => ({ ...prev, [orderId]: anotacao }));
   }, []);
-
-  // Sincronizar aba com store
-  useEffect(() => {
-    if (appliedFilters.activeTab !== activeTab) {
-      setAppliedFilters({ ...appliedFilters, activeTab });
-    }
-  }, [activeTab]);
 
   // Contar ativas e histórico baseado no status de análise
   const countAtivas = useMemo(() => {
@@ -207,14 +211,19 @@ export function VendasComEnvioPage() {
 
   // Handler para buscar
   const handleBuscar = useCallback(() => {
-    applyFilters();
-  }, [applyFilters]);
+    applyFiltersInternal();
+  }, [applyFiltersInternal]);
 
   // Handler para cancelar busca - cancela queries ativas e reseta shouldFetch
   const handleCancelarBusca = useCallback(() => {
     queryClient.cancelQueries({ queryKey: ['vendas-com-envio'] });
     setShouldFetch(false);
   }, [queryClient, setShouldFetch]);
+
+  // Handler para mudança de tab
+  const handleTabChange = useCallback((tab: string) => {
+    changeTab(tab as 'ativas' | 'historico');
+  }, [changeTab]);
 
   if (isLoadingAccounts) {
     return (
@@ -235,10 +244,7 @@ export function VendasComEnvioPage() {
         
         {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
         <div className="px-4 md:px-6 mt-8">
-          <Tabs value={activeTab} onValueChange={(v) => {
-            setActiveTab(v as 'ativas' | 'historico');
-            changePage(1); // Reset para página 1
-          }}>
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
             <div className="flex items-center gap-3 flex-nowrap">
               <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
                 <TabsTrigger value="ativas" className="h-10">
@@ -261,7 +267,7 @@ export function VendasComEnvioPage() {
                   onSearchChange={(s) => updatePendingFilter('searchTerm', s)}
                   onBuscar={handleBuscar}
                   onCancel={handleCancelarBusca}
-                  isLoading={isFetching}
+                  isLoading={isFetching || isApplying}
                   columnManager={columnManager}
                 />
               </div>
@@ -289,7 +295,7 @@ export function VendasComEnvioPage() {
         {/* Tabela */}
         <div className="px-4 md:px-6 mt-4 relative">
           {/* Overlay de loading - aparece SEMPRE que está buscando */}
-          {isFetching && (
+          {(isFetching || isApplying) && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md min-h-[200px]">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
