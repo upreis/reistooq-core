@@ -133,19 +133,19 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full">
-      {/* Container com altura calculada e ambos os scrolls - sticky funciona internamente */}
-      <div className="overflow-auto border rounded-md max-h-[calc(100vh-320px)]">
+      {/* Wrapper único: apenas scroll horizontal. Scroll vertical continua no body/página. */}
+      <div className="overflow-x-auto border rounded-md">
         <Table className="min-w-max">
-          <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
+          <TableHeader className="bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
                   const meta = header.column.columnDef.meta as any;
                   return (
-                    <TableHead 
-                      key={header.id} 
+                    <TableHead
+                      key={header.id}
                       className={cn(
-                        "whitespace-nowrap bg-background",
+                        "whitespace-nowrap sticky top-0 z-30 bg-background",
                         meta?.headerClassName
                       )}
                     >
