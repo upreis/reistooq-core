@@ -109,6 +109,29 @@ export const usePWA = (): [PWAState, PWAActions] => {
   // SERVICE WORKER E UPDATES
   // ============================================================================
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const disablePWA = params.get('pwa') === '0';
+
+    // ✅ Modo diagnóstico: desabilitar Service Worker para evitar cache durante testes
+    if (disablePWA && 'serviceWorker' in navigator) {
+      (async () => {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+
+          if ('caches' in window) {
+            const names = await caches.keys();
+            await Promise.all(names.map((n) => caches.delete(n)));
+          }
+
+          console.warn('🧹 [PWA] Service Worker desabilitado (pwa=0). Cache limpo.');
+        } catch (error) {
+          console.error('❌ [PWA] Falha ao desabilitar Service Worker (pwa=0):', error);
+        }
+      })();
+      return;
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
