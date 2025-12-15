@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { formatInTimeZone } from 'date-fns-tz';
 import { supabase } from '@/integrations/supabase/client';
 import { useVendasComEnvioStore } from '../store/useVendasComEnvioStore';
 import { useVendasComEnvioLocalCache } from './useVendasComEnvioLocalCache';
@@ -81,13 +82,14 @@ export function useVendasComEnvioData({ accounts }: UseVendasComEnvioDataOptions
       return { orders: [], total: 0 };
     }
 
-    // Usar datas do filtro
-    const dateFromISO = appliedFilters.startDate 
-      ? appliedFilters.startDate.toISOString().split('T')[0]
-      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const dateToISO = appliedFilters.endDate 
-      ? appliedFilters.endDate.toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0];
+    // Usar datas do filtro (timezone São Paulo) - evita bug do toISOString() virar "dia seguinte" em UTC
+    const dateFromISO = appliedFilters.startDate
+      ? formatInTimeZone(appliedFilters.startDate, 'America/Sao_Paulo', 'yyyy-MM-dd')
+      : formatInTimeZone(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 'America/Sao_Paulo', 'yyyy-MM-dd');
+
+    const dateToISO = appliedFilters.endDate
+      ? formatInTimeZone(appliedFilters.endDate, 'America/Sao_Paulo', 'yyyy-MM-dd')
+      : formatInTimeZone(new Date(), 'America/Sao_Paulo', 'yyyy-MM-dd');
 
     console.log('[useVendasComEnvioData] 🚀 Chamando get-vendas-comenvio:', {
       accounts: accountsToUse.length,
