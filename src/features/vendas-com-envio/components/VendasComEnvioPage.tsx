@@ -52,6 +52,7 @@ export function VendasComEnvioPage() {
     stats,
     isFetching,
     setShouldFetch,
+    setAppliedFilters: setAppliedFiltersInStore,
   } = useVendasComEnvioStore();
 
   // ✅ Novo hook unificado (padrão /pedidos)
@@ -70,7 +71,9 @@ export function VendasComEnvioPage() {
     isApplying,
   } = useVendasComEnvioFiltersUnified({
     onFiltersApply: (filters) => {
-      // Sincronizar com store e disparar busca
+      // ✅ CRÍTICO: o hook de dados lê appliedFilters do Zustand store.
+      // Se não sincronizar aqui, a Edge Function continua recebendo datas antigas.
+      setAppliedFiltersInStore(filters);
       setShouldFetch(true);
     },
     enableURLSync: true,
@@ -160,18 +163,39 @@ export function VendasComEnvioPage() {
     }).length;
   }, [vendas, statusAnalise]);
 
-  // Filtrar por aba baseado no status de análise
+  // Filtrar por aba baseado no status de análise + busca
   const vendasFiltradasPorAba = useMemo(() => {
     const statusFiltro = activeTab === 'ativas' ? STATUS_ANALISE_ATIVOS : STATUS_ANALISE_HISTORICO;
     let resultado = vendas.filter(v => {
       const status = statusAnalise[v.id] || 'pendente';
       return statusFiltro.includes(status);
     });
-    
+
+    // 🔎 Filtro de busca (aplicado)
+    const term = (appliedFilters.searchTerm || '').trim().toLowerCase();
+    if (term) {
+      resultado = resultado.filter(v => {
+        const haystack = [
+          v.order_id,
+          v.account_name,
+          v.buyer_nickname,
+          v.buyer_name,
+          v.tracking_number,
+          v.carrier,
+          ...(v.items?.flatMap(i => [i.title, i.sku]) ?? []),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return haystack.includes(term);
+      });
+    }
+
     // Aplicar filtro de resumo se ativo
     if (filtroResumoAtivo) {
       const hoje = new Date();
-      
+
       if (filtroResumoAtivo.tipo === 'prazo') {
         if (filtroResumoAtivo.valor === 'vencido') {
           resultado = resultado.filter(venda => {
@@ -191,9 +215,9 @@ export function VendasComEnvioPage() {
         }
       }
     }
-    
+
     return resultado;
-  }, [vendas, activeTab, filtroResumoAtivo, statusAnalise]);
+  }, [vendas, activeTab, filtroResumoAtivo, statusAnalise, appliedFilters.searchTerm]);
 
   // Paginação local
   const paginatedVendas = useMemo(() => {
