@@ -552,40 +552,6 @@ export const Devolucao2025Page = () => {
 
           {/* Tabela */}
           <div className="px-4 md:px-6 mt-2 relative">
-            {/* 📊 Indicador de fonte de dados + Polling status */}
-            {!isLoading && devolucoesCompletas.length > 0 && (
-              <div className="absolute top-2 right-6 z-20 flex items-center gap-2">
-                {/* ✨ COMBO 2: Indicador de polling ativo (não mostrar durante busca manual) */}
-                {isFetching && !isLoading && !isManualSearching && (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
-                    <RefreshCw className="w-3 h-3 animate-spin" />
-                    Atualizando...
-                  </div>
-                )}
-                
-                {/* Badge de fonte de dados */}
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                  useCacheData 
-                    ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20' 
-                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                }`}>
-                  {useCacheData ? (
-                    <>
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Cache
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-3 h-3" />
-                      API
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-            
             <Tabs value={activeTab}>
               <TabsContent value={activeTab} className="mt-0">
                 {/* 🔄 LOADER APENAS NA ÁREA DA TABELA */}
