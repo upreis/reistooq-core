@@ -133,8 +133,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full">
-      {/* Tabela com sticky header real */}
-      <div className="overflow-x-auto border rounded-md">
+      {/* Container com altura calculada e ambos os scrolls - sticky funciona internamente */}
+      <div className="overflow-auto border rounded-md max-h-[calc(100vh-320px)]">
         <Table className="min-w-max">
           <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
