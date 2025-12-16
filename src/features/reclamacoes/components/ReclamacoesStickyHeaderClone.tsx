@@ -7,6 +7,7 @@
 import { memo, useRef, useEffect } from 'react';
 import { flexRender, Table as TanStackTable } from '@tanstack/react-table';
 import { Table, TableHeader, TableHead, TableRow } from '@/components/ui/table';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 
 interface ReclamacoesStickyHeaderCloneProps {
   isVisible: boolean;
@@ -20,6 +21,7 @@ export const ReclamacoesStickyHeaderClone = memo(function ReclamacoesStickyHeade
   scrollLeft,
 }: ReclamacoesStickyHeaderCloneProps) {
   const innerRef = useRef<HTMLDivElement>(null);
+  const { isSidebarCollapsed } = useSidebarUI();
 
   // 🎯 Sync horizontal via transform (GPU accelerated)
   useEffect(() => {
@@ -34,7 +36,9 @@ export const ReclamacoesStickyHeaderClone = memo(function ReclamacoesStickyHeade
 
   return (
     <div 
-      className="fixed top-14 left-0 right-0 z-[9999] bg-background shadow-md border-b-2 overflow-hidden"
+      className={`fixed top-14 right-0 z-[9999] bg-background shadow-md border-b-2 overflow-hidden transition-all duration-300 ${
+        isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+      } left-0`}
       style={{ pointerEvents: 'auto' }}
     >
       {/* Inner wrapper recebe o transform */}
