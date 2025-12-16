@@ -1,10 +1,11 @@
 /**
  * 📌 HEADER BAR SEPARADO - RECLAMAÇÕES
- * 🎯 FASE 1: Componente isolado que renderiza headers da tabela
+ * 🎯 FASE 3: Sincronização de larguras com ResizeObserver
  * 
  * - NÃO usa position: sticky no thead
  * - Usa transform: translate3d para sincronizar scroll horizontal
  * - Renderiza mesmas colunas do TanStack table
+ * - Recebe larguras medidas do body para alinhamento perfeito
  */
 
 import { memo, useRef, useEffect } from 'react';
@@ -16,12 +17,15 @@ interface ReclamacoesHeaderBarProps {
   scrollLeft: number;
   /** Altura do header global do app (para posicionar corretamente) */
   topOffset?: number;
+  /** Larguras medidas das colunas do body (opcional) */
+  columnWidths?: number[];
 }
 
 export const ReclamacoesHeaderBar = memo(function ReclamacoesHeaderBar({
   table,
   scrollLeft,
   topOffset = 0,
+  columnWidths,
 }: ReclamacoesHeaderBarProps) {
   const innerRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +43,7 @@ export const ReclamacoesHeaderBar = memo(function ReclamacoesHeaderBar({
   return (
     <div
       className={cn(
-        "sticky z-50 bg-background border-b-2 shadow-sm",
+        "sticky z-50 bg-background border border-b-2 shadow-sm rounded-t-md",
         "overflow-hidden" // NÃO ter scroll próprio
       )}
       style={{ top: topOffset }}
@@ -51,9 +55,13 @@ export const ReclamacoesHeaderBar = memo(function ReclamacoesHeaderBar({
             key={headerGroup.id}
             className="flex"
           >
-            {headerGroup.headers.map((header) => {
+            {headerGroup.headers.map((header, index) => {
               const meta = header.column.columnDef.meta as any;
-              const width = header.getSize();
+              
+              // 🎯 FASE 3: Usar largura medida do body se disponível, senão fallback para TanStack
+              const measuredWidth = columnWidths?.[index];
+              const tanstackWidth = header.getSize();
+              const width = measuredWidth || (tanstackWidth !== 150 ? tanstackWidth : undefined);
               
               return (
                 <div
@@ -64,8 +72,8 @@ export const ReclamacoesHeaderBar = memo(function ReclamacoesHeaderBar({
                     meta?.headerClassName
                   )}
                   style={{
-                    width: width !== 150 ? width : 'auto', // 150 é o default do TanStack
-                    minWidth: width !== 150 ? width : 'auto',
+                    width: width ? `${width}px` : 'auto',
+                    minWidth: width ? `${width}px` : 'auto',
                     flexShrink: 0,
                   }}
                 >
