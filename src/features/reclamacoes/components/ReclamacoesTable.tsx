@@ -48,10 +48,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 📌 Refs para sincronização de scroll horizontal
-  const headerScrollRef = useRef<HTMLDivElement>(null);
+  // 📌 Ref para sincronização de scroll horizontal
+  const headerInnerRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
-  const isScrollingSyncRef = useRef(false);
   
   // ⚡ Filtrar colunas conforme visibilidade
   const columns = useMemo(() => {
@@ -96,31 +95,18 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🔄 Sincronizar scroll horizontal entre header e body
+  // 🔄 Sincronizar scroll horizontal: body scrolla, header move via transform
   useEffect(() => {
-    const headerEl = headerScrollRef.current;
     const bodyEl = bodyScrollRef.current;
-    if (!headerEl || !bodyEl) return;
+    const headerInner = headerInnerRef.current;
+    if (!bodyEl || !headerInner) return;
 
-    const syncScroll = (source: HTMLDivElement, target: HTMLDivElement) => {
-      if (isScrollingSyncRef.current) return;
-      isScrollingSyncRef.current = true;
-      target.scrollLeft = source.scrollLeft;
-      requestAnimationFrame(() => {
-        isScrollingSyncRef.current = false;
-      });
+    const handleBodyScroll = () => {
+      headerInner.style.transform = `translateX(${-bodyEl.scrollLeft}px)`;
     };
 
-    const handleHeaderScroll = () => syncScroll(headerEl, bodyEl);
-    const handleBodyScroll = () => syncScroll(bodyEl, headerEl);
-
-    headerEl.addEventListener('scroll', handleHeaderScroll, { passive: true });
     bodyEl.addEventListener('scroll', handleBodyScroll, { passive: true });
-
-    return () => {
-      headerEl.removeEventListener('scroll', handleHeaderScroll);
-      bodyEl.removeEventListener('scroll', handleBodyScroll);
-    };
+    return () => bodyEl.removeEventListener('scroll', handleBodyScroll);
   }, []);
 
   if (isLoading) {
@@ -157,42 +143,41 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full flex flex-col border rounded-md">
-      {/* 📌 HEADER FIXO - NÃO SCROLLA VERTICALMENTE */}
-      <div 
-        ref={headerScrollRef}
-        className="overflow-x-auto flex-shrink-0 scrollbar-thin"
-      >
-        <Table className="min-w-max">
-          <TableHeader className="bg-background">
-            {headerGroups.map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
-                {headerGroup.headers.map((header) => {
-                  const meta = header.column.columnDef.meta as any;
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className={`bg-background ${meta?.headerClassName || ''}`}
-                      style={{
-                        width: header.getSize() !== 150 ? header.getSize() : undefined,
-                        minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
-                      }}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-        </Table>
+      {/* 📌 HEADER FIXO - overflow-hidden, move via transform */}
+      <div className="overflow-hidden flex-shrink-0">
+        <div ref={headerInnerRef} style={{ willChange: 'transform' }}>
+          <Table className="min-w-max">
+            <TableHeader className="bg-background">
+              {headerGroups.map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                  {headerGroup.headers.map((header) => {
+                    const meta = header.column.columnDef.meta as any;
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className={`bg-background ${meta?.headerClassName || ''}`}
+                        style={{
+                          width: header.getSize() !== 150 ? header.getSize() : undefined,
+                          minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
+                        }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+          </Table>
+        </div>
       </div>
 
-      {/* 📌 BODY SCROLLÁVEL - APENAS ESTA PARTE MOVE VERTICALMENTE */}
+      {/* 📌 BODY SCROLLÁVEL - scroll horizontal e vertical */}
       <div 
         ref={bodyScrollRef}
         className="overflow-auto flex-1"
