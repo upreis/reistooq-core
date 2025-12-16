@@ -1,27 +1,31 @@
 /**
  * 📌 CLONE FIXO DO CABEÇALHO - RECLAMAÇÕES
- * Aparece no topo da tela quando usuário rola para baixo
- * Sync horizontal via transform (NÃO scrollbar)
+ * Position: fixed controlado por getBoundingClientRect
+ * Sync horizontal via transform (GPU accelerated)
  */
 
 import { memo, useRef, useEffect } from 'react';
 import { flexRender, Table as TanStackTable } from '@tanstack/react-table';
 import { Table, TableHeader, TableHead, TableRow } from '@/components/ui/table';
-import { useSidebarUI } from '@/context/SidebarUIContext';
 
 interface ReclamacoesStickyHeaderCloneProps {
   isVisible: boolean;
   table: TanStackTable<any>;
   scrollLeft: number;
+  left: number;
+  width: number;
+  topOffset: number;
 }
 
 export const ReclamacoesStickyHeaderClone = memo(function ReclamacoesStickyHeaderClone({
   isVisible,
   table,
   scrollLeft,
+  left,
+  width,
+  topOffset,
 }: ReclamacoesStickyHeaderCloneProps) {
   const innerRef = useRef<HTMLDivElement>(null);
-  const { isSidebarCollapsed } = useSidebarUI();
 
   // 🎯 Sync horizontal via transform (GPU accelerated)
   useEffect(() => {
@@ -36,10 +40,14 @@ export const ReclamacoesStickyHeaderClone = memo(function ReclamacoesStickyHeade
 
   return (
     <div 
-      className={`fixed top-14 right-0 z-[9999] bg-background shadow-md border-b-2 overflow-hidden transition-all duration-300 ${
-        isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
-      } left-0`}
-      style={{ pointerEvents: 'auto' }}
+      className="z-[9999] bg-background shadow-md border-b-2 overflow-hidden"
+      style={{ 
+        position: 'fixed',
+        top: topOffset,
+        left: left,
+        width: width,
+        pointerEvents: 'none', // Não bloqueia cliques
+      }}
     >
       {/* Inner wrapper recebe o transform */}
       <div ref={innerRef} data-sticky-clone-inner>
