@@ -1,7 +1,6 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
- * 🎯 FASE 2: Header separado (ReclamacoesHeaderBar)
- * 📌 SEM sticky no thead - header externo sincronizado
+ * 🎯 Sticky vertical via clone + Sync horizontal via transform
  */
 
 import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
@@ -13,9 +12,10 @@ import {
   flexRender,
   SortingState,
 } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
-import { ReclamacoesHeaderBar } from './ReclamacoesHeaderBar';
+import { ReclamacoesStickyHeaderClone } from './ReclamacoesStickyHeaderClone';
+import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
@@ -29,7 +29,7 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
-  visibleColumnKeys?: string[]; // 🎯 Array de keys de colunas visíveis
+  visibleColumnKeys?: string[];
   onTableReady?: (table: any) => void;
 }
 
@@ -50,29 +50,25 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 📌 Estado para scroll horizontal (sincroniza header)
+  // 📌 Estado para scroll horizontal (sync com clone)
   const [scrollLeft, setScrollLeft] = useState(0);
   
-  // 📌 FASE 3: Estado para larguras medidas das colunas
-  const [columnWidths, setColumnWidths] = useState<number[]>([]);
+  // 📌 Hook para sticky vertical
+  const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
   
-  // 📌 Refs
-  const tableRef = useRef<HTMLTableElement>(null);
+  // 📌 Ref do container de scroll horizontal
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
   
-  // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
+  // ⚡ Filtrar colunas conforme visibilidade
   const columns = useMemo(() => {
     const allColumns = reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab);
     
-    // Se não há filtro de colunas, retornar todas
     if (!visibleColumnKeys || visibleColumnKeys.length === 0) {
-      console.log('🔍 [ReclamacoesTable] Sem filtro - retornando todas as colunas:', allColumns.length);
       return allColumns;
     }
     
-    // ✅ USAR ARRAY.INCLUDES ao invés de Set - força React detectar mudanças
     const filtered = allColumns.filter(col => {
-      // Colunas sem id são sempre visíveis (actions, etc)
       if (!col.id) return true;
       return visibleColumnKeys.includes(col.id as string);
     });
@@ -86,48 +82,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     return filtered;
   }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys]);
 
-  // 🎯 FASE 3: ResizeObserver para medir larguras reais das células do body
-  useEffect(() => {
-    if (!tableRef.current || reclamacoes.length === 0) return;
-    
-    const measureWidths = () => {
-      const firstRow = tableRef.current?.querySelector('tbody tr');
-      if (!firstRow) return;
-      
-      const cells = firstRow.querySelectorAll('td');
-      const widths: number[] = [];
-      
-      cells.forEach((cell) => {
-        widths.push(cell.getBoundingClientRect().width);
-      });
-      
-      // Só atualizar se larguras mudaram
-      setColumnWidths(prev => {
-        if (prev.length === widths.length && prev.every((w, i) => Math.abs(w - widths[i]) < 1)) {
-          return prev;
-        }
-        return widths;
-      });
-    };
-    
-    // Medir após render inicial
-    const timer = setTimeout(measureWidths, 100);
-    
-    // ResizeObserver para detectar mudanças de largura
-    const observer = new ResizeObserver(() => {
-      requestAnimationFrame(measureWidths);
-    });
-    
-    if (tableRef.current) {
-      observer.observe(tableRef.current);
-    }
-    
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-    };
-  }, [reclamacoes.length, columns.length]);
-  
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
@@ -155,21 +109,24 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🧪 Debug mode flag (deve estar ANTES dos early returns para respeitar regras de hooks)
-  const debugStickyEnabled = useMemo(() => {
-    try {
-      return new URLSearchParams(window.location.search).get('debugSticky') === '1';
-    } catch {
-      return false;
-    }
-  }, []);
-
   // 🎯 Handler de scroll horizontal com requestAnimationFrame
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    requestAnimationFrame(() => {
-      setScrollLeft(target.scrollLeft);
-    });
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        setScrollLeft(scrollContainer.scrollLeft);
+      });
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   if (isLoading) {
@@ -202,30 +159,54 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     );
   }
 
+  const headerGroups = table.getHeaderGroups();
+
   return (
     <div className="w-full">
-      {debugStickyEnabled && (
-        <div className="fixed bottom-4 right-4 z-[90] rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground shadow">
-          StickyDebug ON · v2025-12-16
-        </div>
-      )}
+      {/* 📌 Sentinela para detectar quando ativar sticky */}
+      <div ref={sentinelRef} className="h-0" />
 
-      {/* 📌 HEADER SEPARADO - position: sticky no container, NÃO no thead */}
-      <ReclamacoesHeaderBar 
-        table={table} 
+      {/* 📌 CLONE FIXO - Aparece quando isSticky = true */}
+      <ReclamacoesStickyHeaderClone
+        isVisible={isSticky}
+        table={table}
         scrollLeft={scrollLeft}
-        topOffset={56} // 🎯 Altura do header global (h-14 = 56px)
-        columnWidths={columnWidths} // 🎯 FASE 3: Larguras medidas do body
       />
 
-      {/* Tabela com scroll horizontal - APENAS BODY */}
+      {/* Tabela com scroll horizontal */}
       <div 
         ref={scrollContainerRef}
-        className="overflow-x-auto border-x border-b rounded-b-md -mt-px"
-        onScroll={handleScroll}
+        className="overflow-x-auto border rounded-md"
       >
-        <Table ref={tableRef} className="min-w-max" disableOverflow>
-          {/* 📌 SEM TableHeader aqui - header está no ReclamacoesHeaderBar */}
+        <Table ref={tableRef} className="min-w-max">
+          {/* 📌 HEADER ORIGINAL (fica oculto quando clone aparece, mas sempre existe) */}
+          <TableHeader className="bg-background">
+            {headerGroups.map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as any;
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className={meta?.headerClassName}
+                      style={{
+                        width: header.getSize() !== 150 ? header.getSize() : undefined,
+                        minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
+                      }}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
