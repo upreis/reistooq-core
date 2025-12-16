@@ -118,20 +118,33 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   }, [table, onTableReady]);
 
   // 🔄 Sincronizar scroll horizontal via transform (SEM scrollbar no clone)
-  const handleScrollSync = useCallback(() => {
-    const outer = scrollWrapperRef.current;
+  // ⚠️ Observação: hoje existem DOIS possíveis scrollers horizontais:
+  // - outer (div com overflow-x-auto)
+  // - wrapper interno do <Table /> (div com overflow-auto do shadcn)
+  // Para evitar regressões, sincronizamos a partir do(s) scroller(s) que realmente rolam.
+  const syncCloneFromScroller = useCallback((scroller: HTMLElement) => {
     const cloneRoot = fixedHeaderRef.current;
-    if (!outer || !cloneRoot) return;
+    if (!cloneRoot) return;
 
-    // Tentar wrapper interno do Table, senão usa o outer diretamente
-    const horizontalScroller = (outer.querySelector(':scope > div') as HTMLDivElement) || outer;
     const cloneInner = cloneRoot.querySelector('[data-sticky-clone-inner]') as HTMLElement | null;
-
     if (!cloneInner) return;
 
-    const scrollLeft = horizontalScroller.scrollLeft;
+    const scrollLeft = scroller.scrollLeft;
     cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
     cloneInner.style.willChange = 'transform';
+  }, []);
+
+  const getHorizontalScrollers = useCallback((): HTMLElement[] => {
+    const outer = scrollWrapperRef.current;
+    if (!outer) return [];
+
+    const inner = outer.querySelector(':scope > div') as HTMLElement | null;
+
+    const candidates = [outer, inner].filter(Boolean) as HTMLElement[];
+    const unique = Array.from(new Set(candidates));
+
+    // Mantém somente quem realmente pode rolar horizontalmente
+    return unique.filter((el) => el.scrollWidth > el.clientWidth + 1);
   }, []);
 
   // 🔄 Efeito para posicionamento e sincronização de scroll quando sticky está ativo
@@ -139,32 +152,32 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     const outer = scrollWrapperRef.current;
     if (!isSticky || !outer) return;
 
-    // 📌 SEMPRE posicionar o clone (independente do scroll sync)
+    // 📌 Posicionar o clone sempre que ativar
     if (fixedHeaderRef.current) {
       const wrapperRect = outer.getBoundingClientRect();
       fixedHeaderRef.current.style.left = `${wrapperRect.left}px`;
       fixedHeaderRef.current.style.width = `${wrapperRect.width}px`;
     }
 
-    // 🔄 Tentar encontrar o scroller horizontal (pode ser o wrapper interno do Table ou o próprio outer)
-    // Table.tsx renderiza: <div class="relative w-full overflow-auto"><table .../></div>
-    const horizontalScroller = (outer.querySelector(':scope > div') as HTMLDivElement) || outer;
+    const scrollers = getHorizontalScrollers();
+    const effectiveScrollers = scrollers.length ? scrollers : [outer];
 
-    // Sincronizar imediatamente via transform
-    if (fixedHeaderRef.current) {
-      const cloneInner = fixedHeaderRef.current.querySelector('[data-sticky-clone-inner]') as HTMLElement | null;
-      if (cloneInner) {
-        const scrollLeft = horizontalScroller.scrollLeft;
-        cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
-      }
-    }
+    const handlers = new Map<HTMLElement, EventListener>();
+    effectiveScrollers.forEach((el) => {
+      const handler: EventListener = () => syncCloneFromScroller(el);
+      handlers.set(el, handler);
+      el.addEventListener('scroll', handler, { passive: true });
+    });
 
-    horizontalScroller.addEventListener('scroll', handleScrollSync, { passive: true });
+    // Sync imediato
+    effectiveScrollers.forEach(syncCloneFromScroller);
 
     return () => {
-      horizontalScroller.removeEventListener('scroll', handleScrollSync);
+      handlers.forEach((handler, el) => {
+        el.removeEventListener('scroll', handler);
+      });
     };
-  }, [isSticky, handleScrollSync]);
+  }, [isSticky, getHorizontalScrollers, syncCloneFromScroller]);
 
 
   // 🔄 Sincronizar larguras das colunas
