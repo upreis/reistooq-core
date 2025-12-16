@@ -1,9 +1,9 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
- * 🎯 Header fixo com sticky CSS + body scrollável
+ * 🎯 Header fixo + body scrollável com sync horizontal
  */
 
-import { useState, useMemo, memo, useCallback, useEffect } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -48,6 +48,11 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
+  // 📌 Refs para sincronização de scroll horizontal
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+  const isScrollingSyncRef = useRef(false);
+  
   // ⚡ Filtrar colunas conforme visibilidade
   const columns = useMemo(() => {
     const allColumns = reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab);
@@ -91,6 +96,33 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
+  // 🔄 Sincronizar scroll horizontal entre header e body
+  useEffect(() => {
+    const headerEl = headerScrollRef.current;
+    const bodyEl = bodyScrollRef.current;
+    if (!headerEl || !bodyEl) return;
+
+    const syncScroll = (source: HTMLDivElement, target: HTMLDivElement) => {
+      if (isScrollingSyncRef.current) return;
+      isScrollingSyncRef.current = true;
+      target.scrollLeft = source.scrollLeft;
+      requestAnimationFrame(() => {
+        isScrollingSyncRef.current = false;
+      });
+    };
+
+    const handleHeaderScroll = () => syncScroll(headerEl, bodyEl);
+    const handleBodyScroll = () => syncScroll(bodyEl, headerEl);
+
+    headerEl.addEventListener('scroll', handleHeaderScroll, { passive: true });
+    bodyEl.addEventListener('scroll', handleBodyScroll, { passive: true });
+
+    return () => {
+      headerEl.removeEventListener('scroll', handleHeaderScroll);
+      bodyEl.removeEventListener('scroll', handleBodyScroll);
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="p-12 text-center space-y-4">
@@ -124,15 +156,14 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const headerGroups = table.getHeaderGroups();
 
   return (
-    <div className="w-full">
-      {/* 📌 Container com scroll horizontal + vertical limitado */}
+    <div className="w-full flex flex-col border rounded-md">
+      {/* 📌 HEADER FIXO - NÃO SCROLLA VERTICALMENTE */}
       <div 
-        className="border rounded-md overflow-auto"
-        style={{ maxHeight: 'calc(100vh - 320px)' }}
+        ref={headerScrollRef}
+        className="overflow-x-auto flex-shrink-0 scrollbar-thin"
       >
         <Table className="min-w-max">
-          {/* 📌 HEADER STICKY - fica fixo enquanto body scrolla */}
-          <TableHeader className="bg-background sticky top-0 z-20">
+          <TableHeader className="bg-background">
             {headerGroups.map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
@@ -158,7 +189,16 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
               </TableRow>
             ))}
           </TableHeader>
+        </Table>
+      </div>
 
+      {/* 📌 BODY SCROLLÁVEL - APENAS ESTA PARTE MOVE VERTICALMENTE */}
+      <div 
+        ref={bodyScrollRef}
+        className="overflow-auto flex-1"
+        style={{ maxHeight: 'calc(100vh - 380px)' }}
+      >
+        <Table className="min-w-max">
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
