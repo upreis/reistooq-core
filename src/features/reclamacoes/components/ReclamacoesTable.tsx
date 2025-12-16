@@ -143,8 +143,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       {/* ⚠️ overflow-y-visible é CRÍTICO para sticky funcionar */}
       <div className="overflow-x-auto overflow-y-visible border rounded-md">
         <Table ref={tableRef} className="min-w-max" disableOverflow>
-          {/* 📌 STICKY HEADER NATIVO - top-14 compensa altura do header da página (h-14 = 56px) */}
-          <TableHeader className="sticky top-14 z-40 bg-background shadow-sm border-b-2">
+          {/* 📌 STICKY HEADER NATIVO - top-0 funciona pois o header do app é sticky (em flow) */}
+          <TableHeader className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 shadow-sm border-b-2 isolate">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
