@@ -55,6 +55,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   // 📌 Estado para scroll horizontal (sincroniza header)
   const [scrollLeft, setScrollLeft] = useState(0);
   
+  // 📌 FASE 3: Estado para larguras medidas das colunas
+  const [columnWidths, setColumnWidths] = useState<number[]>([]);
+  
   // 📌 Refs
   const tableRef = useRef<HTMLTableElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -84,6 +87,48 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     
     return filtered;
   }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys]);
+
+  // 🎯 FASE 3: ResizeObserver para medir larguras reais das células do body
+  useEffect(() => {
+    if (!tableRef.current || reclamacoes.length === 0) return;
+    
+    const measureWidths = () => {
+      const firstRow = tableRef.current?.querySelector('tbody tr');
+      if (!firstRow) return;
+      
+      const cells = firstRow.querySelectorAll('td');
+      const widths: number[] = [];
+      
+      cells.forEach((cell) => {
+        widths.push(cell.getBoundingClientRect().width);
+      });
+      
+      // Só atualizar se larguras mudaram
+      setColumnWidths(prev => {
+        if (prev.length === widths.length && prev.every((w, i) => Math.abs(w - widths[i]) < 1)) {
+          return prev;
+        }
+        return widths;
+      });
+    };
+    
+    // Medir após render inicial
+    const timer = setTimeout(measureWidths, 100);
+    
+    // ResizeObserver para detectar mudanças de largura
+    const observer = new ResizeObserver(() => {
+      requestAnimationFrame(measureWidths);
+    });
+    
+    if (tableRef.current) {
+      observer.observe(tableRef.current);
+    }
+    
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [reclamacoes.length, columns.length]);
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
@@ -230,6 +275,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         table={table} 
         scrollLeft={scrollLeft}
         topOffset={0} // Ajustar se header global existir
+        columnWidths={columnWidths} // 🎯 FASE 3: Larguras medidas do body
       />
 
       {/* Tabela com scroll horizontal - APENAS BODY */}
