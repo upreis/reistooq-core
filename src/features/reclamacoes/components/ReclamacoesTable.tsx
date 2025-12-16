@@ -1,7 +1,7 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
- * 🎯 FASE 2: Header separado (ReclamacoesHeaderBar)
- * 📌 SEM sticky no thead - header externo sincronizado
+ * 🎯 Padrão consistente com /vendas-com-envio, /pedidos
+ * 📌 TableHeader sticky DENTRO da tabela (padrão funcional)
  */
 
 import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
@@ -13,9 +13,8 @@ import {
   flexRender,
   SortingState,
 } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
-import { ReclamacoesHeaderBar } from './ReclamacoesHeaderBar';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
@@ -50,15 +49,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 📌 Estado para scroll horizontal (sincroniza header)
-  const [scrollLeft, setScrollLeft] = useState(0);
-  
-  // 📌 FASE 3: Estado para larguras medidas das colunas
-  const [columnWidths, setColumnWidths] = useState<number[]>([]);
-  
-  // 📌 Refs
   const tableRef = useRef<HTMLTableElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
   const columns = useMemo(() => {
@@ -86,48 +77,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     return filtered;
   }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys]);
 
-  // 🎯 FASE 3: ResizeObserver para medir larguras reais das células do body
-  useEffect(() => {
-    if (!tableRef.current || reclamacoes.length === 0) return;
-    
-    const measureWidths = () => {
-      const firstRow = tableRef.current?.querySelector('tbody tr');
-      if (!firstRow) return;
-      
-      const cells = firstRow.querySelectorAll('td');
-      const widths: number[] = [];
-      
-      cells.forEach((cell) => {
-        widths.push(cell.getBoundingClientRect().width);
-      });
-      
-      // Só atualizar se larguras mudaram
-      setColumnWidths(prev => {
-        if (prev.length === widths.length && prev.every((w, i) => Math.abs(w - widths[i]) < 1)) {
-          return prev;
-        }
-        return widths;
-      });
-    };
-    
-    // Medir após render inicial
-    const timer = setTimeout(measureWidths, 100);
-    
-    // ResizeObserver para detectar mudanças de largura
-    const observer = new ResizeObserver(() => {
-      requestAnimationFrame(measureWidths);
-    });
-    
-    if (tableRef.current) {
-      observer.observe(tableRef.current);
-    }
-    
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-    };
-  }, [reclamacoes.length, columns.length]);
-  
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
@@ -154,23 +103,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       onTableReady(table);
     }
   }, [table, onTableReady]);
-
-  // 🧪 Debug mode flag (deve estar ANTES dos early returns para respeitar regras de hooks)
-  const debugStickyEnabled = useMemo(() => {
-    try {
-      return new URLSearchParams(window.location.search).get('debugSticky') === '1';
-    } catch {
-      return false;
-    }
-  }, []);
-
-  // 🎯 Handler de scroll horizontal com requestAnimationFrame
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    requestAnimationFrame(() => {
-      setScrollLeft(target.scrollLeft);
-    });
-  }, []);
 
   if (isLoading) {
     return (
@@ -204,28 +136,36 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full">
-      {debugStickyEnabled && (
-        <div className="fixed bottom-4 right-4 z-[90] rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground shadow">
-          StickyDebug ON · v2025-12-16
-        </div>
-      )}
-
-      {/* 📌 HEADER SEPARADO - position: sticky no container, NÃO no thead */}
-      <ReclamacoesHeaderBar 
-        table={table} 
-        scrollLeft={scrollLeft}
-        topOffset={56} // 🎯 Altura do header global (h-14 = 56px)
-        columnWidths={columnWidths} // 🎯 FASE 3: Larguras medidas do body
-      />
-
-      {/* Tabela com scroll horizontal - APENAS BODY */}
-      <div 
-        ref={scrollContainerRef}
-        className="overflow-x-auto border-x border-b rounded-b-md -mt-px"
-        onScroll={handleScroll}
-      >
-        <Table ref={tableRef} className="min-w-max" disableOverflow>
-          {/* 📌 SEM TableHeader aqui - header está no ReclamacoesHeaderBar */}
+      {/* 📌 Padrão /vendas-com-envio: overflow-x-auto no wrapper externo */}
+      <div className="overflow-x-auto border rounded-md">
+        <Table ref={tableRef} className="min-w-max">
+          {/* 📌 TableHeader sticky DENTRO da tabela - padrão funcional */}
+          <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as any;
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className={meta?.headerClassName}
+                      style={{
+                        width: header.getSize() !== 150 ? header.getSize() : undefined,
+                      }}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
@@ -256,8 +196,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         <ReclamacoesMensagensModal
           open={mensagensModalOpen}
           onOpenChange={setMensagensModalOpen}
-          mensagens={selectedClaim.timeline_mensagens || []}
-          claimId={String(selectedClaim.claim_id)}
+          claimId={selectedClaim.claim_id || selectedClaim.id}
+          mensagens={selectedClaim.mensagens || []}
         />
       )}
     </div>
