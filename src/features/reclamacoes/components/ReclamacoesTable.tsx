@@ -117,14 +117,15 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🔄 Sincronizar scroll horizontal (otimizado com useCallback)
+  // 🔄 Sincronizar scroll horizontal via transform (SEM scrollbar no clone)
   const handleScrollSync = useCallback(() => {
     if (fixedHeaderRef.current && scrollWrapperRef.current) {
-      requestAnimationFrame(() => {
-        if (fixedHeaderRef.current && scrollWrapperRef.current) {
-          fixedHeaderRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
-        }
-      });
+      const cloneInner = fixedHeaderRef.current.querySelector('[data-sticky-clone-inner]') as HTMLElement;
+      if (cloneInner) {
+        const scrollLeft = scrollWrapperRef.current.scrollLeft;
+        cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
+        cloneInner.style.willChange = 'transform';
+      }
     }
   }, []);
 
@@ -132,9 +133,13 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   useEffect(() => {
     if (!isSticky || !scrollWrapperRef.current) return;
 
-    // Sincronizar imediatamente o scrollLeft atual quando sticky ativa
+    // Sincronizar imediatamente via transform quando sticky ativa
     if (fixedHeaderRef.current && scrollWrapperRef.current) {
-      fixedHeaderRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
+      const cloneInner = fixedHeaderRef.current.querySelector('[data-sticky-clone-inner]') as HTMLElement;
+      if (cloneInner) {
+        const scrollLeft = scrollWrapperRef.current.scrollLeft;
+        cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
+      }
       
       // Ajustar position do clone para alinhar com tabela original
       const wrapperRect = scrollWrapperRef.current.getBoundingClientRect();
