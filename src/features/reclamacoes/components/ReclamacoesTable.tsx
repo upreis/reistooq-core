@@ -18,9 +18,7 @@ import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
 import { ReclamacoesHeaderBar } from './ReclamacoesHeaderBar';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
-import { cn } from '@/lib/utils';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
-
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -157,64 +155,22 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🧪 Debug opcional: detectar ancestrais que quebram position: sticky
-  // Roda APÓS a tabela ter dados (não durante loading)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const enabled = params.get('debugSticky') === '1';
-    if (!enabled) return;
-
-    console.log('🧪 [StickyDebug] ON (ReclamacoesTable)');
-
-    if (isLoading || reclamacoes.length === 0) {
-      console.log('🧪 [StickyDebug] aguardando dados...', {
-        isLoading,
-        reclamacoes: reclamacoes.length,
-      });
-      return;
+  // 🧪 Debug mode flag (deve estar ANTES dos early returns para respeitar regras de hooks)
+  const debugStickyEnabled = useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('debugSticky') === '1';
+    } catch {
+      return false;
     }
+  }, []);
 
-    // Pequeno delay para garantir que DOM está completo
-    const timer = setTimeout(() => {
-      const thead = tableRef.current?.querySelector('thead');
-      if (!thead) {
-        console.log('🧪 [StickyDebug] thead não encontrado após delay', {
-          hasTableRef: Boolean(tableRef.current),
-        });
-        return;
-      }
-
-      const chain: Array<any> = [];
-      let el: HTMLElement | null = thead as HTMLElement;
-
-      while (el && el !== document.body) {
-        const cs = window.getComputedStyle(el);
-        chain.push({
-          tag: el.tagName.toLowerCase(),
-          className: el.className?.slice(0, 80) || '',
-          position: cs.position,
-          overflowX: cs.overflowX,
-          overflowY: cs.overflowY,
-          transform: cs.transform,
-          contain: (cs as any).contain,
-          zIndex: cs.zIndex,
-        });
-        el = el.parentElement;
-      }
-
-      const offender = chain.find((n) =>
-        (n.overflowY && n.overflowY !== 'visible') ||
-        (n.transform && n.transform !== 'none') ||
-        (n.contain && n.contain !== 'none')
-      );
-
-      console.log('🧪 [StickyDebug] ancestors chain (thead → body):', chain);
-      console.log('🧪 [StickyDebug] 🚨 BLOQUEADOR:', offender || 'NENHUM ENCONTRADO');
-      console.log('🧪 [StickyDebug] scrollingElement:', document.scrollingElement);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [isLoading, reclamacoes.length]);
+  // 🎯 Handler de scroll horizontal com requestAnimationFrame
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    requestAnimationFrame(() => {
+      setScrollLeft(target.scrollLeft);
+    });
+  }, []);
 
   if (isLoading) {
     return (
@@ -245,22 +201,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       </div>
     );
   }
-
-  const debugStickyEnabled = useMemo(() => {
-    try {
-      return new URLSearchParams(window.location.search).get('debugSticky') === '1';
-    } catch {
-      return false;
-    }
-  }, []);
-
-  // 🎯 Handler de scroll horizontal com requestAnimationFrame
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    requestAnimationFrame(() => {
-      setScrollLeft(target.scrollLeft);
-    });
-  }, []);
 
   return (
     <div className="w-full">
