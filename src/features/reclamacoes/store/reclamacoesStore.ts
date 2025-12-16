@@ -111,15 +111,17 @@ const loadPersistedState = (): Partial<ReclamacoesState> => {
       // Validar TTL (30 minutos)
       if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
         console.log('📦 [RECLAMACOES-STORE] Restaurando estado do localStorage:', {
-          reclamacoes: parsed.reclamacoes?.length || 0,
           selectedAccounts: parsed.selectedAccounts?.length || 0
         });
         return {
-          reclamacoes: parsed.reclamacoes || [],
+          // ⚠️ Não restaurar reclamacoes por aqui (pode ser gigante e instável)
           selectedAccounts: parsed.selectedAccounts || [],
           filters: parsed.filters || initialFilters,
-          pagination: { ...initialPagination, total: parsed.reclamacoes?.length || 0 },
-          dataSource: parsed.reclamacoes?.length > 0 ? 'cache' : null
+          pagination: {
+            ...initialPagination,
+            ...(parsed.pagination || {}),
+          },
+          dataSource: null
         };
       }
     }
@@ -129,15 +131,22 @@ const loadPersistedState = (): Partial<ReclamacoesState> => {
   return {};
 };
 
-// Salvar estado no localStorage
+// Salvar estado no localStorage (⚠️ NUNCA salvar lista completa de reclamações aqui)
+// Motivo: reclamacoes podem ter centenas/milhares de itens e estouram o quota do localStorage,
+// causando QuotaExceededError e comportamento instável na página.
 const persistState = (state: Partial<ReclamacoesState>) => {
   try {
     const toSave = {
-      reclamacoes: state.reclamacoes,
+      // Persistir apenas o que é leve e necessário para restaurar contexto de UI
       selectedAccounts: state.selectedAccounts,
       filters: state.filters,
-      timestamp: Date.now()
+      pagination: state.pagination ? {
+        currentPage: state.pagination.currentPage,
+        itemsPerPage: state.pagination.itemsPerPage,
+      } : undefined,
+      timestamp: Date.now(),
     };
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (error) {
     console.error('[RECLAMACOES-STORE] Erro ao salvar estado:', error);
@@ -167,22 +176,34 @@ export const useReclamacoesStore = create<ReclamacoesState>((set, get) => ({
   
   // Actions
   setReclamacoes: (reclamacoes, total) => {
-    set({ 
-      reclamacoes, 
+    set({
+      reclamacoes,
       pagination: { ...get().pagination, total: total ?? reclamacoes.length },
       dataSource: 'api'
     });
-    persistState({ ...get(), reclamacoes });
+
+    // Persistir apenas contexto leve (evita QuotaExceededError)
+    persistState({
+      selectedAccounts: get().selectedAccounts,
+      filters: get().filters,
+      pagination: get().pagination,
+    });
   },
   
   appendReclamacoes: (newReclamacoes) => {
     const current = get().reclamacoes;
     const merged = [...current, ...newReclamacoes];
-    set({ 
+    set({
       reclamacoes: merged,
       pagination: { ...get().pagination, total: merged.length }
     });
-    persistState({ ...get(), reclamacoes: merged });
+
+    // Persistir apenas contexto leve (evita QuotaExceededError)
+    persistState({
+      selectedAccounts: get().selectedAccounts,
+      filters: get().filters,
+      pagination: get().pagination,
+    });
   },
   
   clearReclamacoes: () => {
