@@ -1,7 +1,7 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  * 🎯 FASE 3: Integrado com ColumnManager avançado
- * 📌 Sticky Header Clone implementado (igual /devolucoesdevenda)
+ * 📌 Sticky Header NATIVO (position: sticky)
  */
 
 import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
@@ -12,17 +12,11 @@ import {
   getSortedRowModel,
   flexRender,
   SortingState,
-  VisibilityState,
 } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
-import { ReclamacoesStickyHeaderClone } from './ReclamacoesStickyHeaderClone';
-import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
-import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 
@@ -57,12 +51,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 🔧 Hook de sticky header (igual /devolucoesdevenda)
-  const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
-  
-  // 📌 Refs para clone e scroll wrapper da tabela
-  const scrollWrapperRef = useRef<HTMLDivElement>(null);
-  const fixedHeaderRef = useRef<HTMLDivElement>(null);
+  // 📌 Ref para a tabela
+  const tableRef = useRef<HTMLTableElement>(null);
   
   // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
   const columns = useMemo(() => {
@@ -117,141 +107,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🔄 Sincronizar scroll horizontal via transform (SEM scrollbar no clone)
-  // ⚠️ Observação: hoje existem DOIS possíveis scrollers horizontais:
-  // - outer (div com overflow-x-auto)
-  // - wrapper interno do <Table /> (div com overflow-auto do shadcn)
-  // Para evitar regressões, sincronizamos a partir do(s) scroller(s) que realmente rolam.
-
-  const applyCloneTranslateX = useCallback((scrollLeft: number) => {
-    const cloneRoot = fixedHeaderRef.current;
-    if (!cloneRoot) return;
-
-    const cloneInner = cloneRoot.querySelector('[data-sticky-clone-inner]') as HTMLElement | null;
-    if (!cloneInner) return;
-
-    // translate3d reduz "lag" (GPU) e evita jank
-    cloneInner.style.transform = `translate3d(${-scrollLeft}px, 0, 0)`;
-    cloneInner.style.willChange = 'transform';
-  }, []);
-
-  const getHorizontalScrollers = useCallback((): HTMLElement[] => {
-    const outer = scrollWrapperRef.current;
-    if (!outer) return [];
-
-    const inner = outer.querySelector(':scope > div') as HTMLElement | null;
-    const candidates = [inner, outer].filter(Boolean) as HTMLElement[];
-
-    // Mantém somente quem realmente pode rolar horizontalmente
-    return candidates.filter((el) => el.scrollWidth > el.clientWidth + 1);
-  }, []);
-
-  const updateClonePosition = useCallback(() => {
-    const outer = scrollWrapperRef.current;
-    const clone = fixedHeaderRef.current;
-    if (!outer || !clone) return;
-
-    const wrapperRect = outer.getBoundingClientRect();
-    clone.style.left = `${wrapperRect.left}px`;
-    clone.style.width = `${wrapperRect.width}px`;
-  }, []);
-
-  // 🔄 Efeito para posicionamento e sincronização de scroll quando sticky está ativo
-  useEffect(() => {
-    const outer = scrollWrapperRef.current;
-    if (!isSticky || !outer) return;
-
-    updateClonePosition();
-
-    const scrollers = getHorizontalScrollers();
-    const effectiveScrollers = scrollers.length ? scrollers : [outer];
-
-    // rAF throttle (evita "atraso" perceptível)
-    let rafId: number | null = null;
-    let lastLeft = 0;
-
-    const schedule = (left: number) => {
-      lastLeft = left;
-      if (rafId != null) return;
-      rafId = window.requestAnimationFrame(() => {
-        rafId = null;
-        applyCloneTranslateX(lastLeft);
-      });
-    };
-
-    const handlers = new Map<HTMLElement, EventListener>();
-    effectiveScrollers.forEach((el) => {
-      const handler: EventListener = () => schedule(el.scrollLeft);
-      handlers.set(el, handler);
-      el.addEventListener('scroll', handler, { passive: true });
-    });
-
-    // Sync imediato
-    const initialScroller = effectiveScrollers[0];
-    schedule(initialScroller.scrollLeft);
-
-    // Mantém o clone alinhado em resize / mudanças de layout
-    const onResize = () => updateClonePosition();
-    window.addEventListener('resize', onResize, { passive: true });
-
-    const ro = new ResizeObserver(() => updateClonePosition());
-    ro.observe(outer);
-
-    return () => {
-      if (rafId != null) window.cancelAnimationFrame(rafId);
-      handlers.forEach((handler, el) => {
-        el.removeEventListener('scroll', handler);
-      });
-      window.removeEventListener('resize', onResize);
-      ro.disconnect();
-    };
-  }, [isSticky, getHorizontalScrollers, applyCloneTranslateX, updateClonePosition]);
-
-
-  // 🔄 Sincronizar larguras das colunas
-  const syncColumnWidths = useCallback(() => {
-    const originalHeaders = tableRef.current?.querySelectorAll('thead th');
-    const cloneHeaders = fixedHeaderRef.current?.querySelectorAll('thead th');
-
-    if (!originalHeaders || !cloneHeaders) return;
-
-    originalHeaders.forEach((originalTh, index) => {
-      const cloneTh = cloneHeaders[index] as HTMLElement;
-      if (cloneTh) {
-        const width = originalTh.getBoundingClientRect().width;
-        cloneTh.style.width = `${width}px`;
-        cloneTh.style.minWidth = `${width}px`;
-        cloneTh.style.maxWidth = `${width}px`;
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!isSticky || !tableRef.current || !fixedHeaderRef.current) return;
-
-    // Aguardar próximo frame para garantir que clone está montado no DOM
-    requestAnimationFrame(() => {
-      syncColumnWidths();
-    });
-
-    // Debounce para ResizeObserver (performance)
-    let timeoutId: NodeJS.Timeout;
-    const debouncedSync = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(syncColumnWidths, 100);
-    };
-
-    const resizeObserver = new ResizeObserver(debouncedSync);
-    if (tableRef.current) {
-      resizeObserver.observe(tableRef.current);
-    }
-
-    return () => {
-      clearTimeout(timeoutId);
-      resizeObserver.disconnect();
-    };
-  }, [isSticky, syncColumnWidths]);
-
   if (isLoading) {
     return (
       <div className="p-12 text-center space-y-4">
@@ -284,29 +139,20 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full">
-      {/* 🎯 ELEMENTO SENTINELA - Detecta quando tabela rola para baixo */}
-      <div ref={sentinelRef} className="h-0" />
-      
-      {/* 📌 CLONE FIXO DO CABEÇALHO - Aparece quando isSticky = true */}
-      <ReclamacoesStickyHeaderClone
-        isVisible={isSticky}
-        headerRef={fixedHeaderRef}
-        table={table}
-      />
-      
-      {/* Tabela */}
-      <div ref={scrollWrapperRef} className="overflow-x-auto border rounded-md">
-        <Table ref={tableRef} className="min-w-max relative">
-          <TableHeader className="bg-background shadow-sm">
+      {/* Tabela com scroll horizontal no wrapper externo */}
+      <div className="overflow-x-auto border rounded-md">
+        <Table ref={tableRef} className="min-w-max" disableOverflow>
+          {/* 📌 STICKY HEADER NATIVO - position: sticky */}
+          <TableHeader className="sticky top-0 z-50 bg-background shadow-sm border-b-2">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
                   const meta = header.column.columnDef.meta as any;
                   return (
                     <TableHead 
                       key={header.id} 
                       className={cn(
-                        "whitespace-nowrap",
+                        "whitespace-nowrap bg-background",
                         meta?.headerClassName
                       )}
                     >
@@ -361,4 +207,3 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 });
 
 ReclamacoesTable.displayName = 'ReclamacoesTable';
-
