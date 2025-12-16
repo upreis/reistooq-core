@@ -111,14 +111,26 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   // Roda APÓS a tabela ter dados (não durante loading)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('debugSticky') !== '1') return;
-    if (isLoading || reclamacoes.length === 0) return; // Só roda quando tem dados
+    const enabled = params.get('debugSticky') === '1';
+    if (!enabled) return;
+
+    console.log('🧪 [StickyDebug] ON (ReclamacoesTable)');
+
+    if (isLoading || reclamacoes.length === 0) {
+      console.log('🧪 [StickyDebug] aguardando dados...', {
+        isLoading,
+        reclamacoes: reclamacoes.length,
+      });
+      return;
+    }
 
     // Pequeno delay para garantir que DOM está completo
     const timer = setTimeout(() => {
       const thead = tableRef.current?.querySelector('thead');
       if (!thead) {
-        console.log('🧪 [StickyDebug] thead não encontrado após delay');
+        console.log('🧪 [StickyDebug] thead não encontrado após delay', {
+          hasTableRef: Boolean(tableRef.current),
+        });
         return;
       }
 
@@ -129,7 +141,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         const cs = window.getComputedStyle(el);
         chain.push({
           tag: el.tagName.toLowerCase(),
-          className: el.className?.slice(0, 80) || '', // Truncar classes longas
+          className: el.className?.slice(0, 80) || '',
           position: cs.position,
           overflowX: cs.overflowX,
           overflowY: cs.overflowY,
@@ -184,21 +196,35 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     );
   }
 
+  const debugStickyEnabled = useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('debugSticky') === '1';
+    } catch {
+      return false;
+    }
+  }, []);
+
   return (
     <div className="w-full">
+      {debugStickyEnabled && (
+        <div className="fixed bottom-4 right-4 z-[90] rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground shadow">
+          StickyDebug ON · v2025-12-16
+        </div>
+      )}
+
       {/* Tabela com scroll horizontal no wrapper externo */}
       {/* ⚠️ overflow-y-visible é CRÍTICO para sticky funcionar */}
       <div className="overflow-x-auto overflow-y-visible border rounded-md">
         <Table ref={tableRef} className="min-w-max" disableOverflow>
-          {/* 📌 STICKY HEADER NATIVO - top-0 funciona pois o header do app é sticky (em flow) */}
-          <TableHeader className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 shadow-sm border-b-2 isolate">
+          {/* 📌 STICKY HEADER NATIVO */}
+          <TableHeader className="sticky top-0 z-50 bg-background shadow-sm border-b-2 isolate">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
                   const meta = header.column.columnDef.meta as any;
                   return (
-                    <TableHead 
-                      key={header.id} 
+                    <TableHead
+                      key={header.id}
                       className={cn(
                         "whitespace-nowrap bg-background",
                         meta?.headerClassName
