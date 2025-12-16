@@ -1,9 +1,9 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
- * 🎯 Sticky via position:fixed + getBoundingClientRect (viewport-based)
+ * 🎯 Header fixo com sticky CSS + body scrollável
  */
 
-import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -14,7 +14,6 @@ import {
 } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
-import { ReclamacoesStickyHeaderClone } from './ReclamacoesStickyHeaderClone';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
@@ -32,9 +31,6 @@ interface ReclamacoesTableProps {
   onTableReady?: (table: any) => void;
 }
 
-// 📌 Altura do header global (fixo no topo)
-const TOP_OFFSET = 56;
-
 export const ReclamacoesTable = memo(function ReclamacoesTable({
   reclamacoes,
   isLoading,
@@ -51,17 +47,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
-  
-  // 📌 Estados para sticky viewport-based
-  const [isSticky, setIsSticky] = useState(false);
-  const [stickyRect, setStickyRect] = useState({ left: 0, width: 0 });
-  const [scrollLeft, setScrollLeft] = useState(0);
-  
-  // 📌 Refs
-  const tableWrapperRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const headerMeasureRef = useRef<HTMLTableSectionElement>(null);
-  const rafRef = useRef<number>(0);
   
   // ⚡ Filtrar colunas conforme visibilidade
   const columns = useMemo(() => {
@@ -106,61 +91,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🎯 NOVO: Motor de sticky via getBoundingClientRect (viewport-based)
-  useEffect(() => {
-    const wrapper = tableWrapperRef.current;
-    const header = headerMeasureRef.current;
-    if (!wrapper) return;
-
-    const updateSticky = () => {
-      const rect = wrapper.getBoundingClientRect();
-      const headerH = header?.getBoundingClientRect().height ?? 48;
-      
-      // Mostrar clone quando: topo da tabela passou do offset E ainda há conteúdo visível
-      const shouldSticky = rect.top < TOP_OFFSET && rect.bottom > TOP_OFFSET + headerH;
-      
-      setIsSticky(shouldSticky);
-      
-      if (shouldSticky) {
-        setStickyRect({
-          left: rect.left,
-          width: rect.width,
-        });
-      }
-    };
-
-    // Listeners
-    window.addEventListener('scroll', updateSticky, { passive: true });
-    window.addEventListener('resize', updateSticky);
-    
-    // Verificação inicial
-    updateSticky();
-
-    return () => {
-      window.removeEventListener('scroll', updateSticky);
-      window.removeEventListener('resize', updateSticky);
-    };
-  }, [reclamacoes.length]); // Re-attach quando dados mudam
-
-  // 🎯 Handler de scroll horizontal com requestAnimationFrame
-  useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
-
-    const handleScroll = () => {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(() => {
-        setScrollLeft(scrollContainer.scrollLeft);
-      });
-    };
-
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
-      cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
   if (isLoading) {
     return (
       <div className="p-12 text-center space-y-4">
@@ -194,25 +124,15 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const headerGroups = table.getHeaderGroups();
 
   return (
-    <div ref={tableWrapperRef} className="w-full">
-      {/* 📌 CLONE FIXO - Aparece quando isSticky = true */}
-      <ReclamacoesStickyHeaderClone
-        isVisible={isSticky}
-        table={table}
-        scrollLeft={scrollLeft}
-        left={stickyRect.left}
-        width={stickyRect.width}
-        topOffset={TOP_OFFSET}
-      />
-
-      {/* Tabela com scroll horizontal */}
+    <div className="w-full">
+      {/* 📌 Container com scroll horizontal + vertical limitado */}
       <div 
-        ref={scrollContainerRef}
-        className="overflow-x-auto border rounded-md"
+        className="border rounded-md overflow-auto"
+        style={{ maxHeight: 'calc(100vh - 320px)' }}
       >
         <Table className="min-w-max">
-          {/* 📌 HEADER ORIGINAL - ref para medir altura */}
-          <TableHeader ref={headerMeasureRef} className="bg-background">
+          {/* 📌 HEADER STICKY - fica fixo enquanto body scrolla */}
+          <TableHeader className="bg-background sticky top-0 z-20">
             {headerGroups.map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
@@ -220,7 +140,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
                   return (
                     <TableHead
                       key={header.id}
-                      className={meta?.headerClassName}
+                      className={`bg-background ${meta?.headerClassName || ''}`}
                       style={{
                         width: header.getSize() !== 150 ? header.getSize() : undefined,
                         minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
