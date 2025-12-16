@@ -2,18 +2,25 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-const Table = React.forwardRef<
-  HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
-    <table
-      ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
-      {...props}
-    />
-  </div>
-))
+interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
+  /** Quando true, remove overflow-auto do wrapper para permitir position: sticky */
+  disableOverflow?: boolean;
+}
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className, disableOverflow, ...props }, ref) => (
+    <div className={cn(
+      "relative w-full",
+      !disableOverflow && "overflow-auto"
+    )}>
+      <table
+        ref={ref}
+        className={cn("w-full caption-bottom text-sm", className)}
+        {...props}
+      />
+    </div>
+  )
+)
 Table.displayName = "Table"
 
 const TableHeader = React.forwardRef<
