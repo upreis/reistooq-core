@@ -122,15 +122,16 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   // - outer (div com overflow-x-auto)
   // - wrapper interno do <Table /> (div com overflow-auto do shadcn)
   // Para evitar regressões, sincronizamos a partir do(s) scroller(s) que realmente rolam.
-  const syncCloneFromScroller = useCallback((scroller: HTMLElement) => {
+
+  const applyCloneTranslateX = useCallback((scrollLeft: number) => {
     const cloneRoot = fixedHeaderRef.current;
     if (!cloneRoot) return;
 
     const cloneInner = cloneRoot.querySelector('[data-sticky-clone-inner]') as HTMLElement | null;
     if (!cloneInner) return;
 
-    const scrollLeft = scroller.scrollLeft;
-    cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
+    // translate3d reduz "lag" (GPU) e evita jank
+    cloneInner.style.transform = `translate3d(${-scrollLeft}px, 0, 0)`;
     cloneInner.style.willChange = 'transform';
   }, []);
 
@@ -139,12 +140,20 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     if (!outer) return [];
 
     const inner = outer.querySelector(':scope > div') as HTMLElement | null;
-
-    const candidates = [outer, inner].filter(Boolean) as HTMLElement[];
-    const unique = Array.from(new Set(candidates));
+    const candidates = [inner, outer].filter(Boolean) as HTMLElement[];
 
     // Mantém somente quem realmente pode rolar horizontalmente
-    return unique.filter((el) => el.scrollWidth > el.clientWidth + 1);
+    return candidates.filter((el) => el.scrollWidth > el.clientWidth + 1);
+  }, []);
+
+  const updateClonePosition = useCallback(() => {
+    const outer = scrollWrapperRef.current;
+    const clone = fixedHeaderRef.current;
+    if (!outer || !clone) return;
+
+    const wrapperRect = outer.getBoundingClientRect();
+    clone.style.left = `${wrapperRect.left}px`;
+    clone.style.width = `${wrapperRect.width}px`;
   }, []);
 
   // 🔄 Efeito para posicionamento e sincronização de scroll quando sticky está ativo
@@ -152,32 +161,51 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     const outer = scrollWrapperRef.current;
     if (!isSticky || !outer) return;
 
-    // 📌 Posicionar o clone sempre que ativar
-    if (fixedHeaderRef.current) {
-      const wrapperRect = outer.getBoundingClientRect();
-      fixedHeaderRef.current.style.left = `${wrapperRect.left}px`;
-      fixedHeaderRef.current.style.width = `${wrapperRect.width}px`;
-    }
+    updateClonePosition();
 
     const scrollers = getHorizontalScrollers();
     const effectiveScrollers = scrollers.length ? scrollers : [outer];
 
+    // rAF throttle (evita "atraso" perceptível)
+    let rafId: number | null = null;
+    let lastLeft = 0;
+
+    const schedule = (left: number) => {
+      lastLeft = left;
+      if (rafId != null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        applyCloneTranslateX(lastLeft);
+      });
+    };
+
     const handlers = new Map<HTMLElement, EventListener>();
     effectiveScrollers.forEach((el) => {
-      const handler: EventListener = () => syncCloneFromScroller(el);
+      const handler: EventListener = () => schedule(el.scrollLeft);
       handlers.set(el, handler);
       el.addEventListener('scroll', handler, { passive: true });
     });
 
     // Sync imediato
-    effectiveScrollers.forEach(syncCloneFromScroller);
+    const initialScroller = effectiveScrollers[0];
+    schedule(initialScroller.scrollLeft);
+
+    // Mantém o clone alinhado em resize / mudanças de layout
+    const onResize = () => updateClonePosition();
+    window.addEventListener('resize', onResize, { passive: true });
+
+    const ro = new ResizeObserver(() => updateClonePosition());
+    ro.observe(outer);
 
     return () => {
+      if (rafId != null) window.cancelAnimationFrame(rafId);
       handlers.forEach((handler, el) => {
         el.removeEventListener('scroll', handler);
       });
+      window.removeEventListener('resize', onResize);
+      ro.disconnect();
     };
-  }, [isSticky, getHorizontalScrollers, syncCloneFromScroller]);
+  }, [isSticky, getHorizontalScrollers, applyCloneTranslateX, updateClonePosition]);
 
 
   // 🔄 Sincronizar larguras das colunas
