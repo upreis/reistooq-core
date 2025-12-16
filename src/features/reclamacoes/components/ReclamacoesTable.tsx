@@ -118,42 +118,52 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   }, [table, onTableReady]);
 
   // 🔄 Sincronizar scroll horizontal via transform (SEM scrollbar no clone)
+  // ⚠️ Importante: o scroll horizontal real acontece no wrapper interno do componente <Table /> (src/components/ui/table.tsx)
   const handleScrollSync = useCallback(() => {
-    if (fixedHeaderRef.current && scrollWrapperRef.current) {
-      const cloneInner = fixedHeaderRef.current.querySelector('[data-sticky-clone-inner]') as HTMLElement;
-      if (cloneInner) {
-        const scrollLeft = scrollWrapperRef.current.scrollLeft;
-        cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
-        cloneInner.style.willChange = 'transform';
-      }
-    }
+    const outer = scrollWrapperRef.current;
+    const cloneRoot = fixedHeaderRef.current;
+    if (!outer || !cloneRoot) return;
+
+    // Table.tsx renderiza: <div class="relative w-full overflow-auto"><table .../></div>
+    const horizontalScroller = outer.querySelector(':scope > div') as HTMLDivElement | null;
+    const cloneInner = cloneRoot.querySelector('[data-sticky-clone-inner]') as HTMLElement | null;
+
+    if (!horizontalScroller || !cloneInner) return;
+
+    const scrollLeft = horizontalScroller.scrollLeft;
+    cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
+    cloneInner.style.willChange = 'transform';
   }, []);
 
   // 🔄 Efeito para sincronização de scroll quando sticky está ativo
   useEffect(() => {
-    if (!isSticky || !scrollWrapperRef.current) return;
+    const outer = scrollWrapperRef.current;
+    if (!isSticky || !outer) return;
+
+    const horizontalScroller = outer.querySelector(':scope > div') as HTMLDivElement | null;
+    if (!horizontalScroller) return;
 
     // Sincronizar imediatamente via transform quando sticky ativa
-    if (fixedHeaderRef.current && scrollWrapperRef.current) {
-      const cloneInner = fixedHeaderRef.current.querySelector('[data-sticky-clone-inner]') as HTMLElement;
+    if (fixedHeaderRef.current) {
+      const cloneInner = fixedHeaderRef.current.querySelector('[data-sticky-clone-inner]') as HTMLElement | null;
       if (cloneInner) {
-        const scrollLeft = scrollWrapperRef.current.scrollLeft;
+        const scrollLeft = horizontalScroller.scrollLeft;
         cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
       }
-      
+
       // Ajustar position do clone para alinhar com tabela original
-      const wrapperRect = scrollWrapperRef.current.getBoundingClientRect();
+      const wrapperRect = outer.getBoundingClientRect();
       fixedHeaderRef.current.style.left = `${wrapperRect.left}px`;
       fixedHeaderRef.current.style.width = `${wrapperRect.width}px`;
     }
 
-    const scrollWrapper = scrollWrapperRef.current;
-    scrollWrapper.addEventListener('scroll', handleScrollSync, { passive: true });
-    
+    horizontalScroller.addEventListener('scroll', handleScrollSync, { passive: true });
+
     return () => {
-      scrollWrapper.removeEventListener('scroll', handleScrollSync);
+      horizontalScroller.removeEventListener('scroll', handleScrollSync);
     };
   }, [isSticky, handleScrollSync]);
+
 
   // 🔄 Sincronizar larguras das colunas
   const syncColumnWidths = useCallback(() => {
