@@ -103,7 +103,10 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     let raf = 0;
     const onScroll = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => setScrollLeft(el.scrollLeft));
+      raf = requestAnimationFrame(() => {
+        console.log('scrollLeft', el.scrollLeft); // DEBUG - remover depois
+        setScrollLeft(el.scrollLeft);
+      });
     };
 
     el.addEventListener('scroll', onScroll, { passive: true });
@@ -152,11 +155,14 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     <div className="w-full flex flex-col border rounded-md">
       {/* 📌 HEADER FIXO - overflow-hidden, move via translate3d baseado em scrollLeft */}
       <div className="overflow-hidden flex-shrink-0">
-        <div style={{ 
-          transform: `translate3d(${-scrollLeft}px, 0, 0)`,
-          willChange: 'transform' 
-        }}>
-          <Table className="min-w-max">
+        <div 
+          className="min-w-max w-max"
+          style={{ 
+            transform: `translate3d(${-scrollLeft}px, 0, 0)`,
+            willChange: 'transform' 
+          }}
+        >
+          <Table className="min-w-max w-max">
             <TableHeader className="bg-background">
               {headerGroups.map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
@@ -193,7 +199,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         className="overflow-auto flex-1"
         style={{ maxHeight: 'calc(100vh - 380px)' }}
       >
-        <Table className="min-w-max">
+        <Table className="min-w-max w-max">
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
