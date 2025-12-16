@@ -140,10 +140,11 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   return (
     <div className="w-full">
       {/* Tabela com scroll horizontal no wrapper externo */}
-      <div className="overflow-x-auto border rounded-md">
+      {/* ⚠️ overflow-y-visible é CRÍTICO para sticky funcionar */}
+      <div className="overflow-x-auto overflow-y-visible border rounded-md">
         <Table ref={tableRef} className="min-w-max" disableOverflow>
-          {/* 📌 STICKY HEADER NATIVO - position: sticky */}
-          <TableHeader className="sticky top-0 z-50 bg-background shadow-sm border-b-2">
+          {/* 📌 STICKY HEADER NATIVO - top-14 compensa altura do header da página (h-14 = 56px) */}
+          <TableHeader className="sticky top-14 z-40 bg-background shadow-sm border-b-2">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
