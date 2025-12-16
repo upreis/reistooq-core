@@ -1,6 +1,6 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
- * 🎯 Sticky vertical via clone + Sync horizontal via transform
+ * 🎯 Sticky via position:fixed + getBoundingClientRect (viewport-based)
  */
 
 import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
@@ -15,7 +15,6 @@ import {
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
 import { ReclamacoesStickyHeaderClone } from './ReclamacoesStickyHeaderClone';
-import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
@@ -32,6 +31,9 @@ interface ReclamacoesTableProps {
   visibleColumnKeys?: string[];
   onTableReady?: (table: any) => void;
 }
+
+// 📌 Altura do header global (fixo no topo)
+const TOP_OFFSET = 56;
 
 export const ReclamacoesTable = memo(function ReclamacoesTable({
   reclamacoes,
@@ -50,14 +52,15 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 📌 Estado para scroll horizontal (sync com clone)
+  // 📌 Estados para sticky viewport-based
+  const [isSticky, setIsSticky] = useState(false);
+  const [stickyRect, setStickyRect] = useState({ left: 0, width: 0 });
   const [scrollLeft, setScrollLeft] = useState(0);
   
-  // 📌 Hook para sticky vertical
-  const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
-  
-  // 📌 Ref do container de scroll horizontal
+  // 📌 Refs
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const headerMeasureRef = useRef<HTMLTableSectionElement>(null);
   const rafRef = useRef<number>(0);
   
   // ⚡ Filtrar colunas conforme visibilidade
@@ -71,12 +74,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     const filtered = allColumns.filter(col => {
       if (!col.id) return true;
       return visibleColumnKeys.includes(col.id as string);
-    });
-    
-    console.log('🔍 [ReclamacoesTable] Colunas filtradas:', {
-      total: allColumns.length,
-      visible: filtered.length,
-      visibleKeys: visibleColumnKeys
     });
     
     return filtered;
@@ -109,6 +106,42 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
+  // 🎯 NOVO: Motor de sticky via getBoundingClientRect (viewport-based)
+  useEffect(() => {
+    const wrapper = tableWrapperRef.current;
+    const header = headerMeasureRef.current;
+    if (!wrapper) return;
+
+    const updateSticky = () => {
+      const rect = wrapper.getBoundingClientRect();
+      const headerH = header?.getBoundingClientRect().height ?? 48;
+      
+      // Mostrar clone quando: topo da tabela passou do offset E ainda há conteúdo visível
+      const shouldSticky = rect.top < TOP_OFFSET && rect.bottom > TOP_OFFSET + headerH;
+      
+      setIsSticky(shouldSticky);
+      
+      if (shouldSticky) {
+        setStickyRect({
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+    };
+
+    // Listeners
+    window.addEventListener('scroll', updateSticky, { passive: true });
+    window.addEventListener('resize', updateSticky);
+    
+    // Verificação inicial
+    updateSticky();
+
+    return () => {
+      window.removeEventListener('scroll', updateSticky);
+      window.removeEventListener('resize', updateSticky);
+    };
+  }, [reclamacoes.length]); // Re-attach quando dados mudam
+
   // 🎯 Handler de scroll horizontal com requestAnimationFrame
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -128,7 +161,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       cancelAnimationFrame(rafRef.current);
     };
   }, []);
-
   if (isLoading) {
     return (
       <div className="p-12 text-center space-y-4">
@@ -162,15 +194,15 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const headerGroups = table.getHeaderGroups();
 
   return (
-    <div className="w-full">
-      {/* 📌 Sentinela para detectar quando ativar sticky */}
-      <div ref={sentinelRef} className="h-0" />
-
+    <div ref={tableWrapperRef} className="w-full">
       {/* 📌 CLONE FIXO - Aparece quando isSticky = true */}
       <ReclamacoesStickyHeaderClone
         isVisible={isSticky}
         table={table}
         scrollLeft={scrollLeft}
+        left={stickyRect.left}
+        width={stickyRect.width}
+        topOffset={TOP_OFFSET}
       />
 
       {/* Tabela com scroll horizontal */}
@@ -178,9 +210,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         ref={scrollContainerRef}
         className="overflow-x-auto border rounded-md"
       >
-        <Table ref={tableRef} className="min-w-max">
-          {/* 📌 HEADER ORIGINAL (fica oculto quando clone aparece, mas sempre existe) */}
-          <TableHeader className="bg-background">
+        <Table className="min-w-max">
+          {/* 📌 HEADER ORIGINAL - ref para medir altura */}
+          <TableHeader ref={headerMeasureRef} className="bg-background">
             {headerGroups.map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
