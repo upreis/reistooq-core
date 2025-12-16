@@ -27,16 +27,19 @@ export const ReclamacoesStickyHeaderClone = memo(function ReclamacoesStickyHeade
 }: ReclamacoesStickyHeaderCloneProps) {
   const innerRef = useRef<HTMLDivElement>(null);
 
-  // 🎯 Sync horizontal via transform (GPU accelerated)
+  // 🎯 Sync horizontal via transform (GPU accelerated) - usando ref direto para performance
   useEffect(() => {
     if (!innerRef.current) return;
     innerRef.current.style.transform = `translate3d(${-scrollLeft}px, 0, 0)`;
-    innerRef.current.style.willChange = 'transform';
   }, [scrollLeft]);
 
+  // Early return após hooks
   if (!isVisible) return null;
 
   const headerGroups = table.getHeaderGroups();
+  
+  // Proteção contra headerGroups vazio
+  if (!headerGroups || headerGroups.length === 0) return null;
 
   return (
     <div 
@@ -46,11 +49,16 @@ export const ReclamacoesStickyHeaderClone = memo(function ReclamacoesStickyHeade
         top: topOffset,
         left: left,
         width: width,
-        pointerEvents: 'none', // Não bloqueia cliques
+        // pointer-events: auto permite interação com sort buttons no header
+        pointerEvents: 'auto',
       }}
     >
-      {/* Inner wrapper recebe o transform */}
-      <div ref={innerRef} data-sticky-clone-inner>
+      {/* Inner wrapper recebe o transform - willChange no JSX para evitar re-render */}
+      <div 
+        ref={innerRef} 
+        data-sticky-clone-inner
+        style={{ willChange: 'transform' }}
+      >
         <Table className="min-w-max">
           <TableHeader className="bg-background">
             {headerGroups.map((headerGroup) => (
