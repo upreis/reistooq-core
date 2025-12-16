@@ -118,43 +118,45 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   }, [table, onTableReady]);
 
   // 🔄 Sincronizar scroll horizontal via transform (SEM scrollbar no clone)
-  // ⚠️ Importante: o scroll horizontal real acontece no wrapper interno do componente <Table /> (src/components/ui/table.tsx)
   const handleScrollSync = useCallback(() => {
     const outer = scrollWrapperRef.current;
     const cloneRoot = fixedHeaderRef.current;
     if (!outer || !cloneRoot) return;
 
-    // Table.tsx renderiza: <div class="relative w-full overflow-auto"><table .../></div>
-    const horizontalScroller = outer.querySelector(':scope > div') as HTMLDivElement | null;
+    // Tentar wrapper interno do Table, senão usa o outer diretamente
+    const horizontalScroller = (outer.querySelector(':scope > div') as HTMLDivElement) || outer;
     const cloneInner = cloneRoot.querySelector('[data-sticky-clone-inner]') as HTMLElement | null;
 
-    if (!horizontalScroller || !cloneInner) return;
+    if (!cloneInner) return;
 
     const scrollLeft = horizontalScroller.scrollLeft;
     cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
     cloneInner.style.willChange = 'transform';
   }, []);
 
-  // 🔄 Efeito para sincronização de scroll quando sticky está ativo
+  // 🔄 Efeito para posicionamento e sincronização de scroll quando sticky está ativo
   useEffect(() => {
     const outer = scrollWrapperRef.current;
     if (!isSticky || !outer) return;
 
-    const horizontalScroller = outer.querySelector(':scope > div') as HTMLDivElement | null;
-    if (!horizontalScroller) return;
+    // 📌 SEMPRE posicionar o clone (independente do scroll sync)
+    if (fixedHeaderRef.current) {
+      const wrapperRect = outer.getBoundingClientRect();
+      fixedHeaderRef.current.style.left = `${wrapperRect.left}px`;
+      fixedHeaderRef.current.style.width = `${wrapperRect.width}px`;
+    }
 
-    // Sincronizar imediatamente via transform quando sticky ativa
+    // 🔄 Tentar encontrar o scroller horizontal (pode ser o wrapper interno do Table ou o próprio outer)
+    // Table.tsx renderiza: <div class="relative w-full overflow-auto"><table .../></div>
+    const horizontalScroller = (outer.querySelector(':scope > div') as HTMLDivElement) || outer;
+
+    // Sincronizar imediatamente via transform
     if (fixedHeaderRef.current) {
       const cloneInner = fixedHeaderRef.current.querySelector('[data-sticky-clone-inner]') as HTMLElement | null;
       if (cloneInner) {
         const scrollLeft = horizontalScroller.scrollLeft;
         cloneInner.style.transform = `translateX(${-scrollLeft}px)`;
       }
-
-      // Ajustar position do clone para alinhar com tabela original
-      const wrapperRect = outer.getBoundingClientRect();
-      fixedHeaderRef.current.style.left = `${wrapperRect.left}px`;
-      fixedHeaderRef.current.style.width = `${wrapperRect.width}px`;
     }
 
     horizontalScroller.addEventListener('scroll', handleScrollSync, { passive: true });
