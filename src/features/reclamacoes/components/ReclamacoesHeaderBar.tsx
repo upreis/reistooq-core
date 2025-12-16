@@ -1,0 +1,88 @@
+/**
+ * 📌 HEADER BAR SEPARADO - RECLAMAÇÕES
+ * 🎯 FASE 1: Componente isolado que renderiza headers da tabela
+ * 
+ * - NÃO usa position: sticky no thead
+ * - Usa transform: translate3d para sincronizar scroll horizontal
+ * - Renderiza mesmas colunas do TanStack table
+ */
+
+import { memo, useRef, useEffect } from 'react';
+import { flexRender, Table as TanStackTable } from '@tanstack/react-table';
+import { cn } from '@/lib/utils';
+
+interface ReclamacoesHeaderBarProps {
+  table: TanStackTable<any>;
+  scrollLeft: number;
+  /** Altura do header global do app (para posicionar corretamente) */
+  topOffset?: number;
+}
+
+export const ReclamacoesHeaderBar = memo(function ReclamacoesHeaderBar({
+  table,
+  scrollLeft,
+  topOffset = 0,
+}: ReclamacoesHeaderBarProps) {
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  // 🎯 Aplicar transform com requestAnimationFrame para performance
+  useEffect(() => {
+    if (!innerRef.current) return;
+    
+    // Usar translate3d para GPU acceleration
+    innerRef.current.style.transform = `translate3d(${-scrollLeft}px, 0, 0)`;
+    innerRef.current.style.willChange = 'transform';
+  }, [scrollLeft]);
+
+  const headerGroups = table.getHeaderGroups();
+
+  return (
+    <div
+      className={cn(
+        "sticky z-50 bg-background border-b-2 shadow-sm",
+        "overflow-hidden" // NÃO ter scroll próprio
+      )}
+      style={{ top: topOffset }}
+    >
+      {/* Inner wrapper que recebe o transform */}
+      <div ref={innerRef} className="min-w-max">
+        {headerGroups.map((headerGroup) => (
+          <div
+            key={headerGroup.id}
+            className="flex"
+          >
+            {headerGroup.headers.map((header) => {
+              const meta = header.column.columnDef.meta as any;
+              const width = header.getSize();
+              
+              return (
+                <div
+                  key={header.id}
+                  className={cn(
+                    "h-12 px-4 flex items-center text-left font-medium text-muted-foreground whitespace-nowrap bg-background",
+                    "[&:has([role=checkbox])]:pr-0",
+                    meta?.headerClassName
+                  )}
+                  style={{
+                    width: width !== 150 ? width : 'auto', // 150 é o default do TanStack
+                    minWidth: width !== 150 ? width : 'auto',
+                    flexShrink: 0,
+                  }}
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+ReclamacoesHeaderBar.displayName = 'ReclamacoesHeaderBar';
