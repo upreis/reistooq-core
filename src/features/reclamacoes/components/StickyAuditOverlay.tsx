@@ -193,39 +193,16 @@ export function StickyAuditOverlay() {
     setIsDebugMode(debugMode);
 
     if (debugMode) {
-      // Aplicar outlines visuais
-      const applyDebugStyles = () => {
-        document.querySelectorAll('thead').forEach(thead => {
-          (thead as HTMLElement).style.outline = '3px solid red';
-          (thead as HTMLElement).style.outlineOffset = '-1px';
-        });
-        document.querySelectorAll('th').forEach(th => {
-          (th as HTMLElement).style.outline = '2px solid blue';
-          (th as HTMLElement).style.outlineOffset = '-1px';
-        });
-      };
-
       // Executar auditoria inicial
       runAudit();
-      applyDebugStyles();
 
       // Atualizar a cada 500ms
       const interval = setInterval(() => {
         runAudit();
-        applyDebugStyles();
       }, 500);
 
       return () => {
         clearInterval(interval);
-        // Limpar outlines ao sair do modo debug
-        document.querySelectorAll('thead').forEach(thead => {
-          (thead as HTMLElement).style.outline = '';
-          (thead as HTMLElement).style.outlineOffset = '';
-        });
-        document.querySelectorAll('th').forEach(th => {
-          (th as HTMLElement).style.outline = '';
-          (th as HTMLElement).style.outlineOffset = '';
-        });
       };
     }
   }, [runAudit]);
@@ -306,12 +283,6 @@ export function StickyAuditOverlay() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Legend */}
-      <div className="mt-3 pt-2 border-t border-gray-700 text-gray-500">
-        <div>🔴 outline vermelho = {'<thead>'}</div>
-        <div>🔵 outline azul = {'<th>'}</div>
       </div>
     </div>
   );
