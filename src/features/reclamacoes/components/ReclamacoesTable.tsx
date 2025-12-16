@@ -48,9 +48,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 📌 Ref para sincronização de scroll horizontal
-  const headerInnerRef = useRef<HTMLDivElement>(null);
-  const bodyScrollRef = useRef<HTMLDivElement>(null);
+  // 📌 Refs e state para sincronização de scroll horizontal
+  const bodyScrollerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
   
   // ⚡ Filtrar colunas conforme visibilidade
   const columns = useMemo(() => {
@@ -95,18 +95,25 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🔄 Sincronizar scroll horizontal: body scrolla, header move via transform
+  // 🔄 Listener NATIVO no bodyScrollerRef para sync horizontal
   useEffect(() => {
-    const bodyEl = bodyScrollRef.current;
-    const headerInner = headerInnerRef.current;
-    if (!bodyEl || !headerInner) return;
+    const el = bodyScrollerRef.current;
+    if (!el) return;
 
-    const handleBodyScroll = () => {
-      headerInner.style.transform = `translateX(${-bodyEl.scrollLeft}px)`;
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setScrollLeft(el.scrollLeft));
     };
 
-    bodyEl.addEventListener('scroll', handleBodyScroll, { passive: true });
-    return () => bodyEl.removeEventListener('scroll', handleBodyScroll);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    // Inicializa o valor (caso já esteja deslocado)
+    setScrollLeft(el.scrollLeft);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   if (isLoading) {
@@ -143,9 +150,12 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full flex flex-col border rounded-md">
-      {/* 📌 HEADER FIXO - overflow-hidden, move via transform */}
+      {/* 📌 HEADER FIXO - overflow-hidden, move via translate3d baseado em scrollLeft */}
       <div className="overflow-hidden flex-shrink-0">
-        <div ref={headerInnerRef} style={{ willChange: 'transform' }}>
+        <div style={{ 
+          transform: `translate3d(${-scrollLeft}px, 0, 0)`,
+          willChange: 'transform' 
+        }}>
           <Table className="min-w-max">
             <TableHeader className="bg-background">
               {headerGroups.map((headerGroup) => (
@@ -177,9 +187,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         </div>
       </div>
 
-      {/* 📌 BODY SCROLLÁVEL - scroll horizontal e vertical */}
+      {/* 📌 BODY SCROLLÁVEL - ÚNICO elemento com scroll horizontal/vertical */}
       <div 
-        ref={bodyScrollRef}
+        ref={bodyScrollerRef}
         className="overflow-auto flex-1"
         style={{ maxHeight: 'calc(100vh - 380px)' }}
       >
