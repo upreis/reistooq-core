@@ -141,10 +141,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       {/* 🔍 STICKY AUDIT OVERLAY - aparece apenas com ?debugSticky=1 */}
       <StickyAuditOverlay />
       
-      {/* Tabela */}
-      <div className="overflow-x-auto">
-        <Table ref={tableRef} className="min-w-max relative" disableOverflow>
-          <TableHeader className="bg-background">
+      {/* Tabela - SEM wrapper overflow-x-auto para não bloquear sticky */}
+      <Table ref={tableRef} className="min-w-max" disableOverflow>
+        <TableHeader className="bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
@@ -192,7 +191,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
             )}
           </TableBody>
         </Table>
-      </div>
 
       {/* Modal de Mensagens */}
       {selectedClaim && (
