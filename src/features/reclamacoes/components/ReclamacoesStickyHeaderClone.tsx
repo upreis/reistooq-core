@@ -25,36 +25,38 @@ export const ReclamacoesStickyHeaderClone = ({
   return (
     <div 
       ref={headerRef}
-      className="fixed top-0 z-[9999] bg-background shadow-md border-b-2 pointer-events-none overflow-x-auto scrollbar-hide"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      className="fixed top-0 z-[9999] bg-background shadow-md border-b-2 pointer-events-none overflow-hidden"
     >
-      <Table className="min-w-max">
-        <TableHeader className="bg-background">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
-              {headerGroup.headers.map((header) => {
-                const meta = header.column.columnDef.meta as any;
-                return (
-                  <TableHead 
-                    key={header.id} 
-                    className={cn(
-                      "whitespace-nowrap",
-                      meta?.headerClassName
-                    )}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-      </Table>
+      {/* Wrapper interno que recebe o transform para sync horizontal */}
+      <div data-sticky-clone-inner>
+        <Table className="min-w-max">
+          <TableHeader className="bg-background">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as any;
+                  return (
+                    <TableHead 
+                      key={header.id} 
+                      className={cn(
+                        "whitespace-nowrap",
+                        meta?.headerClassName
+                      )}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+        </Table>
+      </div>
     </div>
   );
 };
