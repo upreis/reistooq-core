@@ -108,44 +108,51 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   }, [table, onTableReady]);
 
   // 🧪 Debug opcional: detectar ancestrais que quebram position: sticky
+  // Roda APÓS a tabela ter dados (não durante loading)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('debugSticky') !== '1') return;
+    if (isLoading || reclamacoes.length === 0) return; // Só roda quando tem dados
 
-    const thead = tableRef.current?.querySelector('thead');
-    if (!thead) {
-      console.log('🧪 [StickyDebug] thead não encontrado');
-      return;
-    }
+    // Pequeno delay para garantir que DOM está completo
+    const timer = setTimeout(() => {
+      const thead = tableRef.current?.querySelector('thead');
+      if (!thead) {
+        console.log('🧪 [StickyDebug] thead não encontrado após delay');
+        return;
+      }
 
-    const chain: Array<any> = [];
-    let el: HTMLElement | null = thead as any;
+      const chain: Array<any> = [];
+      let el: HTMLElement | null = thead as HTMLElement;
 
-    while (el && el !== document.body) {
-      const cs = window.getComputedStyle(el);
-      chain.push({
-        tag: el.tagName.toLowerCase(),
-        className: el.className || '',
-        position: cs.position,
-        overflowX: cs.overflowX,
-        overflowY: cs.overflowY,
-        transform: cs.transform,
-        contain: (cs as any).contain,
-        zIndex: cs.zIndex,
-      });
-      el = el.parentElement;
-    }
+      while (el && el !== document.body) {
+        const cs = window.getComputedStyle(el);
+        chain.push({
+          tag: el.tagName.toLowerCase(),
+          className: el.className?.slice(0, 80) || '', // Truncar classes longas
+          position: cs.position,
+          overflowX: cs.overflowX,
+          overflowY: cs.overflowY,
+          transform: cs.transform,
+          contain: (cs as any).contain,
+          zIndex: cs.zIndex,
+        });
+        el = el.parentElement;
+      }
 
-    const offender = chain.find((n) =>
-      (n.overflowY && n.overflowY !== 'visible') ||
-      (n.transform && n.transform !== 'none') ||
-      (n.contain && n.contain !== 'none')
-    );
+      const offender = chain.find((n) =>
+        (n.overflowY && n.overflowY !== 'visible') ||
+        (n.transform && n.transform !== 'none') ||
+        (n.contain && n.contain !== 'none')
+      );
 
-    console.log('🧪 [StickyDebug] ancestors chain (thead → body):', chain);
-    console.log('🧪 [StickyDebug] primeiro possível bloqueador:', offender || 'NENHUM');
-    console.log('🧪 [StickyDebug] scrollingElement:', document.scrollingElement);
-  }, []);
+      console.log('🧪 [StickyDebug] ancestors chain (thead → body):', chain);
+      console.log('🧪 [StickyDebug] 🚨 BLOQUEADOR:', offender || 'NENHUM ENCONTRADO');
+      console.log('🧪 [StickyDebug] scrollingElement:', document.scrollingElement);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, reclamacoes.length]);
 
   if (isLoading) {
     return (
