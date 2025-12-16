@@ -1,7 +1,7 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
- * 🎯 FASE 3: Integrado com ColumnManager avançado
- * 📌 Sticky Header NATIVO (position: sticky)
+ * 🎯 FASE 2: Header separado (ReclamacoesHeaderBar)
+ * 📌 SEM sticky no thead - header externo sincronizado
  */
 
 import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
@@ -13,8 +13,9 @@ import {
   flexRender,
   SortingState,
 } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
+import { ReclamacoesHeaderBar } from './ReclamacoesHeaderBar';
 
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { cn } from '@/lib/utils';
@@ -51,8 +52,12 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 📌 Ref para a tabela
+  // 📌 Estado para scroll horizontal (sincroniza header)
+  const [scrollLeft, setScrollLeft] = useState(0);
+  
+  // 📌 Refs
   const tableRef = useRef<HTMLTableElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
   const columns = useMemo(() => {
@@ -204,6 +209,14 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, []);
 
+  // 🎯 Handler de scroll horizontal com requestAnimationFrame
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    requestAnimationFrame(() => {
+      setScrollLeft(target.scrollLeft);
+    });
+  }, []);
+
   return (
     <div className="w-full">
       {debugStickyEnabled && (
@@ -212,40 +225,25 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         </div>
       )}
 
-      {/* Tabela com scroll horizontal no wrapper externo */}
-      {/* ⚠️ overflow-y-visible é CRÍTICO para sticky funcionar */}
-      <div className="overflow-x-auto overflow-y-visible border rounded-md">
+      {/* 📌 HEADER SEPARADO - position: sticky no container, NÃO no thead */}
+      <ReclamacoesHeaderBar 
+        table={table} 
+        scrollLeft={scrollLeft}
+        topOffset={0} // Ajustar se header global existir
+      />
+
+      {/* Tabela com scroll horizontal - APENAS BODY */}
+      <div 
+        ref={scrollContainerRef}
+        className="overflow-x-auto border-x border-b rounded-b-md"
+        onScroll={handleScroll}
+      >
         <Table ref={tableRef} className="min-w-max" disableOverflow>
-          {/* 📌 STICKY HEADER NATIVO */}
-          <TableHeader className="sticky top-0 z-50 bg-background shadow-sm border-b-2 isolate">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => {
-                  const meta = header.column.columnDef.meta as any;
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className={cn(
-                        "whitespace-nowrap bg-background",
-                        meta?.headerClassName
-                      )}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
+          {/* 📌 SEM TableHeader aqui - header está no ReclamacoesHeaderBar */}
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
-                const cells = row.getAllCells(); // ✅ Cache de células
+                const cells = row.getAllCells();
                 return (
                   <TableRow key={row.id} className="hover:bg-muted/50">
                     {cells.map((cell) => (
