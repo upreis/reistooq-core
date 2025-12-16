@@ -274,14 +274,14 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       <ReclamacoesHeaderBar 
         table={table} 
         scrollLeft={scrollLeft}
-        topOffset={0} // Ajustar se header global existir
+        topOffset={56} // 🎯 Altura do header global (h-14 = 56px)
         columnWidths={columnWidths} // 🎯 FASE 3: Larguras medidas do body
       />
 
       {/* Tabela com scroll horizontal - APENAS BODY */}
       <div 
         ref={scrollContainerRef}
-        className="overflow-x-auto border-x border-b rounded-b-md"
+        className="overflow-x-auto border-x border-b rounded-b-md -mt-px"
         onScroll={handleScroll}
       >
         <Table ref={tableRef} className="min-w-max" disableOverflow>

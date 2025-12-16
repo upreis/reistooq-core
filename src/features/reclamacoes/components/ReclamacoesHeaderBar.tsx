@@ -43,7 +43,7 @@ export const ReclamacoesHeaderBar = memo(function ReclamacoesHeaderBar({
   return (
     <div
       className={cn(
-        "sticky z-50 bg-background border border-b-2 shadow-sm rounded-t-md",
+        "sticky z-50 bg-background border-x border-t border-b shadow-sm rounded-t-md",
         "overflow-hidden" // NÃO ter scroll próprio
       )}
       style={{ top: topOffset }}
