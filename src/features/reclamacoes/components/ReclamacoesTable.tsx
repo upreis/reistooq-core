@@ -107,6 +107,46 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
+  // 🧪 Debug opcional: detectar ancestrais que quebram position: sticky
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('debugSticky') !== '1') return;
+
+    const thead = tableRef.current?.querySelector('thead');
+    if (!thead) {
+      console.log('🧪 [StickyDebug] thead não encontrado');
+      return;
+    }
+
+    const chain: Array<any> = [];
+    let el: HTMLElement | null = thead as any;
+
+    while (el && el !== document.body) {
+      const cs = window.getComputedStyle(el);
+      chain.push({
+        tag: el.tagName.toLowerCase(),
+        className: el.className || '',
+        position: cs.position,
+        overflowX: cs.overflowX,
+        overflowY: cs.overflowY,
+        transform: cs.transform,
+        contain: (cs as any).contain,
+        zIndex: cs.zIndex,
+      });
+      el = el.parentElement;
+    }
+
+    const offender = chain.find((n) =>
+      (n.overflowY && n.overflowY !== 'visible') ||
+      (n.transform && n.transform !== 'none') ||
+      (n.contain && n.contain !== 'none')
+    );
+
+    console.log('🧪 [StickyDebug] ancestors chain (thead → body):', chain);
+    console.log('🧪 [StickyDebug] primeiro possível bloqueador:', offender || 'NENHUM');
+    console.log('🧪 [StickyDebug] scrollingElement:', document.scrollingElement);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="p-12 text-center space-y-4">
