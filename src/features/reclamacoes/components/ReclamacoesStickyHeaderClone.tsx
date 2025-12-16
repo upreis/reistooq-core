@@ -25,7 +25,8 @@ export const ReclamacoesStickyHeaderClone = ({
   return (
     <div 
       ref={headerRef}
-      className="fixed top-0 z-[9999] bg-background shadow-md border-b-2 pointer-events-none overflow-hidden"
+      className="fixed top-0 z-[9999] bg-background shadow-md border-b-2 pointer-events-none overflow-x-auto scrollbar-hide"
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
       <Table className="min-w-max">
         <TableHeader className="bg-background">
