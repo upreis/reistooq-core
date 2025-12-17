@@ -162,7 +162,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
             willChange: 'transform' 
           }}
         >
-          <Table className="min-w-max w-max">
+          <Table className="min-w-max w-max" disableOverflow>
             <TableHeader className="bg-background">
               {headerGroups.map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
@@ -199,7 +199,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
         className="overflow-auto flex-1"
         style={{ maxHeight: 'calc(100vh - 380px)' }}
       >
-        <Table className="min-w-max w-max">
+        <Table className="min-w-max w-max" disableOverflow>
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
