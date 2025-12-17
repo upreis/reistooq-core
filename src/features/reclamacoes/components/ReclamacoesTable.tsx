@@ -107,28 +107,38 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   }, []);
 
   // 🔄 Listener NATIVO para sync horizontal direto via ref (zero delay)
-  useEffect(() => {
+  // Importante: precisa re-registrar quando saímos do loading/empty state,
+  // pois no mount inicial os refs ainda podem estar null.
+  useLayoutEffect(() => {
+    if (isLoading || error) return;
+
     const bodyEl = bodyScrollerRef.current;
     const headerInner = headerInnerRef.current;
     if (!bodyEl || !headerInner) return;
 
     let raf = 0;
+    const applyTransform = () => {
+      headerInner.style.transform = `translate3d(${-bodyEl.scrollLeft}px, 0, 0)`;
+    };
+
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        headerInner.style.transform = `translate3d(${-bodyEl.scrollLeft}px, 0, 0)`;
+        // DEBUG temporário: confirmar que o scroller real está variando
+        console.log('scrolling', bodyEl.scrollLeft);
+        applyTransform();
       });
     };
 
     bodyEl.addEventListener('scroll', onScroll, { passive: true });
-    // Inicializa
-    headerInner.style.transform = `translate3d(${-bodyEl.scrollLeft}px, 0, 0)`;
+    // Inicializa imediatamente
+    applyTransform();
 
     return () => {
       cancelAnimationFrame(raf);
       bodyEl.removeEventListener('scroll', onScroll);
     };
-  }, []);
+  }, [isLoading, error, reclamacoes.length, columns.length]);
 
   if (isLoading) {
     return (
