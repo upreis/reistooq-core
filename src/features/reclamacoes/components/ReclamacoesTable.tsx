@@ -1,9 +1,9 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
- * 🎯 Header fixo + body scrollável com sync horizontal
+ * 🎯 Tabela única com sticky header nativo (zero JS sync)
  */
 
-import { useState, useMemo, memo, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -48,13 +48,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 📌 Refs para sincronização de scroll horizontal (sem state para zero delay)
-  const bodyScrollerRef = useRef<HTMLDivElement | null>(null);
-  const headerInnerRef = useRef<HTMLDivElement | null>(null);
-  
-  // 📌 Compensação do scrollbar vertical para alinhar header com body
-  const [scrollbarW, setScrollbarW] = useState(0);
-  
   // ⚡ Filtrar colunas conforme visibilidade
   const columns = useMemo(() => {
     const allColumns = reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab);
@@ -98,48 +91,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 📏 Calcular largura do scrollbar vertical para compensação
-  useLayoutEffect(() => {
-    const el = bodyScrollerRef.current;
-    if (!el) return;
-    const w = el.offsetWidth - el.clientWidth;
-    setScrollbarW(w);
-  }, []);
-
-  // 🔄 Listener NATIVO para sync horizontal direto via ref (zero delay)
-  // Importante: precisa re-registrar quando saímos do loading/empty state,
-  // pois no mount inicial os refs ainda podem estar null.
-  useLayoutEffect(() => {
-    if (isLoading || error) return;
-
-    const bodyEl = bodyScrollerRef.current;
-    const headerInner = headerInnerRef.current;
-    if (!bodyEl || !headerInner) return;
-
-    let raf = 0;
-    const applyTransform = () => {
-      headerInner.style.transform = `translate3d(${-bodyEl.scrollLeft}px, 0, 0)`;
-    };
-
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        // DEBUG temporário: confirmar que o scroller real está variando
-        console.log('scrolling', bodyEl.scrollLeft);
-        applyTransform();
-      });
-    };
-
-    bodyEl.addEventListener('scroll', onScroll, { passive: true });
-    // Inicializa imediatamente
-    applyTransform();
-
-    return () => {
-      cancelAnimationFrame(raf);
-      bodyEl.removeEventListener('scroll', onScroll);
-    };
-  }, [isLoading, error, reclamacoes.length, columns.length]);
-
   if (isLoading) {
     return (
       <div className="p-12 text-center space-y-4">
@@ -174,54 +125,41 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full flex flex-col border rounded-md">
-      {/* 📌 HEADER FIXO - overflow-hidden, move via translate3d via ref direto */}
+      {/* 📌 WRAPPER ÚNICO COM SCROLL - header sticky nativo */}
       <div 
-        className="overflow-hidden flex-shrink-0"
-        style={{ paddingRight: scrollbarW }}
-      >
-        <div 
-          ref={headerInnerRef}
-          className="min-w-max w-max"
-          style={{ willChange: 'transform' }}
-        >
-          <Table className="min-w-max w-max" disableOverflow>
-            <TableHeader className="bg-background">
-              {headerGroups.map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
-                  {headerGroup.headers.map((header) => {
-                    const meta = header.column.columnDef.meta as any;
-                    return (
-                      <TableHead
-                        key={header.id}
-                        className={`bg-background ${meta?.headerClassName || ''}`}
-                        style={{
-                          width: header.getSize() !== 150 ? header.getSize() : undefined,
-                          minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
-                        }}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-          </Table>
-        </div>
-      </div>
-
-      {/* 📌 BODY SCROLLÁVEL - ÚNICO elemento com scroll horizontal/vertical */}
-      <div 
-        ref={bodyScrollerRef}
-        className="overflow-auto flex-1"
+        className="overflow-auto"
         style={{ maxHeight: 'calc(100vh - 380px)' }}
       >
         <Table className="min-w-max w-max" disableOverflow>
+          {/* 📌 HEADER STICKY - position: sticky top-0 */}
+          <TableHeader className="sticky top-0 z-20 bg-background">
+            {headerGroups.map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as any;
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className={`bg-background ${meta?.headerClassName || ''}`}
+                      style={{
+                        width: header.getSize() !== 150 ? header.getSize() : undefined,
+                        minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
+                      }}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+
+          {/* 📌 BODY - mesma tabela, scroll natural */}
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
