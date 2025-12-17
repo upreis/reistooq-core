@@ -124,62 +124,65 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const headerGroups = table.getHeaderGroups();
 
   return (
-    <div className="w-full flex flex-col border rounded-md">
-      {/* 📌 WRAPPER COM SCROLL - sticky funciona DENTRO deste container */}
-      <div className="overflow-auto max-h-[calc(100vh-200px)]">
-        <Table className="min-w-max w-max" disableOverflow>
-          {/* 📌 HEADER - sticky top-0 relativo ao wrapper scrollável */}
-          <TableHeader className="bg-background">
-            {headerGroups.map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
-                {headerGroup.headers.map((header) => {
-                  const meta = header.column.columnDef.meta as any;
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className={`sticky top-0 z-40 bg-background border-b ${meta?.headerClassName || ''}`}
-                      style={{
-                        width: header.getSize() !== 150 ? header.getSize() : undefined,
-                        minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
-                      }}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
+    <div className="w-full border rounded-md">
+      {/* 📌 WRAPPER NEUTRO - sem overflow vertical, scroll do WINDOW */}
+      <div className="w-full">
+        {/* 📌 SCROLL HORIZONTAL APENAS - não bloqueia sticky vertical */}
+        <div className="overflow-x-auto">
+          <Table className="min-w-max w-max" disableOverflow>
+            {/* 📌 HEADER - sticky relativo ao VIEWPORT (window scroll) */}
+            <TableHeader className="bg-background">
+              {headerGroups.map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                  {headerGroup.headers.map((header) => {
+                    const meta = header.column.columnDef.meta as any;
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className={`!sticky !top-[56px] z-50 bg-background border-b shadow-sm ${meta?.headerClassName || ''}`}
+                        style={{
+                          width: header.getSize() !== 150 ? header.getSize() : undefined,
+                          minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
+                        }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
 
-          {/* 📌 BODY - mesma tabela, scroll natural */}
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => {
-                const cells = row.getAllCells();
-                return (
-                  <TableRow key={row.id} className="hover:bg-muted/50">
-                    {cells.map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
-                  {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            {/* 📌 BODY - mesma tabela, scroll do WINDOW */}
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => {
+                  const cells = row.getAllCells();
+                  return (
+                    <TableRow key={row.id} className="hover:bg-muted/50">
+                      {cells.map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
+                    {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Modal de Mensagens */}
