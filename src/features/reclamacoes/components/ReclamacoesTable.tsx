@@ -128,8 +128,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       {/* 📌 WRAPPER COM SCROLL HORIZONTAL APENAS - scroll vertical é do window */}
       <div className="overflow-x-auto overflow-y-visible">
         <Table className="min-w-max w-max" disableOverflow>
-          {/* 📌 HEADER STICKY NO VIEWPORT - top-[64px] considera header global */}
-          <TableHeader className="sticky top-[64px] z-30 bg-background">
+          {/* 📌 HEADER STICKY NO VIEWPORT - top-[56px] = altura do Header (h-14) */}
+          <TableHeader className="sticky top-[56px] z-30 bg-background">
             {headerGroups.map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                 {headerGroup.headers.map((header) => {
