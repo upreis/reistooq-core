@@ -3,7 +3,7 @@
  * 🎯 Header fixo + body scrollável com sync horizontal
  */
 
-import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -48,9 +48,12 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>();
   
-  // 📌 Refs e state para sincronização de scroll horizontal
+  // 📌 Refs para sincronização de scroll horizontal (sem state para zero delay)
   const bodyScrollerRef = useRef<HTMLDivElement | null>(null);
-  const [scrollLeft, setScrollLeft] = useState(0);
+  const headerInnerRef = useRef<HTMLDivElement | null>(null);
+  
+  // 📌 Compensação do scrollbar vertical para alinhar header com body
+  const [scrollbarW, setScrollbarW] = useState(0);
   
   // ⚡ Filtrar colunas conforme visibilidade
   const columns = useMemo(() => {
@@ -95,27 +98,35 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     }
   }, [table, onTableReady]);
 
-  // 🔄 Listener NATIVO no bodyScrollerRef para sync horizontal
-  useEffect(() => {
+  // 📏 Calcular largura do scrollbar vertical para compensação
+  useLayoutEffect(() => {
     const el = bodyScrollerRef.current;
     if (!el) return;
+    const w = el.offsetWidth - el.clientWidth;
+    setScrollbarW(w);
+  }, []);
+
+  // 🔄 Listener NATIVO para sync horizontal direto via ref (zero delay)
+  useEffect(() => {
+    const bodyEl = bodyScrollerRef.current;
+    const headerInner = headerInnerRef.current;
+    if (!bodyEl || !headerInner) return;
 
     let raf = 0;
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        console.log('scrollLeft', el.scrollLeft); // DEBUG - remover depois
-        setScrollLeft(el.scrollLeft);
+        headerInner.style.transform = `translate3d(${-bodyEl.scrollLeft}px, 0, 0)`;
       });
     };
 
-    el.addEventListener('scroll', onScroll, { passive: true });
-    // Inicializa o valor (caso já esteja deslocado)
-    setScrollLeft(el.scrollLeft);
+    bodyEl.addEventListener('scroll', onScroll, { passive: true });
+    // Inicializa
+    headerInner.style.transform = `translate3d(${-bodyEl.scrollLeft}px, 0, 0)`;
 
     return () => {
       cancelAnimationFrame(raf);
-      el.removeEventListener('scroll', onScroll);
+      bodyEl.removeEventListener('scroll', onScroll);
     };
   }, []);
 
@@ -153,14 +164,15 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full flex flex-col border rounded-md">
-      {/* 📌 HEADER FIXO - overflow-hidden, move via translate3d baseado em scrollLeft */}
-      <div className="overflow-hidden flex-shrink-0">
+      {/* 📌 HEADER FIXO - overflow-hidden, move via translate3d via ref direto */}
+      <div 
+        className="overflow-hidden flex-shrink-0"
+        style={{ paddingRight: scrollbarW }}
+      >
         <div 
+          ref={headerInnerRef}
           className="min-w-max w-max"
-          style={{ 
-            transform: `translate3d(${-scrollLeft}px, 0, 0)`,
-            willChange: 'transform' 
-          }}
+          style={{ willChange: 'transform' }}
         >
           <Table className="min-w-max w-max" disableOverflow>
             <TableHeader className="bg-background">
