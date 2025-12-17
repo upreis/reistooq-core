@@ -65,7 +65,7 @@ const InnerLayout = () => {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden">
+    <div className="min-h-screen w-full overflow-x-clip">
       {/* Mobile Header - Only show for pages that don't use MobileAppShell */}
       {isMobile && !usesMobileAppShell() && <AppMobileHeader title={getPageTitle()} />}
         
