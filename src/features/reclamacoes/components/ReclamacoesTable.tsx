@@ -125,10 +125,10 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="w-full flex flex-col border rounded-md">
-      {/* 📌 WRAPPER COM SCROLL HORIZONTAL APENAS - scroll vertical é do window */}
-      <div className="overflow-x-auto overflow-y-visible">
+      {/* 📌 WRAPPER COM SCROLL - sticky funciona DENTRO deste container */}
+      <div className="overflow-auto max-h-[calc(100vh-200px)]">
         <Table className="min-w-max w-max" disableOverflow>
-          {/* 📌 HEADER - sticky aplicado nos TH, não no THEAD */}
+          {/* 📌 HEADER - sticky top-0 relativo ao wrapper scrollável */}
           <TableHeader className="bg-background">
             {headerGroups.map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
@@ -137,7 +137,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
                   return (
                     <TableHead
                       key={header.id}
-                      className={`sticky top-[64px] z-40 bg-background border-b ${meta?.headerClassName || ''}`}
+                      className={`sticky top-0 z-40 bg-background border-b ${meta?.headerClassName || ''}`}
                       style={{
                         width: header.getSize() !== 150 ? header.getSize() : undefined,
                         minWidth: header.getSize() !== 150 ? header.getSize() : undefined,
