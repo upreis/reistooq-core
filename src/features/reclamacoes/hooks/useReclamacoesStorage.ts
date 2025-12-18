@@ -19,13 +19,10 @@ interface StorageData {
 
 export function useReclamacoesStorage() {
   const [dadosInMemory, setDadosInMemory] = useState<Record<string, any>>(() => {
-    // Carregar dados do localStorage na inicialização
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const data = JSON.parse(stored);
-        console.log('📦 Dados carregados do localStorage:', Object.keys(data).length, 'registros');
-        return data;
+        return JSON.parse(stored);
       }
     } catch (error) {
       console.error('Erro ao carregar dados do localStorage:', error);
@@ -68,7 +65,6 @@ export function useReclamacoesStorage() {
         // ⚠️ PROTEÇÃO: Verificar tamanho antes de salvar (limite ~5MB)
         const sizeInMB = new Blob([dataToStore]).size / (1024 * 1024);
         if (sizeInMB > 4.5) {
-          console.warn('⚠️ Dados muito grandes para localStorage (>4.5MB). Limpando dados antigos...');
           // Manter apenas os últimos 100 registros mais recentes
           const sortedEntries = Object.entries(dadosInMemory)
             .sort((a: any, b: any) => {
@@ -80,20 +76,15 @@ export function useReclamacoesStorage() {
           
           const reducedData = Object.fromEntries(sortedEntries);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(reducedData));
-          console.log('💾 Dados reduzidos salvos:', Object.keys(reducedData).length, 'registros');
         } else {
           localStorage.setItem(STORAGE_KEY, dataToStore);
           localStorage.setItem(TIMESTAMP_KEY, new Date().toISOString());
-          console.log('💾 Dados salvos no localStorage:', Object.keys(dadosInMemory).length, 'registros');
         }
       }
     } catch (error: any) {
-      // ⚠️ TRATAMENTO: QuotaExceededError
       if (error.name === 'QuotaExceededError') {
-        console.error('❌ localStorage cheio! Limpando dados antigos...');
         try {
           localStorage.removeItem(STORAGE_KEY);
-          // Salvar apenas os últimos 50 registros
           const sortedEntries = Object.entries(dadosInMemory)
             .sort((a: any, b: any) => {
               const dateA = new Date(a[1].last_updated || a[1].date_created);
@@ -105,7 +96,7 @@ export function useReclamacoesStorage() {
           const reducedData = Object.fromEntries(sortedEntries);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(reducedData));
         } catch (retryError) {
-          console.error('❌ Não foi possível salvar dados mesmo após limpeza:', retryError);
+          console.error('Não foi possível salvar dados mesmo após limpeza:', retryError);
         }
       } else {
         console.error('Erro ao salvar dados no localStorage:', error);
@@ -147,7 +138,6 @@ export function useReclamacoesStorage() {
           localStorage.removeItem(TIMESTAMP_KEY);
           setDadosInMemory({});
           setAnaliseStatus({});
-          console.log('🗑️ Dados antigos removidos (>7 dias)');
         }
       }
     } catch (error) {
@@ -164,7 +154,6 @@ export function useReclamacoesStorage() {
     setDadosInMemory({});
     setAnaliseStatus({});
     setAnotacoes({});
-    console.log('🗑️ Todos os dados foram limpos');
   }, []);
 
   // Remover uma reclamação específica
@@ -172,7 +161,6 @@ export function useReclamacoesStorage() {
     setDadosInMemory(prevData => {
       const newData = { ...prevData };
       delete newData[claimId];
-      console.log(`🗑️ Reclamação ${claimId} removida`);
       return newData;
     });
     
@@ -189,7 +177,6 @@ export function useReclamacoesStorage() {
       ...prevAnotacoes,
       [claimId]: anotacao
     }));
-    console.log(`📝 Anotação salva para ${claimId}`);
   }, []);
 
   return {
