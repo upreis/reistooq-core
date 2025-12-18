@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell, Trash2 } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell, Trash2, Link as LinkIcon } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ interface HierarchicalEstoqueTableProps {
   onEditParentProduct?: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
   onDeleteSelected?: () => void;
+  onLinkChild?: () => void;
   onStockMovement: (productId: string, type: 'entrada' | 'saida', quantity: number, reason?: string) => void;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
@@ -241,6 +242,17 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                   Recolher Todos
                 </Button>
               </>
+            )}
+            
+            {props.selectedProducts.length > 0 && props.onLinkChild && (
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={props.onLinkChild}
+              >
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Gerenciar Vinculação
+              </Button>
             )}
             
             {props.selectedProducts.length > 0 && props.onDeleteSelected && (
