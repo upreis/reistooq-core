@@ -4,7 +4,6 @@ import { SkuMapList } from "./SkuMapList";
 import { SkuMapFilters } from "./SkuMapFilters";
 import { SkuMapActions } from "./SkuMapActions";
 import { SkuMapForm } from "./SkuMapForm";
-import { SkuMapStats } from "./SkuMapStats";
 import { SkuMapHistory } from "./SkuMapHistory";
 import { SavedFiltersManager } from "./SavedFiltersManager";
 import { BulkEditModal } from "./BulkEditModal";
@@ -22,17 +21,6 @@ import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 export function SkuMapPage() {
   const { filters, updateFilters, resetFilters } = useSkuFilters();
 
-  const handleStatsFilterClick = (filterType: 'all' | 'ativos' | 'pendentes' | 'completos') => {
-    if (filterType === 'all') {
-      updateFilters({ status: "todos", preenchimento: "todos" });
-    } else if (filterType === 'ativos') {
-      updateFilters({ status: 'ativos', preenchimento: "todos" });
-    } else if (filterType === 'pendentes') {
-      updateFilters({ status: "todos", preenchimento: 'pendentes' });
-    } else if (filterType === 'completos') {
-      updateFilters({ status: "todos", preenchimento: 'completos' });
-    }
-  };
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showImportWizard, setShowImportWizard] = useState(false);
@@ -95,9 +83,6 @@ export function SkuMapPage() {
           </Button>
         </div>
       </div>
-
-      {/* Stats */}
-      <SkuMapStats onFilterClick={undefined} />
 
       {/* Filters */}
       <SkuMapFilters
@@ -180,9 +165,6 @@ export function SkuMapPage() {
           Novo
         </Button>
       </div>
-
-      {/* Stats */}
-      <SkuMapStats onFilterClick={handleStatsFilterClick} />
 
       {/* Bulk Actions */}
       {selectedItems.length > 0 && (
