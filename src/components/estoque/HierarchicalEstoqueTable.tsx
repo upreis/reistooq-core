@@ -16,49 +16,7 @@ import { EstoqueTable } from "./EstoqueTable";
 import { Product } from "@/hooks/useProducts";
 import { SkuGroup, groupProductsBySku } from "@/utils/skuGrouping";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-// Componente de imagem com fallback
-function ProductImage({ 
-  parentImage, 
-  childrenImages, 
-  alt 
-}: { 
-  parentImage?: string; 
-  childrenImages?: string[]; 
-  alt: string;
-}) {
-  const [imageError, setImageError] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  const allImages = [parentImage, ...(childrenImages || [])].filter(Boolean) as string[];
-  const currentImage = allImages[currentImageIndex];
-  
-  const handleError = () => {
-    // Tentar próxima imagem disponível
-    if (currentImageIndex < allImages.length - 1) {
-      setCurrentImageIndex(prev => prev + 1);
-    } else {
-      setImageError(true);
-    }
-  };
-  
-  if (!currentImage || imageError) {
-    return (
-      <div className="w-12 h-12 flex items-center justify-center bg-muted rounded-md border border-border">
-        <Box className="w-6 h-6 text-muted-foreground" />
-      </div>
-    );
-  }
-  
-  return (
-    <img 
-      src={currentImage} 
-      alt={alt}
-      className="w-12 h-12 object-cover rounded-md border border-border"
-      onError={handleError}
-    />
-  );
-}
+import { HoverableProductImage } from "./HoverableProductImage";
 
 interface HierarchicalEstoqueTableProps {
   products: Product[];
@@ -366,12 +324,13 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       </Button>
                     </CollapsibleTrigger>
                     
-                    {/* Imagem do produto pai ou primeiro filho */}
+                    {/* Imagem do produto pai ou primeiro filho com hover preview */}
                     {!isMobile && (
-                      <ProductImage 
-                        parentImage={group.parentProduct?.url_imagem}
-                        childrenImages={group.children?.map(c => c.url_imagem).filter(Boolean) as string[]}
+                      <HoverableProductImage 
+                        src={group.parentProduct?.url_imagem}
+                        fallbackImages={group.children?.map(c => c.url_imagem).filter(Boolean) as string[]}
                         alt={group.parentProduct?.nome || group.parentSku}
+                        size="lg"
                       />
                     )}
                     
