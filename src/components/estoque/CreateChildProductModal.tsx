@@ -53,6 +53,16 @@ interface VariationForm {
   descricao: string;
   imagem: File | null;
   url_imagem: string;
+  // Novos campos
+  material: string;
+  cor: string;
+  observacoes: string;
+  pcs_ctn: number;
+  peso_unitario_g: number;
+  peso_cx_master_kg: number;
+  imagem_fornecedor: string;
+  package: string;
+  unit: string;
 }
 
 interface CreateChildProductModalProps {
@@ -106,6 +116,15 @@ export function CreateChildProductModal({
       descricao: '',
       imagem: null,
       url_imagem: '',
+      material: '',
+      cor: '',
+      observacoes: '',
+      pcs_ctn: 0,
+      peso_unitario_g: 0,
+      peso_cx_master_kg: 0,
+      imagem_fornecedor: '',
+      package: '',
+      unit: '',
     }
   ]);
   const [isCreating, setIsCreating] = useState(false);
@@ -174,6 +193,15 @@ export function CreateChildProductModal({
         descricao: '',
         imagem: null,
         url_imagem: '',
+        material: '',
+        cor: '',
+        observacoes: '',
+        pcs_ctn: 0,
+        peso_unitario_g: 0,
+        peso_cx_master_kg: 0,
+        imagem_fornecedor: '',
+        package: '',
+        unit: '',
       }]);
     }
   }, [open]);
@@ -216,6 +244,15 @@ export function CreateChildProductModal({
       descricao: '',
       imagem: null,
       url_imagem: '',
+      material: '',
+      cor: '',
+      observacoes: '',
+      pcs_ctn: 0,
+      peso_unitario_g: 0,
+      peso_cx_master_kg: 0,
+      imagem_fornecedor: '',
+      package: '',
+      unit: '',
     }]);
   };
 
@@ -317,6 +354,16 @@ export function CreateChildProductModal({
           ncm: variation.ncm || null,
           codigo_cest: variation.codigo_cest || null,
           origem: variation.origem || null,
+          // Novos campos
+          material: variation.material || null,
+          cor: variation.cor || null,
+          observacoes: variation.observacoes || null,
+          pcs_ctn: variation.pcs_ctn || null,
+          peso_unitario_g: variation.peso_unitario_g || null,
+          peso_cx_master_kg: variation.peso_cx_master_kg || null,
+          url_imagem_fornecedor: variation.imagem_fornecedor || null,
+          package: variation.package || null,
+          unidade: variation.unit || null,
         });
       }
 
@@ -370,6 +417,15 @@ export function CreateChildProductModal({
       descricao: '',
       imagem: null,
       url_imagem: '',
+      material: '',
+      cor: '',
+      observacoes: '',
+      pcs_ctn: 0,
+      peso_unitario_g: 0,
+      peso_cx_master_kg: 0,
+      imagem_fornecedor: '',
+      package: '',
+      unit: '',
     }]);
     onOpenChange(false);
   };
@@ -551,6 +607,42 @@ export function CreateChildProductModal({
                   </div>
                 </div>
 
+                {/* Material, Cor, Package, Unit */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>Material</Label>
+                    <Input
+                      placeholder="Material do produto"
+                      value={variation.material}
+                      onChange={(e) => handleVariationChange(index, 'material', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cor</Label>
+                    <Input
+                      placeholder="Cor do produto"
+                      value={variation.cor}
+                      onChange={(e) => handleVariationChange(index, 'cor', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Package</Label>
+                    <Input
+                      placeholder="Embalagem"
+                      value={variation.package}
+                      onChange={(e) => handleVariationChange(index, 'package', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Unidade (Unit)</Label>
+                    <Input
+                      placeholder="Unidade"
+                      value={variation.unit}
+                      onChange={(e) => handleVariationChange(index, 'unit', e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 {/* Estoque Mínimo e Máximo */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -598,6 +690,40 @@ export function CreateChildProductModal({
                       value={variation.preco_venda || ''}
                       onChange={(e) => handleVariationChange(index, 'preco_venda', parseFloat(e.target.value) || 0)}
                     />
+                  </div>
+                </div>
+
+                {/* PCS/CTN e Campos Calculados */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>PCS/CTN</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={variation.pcs_ctn || ''}
+                      onChange={(e) => handleVariationChange(index, 'pcs_ctn', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Quantidade Total (Calculado)</Label>
+                    <Input
+                      type="number"
+                      disabled
+                      value={(variation.pcs_ctn || 0) * (variation.quantity || 0)}
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">PCS/CTN × Quantidade</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Valor Total (Calculado)</Label>
+                    <Input
+                      type="text"
+                      disabled
+                      value={((variation.preco_venda || 0) * (variation.pcs_ctn || 0) * (variation.quantity || 0)).toFixed(2)}
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">Preço × Quantidade Total</p>
                   </div>
                 </div>
 
@@ -688,6 +814,30 @@ export function CreateChildProductModal({
                         placeholder="0.0"
                         value={variation.peso_bruto || ''}
                         onChange={(e) => handleVariationChange(index, 'peso_bruto', parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Peso Unitário (g)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0"
+                        value={variation.peso_unitario_g || ''}
+                        onChange={(e) => handleVariationChange(index, 'peso_unitario_g', parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Peso Cx Master (Kg)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0"
+                        value={variation.peso_cx_master_kg || ''}
+                        onChange={(e) => handleVariationChange(index, 'peso_cx_master_kg', parseFloat(e.target.value) || 0)}
                       />
                     </div>
                   </div>
@@ -821,20 +971,48 @@ export function CreateChildProductModal({
                   </div>
                 </div>
 
-                {/* Descrição */}
-                <div className="space-y-2 pt-4 border-t">
-                  <Label>Descrição</Label>
-                  <Textarea
-                    placeholder="Descrição detalhada do produto..."
-                    value={variation.descricao}
-                    onChange={(e) => handleVariationChange(index, 'descricao', e.target.value)}
-                    rows={4}
-                  />
+                {/* Descrição e Observações */}
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label>Descrição</Label>
+                    <Textarea
+                      placeholder="Descrição detalhada do produto..."
+                      value={variation.descricao}
+                      onChange={(e) => handleVariationChange(index, 'descricao', e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Observações</Label>
+                    <Textarea
+                      placeholder="Observações adicionais..."
+                      value={variation.observacoes}
+                      onChange={(e) => handleVariationChange(index, 'observacoes', e.target.value)}
+                      rows={2}
+                    />
+                  </div>
                 </div>
 
-                {/* Imagem do Produto */}
-                <div className="space-y-2 pt-4 border-t">
-                  <Label>Imagem do Produto</Label>
+                {/* Imagens do Produto */}
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>URL da Imagem</Label>
+                      <Input
+                        placeholder="https://exemplo.com/imagem.jpg"
+                        value={variation.url_imagem}
+                        onChange={(e) => handleVariationChange(index, 'url_imagem', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Imagem do Fornecedor</Label>
+                      <Input
+                        placeholder="https://exemplo.com/imagem-fornecedor.jpg"
+                        value={variation.imagem_fornecedor}
+                        onChange={(e) => handleVariationChange(index, 'imagem_fornecedor', e.target.value)}
+                      />
+                    </div>
+                  </div>
                   <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
                     <input
                       type="file"
@@ -859,7 +1037,7 @@ export function CreateChildProductModal({
                     <label htmlFor={`image-upload-${index}`} className="cursor-pointer">
                       <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground">
-                        {variation.imagem ? variation.imagem.name : 'Clique para selecionar uma imagem'}
+                        {variation.imagem ? variation.imagem.name : 'Upload de Imagens - Clique para selecionar'}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         PNG, JPG, GIF até 5MB
