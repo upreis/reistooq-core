@@ -38,6 +38,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         ]
       },
       {
+        id: 'ecommerce-app',
+        label: 'Cadastros',
+        icon: 'ShoppingCart',
+        path: '/apps/ecommerce/shop'
+      },
+      {
         id: 'oms',
         label: 'Vendas',
         icon: 'TrendingUp',
@@ -135,12 +141,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Clock'
           }
         ]
-      },
-      {
-        id: 'ecommerce-app',
-        label: 'Cadastros',
-        icon: 'ShoppingCart',
-        path: '/apps/ecommerce/shop'
       },
       
       // FERRAMENTAS E APLICATIVOS
