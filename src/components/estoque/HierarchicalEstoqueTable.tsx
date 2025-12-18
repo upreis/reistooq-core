@@ -245,7 +245,10 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 {props.isToolbarExpanded ? (
                   <ChevronUp className="h-4 w-4" />
                 ) : (
-                  <ChevronDownIcon className="h-4 w-4" />
+                  <>
+                    <ChevronDownIcon className="h-4 w-4 mr-1" />
+                    <span>Filtros</span>
+                  </>
                 )}
               </Button>
             )}
