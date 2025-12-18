@@ -98,27 +98,6 @@ export function EstoqueActionButtons({
     <>
       {!isMobile && (
         <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
-          {/* Campo de busca */}
-          <div className="relative flex-1 min-w-[350px] max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input 
-              placeholder="Buscar por nome, SKU, código de barras..." 
-              className="pl-10 h-11" 
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              onKeyPress={handleKeyPress}
-            />
-            {searchTerm && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                onClick={() => onSearchChange("")}
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            )}
-          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
