@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EstoqueTable } from "./EstoqueTable";
 import { Product } from "@/hooks/useProducts";
@@ -36,6 +41,9 @@ interface HierarchicalEstoqueTableProps {
   onCreateChild?: () => void;
   isToolbarExpanded?: boolean;
   onToggleToolbar?: () => void;
+  notificationsCollapsed?: boolean;
+  onToggleNotifications?: (collapsed: boolean) => void;
+  notificationsCount?: number;
 }
 
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
@@ -237,21 +245,63 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           
           <div className="flex items-center gap-2">
             {props.onToggleToolbar && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={props.onToggleToolbar}
-                title={props.isToolbarExpanded ? "Minimizar barra de ações" : "Expandir barra de ações"}
-              >
-                {props.isToolbarExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="relative"
+                  >
+                    {props.notificationsCount && props.notificationsCount > 0 && props.notificationsCollapsed && (
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                      </span>
+                    )}
                     <ChevronDownIcon className="h-4 w-4 mr-1" />
                     <span>Filtros</span>
-                  </>
-                )}
-              </Button>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-56 p-2">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="justify-start"
+                      onClick={props.onToggleToolbar}
+                    >
+                      {props.isToolbarExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4 mr-2" />
+                          Ocultar Filtros
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDownIcon className="h-4 w-4 mr-2" />
+                          Mostrar Filtros
+                        </>
+                      )}
+                    </Button>
+                    
+                    {props.onToggleNotifications && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="justify-start relative"
+                        onClick={() => props.onToggleNotifications?.(!props.notificationsCollapsed)}
+                      >
+                        <Bell className="h-4 w-4 mr-2" />
+                        {props.notificationsCollapsed ? 'Mostrar Notificações' : 'Ocultar Notificações'}
+                        {props.notificationsCount && props.notificationsCount > 0 && props.notificationsCollapsed && (
+                          <Badge variant="destructive" className="ml-2 animate-pulse text-xs h-5">
+                            {props.notificationsCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
             
             {props.onCreateParent && props.onCreateChild && (
