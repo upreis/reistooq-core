@@ -116,44 +116,56 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
 
   return (
     <div className="space-y-8">
-      {/* Botões de ação - visível sempre */}
+      {/* Barra de busca + botões de ação na mesma linha */}
       <div className="flex items-center gap-3 flex-wrap">
+        {/* Campo de busca */}
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar insumos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-9"
+          />
+        </div>
+
+        {/* Botões de ação */}
         {!isSelectMode ? (
           <>
-            <Button onClick={handleCreate} className="gap-2">
-              <Plus className="w-4 h-4" />
+            <Button onClick={handleCreate} className="gap-1.5 h-9 text-sm">
+              <Plus className="w-3.5 h-3.5" />
               Nova Composição
             </Button>
             <Button
               variant="outline"
               onClick={() => toast.info('Importar do Estoque - Em breve')}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <Import className="w-4 h-4" />
+              <Import className="w-3.5 h-3.5" />
               Importar do Estoque
             </Button>
             <Button
               variant="outline"
               onClick={() => toast.info('Importar Excel - Em breve')}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="w-3.5 h-3.5" />
               Importar Excel
             </Button>
             <Button
               variant="outline"
               onClick={() => toast.info('Baixar Dados - Em breve')}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               Baixar Dados
             </Button>
             <Button
               variant="outline"
               onClick={toggleSelectMode}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3.5 h-3.5" />
               Selecionar
             </Button>
           </>
@@ -166,9 +178,9 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
               variant="outline"
               size="sm"
               onClick={() => selectAll(insumosEnriquecidos)}
-              className="gap-2"
+              className="gap-1.5 h-9"
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3.5 h-3.5" />
               Selecionar Todos
             </Button>
             <AlertDialog>
@@ -177,9 +189,9 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
                   variant="destructive"
                   size="sm"
                   disabled={selectedCount === 0}
-                  className="gap-2"
+                  className="gap-1.5 h-9"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                   Excluir ({selectedCount})
                 </Button>
               </AlertDialogTrigger>
@@ -203,9 +215,9 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
               variant="outline"
               size="sm"
               onClick={toggleSelectMode}
-              className="gap-2"
+              className="gap-1.5 h-9"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
               Cancelar
             </Button>
           </>
@@ -238,40 +250,22 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
 
       {/* Layout principal */}
       <div className="flex-1 min-w-0 space-y-6">
-        {/* Seção de busca */}
-        <div className="space-y-4">
-          {/* Info Box */}
-          <div className="p-4 border rounded-lg bg-blue-500/10 border-blue-500/20">
-            <div className="text-sm space-y-2">
-              <p>
-                <strong>💡 Como funciona:</strong>
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                <li>
-                  <strong>Composições de Produtos:</strong> Componentes multiplicados pela quantidade 
-                  (ex: 3 produtos = 3x cada componente)
-                </li>
-                <li>
-                  <strong>Composições de Insumos:</strong> Sempre 1 unidade por pedido 
-                  (ex: 3 produtos do mesmo comprador = 1 etiqueta, 1 embalagem)
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Busca */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar insumos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-10"
-                />
-              </div>
-            </div>
+        {/* Info Box - Como funciona */}
+        <div className="p-4 border rounded-lg bg-blue-500/10 border-blue-500/20">
+          <div className="text-sm space-y-2">
+            <p>
+              <strong>💡 Como funciona:</strong>
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+              <li>
+                <strong>Composições de Produtos:</strong> Componentes multiplicados pela quantidade 
+                (ex: 3 produtos = 3x cada componente)
+              </li>
+              <li>
+                <strong>Composições de Insumos:</strong> Sempre 1 unidade por pedido 
+                (ex: 3 produtos do mesmo comprador = 1 etiqueta, 1 embalagem)
+              </li>
+            </ul>
           </div>
         </div>
 
