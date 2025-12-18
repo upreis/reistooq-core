@@ -98,26 +98,6 @@ export function EstoqueActionButtons({
     <>
       {!isMobile && (
         <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="default" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Produto
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={onCreateParent}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Produto Pai
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onCreateChild}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Produto Filho
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {selectedProducts.length > 0 && (
             <>
               <Button 
