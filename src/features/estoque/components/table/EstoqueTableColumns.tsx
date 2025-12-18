@@ -3,10 +3,10 @@
  * Configurações centralizadas das colunas da tabela
  */
 
-import { ImageOff } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { ProductTypeBadges, StatusBadges, ActiveStatusBadge, OnDemandBadge } from "./EstoqueTableBadges";
 import { formatPrice, formatDimensions } from "../../utils/stockFormatters";
+import { HoverableProductImage } from "@/components/estoque/HoverableProductImage";
 
 export interface ColumnDefinition {
   key: string;
@@ -44,23 +44,12 @@ export function getEstoqueTableColumns({
         
         return (
           <div className="flex items-center gap-3">
-            {/* Thumbnail do produto - maior */}
-            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
-              <div className="absolute inset-0 grid place-items-center">
-                <ImageOff className="h-5 w-5 text-muted-foreground" />
-              </div>
-              {product.url_imagem ? (
-                <img
-                  src={product.url_imagem}
-                  alt={product.nome || product.sku_interno}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : null}
-            </div>
+            {/* Thumbnail do produto com hover preview */}
+            <HoverableProductImage
+              src={product.url_imagem}
+              alt={product.nome || product.sku_interno}
+              size="md"
+            />
 
             {/* Info do SKU e badges */}
             <div className="flex flex-col gap-1">
