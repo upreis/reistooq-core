@@ -27,7 +27,7 @@ export default function ControleEstoquePage() {
   const [transferenciaModalOpen, setTransferenciaModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingParentProduct, setEditingParentProduct] = useState<Product | null>(null);
-  const [isToolbarExpanded, setIsToolbarExpanded] = useState(true);
+  const [isToolbarExpanded, setIsToolbarExpanded] = useState(false);
   const [notificationsCollapsed, setNotificationsCollapsed] = useState(true);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("list");
