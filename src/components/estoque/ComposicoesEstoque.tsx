@@ -693,13 +693,24 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Botões de ação - igual ao InsumosPage */}
+      {/* Barra de busca + botões de ação na mesma linha */}
       <div className="flex items-center gap-3 flex-wrap">
+        {/* Campo de busca */}
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produtos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-9"
+          />
+        </div>
+
+        {/* Botões de ação */}
         {!isSelectMode ? (
           <>
             <Button
               onClick={async () => {
-                // Criar um produto de composição básico primeiro
                 try {
                   const novoProduto = await createProdutoAsync({
                     sku_interno: `COMP-${Date.now()}`,
@@ -719,33 +730,33 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                   console.error('Erro ao criar composição:', error);
                 }
               }}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               Nova Composição
             </Button>
             <Button
               variant="outline"
               onClick={() => setImportProdutosModalOpen(true)}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <Import className="w-4 h-4" />
+              <Import className="w-3.5 h-3.5" />
               Importar do Estoque
             </Button>
             <Button
               variant="outline"
               onClick={() => setImportModalOpen(true)}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="w-3.5 h-3.5" />
               Importar Excel
             </Button>
             <Button
               variant="outline"
               onClick={handleDownloadComposicoes}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               Baixar Dados
             </Button>
             <Tooltip>
@@ -753,9 +764,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                 <Button
                   variant="outline"
                   onClick={limparComposicoesOrfas}
-                  className="gap-2 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  className="gap-1.5 h-9 text-sm border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                   Limpar Órfãs
                 </Button>
               </TooltipTrigger>
@@ -766,9 +777,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
             <Button
               variant="outline"
               onClick={toggleSelectMode}
-              className="gap-2"
+              className="gap-1.5 h-9 text-sm"
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3.5 h-3.5" />
               Selecionar
             </Button>
           </>
@@ -781,9 +792,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
               variant="outline"
               size="sm"
               onClick={() => selectAll(produtosFinaisFiltrados)}
-              className="gap-2"
+              className="gap-1.5 h-9"
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3.5 h-3.5" />
               Selecionar Todos
             </Button>
             <Button
@@ -791,9 +802,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
               size="sm"
               onClick={() => handleBulkStatusChange(true)}
               disabled={selectedCount === 0}
-              className="gap-2 border-green-500 text-green-600 hover:bg-green-50"
+              className="gap-1.5 h-9 border-green-500 text-green-600 hover:bg-green-50"
             >
-              <Package className="w-4 h-4" />
+              <Package className="w-3.5 h-3.5" />
               Ativar ({selectedCount})
             </Button>
             <Button
@@ -801,9 +812,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
               size="sm"
               onClick={() => handleBulkStatusChange(false)}
               disabled={selectedCount === 0}
-              className="gap-2 border-orange-500 text-orange-600 hover:bg-orange-50"
+              className="gap-1.5 h-9 border-orange-500 text-orange-600 hover:bg-orange-50"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
               Desativar ({selectedCount})
             </Button>
             <AlertDialog>
@@ -812,9 +823,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                   variant="destructive"
                   size="sm"
                   disabled={selectedCount === 0}
-                  className="gap-2"
+                  className="gap-1.5 h-9"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                   Excluir ({selectedCount})
                 </Button>
               </AlertDialogTrigger>
@@ -838,9 +849,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
               variant="outline"
               size="sm"
               onClick={toggleSelectMode}
-              className="gap-2"
+              className="gap-1.5 h-9"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
               Cancelar
             </Button>
           </>
@@ -849,29 +860,6 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
 
       {/* Layout principal */}
       <div className="space-y-6">
-          {/* Seção de busca */}
-          <div className="space-y-4">
-
-            {/* Busca e Filtros Mobile/Desktop */}
-            <div>
-            <div className="flex gap-2">
-              {/* Campo de busca - ocupa maior parte da largura */}
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar produtos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-10"
-                  />
-                </div>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-          {/* Fim da seção consolidada de filtros */}
 
           {/* Grid de produtos com melhor espaçamento - lista completa no mobile */}
           {isLoading ? (
