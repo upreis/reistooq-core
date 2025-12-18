@@ -7,9 +7,10 @@
 import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { subDays, startOfDay, endOfDay, format, parseISO, isValid } from 'date-fns';
+import { STORAGE_KEYS } from '../constants/storage-keys';
 
 const isDev = import.meta.env.DEV;
-const STORAGE_KEY = 'reclamacoes_filters_v3';
+const STORAGE_KEY = STORAGE_KEYS.FILTERS;
 const DEFAULT_ITEMS_PER_PAGE = 50;
 
 export interface ReclamacoesFilters {

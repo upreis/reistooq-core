@@ -5,11 +5,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
+import { STORAGE_KEYS } from '../constants/storage-keys';
 
-const STORAGE_KEY = 'reclamacoes-data';
-const ANALISE_STORAGE_KEY = 'reclamacoes-analise-status';
-const ANOTACOES_STORAGE_KEY = 'reclamacoes-anotacoes';
-const TIMESTAMP_KEY = 'reclamacoes-last-update';
+const STORAGE_KEY = STORAGE_KEYS.DATA;
+const ANALISE_STORAGE_KEY = STORAGE_KEYS.ANALISE_STATUS;
+const ANOTACOES_STORAGE_KEY = STORAGE_KEYS.ANOTACOES;
+const TIMESTAMP_KEY = STORAGE_KEYS.LAST_UPDATE;
 
 interface StorageData {
   dadosInMemory: Record<string, any>;

@@ -3,9 +3,11 @@
  * Sistema de gerenciamento de visibilidade de colunas
  */
 
-// 📦 STORAGE CONSTANTS
-export const RECLAMACOES_COLUMN_STORAGE_KEY = 'reclamacoes_column_preferences';
-export const RECLAMACOES_COLUMN_STORAGE_VERSION = 1;
+import { STORAGE_KEYS, STORAGE_VERSIONS } from '../constants/storage-keys';
+
+// 📦 STORAGE CONSTANTS - Usando constantes centralizadas
+export const RECLAMACOES_COLUMN_STORAGE_KEY = STORAGE_KEYS.COLUMN_PREFERENCES;
+export const RECLAMACOES_COLUMN_STORAGE_VERSION = STORAGE_VERSIONS.COLUMN_PREFERENCES;
 
 export type ColumnCategory = 
   | 'essential'    // Colunas essenciais (sempre importantes)
