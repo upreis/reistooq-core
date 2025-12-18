@@ -247,8 +247,20 @@ export default function ControleEstoquePage() {
             products={paginatedProducts}
             selectedProducts={selectedProducts}
             onSelectProduct={handleSelectProduct}
+            onSelectAll={(selected) => handleSelectAll(selected, paginatedProducts, setSelectedProducts)}
             onEditProduct={handleEditProduct}
+            onDeleteSelected={handleDeleteSelected}
+            onLinkChild={() => setLinkChildModalOpen(true)}
+            onCreateParent={() => setParentProductModalOpen(true)}
+            onCreateChild={() => setChildProductModalOpen(true)}
             searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            totalProducts={finalFilteredProducts.length}
+            isToolbarExpanded={isToolbarExpanded}
+            onToggleToolbar={() => setIsToolbarExpanded(!isToolbarExpanded)}
+            notificationsCollapsed={notificationsCollapsed}
+            onToggleNotifications={setNotificationsCollapsed}
+            notificationsCount={notificationsCount}
           />
         </div>
       ) : (
