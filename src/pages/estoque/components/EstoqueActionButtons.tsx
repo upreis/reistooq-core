@@ -99,7 +99,6 @@ export function EstoqueActionButtons({
       {!isMobile && (
         <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
           {selectedProducts.length > 0 && (
-            <>
               <Button 
                 variant="secondary" 
                 size="sm"
@@ -108,15 +107,6 @@ export function EstoqueActionButtons({
                 <LinkIcon className="h-4 w-4 mr-2" />
                 Gerenciar Vinculação
               </Button>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={onDelete}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
-              </Button>
-            </>
           )}
           
           <Button 

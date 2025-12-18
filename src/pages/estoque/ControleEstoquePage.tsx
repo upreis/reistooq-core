@@ -249,6 +249,7 @@ export default function ControleEstoquePage() {
             onEditProduct={handleEditProduct}
             onEditParentProduct={handleEditParentProduct}
             onDeleteProduct={handleDeleteProduct}
+            onDeleteSelected={handleDeleteSelected}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             onCreateParent={() => setParentProductModalOpen(true)}
