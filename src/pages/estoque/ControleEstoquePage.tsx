@@ -26,6 +26,7 @@ export default function ControleEstoquePage() {
   const [transferenciaModalOpen, setTransferenciaModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingParentProduct, setEditingParentProduct] = useState<Product | null>(null);
+  const [isToolbarExpanded, setIsToolbarExpanded] = useState(true);
 
   const { toast } = useToast();
   
@@ -202,28 +203,30 @@ export default function ControleEstoquePage() {
         }}
       />
 
-      <EstoqueActionButtons
-        selectedProducts={selectedProducts}
-        products={products}
-        finalFilteredProducts={finalFilteredProducts}
-        onCreateParent={() => setParentProductModalOpen(true)}
-        onCreateChild={() => setChildProductModalOpen(true)}
-        onLinkChild={() => setLinkChildModalOpen(true)}
-        onDelete={handleDeleteSelected}
-        onImportSuccess={loadProducts}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        selectedStatus={paginationSelectedStatus}
-        onStatusChange={setPaginationSelectedStatus}
-        selectedProductType={selectedProductType}
-        onProductTypeChange={setSelectedProductType}
-        categories={categories}
-        onClearFilters={handleClearFilters}
-        hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
-        onSearch={handleSearch}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
+      {isToolbarExpanded && (
+        <EstoqueActionButtons
+          selectedProducts={selectedProducts}
+          products={products}
+          finalFilteredProducts={finalFilteredProducts}
+          onCreateParent={() => setParentProductModalOpen(true)}
+          onCreateChild={() => setChildProductModalOpen(true)}
+          onLinkChild={() => setLinkChildModalOpen(true)}
+          onDelete={handleDeleteSelected}
+          onImportSuccess={loadProducts}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          selectedStatus={paginationSelectedStatus}
+          onStatusChange={setPaginationSelectedStatus}
+          selectedProductType={selectedProductType}
+          onProductTypeChange={setSelectedProductType}
+          categories={categories}
+          onClearFilters={handleClearFilters}
+          hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
+          onSearch={handleSearch}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
+      )}
 
       <TableWrapper>
         {loading ? (
@@ -245,6 +248,8 @@ export default function ControleEstoquePage() {
             onSearchChange={setSearchTerm}
             onCreateParent={() => setParentProductModalOpen(true)}
             onCreateChild={() => setChildProductModalOpen(true)}
+            isToolbarExpanded={isToolbarExpanded}
+            onToggleToolbar={() => setIsToolbarExpanded(!isToolbarExpanded)}
           />
         )}
       </TableWrapper>
