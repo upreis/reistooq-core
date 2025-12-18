@@ -1,19 +1,20 @@
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, X, Calendar } from "lucide-react";
+import { Search, Filter, X } from "lucide-react";
 import { SkuMappingFilters } from "@/types/sku-mapping.types";
 
 interface SkuMapFiltersProps {
   filters: SkuMappingFilters;
   onFiltersChange: (filters: Partial<SkuMappingFilters>) => void;
   onReset: () => void;
+  actions?: ReactNode;
 }
 
-export function SkuMapFilters({ filters, onFiltersChange, onReset }: SkuMapFiltersProps) {
+export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: SkuMapFiltersProps) {
   const [searchValue, setSearchValue] = useState(filters.search || "");
 
   const handleSearchChange = (value: string) => {
@@ -42,12 +43,15 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset }: SkuMapFilte
                 </Badge>
               )}
             </div>
-            {activeFiltersCount > 0 && (
-              <Button variant="outline" size="sm" onClick={onReset}>
-                <X className="w-4 h-4 mr-2" />
-                Limpar
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {activeFiltersCount > 0 && (
+                <Button variant="outline" size="sm" onClick={onReset}>
+                  <X className="w-4 h-4 mr-2" />
+                  Limpar
+                </Button>
+              )}
+              {actions}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
