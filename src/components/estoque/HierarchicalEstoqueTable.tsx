@@ -1,10 +1,16 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EstoqueTable } from "./EstoqueTable";
 import { Product } from "@/hooks/useProducts";
@@ -24,6 +30,8 @@ interface HierarchicalEstoqueTableProps {
   onSort: (field: string) => void;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
+  onCreateParent?: () => void;
+  onCreateChild?: () => void;
 }
 
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
@@ -223,9 +231,26 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
             )}
           </div>
           
-          <div className="text-sm text-muted-foreground">
-            {groups.length} grupos • {props.products.length} produtos
-          </div>
+          {props.onCreateParent && props.onCreateChild && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Produto
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={props.onCreateParent}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Produto Pai
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={props.onCreateChild}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Produto Filho
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       )}
 

@@ -243,6 +243,8 @@ export default function ControleEstoquePage() {
             onDeleteProduct={handleDeleteProduct}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            onCreateParent={() => setParentProductModalOpen(true)}
+            onCreateChild={() => setChildProductModalOpen(true)}
           />
         )}
       </TableWrapper>
