@@ -143,6 +143,7 @@ export default function Header() {
     // Estoque
     if (path.startsWith('/estoque/historico')) return { icon: estoqueHistoricoIcon, label: 'Estoque / Histórico', isImage: true };
     if (path.startsWith('/estoque/composicoes')) return { icon: estoqueComposicoesIcon, label: 'Estoque / Composições', isImage: true };
+    if (path.startsWith('/estoque/de-para')) return { icon: estoqueIcon, label: 'De-Para de SKU', isImage: true };
     if (path.startsWith('/estoque')) return { icon: estoqueIcon, label: 'Estoque', isImage: true };
     if (path.startsWith('/category-manager')) return { icon: '🏷️', label: 'Categorias' };
     
