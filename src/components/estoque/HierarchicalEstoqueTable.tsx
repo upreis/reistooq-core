@@ -323,26 +323,31 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       </Button>
                     </CollapsibleTrigger>
                     
-                    {/* Imagem do produto pai */}
+                    {/* Imagem do produto pai ou primeiro filho */}
                     {!isMobile && (
-                      group.parentProduct?.url_imagem ? (
-                        <img 
-                          src={group.parentProduct.url_imagem} 
-                          alt={group.parentProduct.nome || group.parentSku}
-                          className="w-12 h-12 object-cover rounded-md border border-border"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-12 h-12 flex items-center justify-center bg-muted rounded-md border border-border">
-                          {group.parentProduct?.eh_produto_pai ? (
-                            <FolderOpen className="w-6 h-6 text-primary" />
-                          ) : (
+                      (() => {
+                        const parentImage = group.parentProduct?.url_imagem;
+                        const firstChildWithImage = hasChildren ? group.children.find(c => c.url_imagem) : null;
+                        const imageUrl = parentImage || firstChildWithImage?.url_imagem;
+                        const imageAlt = parentImage 
+                          ? (group.parentProduct?.nome || group.parentSku)
+                          : (firstChildWithImage?.nome || group.parentSku);
+                        
+                        return imageUrl ? (
+                          <img 
+                            src={imageUrl} 
+                            alt={imageAlt}
+                            className="w-12 h-12 object-cover rounded-md border border-border"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 flex items-center justify-center bg-muted rounded-md border border-border">
                             <Box className="w-6 h-6 text-muted-foreground" />
-                          )}
-                        </div>
-                      )
+                          </div>
+                        );
+                      })()
                     )}
                     
                     <div className="flex-1 min-w-0 flex gap-2">
