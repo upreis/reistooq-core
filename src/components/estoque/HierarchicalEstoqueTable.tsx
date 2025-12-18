@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import { EstoqueTable } from "./EstoqueTable";
 import { Product } from "@/hooks/useProducts";
 import { SkuGroup, groupProductsBySku } from "@/utils/skuGrouping";
 import { useIsMobile } from "@/hooks/use-mobile";
+
 interface HierarchicalEstoqueTableProps {
   products: Product[];
   selectedProducts: string[];
@@ -32,6 +33,8 @@ interface HierarchicalEstoqueTableProps {
   onSearchChange?: (value: string) => void;
   onCreateParent?: () => void;
   onCreateChild?: () => void;
+  isToolbarExpanded?: boolean;
+  onToggleToolbar?: () => void;
 }
 
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
@@ -231,26 +234,43 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
             )}
           </div>
           
-          {props.onCreateParent && props.onCreateChild && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="default" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Produto
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={props.onCreateParent}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Produto Pai
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={props.onCreateChild}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Produto Filho
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <div className="flex items-center gap-2">
+            {props.onToggleToolbar && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={props.onToggleToolbar}
+                title={props.isToolbarExpanded ? "Minimizar barra de ações" : "Expandir barra de ações"}
+              >
+                {props.isToolbarExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDownIcon className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            
+            {props.onCreateParent && props.onCreateChild && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="default" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Produto
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={props.onCreateParent}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Produto Pai
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={props.onCreateChild}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Produto Filho
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       )}
 
