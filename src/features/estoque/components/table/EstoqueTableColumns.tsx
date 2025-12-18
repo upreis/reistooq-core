@@ -3,6 +3,7 @@
  * Configurações centralizadas das colunas da tabela
  */
 
+import { ImageOff } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { ProductTypeBadges, StatusBadges, ActiveStatusBadge, OnDemandBadge } from "./EstoqueTableBadges";
 import { formatPrice, formatDimensions } from "../../utils/stockFormatters";
@@ -44,6 +45,25 @@ export function getEstoqueTableColumns({
         return (
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
+              {/* Thumbnail do produto (principalmente útil para produtos FILHO) */}
+              <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                <div className="absolute inset-0 grid place-items-center">
+                  <ImageOff className="h-4 w-4 text-muted-foreground" />
+                </div>
+                {product.url_imagem ? (
+                  <img
+                    src={product.url_imagem}
+                    alt={`Imagem do produto ${product.nome || product.sku_interno}`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      // mantém o fallback visível
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : null}
+              </div>
+
               <ProductTypeBadges isParent={isParent} isChild={isChild} />
               <div className="font-mono text-[11px] font-semibold">{value}</div>
             </div>
