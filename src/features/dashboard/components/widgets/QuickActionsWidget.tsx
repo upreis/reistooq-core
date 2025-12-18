@@ -30,7 +30,7 @@ import calendarioIcon from "@/assets/calendario.png";
 import notasIcon from "@/assets/notas.png";
 import lojaIcon from "@/assets/loja.png";
 import adicionarProdutoIcon from "@/assets/adicionar_produto.png";
-import importarProdutosIcon from "@/assets/importar_produtos.png";
+
 import integracoesIcon from "@/assets/integracoes.png";
 import anunciosIcon from "@/assets/anuncios.png";
 import adminIcon from "@/assets/admin.png";
@@ -83,7 +83,6 @@ const ROUTE_TO_ICON: Record<string, string> = {
   '/apps/ecommerce/shop': lojaIcon,
   '/apps/ecommerce/list': listaProdutosIcon,
   '/apps/ecommerce/addproduct': adicionarProdutoIcon,
-  '/apps/ecommerce/import': importarProdutosIcon,
   // Configurações
   '/configuracoes/integracoes': integracoesIcon,
   '/configuracoes/anuncios': anunciosIcon,

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Store, Package, PlusSquare, Upload } from "lucide-react";
+import { Store, Package, PlusSquare } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const navItems = [
@@ -17,11 +17,6 @@ const navItems = [
     path: "/apps/ecommerce/addproduct",
     label: "Adicionar",
     icon: PlusSquare,
-  },
-  {
-    path: "/apps/ecommerce/import",
-    label: "Importar Exportar",
-    icon: Upload,
   },
 ];
 

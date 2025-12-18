@@ -59,12 +59,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Adicionar',
             path: '/apps/ecommerce/addproduct',
             icon: 'PlusSquare'
-          },
-          {
-            id: 'cadastros-importar',
-            label: 'Exportar/Importar',
-            path: '/apps/ecommerce/import',
-            icon: 'Upload'
           }
         ]
       },

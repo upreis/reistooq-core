@@ -39,7 +39,6 @@ import Shop from "./pages/Shop";
 import ProductList from "./pages/ProductList";
 
 import AddProduct from "./pages/AddProduct";
-import ProductImport from "./pages/ProductImport";
 import Ecommerce from "./pages/Ecommerce";
 
 import Calendar from "./pages/Calendar";
@@ -187,7 +186,6 @@ function App() {
                     <Route path="apps/ecommerce/*" element={<Ecommerce />} />
                     <Route path="product-list" element={<ProductList />} />
                     <Route path="add-product" element={<AddProduct />} />
-                    <Route path="product-import" element={<ProductImport />} />
                     
                     {/* Outros */}
                     <Route path="calendar" element={<Calendar />} />
