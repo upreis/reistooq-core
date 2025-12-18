@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Plus, Package, Upload, Download, Import, CheckCircle, X, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Package, Upload, Download, Import, CheckCircle, X, Trash2, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,7 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
   const [insumoSelecionado, setInsumoSelecionado] = useState<ComposicaoInsumoEnriquecida | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [showInfo, setShowInfo] = useState(true);
 
   // Hook para seleção de itens
   const {
@@ -251,22 +252,28 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
       {/* Layout principal */}
       <div className="flex-1 min-w-0 space-y-6">
         {/* Info Box - Como funciona */}
-        <div className="p-4 border rounded-lg bg-blue-500/10 border-blue-500/20">
-          <div className="text-sm space-y-2">
-            <p>
-              <strong>💡 Como funciona:</strong>
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-              <li>
-                <strong>Composições de Produtos:</strong> Componentes multiplicados pela quantidade 
-                (ex: 3 produtos = 3x cada componente)
-              </li>
-              <li>
-                <strong>Composições de Insumos:</strong> Sempre 1 unidade por pedido 
-                (ex: 3 produtos do mesmo comprador = 1 etiqueta, 1 embalagem)
-              </li>
-            </ul>
-          </div>
+        <div className="border rounded-lg bg-blue-500/10 border-blue-500/20 overflow-hidden">
+          <button 
+            onClick={() => setShowInfo(!showInfo)}
+            className="w-full p-3 flex items-center justify-between text-sm font-medium hover:bg-blue-500/5 transition-colors"
+          >
+            <span>💡 Como funciona</span>
+            {showInfo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+          {showInfo && (
+            <div className="px-4 pb-4 text-sm">
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                <li>
+                  <strong>Composições de Produtos:</strong> Componentes multiplicados pela quantidade 
+                  (ex: 3 produtos = 3x cada componente)
+                </li>
+                <li>
+                  <strong>Composições de Insumos:</strong> Sempre 1 unidade por pedido 
+                  (ex: 3 produtos do mesmo comprador = 1 etiqueta, 1 embalagem)
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Tabela */}
