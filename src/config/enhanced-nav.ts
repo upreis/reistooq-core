@@ -138,7 +138,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       },
       {
         id: 'ecommerce-app',
-        label: 'eCommerce',
+        label: 'Cadastros',
         icon: 'ShoppingCart',
         path: '/apps/ecommerce/shop'
       },
