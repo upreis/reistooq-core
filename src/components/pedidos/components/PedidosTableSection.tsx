@@ -6,6 +6,14 @@
 import { memo, useMemo, useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableRow, 
+  TableHead, 
+  TableCell 
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Package, CheckCircle, AlertTriangle, AlertCircle, Clock } from 'lucide-react';
@@ -154,38 +162,37 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
       )}
 
 
-      {/* Tabela Principal */}
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max">
-            <thead className="sticky top-0 z-10 bg-background shadow-sm">
-              <tr className="text-left hover:bg-transparent border-b-2">
-                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left whitespace-nowrap">
-                  <Checkbox
-                    checked={selectedOrders.size === orders.length && orders.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </th>
-                {/* Coluna fixa: ID-Único sempre primeiro */}
-                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left whitespace-nowrap">ID-Único</th>
-                {/* Demais cabeçalhos conforme ordem/seleção */}
-                {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
-                  <th 
-                    key={def.key} 
-                    className={cn(
-                      "px-4 h-12 text-sm text-muted-foreground font-medium text-left whitespace-nowrap",
-                      // Tags com quebra permitida
-                      def.key === 'tags' && "break-words"
-                    )}
-                    style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
-                  >
-                    {def.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
+      {/* Tabela Principal com Sticky Header Nativo */}
+      <div className="border rounded-lg overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+        <Table disableOverflow className="min-w-max">
+          <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
+            <TableRow className="hover:bg-transparent border-b-2">
+              <TableHead className="bg-background whitespace-nowrap">
+                <Checkbox
+                  checked={selectedOrders.size === orders.length && orders.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
+              {/* Coluna fixa: ID-Único sempre primeiro */}
+              <TableHead className="bg-background whitespace-nowrap">ID-Único</TableHead>
+              {/* Demais cabeçalhos conforme ordem/seleção */}
+              {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
+                <TableHead 
+                  key={def.key} 
+                  className={cn(
+                    "bg-background whitespace-nowrap",
+                    // Tags com quebra permitida
+                    def.key === 'tags' && "break-words"
+                  )}
+                  style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
+                >
+                  {def.label}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
             
-            <tbody>
+            <TableBody>
               {orders.map((order, index) => {
                 const isSelected = selectedOrders.has(order.id);
                 const isProcessed = isPedidoProcessado(order);
@@ -1158,7 +1165,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 const idUnico = (order as any).id_unico || buildIdUnico?.(order) || order.id;
 
                 return (
-                  <tr
+                  <TableRow
                     key={order.id}
                     className={cn(
                       "border-b border-border hover:bg-accent/20 transition-colors",
@@ -1167,25 +1174,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     )}
                   >
                     {/* Checkbox de seleção */}
-                    <td className="px-4 text-center">
+                    <TableCell className="text-center">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => handleSelectOrder(order.id)}
                         disabled={isProcessed}
                       />
-                    </td>
+                    </TableCell>
 
                     {/* Coluna fixa ID-Único */}
-                    <td className="px-4 text-left">
+                    <TableCell className="text-left">
                       <div className="break-words whitespace-normal text-xs leading-tight line-clamp-2" style={{ minWidth: '250px' }}>{idUnico}</div>
-                    </td>
+                    </TableCell>
 
                     {/* Demais colunas dinâmicas */}
                     {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
-                      <td 
+                      <TableCell 
                         key={def.key} 
                         className={cn(
-                          "px-4 text-left",
+                          "text-left",
                           // Colunas SKU com largura ajustada ao conteúdo
                           (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
                           // Colunas de envio sem quebra de linha
@@ -1194,16 +1201,14 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                       >
                         <span className="text-xs">{renderCell(def.key)}</span>
-                      </td>
+                      </TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-
-      </Card>
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 });
