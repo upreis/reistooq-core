@@ -60,42 +60,17 @@ export function EstoqueGridView({
   notificationsCount,
 }: EstoqueGridViewProps) {
   const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [smoothPosition, setSmoothPosition] = useState({ x: 0, y: 0 });
-  const [isImageVisible, setIsImageVisible] = useState(false);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const gridContainerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number | null>(null);
 
   const total = totalProducts ?? products.length;
   const allSelected = products.length > 0 && selectedProducts.length === products.length;
 
-  // Smooth mouse follow animation
-  useEffect(() => {
-    const lerp = (start: number, end: number, factor: number) => {
-      return start + (end - start) * factor;
-    };
-
-    const animate = () => {
-      setSmoothPosition((prev) => ({
-        x: lerp(prev.x, mousePosition.x, 0.15),
-        y: lerp(prev.y, mousePosition.y, 0.15),
-      }));
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [mousePosition]);
-
+  // Update image position only when hovering
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (gridContainerRef.current) {
+    if (hoveredProductIndex !== null && gridContainerRef.current) {
       const rect = gridContainerRef.current.getBoundingClientRect();
-      setMousePosition({
+      setImagePosition({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       });
@@ -104,12 +79,10 @@ export function EstoqueGridView({
 
   const handleMouseEnter = (index: number) => {
     setHoveredProductIndex(index);
-    setIsImageVisible(true);
   };
 
   const handleMouseLeave = () => {
     setHoveredProductIndex(null);
-    setIsImageVisible(false);
   };
 
   const getStockStatus = (product: Product) => {
@@ -410,8 +383,7 @@ export function EstoqueGridView({
 
           {/* Floating enlarged image */}
           <AnimatePresence>
-            {isImageVisible &&
-              hoveredProductIndex !== null &&
+            {hoveredProductIndex !== null &&
               products[hoveredProductIndex]?.url_imagem && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -419,8 +391,8 @@ export function EstoqueGridView({
                   exit={{ opacity: 0, scale: 0.8 }}
                   className="pointer-events-none fixed z-50 w-48 h-48 rounded-lg overflow-hidden shadow-2xl border-2 border-primary/50"
                   style={{
-                    left: smoothPosition.x + (gridContainerRef.current?.getBoundingClientRect().left || 0) + 20,
-                    top: smoothPosition.y + (gridContainerRef.current?.getBoundingClientRect().top || 0) - 100,
+                    left: imagePosition.x + (gridContainerRef.current?.getBoundingClientRect().left || 0) + 20,
+                    top: imagePosition.y + (gridContainerRef.current?.getBoundingClientRect().top || 0) - 100,
                   }}
                 >
                   <img
