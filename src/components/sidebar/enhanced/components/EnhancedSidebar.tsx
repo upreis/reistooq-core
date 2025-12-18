@@ -43,25 +43,30 @@ const SidebarSection = memo(({
         </div>
       )}
 
-      {/* Section Items */}
+      {/* Section Items - mantendo a ordem original */}
       <div className="space-y-1 mt-2">
-        {/* Items with children (groups) */}
-        {section.items.filter(item => item.children && item.children.length > 0).map((item) => (
-          <SidebarItemWithChildren
-            key={item.id || item.label}
-            item={item}
-            isCollapsed={isCollapsed}
-            isMobile={isMobile}
-          />
-        ))}
-        
-        {/* Single items (no children) */}
-        <SimpleSidebarItems
-          items={section.items}
-          isCollapsed={isCollapsed}
-          isMobile={isMobile}
-          isActive={isActive}
-        />
+        {section.items.map((item) => {
+          if (item.children && item.children.length > 0) {
+            return (
+              <SidebarItemWithChildren
+                key={item.id || item.label}
+                item={item}
+                isCollapsed={isCollapsed}
+                isMobile={isMobile}
+              />
+            );
+          } else {
+            return (
+              <SimpleSidebarItems
+                key={item.id || item.label}
+                items={[item]}
+                isCollapsed={isCollapsed}
+                isMobile={isMobile}
+                isActive={isActive}
+              />
+            );
+          }
+        })}
       </div>
     </div>
   );
