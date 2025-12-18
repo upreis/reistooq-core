@@ -791,12 +791,11 @@ const ProductList = () => {
                         <th className="px-3 py-3 text-left font-medium min-w-[90px]">Valor Total</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">OBS</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[120px]">Codigo de Barras</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">NCM</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">PIS (%)</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">COFINS (%)</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[120px]">IMPOSTO IMPORTAÇÃO (%)</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">IPI (%)</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[70px]">ICMS (%)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Categoria</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[90px]">Preço Custo</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[90px]">Estoque Mín.</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[90px]">Estoque Máx.</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Localização</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">Ações</th>
                       </tr>
                     </thead>
@@ -1098,52 +1097,47 @@ const ProductList = () => {
                               <span className="text-xs font-mono">{product.codigo_barras || "-"}</span>
                             </EditableCell>
 
-                            {/* NCM */}
+                            {/* Categoria */}
                             <EditableCell 
                               productId={product.id} 
-                              field="ncm" 
-                              value={(product as any).ncm}
-                              displayValue={(product as any).ncm || "-"}
+                              field="categoria" 
+                              value={product.categoria}
+                              displayValue={product.categoria || "-"}
                             />
 
-                            {/* PIS */}
+                            {/* Preço Custo */}
                             <EditableCell 
                               productId={product.id} 
-                              field="pis" 
-                              value={(product as any).pis}
-                              displayValue={(product as any).pis ? `${((product as any).pis * 100).toFixed(2)}%` : "-"}
-                            />
+                              field="preco_custo" 
+                              value={product.preco_custo}
+                            >
+                              <span className="text-xs">{product.preco_custo ? formatPrice(product.preco_custo) : "-"}</span>
+                            </EditableCell>
 
-                            {/* COFINS */}
+                            {/* Estoque Mínimo */}
                             <EditableCell 
                               productId={product.id} 
-                              field="cofins" 
-                              value={(product as any).cofins}
-                              displayValue={(product as any).cofins ? `${((product as any).cofins * 100).toFixed(2)}%` : "-"}
-                            />
+                              field="estoque_minimo" 
+                              value={product.estoque_minimo}
+                            >
+                              <span className="text-xs">{product.estoque_minimo ?? "-"}</span>
+                            </EditableCell>
 
-                            {/* IMPOSTO DE IMPORTAÇÃO */}
+                            {/* Estoque Máximo */}
                             <EditableCell 
                               productId={product.id} 
-                              field="imposto_importacao" 
-                              value={(product as any).imposto_importacao}
-                              displayValue={(product as any).imposto_importacao ? `${((product as any).imposto_importacao * 100).toFixed(2)}%` : "-"}
-                            />
+                              field="estoque_maximo" 
+                              value={product.estoque_maximo}
+                            >
+                              <span className="text-xs">{product.estoque_maximo ?? "-"}</span>
+                            </EditableCell>
 
-                            {/* IPI */}
+                            {/* Localização */}
                             <EditableCell 
                               productId={product.id} 
-                              field="ipi" 
-                              value={(product as any).ipi}
-                              displayValue={(product as any).ipi ? `${((product as any).ipi * 100).toFixed(2)}%` : "-"}
-                            />
-
-                            {/* ICMS */}
-                            <EditableCell 
-                              productId={product.id} 
-                              field="icms" 
-                              value={(product as any).icms}
-                              displayValue={(product as any).icms ? `${((product as any).icms * 100).toFixed(2)}%` : "-"}
+                              field="localizacao" 
+                              value={product.localizacao}
+                              displayValue={product.localizacao || "-"}
                             />
 
                             {/* Actions */}
