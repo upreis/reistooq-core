@@ -5,8 +5,7 @@
  */
 
 import { create } from 'zustand';
-
-// ✅ CORREÇÃO: Usar any[] pois dados da API ML têm estrutura dinâmica
+import { STORAGE_KEYS } from '../constants/storage-keys';
 // Os dados vêm do useMLClaimsFromCache que retorna any[]
 type ReclamacaoData = any;
 
@@ -84,7 +83,7 @@ interface ReclamacoesState {
   hydrate: (data: Partial<ReclamacoesState>) => void;
 }
 
-const STORAGE_KEY = 'reclamacoes-store';
+const STORAGE_KEY = STORAGE_KEYS.STORE;
 
 const initialFilters: ReclamacoesFilters = {
   search: '',

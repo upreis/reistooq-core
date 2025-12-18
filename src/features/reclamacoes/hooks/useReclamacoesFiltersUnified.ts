@@ -7,9 +7,10 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 import { useReclamacoesFiltersSync, ReclamacoesFilters, DEFAULT_FILTERS } from './useReclamacoesFiltersSync';
+import { STORAGE_KEYS } from '../constants/storage-keys';
 
 const isDev = import.meta.env.DEV;
-const STORAGE_KEY = 'reclamacoes_filters_v3';
+const STORAGE_KEY = STORAGE_KEYS.FILTERS;
 
 interface UseReclamacoesFiltersUnifiedOptions {
   onFiltersApply?: (filters: ReclamacoesFilters) => void;
