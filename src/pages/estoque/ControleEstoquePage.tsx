@@ -6,11 +6,12 @@ import { HierarchicalEstoqueTable } from "@/components/estoque/HierarchicalEstoq
 import { EstoqueNotifications } from "@/components/estoque/EstoqueNotifications";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
+import { EstoqueGridView } from "@/components/estoque/EstoqueGridView";
 
 import { useEstoqueData } from "./hooks/useEstoqueData";
 import { useEstoqueActions } from "./hooks/useEstoqueActions";
 import { useEstoquePagination } from "./hooks/useEstoquePagination";
-import { EstoqueHeader } from "./components/EstoqueHeader";
+import { EstoqueHeader, LayoutMode } from "./components/EstoqueHeader";
 import { EstoqueActionButtons } from "./components/EstoqueActionButtons";
 import { EstoquePagination } from "./components/EstoquePagination";
 import { EstoqueModals } from "./components/EstoqueModals";
@@ -29,6 +30,7 @@ export default function ControleEstoquePage() {
   const [isToolbarExpanded, setIsToolbarExpanded] = useState(true);
   const [notificationsCollapsed, setNotificationsCollapsed] = useState(true);
   const [notificationsCount, setNotificationsCount] = useState(0);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("list");
 
   const { toast } = useToast();
   
@@ -155,6 +157,8 @@ export default function ControleEstoquePage() {
         onLocalChange={loadProducts} 
         onTransferClick={() => setTransferenciaModalOpen(true)}
         selectedProductsCount={selectedProducts.length}
+        layoutMode={layoutMode}
+        onLayoutChange={setLayoutMode}
       />
 
       <EstoqueFilters
@@ -233,10 +237,22 @@ export default function ControleEstoquePage() {
         />
       )}
 
-      <TableWrapper>
-        {loading ? (
+      {loading ? (
+        <TableWrapper>
           <EstoqueSkeleton />
-        ) : (
+        </TableWrapper>
+      ) : layoutMode === "grid" ? (
+        <div className="border rounded-lg bg-card">
+          <EstoqueGridView
+            products={paginatedProducts}
+            selectedProducts={selectedProducts}
+            onSelectProduct={handleSelectProduct}
+            onEditProduct={handleEditProduct}
+            searchTerm={searchTerm}
+          />
+        </div>
+      ) : (
+        <TableWrapper>
           <HierarchicalEstoqueTable
             products={paginatedProducts}
             onSort={() => {}}
@@ -261,8 +277,8 @@ export default function ControleEstoquePage() {
             onToggleNotifications={setNotificationsCollapsed}
             notificationsCount={notificationsCount}
           />
-        )}
-      </TableWrapper>
+        </TableWrapper>
+      )}
 
       {!loading && finalFilteredProducts.length > 0 && (
         <EstoquePagination
