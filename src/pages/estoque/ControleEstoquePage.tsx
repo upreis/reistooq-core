@@ -27,6 +27,8 @@ export default function ControleEstoquePage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingParentProduct, setEditingParentProduct] = useState<Product | null>(null);
   const [isToolbarExpanded, setIsToolbarExpanded] = useState(true);
+  const [notificationsCollapsed, setNotificationsCollapsed] = useState(true);
+  const [notificationsCount, setNotificationsCount] = useState(0);
 
   const { toast } = useToast();
   
@@ -201,6 +203,9 @@ export default function ControleEstoquePage() {
           setSelectedProducts([product.id]);
           setLinkChildModalOpen(true);
         }}
+        isCollapsed={notificationsCollapsed}
+        onToggleCollapse={setNotificationsCollapsed}
+        onNotificationsCountChange={setNotificationsCount}
       />
 
       {isToolbarExpanded && (
@@ -250,6 +255,9 @@ export default function ControleEstoquePage() {
             onCreateChild={() => setChildProductModalOpen(true)}
             isToolbarExpanded={isToolbarExpanded}
             onToggleToolbar={() => setIsToolbarExpanded(!isToolbarExpanded)}
+            notificationsCollapsed={notificationsCollapsed}
+            onToggleNotifications={setNotificationsCollapsed}
+            notificationsCount={notificationsCount}
           />
         )}
       </TableWrapper>

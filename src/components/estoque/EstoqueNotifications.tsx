@@ -26,6 +26,9 @@ interface EstoqueNotificationsProps {
   onOpenPriceModal?: (products: Product[]) => void;
   onOpenOrphanModal?: (products: Product[]) => void;
   onOrphanProductClick?: (product: Product) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: (collapsed: boolean) => void;
+  onNotificationsCountChange?: (count: number) => void;
 }
 
 interface Notification {
@@ -38,15 +41,29 @@ interface Notification {
   actionLabel?: string;
 }
 
-export function EstoqueNotifications({ products, onProductClick, onFilterByStock, onOpenPriceModal, onOpenOrphanModal, onOrphanProductClick }: EstoqueNotificationsProps) {
+export function EstoqueNotifications({ 
+  products, 
+  onProductClick, 
+  onFilterByStock, 
+  onOpenPriceModal, 
+  onOpenOrphanModal, 
+  onOrphanProductClick,
+  isCollapsed: controlledIsCollapsed,
+  onToggleCollapse,
+  onNotificationsCountChange
+}: EstoqueNotificationsProps) {
   // ✅ CRÍTICO: Todos os hooks devem ser executados SEMPRE, independente de qualquer condição
   const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true); // Inicia oculto por padrão
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(true); // Inicia oculto por padrão
   const hierarchy = useProductHierarchy(products);
   const { config } = useEstoqueSettings();
+  
+  // Usar estado controlado se fornecido, caso contrário usar estado interno
+  const isCollapsed = controlledIsCollapsed !== undefined ? controlledIsCollapsed : internalIsCollapsed;
+  const setIsCollapsed = onToggleCollapse || setInternalIsCollapsed;
 
   useEffect(() => {
     // Só gera notificações se não for mobile
@@ -166,6 +183,11 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   };
 
   const visibleNotifications = notifications.filter(n => !dismissed.has(n.id));
+  
+  // Reportar contagem de notificações para o componente pai
+  useEffect(() => {
+    onNotificationsCountChange?.(visibleNotifications.length);
+  }, [visibleNotifications.length, onNotificationsCountChange]);
 
   // ✅ CRÍTICO: Ocultar em mobile - retorna null DEPOIS de todos os hooks serem executados
   if (isMobile) {
