@@ -849,16 +849,8 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
 
       {/* Layout principal */}
       <div className="space-y-6">
-          {/* Seção combinada de filtros e busca - tratada como um elemento único */}
+          {/* Seção de busca */}
           <div className="space-y-4">
-            {/* Filtros Desktop */}
-            <div className="hidden md:block">
-              <ComposicoesFilters 
-                filters={filters}
-                onFiltersChange={setFilters}
-                stats={stats}
-              />
-            </div>
 
             {/* Busca e Filtros Mobile/Desktop */}
             <div>
