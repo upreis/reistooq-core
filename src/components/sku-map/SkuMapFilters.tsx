@@ -31,38 +31,33 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
 
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              <span className="font-medium">Filtros</span>
-              {activeFiltersCount > 0 && (
-                <Badge variant="secondary">
-                  {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {activeFiltersCount > 0 && (
-                <Button variant="outline" size="sm" onClick={onReset}>
-                  <X className="w-4 h-4 mr-2" />
-                  Limpar
-                </Button>
-              )}
-              {actions}
-            </div>
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            <span className="font-medium text-sm">Filtros</span>
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
+              </Badge>
+            )}
+            {activeFiltersCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={onReset} className="h-7 px-2">
+                <X className="w-3 h-3 mr-1" />
+                Limpar
+              </Button>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative flex-1 min-w-[180px] max-w-[280px]">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Buscar por SKU..."
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
+                className="pl-8 h-9 text-sm"
               />
             </div>
 
@@ -71,7 +66,7 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
               value={filters.status}
               onValueChange={(value) => onFiltersChange({ status: value as "todos" | "ativos" | "inativos" })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-[110px] h-9 text-sm">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -86,7 +81,7 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
               value={filters.preenchimento}
               onValueChange={(value) => onFiltersChange({ preenchimento: value as "todos" | "pendentes" | "completos" })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-[120px] h-9 text-sm">
                 <SelectValue placeholder="Preenchimento" />
               </SelectTrigger>
               <SelectContent>
@@ -101,8 +96,8 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
               value={filters.pageSize.toString()}
               onValueChange={(value) => onFiltersChange({ pageSize: parseInt(value, 10) })}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Itens por página" />
+              <SelectTrigger className="w-[100px] h-9 text-sm">
+                <SelectValue placeholder="Itens" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="10">10 itens</SelectItem>
@@ -111,6 +106,9 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
                 <SelectItem value="100">100 itens</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Actions */}
+            {actions}
           </div>
         </div>
       </CardContent>

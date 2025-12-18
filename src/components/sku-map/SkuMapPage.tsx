@@ -138,22 +138,24 @@ export function SkuMapPage() {
       <Button
         variant="outline"
         size="sm"
+        className="h-9 text-sm"
         onClick={handleExport}
         disabled={isExporting}
       >
-        <Download className="w-4 h-4 mr-2" />
+        <Download className="w-3.5 h-3.5 mr-1.5" />
         {isExporting ? 'Exportando...' : 'Exportar'}
       </Button>
       <Button
         variant="outline"
         size="sm"
+        className="h-9 text-sm"
         onClick={() => setShowImportWizard(true)}
       >
-        <Upload className="w-4 h-4 mr-2" />
+        <Upload className="w-3.5 h-3.5 mr-1.5" />
         Importar
       </Button>
-      <Button size="sm" onClick={() => setShowCreateForm(true)}>
-        <Plus className="w-4 h-4 mr-2" />
+      <Button size="sm" className="h-9 text-sm" onClick={() => setShowCreateForm(true)}>
+        <Plus className="w-3.5 h-3.5 mr-1.5" />
         Novo Mapeamento
       </Button>
     </div>
