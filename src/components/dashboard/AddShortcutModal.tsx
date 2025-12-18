@@ -33,7 +33,7 @@ import fornecedoresNewIcon from "@/assets/fornecedores-new-icon.png";
 import estoqueHistoricoNewIcon from "@/assets/historico-estoque-icon-v2.png";
 import historicoIcon from "@/assets/historico.png";
 import importacaoIcon from "@/assets/icons/compras-importacao-new-icon.png";
-import importarProdutosIcon from "@/assets/importar_produtos.png";
+
 import integracoesIcon from "@/assets/integracoes.png";
 import listaProdutosIcon from "@/assets/lista_produtos.png";
 import lojaIcon from "@/assets/loja.png";
@@ -296,15 +296,6 @@ const ALL_PAGES: PageOption[] = [
     imageUrl: adicionarProdutoIcon,
     category: 'E-commerce',
     gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
-  },
-  {
-    id: 'ecommerce-import',
-    label: 'Importar Produtos',
-    route: '/apps/ecommerce/import',
-    icon: <img src={importarProdutosIcon} alt="Importar Produtos" className="w-16 h-16 object-contain" />,
-    imageUrl: importarProdutosIcon,
-    category: 'E-commerce',
-    gradient: 'bg-gradient-to-br from-pink-600 to-pink-800'
   },
 
   // Configurações

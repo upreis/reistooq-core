@@ -666,10 +666,6 @@ const ProductList = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Produto
               </Button>
-              <Button variant="outline" onClick={() => navigate("/apps/ecommerce/import")}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Importar
-              </Button>
               <Button variant="outline" onClick={handleDownloadData}>
                 <Download className="h-4 w-4 mr-2" />
                 Baixar Dados

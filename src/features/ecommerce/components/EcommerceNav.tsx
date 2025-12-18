@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Store, Package, PlusSquare, Upload } from "lucide-react";
+import { Store, Package, PlusSquare } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -7,7 +7,6 @@ const navigation = [
   { name: "Loja", href: "/apps/ecommerce/shop", icon: Store },
   { name: "Produtos", href: "/apps/ecommerce/list", icon: Package },
   { name: "Adicionar", href: "/apps/ecommerce/addproduct", icon: PlusSquare },
-  { name: "Importar Exportar", href: "/apps/ecommerce/import", icon: Upload },
 ];
 
 export function EcommerceNav() {

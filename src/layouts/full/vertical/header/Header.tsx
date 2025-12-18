@@ -26,7 +26,6 @@ import adminPerfilIcon from "@/assets/admin-perfil-icon.png";
 import ecommerceShopIcon from "@/assets/ecommerce-shop-icon.png";
 import ecommerceListIcon from "@/assets/ecommerce-list-icon.png";
 import ecommerceAddProductIcon from "@/assets/ecommerce-addproduct-icon.png";
-import ecommerceImportIcon from "@/assets/ecommerce-import-icon.png";
 import scannerIcon from "@/assets/icons/scanner-icon.png";
 import deParaIcon from "@/assets/de-para-icon.png";
 import alertasIcon from "@/assets/alertas-icon.png";
@@ -125,7 +124,6 @@ export default function Header() {
     if (path.startsWith('/configuracoes/alertas')) return { icon: alertasIcon, label: 'Configurações / Alertas', isImage: true };
     
     // Apps/Ecommerce
-    if (path.startsWith('/apps/ecommerce/import')) return { icon: ecommerceImportIcon, label: 'Apps / Ecommerce / Importar', isImage: true };
     if (path.startsWith('/apps/ecommerce/addproduct')) return { icon: ecommerceAddProductIcon, label: 'Apps / Ecommerce / Adicionar', isImage: true };
     if (path.startsWith('/apps/ecommerce/list')) return { icon: ecommerceListIcon, label: 'Apps / Ecommerce / Produtos', isImage: true };
     if (path.startsWith('/apps/ecommerce/shop')) return { icon: ecommerceShopIcon, label: 'Apps / Ecommerce / Loja', isImage: true };
