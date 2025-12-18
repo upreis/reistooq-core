@@ -133,44 +133,40 @@ export function SkuMapPage() {
   // Header actions para mobile - removido, será movido para baixo do header
   const headerActions = undefined;
 
+  const actionButtons = (
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleExport}
+        disabled={isExporting}
+      >
+        <Download className="w-4 h-4 mr-2" />
+        {isExporting ? 'Exportando...' : 'Exportar'}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setShowImportWizard(true)}
+      >
+        <Upload className="w-4 h-4 mr-2" />
+        Importar
+      </Button>
+      <Button size="sm" onClick={() => setShowCreateForm(true)}>
+        <Plus className="w-4 h-4 mr-2" />
+        Novo Mapeamento
+      </Button>
+    </div>
+  );
+
   const desktopContent = (
     <div className="p-6 space-y-6">
-      {/* Header Desktop */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">De-Para de Produtos</h1>
-          <p className="text-muted-foreground">
-            Mapeie produtos entre diferentes plataformas
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            disabled={isExporting}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            {isExporting ? 'Exportando...' : 'Exportar'}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowImportWizard(true)}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Importar
-          </Button>
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Mapeamento
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters */}
+      {/* Filters with Actions */}
       <SkuMapFilters
         filters={filters}
         onFiltersChange={updateFilters}
         onReset={resetFilters}
+        actions={actionButtons}
       />
 
       {/* Bulk Actions */}
