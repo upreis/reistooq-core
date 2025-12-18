@@ -106,21 +106,27 @@ export function VendasComEnvioTable({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table className="min-w-max">
-        <TableHeader className="sticky top-0 z-10 bg-background">
-          <TableRow>
-            <TableHead className="w-[120px]">Pedido</TableHead>
-            <TableHead className="w-[100px]">Conta</TableHead>
-            <TableHead className="w-[140px]">Data</TableHead>
-            <TableHead className="w-[150px]">Comprador</TableHead>
-            <TableHead className="w-[200px]">Itens</TableHead>
-            <TableHead className="w-[100px] text-right">Valor</TableHead>
-            <TableHead className="w-[130px]">Status Envio</TableHead>
-            <TableHead className="w-[120px]">Prazo</TableHead>
-            <TableHead className="w-[100px]">Logística</TableHead>
-          </TableRow>
-        </TableHeader>
+    <div className="w-full flex flex-col border rounded-md">
+      {/* 📌 WRAPPER ÚNICO COM SCROLL - sticky header nativo */}
+      <div 
+        className="overflow-auto"
+        style={{ maxHeight: 'calc(100vh - 380px)' }}
+      >
+        <Table className="min-w-max w-max" disableOverflow>
+          {/* 📌 HEADER STICKY */}
+          <TableHeader className="sticky top-0 z-20 bg-background">
+            <TableRow className="hover:bg-transparent border-b-2">
+              <TableHead className="w-[120px] bg-background">Pedido</TableHead>
+              <TableHead className="w-[100px] bg-background">Conta</TableHead>
+              <TableHead className="w-[140px] bg-background">Data</TableHead>
+              <TableHead className="w-[150px] bg-background">Comprador</TableHead>
+              <TableHead className="w-[200px] bg-background">Itens</TableHead>
+              <TableHead className="w-[100px] bg-background text-right">Valor</TableHead>
+              <TableHead className="w-[130px] bg-background">Status Envio</TableHead>
+              <TableHead className="w-[120px] bg-background">Prazo</TableHead>
+              <TableHead className="w-[100px] bg-background">Logística</TableHead>
+            </TableRow>
+          </TableHeader>
         <TableBody>
           {filteredVendas.map((venda) => (
             <TableRow key={venda.id} className="hover:bg-muted/50">
@@ -199,7 +205,8 @@ export function VendasComEnvioTable({
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
     </div>
   );
 }
