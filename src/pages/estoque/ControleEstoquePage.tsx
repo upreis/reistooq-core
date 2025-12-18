@@ -241,6 +241,8 @@ export default function ControleEstoquePage() {
             onEditProduct={handleEditProduct}
             onEditParentProduct={handleEditParentProduct}
             onDeleteProduct={handleDeleteProduct}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
           />
         )}
       </TableWrapper>

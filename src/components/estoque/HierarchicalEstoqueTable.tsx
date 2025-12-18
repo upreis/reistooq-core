@@ -1,15 +1,15 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EstoqueTable } from "./EstoqueTable";
 import { Product } from "@/hooks/useProducts";
 import { SkuGroup, groupProductsBySku } from "@/utils/skuGrouping";
 import { useIsMobile } from "@/hooks/use-mobile";
-
 interface HierarchicalEstoqueTableProps {
   products: Product[];
   selectedProducts: string[];
@@ -22,6 +22,8 @@ interface HierarchicalEstoqueTableProps {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   onSort: (field: string) => void;
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
@@ -176,6 +178,29 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 Selecionar Todos ({props.selectedProducts.length}/{props.products.length})
               </span>
             </div>
+            
+            {/* Campo de busca */}
+            {props.onSearchChange && (
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input 
+                  placeholder="Buscar por nome, SKU, código de barras..." 
+                  className="pl-10 h-8"
+                  value={props.searchTerm || ""}
+                  onChange={(e) => props.onSearchChange?.(e.target.value)}
+                />
+                {props.searchTerm && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={() => props.onSearchChange?.("")}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            )}
             
             <Button
               variant="outline"
