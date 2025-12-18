@@ -41,7 +41,32 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'ecommerce-app',
         label: 'Cadastros',
         icon: 'ShoppingCart',
-        path: '/apps/ecommerce/shop'
+        children: [
+          {
+            id: 'cadastros-itens',
+            label: 'Itens',
+            path: '/apps/ecommerce/shop',
+            icon: 'Package'
+          },
+          {
+            id: 'cadastros-produtos',
+            label: 'Produtos',
+            path: '/apps/ecommerce/list',
+            icon: 'List'
+          },
+          {
+            id: 'cadastros-adicionar',
+            label: 'Adicionar',
+            path: '/apps/ecommerce/addproduct',
+            icon: 'PlusSquare'
+          },
+          {
+            id: 'cadastros-importar',
+            label: 'Exportar/Importar',
+            path: '/apps/ecommerce/import',
+            icon: 'Upload'
+          }
+        ]
       },
       {
         id: 'oms',
