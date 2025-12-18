@@ -43,36 +43,38 @@ export function getEstoqueTableColumns({
         const isOrphan = parentSkus && hasParentSku && !parentExists;
         
         return (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              {/* Thumbnail do produto (principalmente útil para produtos FILHO) */}
-              <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
-                <div className="absolute inset-0 grid place-items-center">
-                  <ImageOff className="h-4 w-4 text-muted-foreground" />
-                </div>
-                {product.url_imagem ? (
-                  <img
-                    src={product.url_imagem}
-                    alt={`Imagem do produto ${product.nome || product.sku_interno}`}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      // mantém o fallback visível
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : null}
+          <div className="flex items-center gap-3">
+            {/* Thumbnail do produto - maior */}
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+              <div className="absolute inset-0 grid place-items-center">
+                <ImageOff className="h-5 w-5 text-muted-foreground" />
               </div>
-
-              <ProductTypeBadges isParent={isParent} isChild={isChild} />
-              <div className="font-mono text-[11px] font-semibold">{value}</div>
+              {product.url_imagem ? (
+                <img
+                  src={product.url_imagem}
+                  alt={product.nome || product.sku_interno}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : null}
             </div>
-            <StatusBadges 
-              product={product} 
-              isParent={isParent} 
-              isOrphan={isOrphan}
-              allProducts={allProducts}
-            />
+
+            {/* Info do SKU e badges */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <ProductTypeBadges isParent={isParent} isChild={isChild} />
+                <div className="font-mono text-[11px] font-semibold">{value}</div>
+                <StatusBadges 
+                  product={product} 
+                  isParent={isParent} 
+                  isOrphan={isOrphan}
+                  allProducts={allProducts}
+                />
+              </div>
+            </div>
           </div>
         );
       }
