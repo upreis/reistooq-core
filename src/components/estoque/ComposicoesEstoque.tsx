@@ -876,29 +876,6 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                 </div>
               </div>
               
-              {/* Ícone de filtro compacto */}
-              <div className="md:hidden">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline" 
-                      size="icon"
-                      className="h-10 w-10"
-                    >
-                      <Filter className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="z-50 w-[340px] sm:w-[520px] bg-popover text-popover-foreground">
-                    <ComposicoesFilters 
-                      filters={filters}
-                      onFiltersChange={setFilters}
-                      stats={stats}
-                      forceExpanded
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
             </div>
           </div>
         </div>
