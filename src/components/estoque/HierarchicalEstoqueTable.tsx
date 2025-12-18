@@ -244,7 +244,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
               </>
             )}
             
-            {props.selectedProducts.length > 0 && props.onLinkChild && (
+            {props.onLinkChild && (
               <Button 
                 variant="secondary" 
                 size="sm"
