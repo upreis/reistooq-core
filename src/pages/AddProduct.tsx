@@ -30,7 +30,6 @@ const AddProduct = () => {
     url_imagem: "",
     codigo_barras: "",
     categoria: "",
-    imagem_fornecedor: "",
     material: "",
     cor: "",
     package: "",
@@ -110,7 +109,6 @@ const AddProduct = () => {
         url_imagem: "",
         codigo_barras: "",
         categoria: "",
-        imagem_fornecedor: "",
         material: "",
         cor: "",
         package: "",
@@ -490,15 +488,6 @@ const AddProduct = () => {
                     value={formData.url_imagem}
                     onChange={(e) => handleInputChange('url_imagem', e.target.value)}
                     placeholder="https://exemplo.com/imagem.jpg" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="imagem_fornecedor">Imagem do Fornecedor</Label>
-                  <Input 
-                    id="imagem_fornecedor" 
-                    value={formData.imagem_fornecedor}
-                    onChange={(e) => handleInputChange('imagem_fornecedor', e.target.value)}
-                    placeholder="https://exemplo.com/imagem-fornecedor.jpg" 
                   />
                 </div>
               </div>
