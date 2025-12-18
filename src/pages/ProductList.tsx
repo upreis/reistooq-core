@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X, Trash2, Upload, Camera, Download } from "lucide-react";
+import { HoverableProductImage } from "@/components/estoque/HoverableProductImage";
 import {
   Dialog,
   DialogContent,
@@ -853,25 +854,11 @@ const ProductList = () => {
                             {/* IMAGEM */}
                             <td className="px-3 py-3">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
-                                  {product.url_imagem ? (
-                                    <img 
-                                      src={product.url_imagem} 
-                                      alt={product.nome} 
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const parent = target.parentElement;
-                                        if (parent) {
-                                          parent.innerHTML = '<div class="w-4 h-4 bg-gray-300 rounded"></div>';
-                                        }
-                                      }}
-                                    />
-                                  ) : (
-                                    <Package className="w-4 h-4 text-muted-foreground" />
-                                  )}
-                                </div>
+                                <HoverableProductImage
+                                  src={product.url_imagem}
+                                  alt={product.nome || product.sku_interno}
+                                  size="md"
+                                />
                                 <Button
                                   variant="ghost"
                                   size="sm"
