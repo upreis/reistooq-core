@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell, Trash2 } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ interface HierarchicalEstoqueTableProps {
   onEditProduct: (product: Product) => void;
   onEditParentProduct?: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
+  onDeleteSelected?: () => void;
   onStockMovement: (productId: string, type: 'entrada' | 'saida', quantity: number, reason?: string) => void;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
@@ -240,6 +241,17 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                   Recolher Todos
                 </Button>
               </>
+            )}
+            
+            {props.selectedProducts.length > 0 && props.onDeleteSelected && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={props.onDeleteSelected}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir ({props.selectedProducts.length})
+              </Button>
             )}
           </div>
           
