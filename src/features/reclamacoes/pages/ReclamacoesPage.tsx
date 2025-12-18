@@ -13,26 +13,17 @@ import { useReclamacoesFiltersUnified } from '../hooks/useReclamacoesFiltersUnif
 import { useReclamacoesColumnManager } from '../hooks/useReclamacoesColumnManager';
 import { useMLClaimsFromCache } from '@/hooks/useMLClaimsFromCache';
 import { useReclamacoesStore } from '../store/reclamacoesStore';
-import type { VisibilityState } from '@tanstack/react-table';
 
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
-import { ReclamacoesStats } from '../components/ReclamacoesStats';
 import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
-import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAlert';
-import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
 import { ReclamacoesAnotacoesModal } from '../components/modals/ReclamacoesAnotacoesModal';
 import { ReclamacoesResumo } from '../components/ReclamacoesResumo';
 import { RECLAMACOES_COLUMN_DEFINITIONS } from '../config/reclamacoes-column-definitions';
-import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
-import { logger } from '@/utils/logger';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '../types/devolucao-analise.types';
 import { useToast } from '@/hooks/use-toast';
@@ -156,7 +147,6 @@ export function ReclamacoesPage() {
     
     // Se filtros mudaram E já houve busca anterior, resetar shouldFetch
     if (previousFiltersRef.current && previousFiltersRef.current !== currentFiltersKey) {
-      console.log('🔄 [COMBO 2.1] Filtros mudaram - resetando shouldFetch para aguardar clique');
       setShouldFetch(false);
     }
     
@@ -224,7 +214,6 @@ export function ReclamacoesPage() {
       return cacheResponse?.devolucoes || [];
     }
     if (dataSource === 'cache') {
-      console.log('⚡ [RECLAMACOES] Renderizando dados do cache:', reclamacoesCached.length);
       return reclamacoesCached;
     }
     return [];
@@ -241,8 +230,6 @@ export function ReclamacoesPage() {
   // Store já salva automaticamente em localStorage, não precisamos do persistentCache
   useEffect(() => {
     if (cacheResponse?.devolucoes?.length && shouldFetch) {
-      console.log('💾 [RECLAMACOES] Salvando no Store:', cacheResponse.devolucoes.length);
-      
       // ✅ Store persiste automaticamente no localStorage (única fonte)
       setReclamacoesCached(cacheResponse.devolucoes);
     }
@@ -414,18 +401,8 @@ export function ReclamacoesPage() {
   // 🔗 FILTRAR COLUNAS VISÍVEIS - CONVERTIDO EM ARRAY PARA FORÇAR RE-RENDER
   // ✅ DEPENDÊNCIAS: size + join forçam recálculo quando Set muda
   const visibleColumnKeys = useMemo(() => {
-    const keysArray = Array.from(columnManager.state.visibleColumns);
-    console.log('🔄 [ReclamacoesPage] visibleColumnKeys recalculado:', {
-      count: keysArray.length,
-      keys: keysArray
-    });
-    return keysArray;
+    return Array.from(columnManager.state.visibleColumns);
   }, [columnManager.state.visibleColumns.size, Array.from(columnManager.state.visibleColumns).join(',')]);
-
-  console.log('🎯 [ReclamacoesPage] Colunas visíveis:', {
-    count: visibleColumnKeys.length,
-    keys: visibleColumnKeys
-  });
 
   const handleTableReady = useCallback((table: any) => {
     setTableInstance(table);
@@ -488,7 +465,6 @@ export function ReclamacoesPage() {
                       columnDefinitions={RECLAMACOES_COLUMN_DEFINITIONS}
                       visibleColumns={columnManager.visibleColumnKeys}
                       onVisibleColumnsChange={(keys) => {
-                        console.log('🎛️ [Page] onVisibleColumnsChange chamado:', keys);
                         columnManager.actions.setVisibleColumns(keys);
                       }}
                     />
