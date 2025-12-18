@@ -768,7 +768,6 @@ const ProductList = () => {
                         </th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">SKU</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">IMAGEM</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">IMAGEM FORNECEDOR</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">MATERIAL</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[60px]">COR</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[200px]">Nome do Produto</th>
@@ -882,50 +881,6 @@ const ProductList = () => {
                                   disabled={uploadingProductId === product.id && uploadingField === 'imagem'}
                                 >
                                   {uploadingProductId === product.id && uploadingField === 'imagem' ? (
-                                    <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    <Upload className="w-3 h-3" />
-                                  )}
-                                </Button>
-                              </div>
-                            </td>
-
-                            {/* IMAGEM DO FORNECEDOR */}
-                            <td className="px-3 py-3">
-                              <div className="flex items-center gap-2">
-                                <EditableCell 
-                                  productId={product.id} 
-                                  field="url_imagem_fornecedor" 
-                                  value={(product as any).url_imagem_fornecedor}
-                                >
-                                  <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
-                                    {(product as any).url_imagem_fornecedor ? (
-                                      <img 
-                                        src={(product as any).url_imagem_fornecedor} 
-                                        alt="Fornecedor" 
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          const target = e.target as HTMLImageElement;
-                                          target.style.display = 'none';
-                                          const parent = target.parentElement;
-                                          if (parent) {
-                                            parent.innerHTML = '<div class="w-4 h-4 bg-gray-300 rounded"></div>';
-                                          }
-                                        }}
-                                      />
-                                    ) : (
-                                      <div className="w-4 h-4 bg-gray-300 rounded"></div>
-                                    )}
-                                  </div>
-                                </EditableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => triggerImageUpload(product.id, 'imagem_fornecedor')}
-                                  disabled={uploadingProductId === product.id && uploadingField === 'imagem_fornecedor'}
-                                >
-                                  {uploadingProductId === product.id && uploadingField === 'imagem_fornecedor' ? (
                                     <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
                                   ) : (
                                     <Upload className="w-3 h-3" />
