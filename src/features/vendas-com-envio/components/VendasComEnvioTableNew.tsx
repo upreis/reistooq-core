@@ -120,50 +120,59 @@ export const VendasComEnvioTableNew = ({
 
   return (
     <div className="space-y-4">
-      <div>
-        <Table className="min-w-max">
-          <TableHeader className="sticky top-0 z-50 bg-background shadow-sm">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead 
-                    key={header.id}
-                    className={(header.column.columnDef.meta as any)?.headerClassName}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => {
-                const cells = row.getAllCells();
-                return (
-                  <TableRow key={row.id} className="hover:bg-muted/50">
-                    {cells.map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Nenhum pedido encontrado
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+      {/* 📌 CONTAINER EXTERNO - padrão /reclamacoes */}
+      <div className="w-full flex flex-col border rounded-md">
+        {/* 📌 WRAPPER ÚNICO COM SCROLL - sticky header nativo */}
+        <div 
+          className="overflow-auto"
+          style={{ maxHeight: 'calc(100vh - 380px)' }}
+        >
+          <Table className="min-w-max w-max" disableOverflow>
+            {/* 📌 HEADER STICKY - position: sticky top-0 */}
+            <TableHeader className="sticky top-0 z-20 bg-background">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead 
+                      key={header.id}
+                      className={`bg-background ${(header.column.columnDef.meta as any)?.headerClassName || ''}`}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            {/* 📌 BODY - mesma tabela, scroll natural */}
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => {
+                  const cells = row.getAllCells();
+                  return (
+                    <TableRow key={row.id} className="hover:bg-muted/50">
+                      {cells.map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    Nenhum pedido encontrado
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Paginação */}
