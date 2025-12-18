@@ -16,7 +16,7 @@ import { ImportModal } from "./ImportModal";
 import { ImportarProdutosModal } from "../composicoes/ImportarProdutosModal";
 import { adaptProdutoComposicaoToModalProduct } from "../composicoes/ComposicoesModalAdapter";
 import { ProductModal } from "./ProductModal";
-import { ComposicoesCategorySidebar } from "./ComposicoesCategorySidebar";
+
 import { ComposicoesFilters } from "./ComposicoesFilters";
 import { useComposicoesFilters } from "@/features/estoque/hooks/useComposicoesFilters";
 import { formatMoney } from "@/lib/format";
@@ -25,7 +25,6 @@ import { Product, useProducts } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { cn } from "@/lib/utils";
-import { useSidebarUI } from "@/context/SidebarUIContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -47,7 +46,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [skuParaCadastro, setSkuParaCadastro] = useState<string>("");
-  const { isSidebarCollapsed: sidebarCollapsed, toggleSidebar } = useSidebarUI();
+  
   
   // Filtros hierárquicos para o sidebar
   const [hierarchicalFilters, setHierarchicalFilters] = useState<{
@@ -848,48 +847,8 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
         )}
       </div>
 
-      {/* Layout principal com sidebar e conteúdo */}
-      <div className="flex gap-6 relative">
-        {/* Sidebar de categorias - responsivo - oculto no mobile, overlay quando aberto */}
-        <div className={cn(
-          "transition-all duration-300 flex-shrink-0",
-          "hidden md:block", // Sempre oculto no mobile por padrão
-          sidebarCollapsed ? "md:w-12" : "md:w-72"
-        )}>
-          <div className="sticky top-6">
-            <ComposicoesCategorySidebar 
-              produtos={produtos || []}
-              hierarchicalFilters={hierarchicalFilters}
-              onHierarchicalFiltersChange={setHierarchicalFilters}
-              isCollapsed={sidebarCollapsed}
-              onToggleCollapse={toggleSidebar}
-            />
-          </div>
-        </div>
-
-        {/* Sidebar mobile overlay */}
-        {!sidebarCollapsed && (
-          <div className="md:hidden fixed inset-0 z-50 bg-black/20 backdrop-blur-sm">
-            <div className="absolute left-0 top-0 h-full w-72 bg-background border-r border-border shadow-xl">
-              <div className="p-6">
-                <ComposicoesCategorySidebar 
-                  produtos={produtos || []}
-                  hierarchicalFilters={hierarchicalFilters}
-                  onHierarchicalFiltersChange={setHierarchicalFilters}
-                  isCollapsed={false}
-                  onToggleCollapse={toggleSidebar}
-                />
-              </div>
-            </div>
-            {/* Área para fechar clicando fora */}
-            <div 
-              className="absolute inset-0" 
-              onClick={toggleSidebar}
-            />
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0 space-y-6">
+      {/* Layout principal */}
+      <div className="space-y-6">
           {/* Seção combinada de filtros e busca - tratada como um elemento único */}
           <div className="space-y-4">
             {/* Filtros Desktop */}
@@ -940,15 +899,6 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                 </Popover>
               </div>
 
-              {/* Ícone de categorias compacto */}
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 md:hidden"
-                onClick={toggleSidebar}
-              >
-                <Package className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>
@@ -996,7 +946,6 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
               </CardContent>
             </Card>
           )}
-        </div>
       </div>
 
       {/* Barra flutuante de ações (Mobile) */}
