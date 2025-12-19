@@ -76,33 +76,10 @@ const ALL_PAGES: PageOption[] = [
     category: 'Dashboard',
     gradient: 'bg-gradient-to-br from-cyan-500 to-cyan-700'
   },
-  {
-    id: 'dashboard-vendas',
-    label: 'Dashboard Vendas',
-    route: '/dashboardinicial/vendas',
-    icon: <img src={dashboardVendasIcon} alt="Dashboard Vendas" className="w-16 h-16 object-contain" />,
-    imageUrl: dashboardVendasIcon,
-    category: 'Dashboard',
-    gradient: 'bg-gradient-to-br from-green-500 to-green-700'
-  },
-  {
-    id: 'dashboard-estoque',
-    label: 'Dashboard Estoque',
-    route: '/dashboardinicial/estoque',
-    icon: <img src={dashboardEstoqueIcon} alt="Dashboard Estoque" className="w-16 h-16 object-contain" />,
-    imageUrl: dashboardEstoqueIcon,
-    category: 'Dashboard',
-    gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
-  },
-  {
-    id: 'dashboard-analises',
-    label: 'Dashboard Análises',
-    route: '/dashboardinicial/analises',
-    icon: <img src={dashboardAnalisesIcon} alt="Dashboard Análises" className="w-16 h-16 object-contain" />,
-    imageUrl: dashboardAnalisesIcon,
-    category: 'Dashboard',
-    gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
-  },
+  // Páginas de Dashboard ocultas temporariamente (em desenvolvimento):
+  // - dashboard-vendas (/dashboardinicial/vendas)
+  // - dashboard-estoque (/dashboardinicial/estoque)
+  // - dashboard-analises (/dashboardinicial/analises)
 
   // Vendas & Pedidos
   {

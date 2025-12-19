@@ -16,25 +16,11 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Visão Geral',
             path: '/dashboardinicial/visao-geral',
             icon: 'Home'
-          },
-          {
-            id: 'dashboard-vendas',
-            label: 'Dashboard Vendas',
-            path: '/dashboardinicial/vendas',
-            icon: 'TrendingUp'
-          },
-          {
-            id: 'dashboard-estoque',
-            label: 'Dashboard Estoque',
-            path: '/dashboardinicial/estoque',
-            icon: 'Package'
-          },
-          {
-            id: 'dashboard-financeiro',
-            label: 'Análises',
-            path: '/dashboardinicial/analises',
-            icon: 'DollarSign'
           }
+          // Páginas ocultas temporariamente (em desenvolvimento):
+          // - /dashboardinicial/vendas
+          // - /dashboardinicial/estoque
+          // - /dashboardinicial/analises
         ]
       },
       {

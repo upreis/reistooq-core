@@ -9,21 +9,10 @@ const navItems = [
     label: "Visão Geral",
     icon: BarChart3,
   },
-  {
-    path: "/dashboardinicial/vendas", 
-    label: "Vendas",
-    icon: ShoppingCart,
-  },
-  {
-    path: "/dashboardinicial/estoque",
-    label: "Estoque", 
-    icon: Package,
-  },
-  {
-    path: "/dashboardinicial/analises",
-    label: "Análises",
-    icon: TrendingUp,
-  },
+  // Páginas ocultas temporariamente (em desenvolvimento):
+  // - /dashboardinicial/vendas
+  // - /dashboardinicial/estoque
+  // - /dashboardinicial/analises
 ];
 
 export function DashboardInicialNav() {
