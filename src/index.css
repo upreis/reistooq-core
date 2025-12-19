@@ -69,11 +69,24 @@
   }
 
   /* F5.4: Focus visible improvements */
-  *:focus-visible {
-    outline: 2px solid hsl(var(--ring));
+  /* Evita “moldura” em containers como tabelas; aplica apenas em elementos interativos */
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role="button"],
+    [role="menuitem"],
+    [role="tab"],
+    [role="checkbox"],
+    [role="switch"],
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+    outline: 2px solid hsl(var(--ring) / 0.55);
     outline-offset: 2px;
   }
-  
   /* F5.1: Better scrollbars */
   ::-webkit-scrollbar {
     width: 8px;
