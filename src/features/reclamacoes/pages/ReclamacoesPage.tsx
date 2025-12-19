@@ -257,11 +257,7 @@ export function ReclamacoesPage() {
       await queryClient.invalidateQueries({ 
         queryKey: ['ml-claims-cache', selectedAccountIds.slice().sort().join(','), dateFrom, dateTo] 
       });
-      
-      toast({
-        title: "✅ Sucesso",
-        description: `Busca iniciada...`,
-      });
+      // Busca iniciada silenciosamente (sem toast)
     } catch (error) {
       toast({
         title: "Erro",
