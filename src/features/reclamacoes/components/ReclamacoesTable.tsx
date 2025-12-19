@@ -124,9 +124,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const headerGroups = table.getHeaderGroups();
 
   return (
-    <div className="w-full flex flex-col border rounded-md">
+    <div className="w-full flex flex-col rounded-md bg-card/40 ring-1 ring-border/25 overflow-hidden">
       {/* 📌 WRAPPER ÚNICO COM SCROLL - header sticky nativo */}
-      <div 
+      <div
         className="overflow-auto"
         style={{ maxHeight: 'calc(100vh - 380px)' }}
       >
