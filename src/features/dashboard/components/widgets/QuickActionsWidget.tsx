@@ -79,10 +79,6 @@ const ROUTE_TO_ICON: Record<string, string> = {
   '/aplicativos/calendario': calendarioIcon,
   '/aplicativos/notas': notasIcon,
   '/aplicativos/scanner': scannerIcon,
-  // E-commerce
-  '/apps/ecommerce/shop': lojaIcon,
-  '/apps/ecommerce/list': listaProdutosIcon,
-  '/apps/ecommerce/addproduct': adicionarProdutoIcon,
   // Configurações
   '/configuracoes/integracoes': integracoesIcon,
   '/configuracoes/anuncios': anunciosIcon,
@@ -143,12 +139,6 @@ const DEFAULT_SHORTCUTS: Service[] = [
     imageUrl: canceladasComEnvioIcon,
     href: '/vendas-com-envio',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
-  },
-  {
-    name: 'Produtos',
-    imageUrl: listaProdutosIcon,
-    href: '/apps/ecommerce/list',
-    gradient: 'bg-gradient-to-br from-green-500 to-emerald-600'
   },
   {
     name: 'Clientes',

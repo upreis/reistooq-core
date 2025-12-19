@@ -35,12 +35,6 @@ import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
 import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
 import Historico from "./pages/Historico";
-import Shop from "./pages/Shop";
-import ProductList from "./pages/ProductList";
-
-import AddProduct from "./pages/AddProduct";
-import Ecommerce from "./pages/Ecommerce";
-
 import Calendar from "./pages/Calendar";
 import Notes from "./pages/Notes";
 import OMS from "./pages/OMS";
@@ -181,11 +175,6 @@ function App() {
                     {/* Debug - Vendas Hoje */}
                     <Route path="debug-vendas-hoje" element={<DebugVendasHoje />} />
                     
-                    {/* E-commerce */}
-                    <Route path="shop" element={<Shop />} />
-                    <Route path="apps/ecommerce/*" element={<Ecommerce />} />
-                    <Route path="product-list" element={<ProductList />} />
-                    <Route path="add-product" element={<AddProduct />} />
                     
                     {/* Outros */}
                     <Route path="calendar" element={<Calendar />} />

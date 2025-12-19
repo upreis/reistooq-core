@@ -269,34 +269,6 @@ const ALL_PAGES: PageOption[] = [
     gradient: 'bg-gradient-to-br from-yellow-500 to-yellow-700'
   },
 
-  // E-commerce
-  {
-    id: 'ecommerce-shop',
-    label: 'Loja',
-    route: '/apps/ecommerce/shop',
-    icon: <img src={lojaIcon} alt="Loja" className="w-16 h-16 object-contain" />,
-    imageUrl: lojaIcon,
-    category: 'E-commerce',
-    gradient: 'bg-gradient-to-br from-purple-600 to-purple-800'
-  },
-  {
-    id: 'ecommerce-list',
-    label: 'Lista Produtos',
-    route: '/apps/ecommerce/list',
-    icon: <img src={listaProdutosIcon} alt="Lista Produtos" className="w-16 h-16 object-contain" />,
-    imageUrl: listaProdutosIcon,
-    category: 'E-commerce',
-    gradient: 'bg-gradient-to-br from-violet-600 to-violet-800'
-  },
-  {
-    id: 'ecommerce-add',
-    label: 'Adicionar Produto',
-    route: '/apps/ecommerce/addproduct',
-    icon: <img src={adicionarProdutoIcon} alt="Adicionar Produto" className="w-16 h-16 object-contain" />,
-    imageUrl: adicionarProdutoIcon,
-    category: 'E-commerce',
-    gradient: 'bg-gradient-to-br from-amber-500 to-amber-700'
-  },
 
   // Configurações
   {

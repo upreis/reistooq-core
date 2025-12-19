@@ -40,12 +40,6 @@ const DEFAULT_SHORTCUTS: Service[] = [
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
   },
   {
-    name: 'Produtos',
-    imageUrl: 'https://img.icons8.com/fluency/96/product.png',
-    href: '/apps/ecommerce/list',
-    gradient: 'bg-gradient-to-br from-green-500 to-emerald-600'
-  },
-  {
     name: 'Clientes',
     imageUrl: 'https://img.icons8.com/fluency/96/customer.png',
     href: '/oms/clientes',

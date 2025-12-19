@@ -23,9 +23,6 @@ import adminAlertasIcon from "@/assets/admin-alertas-icon.png";
 import adminSegurancaIcon from "@/assets/admin-seguranca-icon.png";
 import adminAuditoriaIcon from "@/assets/admin-auditoria-icon.png";
 import adminPerfilIcon from "@/assets/admin-perfil-icon.png";
-import ecommerceShopIcon from "@/assets/ecommerce-shop-icon.png";
-import ecommerceListIcon from "@/assets/ecommerce-list-icon.png";
-import ecommerceAddProductIcon from "@/assets/ecommerce-addproduct-icon.png";
 import scannerIcon from "@/assets/icons/scanner-icon.png";
 import deParaIcon from "@/assets/de-para-icon.png";
 import alertasIcon from "@/assets/alertas-icon.png";
@@ -46,7 +43,7 @@ import { ComprasNavLimelight } from "@/features/compras/components/ComprasNavLim
 import { AplicativosNavLimelight } from "@/features/aplicativos/components/AplicativosNavLimelight";
 import { ConfiguracoesNavLimelight } from "@/features/configuracoes/components/ConfiguracoesNavLimelight";
 import { AdminNavLimelight } from "@/features/admin/components/AdminNavLimelight";
-import { EcommerceNavLimelight } from "@/features/ecommerce/components/EcommerceNavLimelight";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -123,10 +120,6 @@ export default function Header() {
     if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Avisos', isImage: true };
     if (path.startsWith('/configuracoes/alertas')) return { icon: alertasIcon, label: 'Configurações / Alertas', isImage: true };
     
-    // Apps/Ecommerce
-    if (path.startsWith('/apps/ecommerce/addproduct')) return { icon: ecommerceAddProductIcon, label: 'Apps / Ecommerce / Adicionar', isImage: true };
-    if (path.startsWith('/apps/ecommerce/list')) return { icon: ecommerceListIcon, label: 'Apps / Ecommerce / Produtos', isImage: true };
-    if (path.startsWith('/apps/ecommerce/shop')) return { icon: ecommerceShopIcon, label: 'Apps / Ecommerce / Loja', isImage: true };
     
     // Admin
     if (path.startsWith('/admin/perfil')) return { icon: adminPerfilIcon, label: 'Admin / Perfil', isImage: true };
@@ -177,13 +170,6 @@ export default function Header() {
     if (path.startsWith('/admin/perfil')) return { icon: '👤', label: 'Admin / Perfil' };
     if (path.startsWith('/admin')) return { icon: '🛡️', label: 'Administração' };
     
-    // eCommerce
-    if (path.startsWith('/apps/ecommerce/shop')) return { icon: '🛒', label: 'eCommerce / Loja' };
-    if (path.startsWith('/apps/ecommerce/detail')) return { icon: '🔍', label: 'eCommerce / Detalhes' };
-    if (path.startsWith('/apps/ecommerce/list')) return { icon: '📋', label: 'eCommerce / Produtos' };
-    if (path.startsWith('/apps/ecommerce/addproduct')) return { icon: '➕', label: 'eCommerce / Adicionar' };
-    if (path.startsWith('/apps/ecommerce/editproduct')) return { icon: '✏️', label: 'eCommerce / Editar' };
-    if (path.startsWith('/apps/ecommerce')) return { icon: '🛒', label: 'eCommerce' };
     
     return null;
   };
@@ -236,7 +222,7 @@ export default function Header() {
           {location.pathname.startsWith('/aplicativos') && <AplicativosNavLimelight />}
           {location.pathname.startsWith('/configuracoes') && <ConfiguracoesNavLimelight />}
           {location.pathname.startsWith('/admin') && <AdminNavLimelight />}
-          {location.pathname.startsWith('/apps/ecommerce') && <EcommerceNavLimelight />}
+          
         </div>
 
         {/* Spacer to push right side to the end */}
