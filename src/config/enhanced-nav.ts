@@ -38,31 +38,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         ]
       },
       {
-        id: 'ecommerce-app',
-        label: 'Cadastros',
-        icon: 'ShoppingCart',
-        children: [
-          {
-            id: 'cadastros-itens',
-            label: 'Itens',
-            path: '/apps/ecommerce/shop',
-            icon: 'Package'
-          },
-          {
-            id: 'cadastros-produtos',
-            label: 'Produtos',
-            path: '/apps/ecommerce/list',
-            icon: 'List'
-          },
-          {
-            id: 'cadastros-adicionar',
-            label: 'Adicionar',
-            path: '/apps/ecommerce/addproduct',
-            icon: 'PlusSquare'
-          }
-        ]
-      },
-      {
         id: 'oms',
         label: 'Vendas',
         icon: 'TrendingUp',
