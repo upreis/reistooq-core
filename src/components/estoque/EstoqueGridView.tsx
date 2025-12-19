@@ -22,6 +22,7 @@ import { SegmentFilter } from "./SegmentFilter";
 
 interface EstoqueGridViewProps {
   products: Product[];
+  allFilteredProducts?: Product[]; // Todos os produtos filtrados (para calcular segmentos)
   selectedProducts: string[];
   onSelectProduct: (productId: string, isSelected: boolean) => void;
   onSelectAll?: (selected: boolean) => void;
@@ -43,6 +44,7 @@ interface EstoqueGridViewProps {
 
 export function EstoqueGridView({
   products,
+  allFilteredProducts,
   selectedProducts,
   onSelectProduct,
   onSelectAll,
@@ -65,7 +67,10 @@ export function EstoqueGridView({
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  // Filtrar produtos por segmento selecionado
+  // Usa allFilteredProducts para segmentos (todos os produtos) ou fallback para products
+  const productsForSegments = allFilteredProducts || products;
+
+  // Filtrar produtos da página atual por segmento selecionado
   const filteredProducts = useMemo(() => {
     if (selectedSegments.length === 0) return products;
     
@@ -293,9 +298,9 @@ export function EstoqueGridView({
         </div>
       </div>
 
-      {/* Filtro de Segmentos */}
+      {/* Filtro de Segmentos - usa todos os produtos filtrados */}
       <SegmentFilter
-        products={products}
+        products={productsForSegments}
         selectedSegments={selectedSegments}
         onSegmentChange={setSelectedSegments}
       />

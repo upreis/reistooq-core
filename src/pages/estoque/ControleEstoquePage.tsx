@@ -245,6 +245,7 @@ export default function ControleEstoquePage() {
         <div className="border rounded-lg bg-card">
           <EstoqueGridView
             products={paginatedProducts}
+            allFilteredProducts={finalFilteredProducts}
             selectedProducts={selectedProducts}
             onSelectProduct={handleSelectProduct}
             onSelectAll={(selected) => handleSelectAll(selected, paginatedProducts, setSelectedProducts)}
