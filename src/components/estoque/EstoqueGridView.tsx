@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, Search, X, Link as LinkIcon, Trash2, Plus, ChevronDown, ChevronUp, Bell } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SegmentFilter } from "./SegmentFilter";
 
 interface EstoqueGridViewProps {
   products: Product[];
@@ -61,10 +62,21 @@ export function EstoqueGridView({
 }: EstoqueGridViewProps) {
   const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
+  // Filtrar produtos por segmento selecionado
+  const filteredProducts = useMemo(() => {
+    if (selectedSegments.length === 0) return products;
+    
+    return products.filter((product) => {
+      const segment = product.categoria_principal || product.categoria || "Sem Categoria";
+      return selectedSegments.includes(segment);
+    });
+  }, [products, selectedSegments]);
+
   const total = totalProducts ?? products.length;
-  const allSelected = products.length > 0 && selectedProducts.length === products.length;
+  const allSelected = filteredProducts.length > 0 && selectedProducts.length === filteredProducts.length;
 
   // Update image position only when hovering
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -110,7 +122,17 @@ export function EstoqueGridView({
 
   const handleSelectAll = () => {
     if (onSelectAll) {
-      onSelectAll(!allSelected);
+      // Selecionar todos os produtos filtrados
+      if (allSelected) {
+        onSelectAll(false);
+      } else {
+        // Precisa passar os IDs dos produtos filtrados para o parent
+        filteredProducts.forEach(p => {
+          if (!selectedProducts.includes(p.id)) {
+            onSelectProduct(p.id, true);
+          }
+        });
+      }
     }
   };
 
@@ -130,7 +152,7 @@ export function EstoqueGridView({
                 onCheckedChange={() => handleSelectAll()}
               />
               <span className="text-sm text-muted-foreground">
-                Selecionar Todos ({selectedProducts.length}/{total})
+                Selecionar Todos ({selectedProducts.length}/{filteredProducts.length})
               </span>
             </div>
           )}
@@ -271,11 +293,23 @@ export function EstoqueGridView({
         </div>
       </div>
 
+      {/* Filtro de Segmentos */}
+      <SegmentFilter
+        products={products}
+        selectedSegments={selectedSegments}
+        onSegmentChange={setSelectedSegments}
+      />
+
       {/* Grid */}
-      {products.length === 0 ? (
+      {filteredProducts.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
           <Package className="h-12 w-12 mb-4" />
-          <span className="text-sm">Nenhum produto encontrado</span>
+          <span className="text-sm">
+            {selectedSegments.length > 0 
+              ? "Nenhum produto neste segmento" 
+              : "Nenhum produto encontrado"
+            }
+          </span>
         </div>
       ) : (
         <div
@@ -284,7 +318,7 @@ export function EstoqueGridView({
           className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4"
         >
           <AnimatePresence mode="sync">
-            {products.map((product, index) => {
+            {filteredProducts.map((product, index) => {
               const isSelected = selectedProducts.includes(product.id);
               const status = getStockStatus(product);
 
@@ -384,7 +418,7 @@ export function EstoqueGridView({
           {/* Floating enlarged image */}
           <AnimatePresence>
             {hoveredProductIndex !== null &&
-              products[hoveredProductIndex]?.url_imagem && (
+              filteredProducts[hoveredProductIndex]?.url_imagem && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -396,7 +430,7 @@ export function EstoqueGridView({
                   }}
                 >
                   <img
-                    src={products[hoveredProductIndex].url_imagem!}
+                    src={filteredProducts[hoveredProductIndex].url_imagem!}
                     alt=""
                     className="w-full h-full object-cover"
                   />
