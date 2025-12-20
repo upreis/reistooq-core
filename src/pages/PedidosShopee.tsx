@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from "react";
 import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
-import pLimit from "p-limit";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +21,6 @@ interface ImportResult {
   novos: number;
   duplicados: number;
   erros: number;
-  baixasRealizadas: number;
   detalhesErros: Array<{ linha: number; erro: string }>;
 }
 
@@ -96,46 +94,6 @@ export default function PedidosShopee() {
       loadPedidos();
     }
   }, [activeTab, organizationId, loadPedidos]);
-
-  const processarBaixaEstoque = async (sku: string, quantidade: number): Promise<boolean> => {
-    if (!sku || !organizationId) return false;
-
-    try {
-      // Buscar produto pelo SKU
-      const { data: produto, error: prodError } = await supabase
-        .from("produtos")
-        .select("id, quantidade_atual, nome")
-        .eq("sku_interno", sku)
-        .eq("organization_id", organizationId)
-        .maybeSingle();
-
-      if (prodError || !produto) {
-        console.warn(`Produto não encontrado para SKU: ${sku}`);
-        return false;
-      }
-
-      // Atualizar quantidade do produto
-      const novaQuantidade = Math.max(0, (produto.quantidade_atual || 0) - quantidade);
-      
-      const { error: updateError } = await supabase
-        .from("produtos")
-        .update({ quantidade_atual: novaQuantidade })
-        .eq("id", produto.id);
-
-      if (updateError) {
-        console.error(`Erro ao atualizar estoque do produto ${sku}:`, updateError);
-        return false;
-      }
-
-      // Registrar movimentação usando RPC ou diretamente
-      console.log(`Baixa realizada: SKU ${sku}, Qtd ${quantidade}`);
-
-      return true;
-    } catch (error) {
-      console.error(`Erro ao processar baixa do SKU ${sku}:`, error);
-      return false;
-    }
-  };
 
   const parseShopeeDate = (value: unknown): string | null => {
     if (!value) return null;
@@ -231,13 +189,9 @@ export default function PedidosShopee() {
       let novos = 0;
       let duplicados = 0;
       let erros = 0;
-      let baixasRealizadas = 0;
       const detalhesErros: Array<{ linha: number; erro: string }> = [];
 
-      const total = dataRows.length;
-      const nowIso = new Date().toISOString();
-
-      // 1) Monta payload (memória) – aqui é onde acontece o “de/para” (apenas leitura dos headers)
+      // 1) Monta payload (memória) – aqui é onde acontece o "de/para" (apenas leitura dos headers)
       const pedidosPayload = dataRows.map((row, i) => {
         const linhaNum = i + 2;
         const orderId = String(row[colMap.order_id] || "").trim();
@@ -300,79 +254,19 @@ export default function PedidosShopee() {
         const { error: upsertError } = await supabase
           .from("pedidos_shopee")
           .upsert(chunk, {
-            // Mantém compatível com a constraint de duplicidade já existente
-            // (ajuste se seu índice/constraint tiver outro nome)
             onConflict: "organization_id,order_id,sku",
             ignoreDuplicates: true,
           });
 
         if (upsertError) {
-          // Em lote: se der erro, registramos e seguimos (evita travar tudo)
           detalhesErros.push({ linha: 0, erro: `Erro no lote ${c + 1}: ${upsertError.message}` });
           erros += chunk.length;
         } else {
-          // Com ignoreDuplicates, não temos como saber exatamente quantos foram duplicados sem retornar rows.
-          // Então contamos como “novos” os que foram enviados ao upsert (melhor estimativa) e ajustamos na UI.
           novos += chunk.length;
         }
 
-        setProgress(Math.round(((c + 1) / chunks.length) * 70));
+        setProgress(Math.round(((c + 1) / chunks.length) * 100));
       }
-
-      // 3) Baixa de estoque (agregada por SKU) – evita 3-4 queries por linha
-      const qtyBySku = new Map<string, number>();
-      for (const p of pedidosValidos) {
-        if (!p.sku) continue;
-        qtyBySku.set(p.sku, (qtyBySku.get(p.sku) || 0) + (p.quantidade || 0));
-      }
-
-      const skus = Array.from(qtyBySku.keys());
-      if (skus.length > 0) {
-        const { data: produtos, error: prodError } = await supabase
-          .from("produtos")
-          .select("id, sku_interno, quantidade_atual")
-          .eq("organization_id", organizationId)
-          .in("sku_interno", skus);
-
-        if (prodError) {
-          detalhesErros.push({ linha: 0, erro: `Erro ao buscar produtos para baixa: ${prodError.message}` });
-        } else {
-          const limit = pLimit(8);
-          await Promise.all(
-            (produtos || []).map((produto) =>
-              limit(async () => {
-                const sku = String((produto as any).sku_interno);
-                const qtd = qtyBySku.get(sku) || 0;
-                if (!qtd) return;
-
-                const novaQuantidade = Math.max(0, Number((produto as any).quantidade_atual || 0) - qtd);
-                const { error: updateError } = await supabase
-                  .from("produtos")
-                  .update({ quantidade_atual: novaQuantidade })
-                  .eq("id", (produto as any).id);
-
-                if (updateError) {
-                  detalhesErros.push({ linha: 0, erro: `Erro ao atualizar estoque ${sku}: ${updateError.message}` });
-                  erros++;
-                  return;
-                }
-
-                baixasRealizadas++;
-
-                // Marca todos os pedidos dessa importação com esse SKU como “baixados”
-                await supabase
-                  .from("pedidos_shopee")
-                  .update({ baixa_estoque_realizada: true, data_baixa_estoque: nowIso })
-                  .eq("organization_id", organizationId)
-                  .eq("importacao_id", importacao.id)
-                  .eq("sku", sku);
-              })
-            )
-          );
-        }
-      }
-
-      setProgress(100);
 
       // Atualizar registro de importação
       await supabase
@@ -383,7 +277,6 @@ export default function PedidosShopee() {
           linhas_erro: erros,
           pedidos_novos: novos,
           pedidos_duplicados: duplicados,
-          baixas_realizadas: baixasRealizadas,
           detalhes_erros: detalhesErros.length > 0 ? detalhesErros : null,
         })
         .eq("id", importacao.id);
@@ -393,13 +286,12 @@ export default function PedidosShopee() {
         novos,
         duplicados,
         erros,
-        baixasRealizadas,
         detalhesErros,
       });
 
       toast({
         title: "Importação concluída",
-        description: `${novos} pedidos importados, ${baixasRealizadas} baixas realizadas.`,
+        description: `${novos} pedidos importados.`,
       });
 
       loadPedidos();
@@ -467,7 +359,7 @@ export default function PedidosShopee() {
                   Importar Planilha Shopee
                 </CardTitle>
                 <CardDescription>
-                  Arraste um arquivo Excel/CSV exportado da Shopee. Os pedidos serão importados e o estoque será dado baixa automaticamente.
+                  Arraste um arquivo Excel/CSV exportado da Shopee. Os pedidos serão importados (baixa de estoque pode ser feita manualmente depois).
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -513,7 +405,7 @@ export default function PedidosShopee() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-3 bg-muted rounded-lg">
                       <p className="text-2xl font-bold">{result.total}</p>
                       <p className="text-xs text-muted-foreground">Total de linhas</p>
@@ -521,10 +413,6 @@ export default function PedidosShopee() {
                     <div className="text-center p-3 bg-green-500/10 rounded-lg">
                       <p className="text-2xl font-bold text-green-600">{result.novos}</p>
                       <p className="text-xs text-muted-foreground">Novos pedidos</p>
-                    </div>
-                    <div className="text-center p-3 bg-blue-500/10 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{result.baixasRealizadas}</p>
-                      <p className="text-xs text-muted-foreground">Baixas estoque</p>
                     </div>
                     <div className="text-center p-3 bg-amber-500/10 rounded-lg">
                       <p className="text-2xl font-bold text-amber-600">{result.duplicados}</p>
