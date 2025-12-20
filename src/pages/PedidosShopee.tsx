@@ -184,16 +184,33 @@ export default function PedidosShopee() {
       const headers = (rows[0] as unknown[]).map(h => String(h || ""));
       const dataRows = rows.slice(1) as unknown[][];
 
-      // Mapear colunas
+      // Mapear colunas - De/Para planilha Shopee
       const colMap = {
-        order_id: headers.findIndex(h => /order.*id|número.*pedido|pedido|order_sn/i.test(h)),
-        order_status: headers.findIndex(h => /status|situação|estado/i.test(h)),
-        data_pedido: headers.findIndex(h => /data.*pedido|data.*compra|created|criado/i.test(h)),
-        comprador_nome: headers.findIndex(h => /comprador|cliente|buyer|nome/i.test(h)),
-        sku: headers.findIndex(h => /sku|código.*produto|product.*id/i.test(h)),
-        produto_nome: headers.findIndex(h => /produto|item|product.*name|nome.*produto/i.test(h)),
-        quantidade: headers.findIndex(h => /quantidade|qty|qtd|quantity/i.test(h)),
-        preco_total: headers.findIndex(h => /total|valor|price|preço/i.test(h)),
+        // Obrigatórios
+        order_id: headers.findIndex(h => /^id\s*do\s*pedido$|order.*id|número.*pedido|order_sn/i.test(h)),
+        order_status: headers.findIndex(h => /^situa[çc][aã]o\s*do\s*pedido$|status|situação|estado/i.test(h)),
+        data_pedido: headers.findIndex(h => /^data\s*de\s*cria[çc][aã]o\s*do\s*pedido$|data.*pedido|data.*compra|created|criado/i.test(h)),
+        comprador_nome: headers.findIndex(h => /^nome\s*de\s*usu[aá]rio.*comprador.*$|comprador|cliente|buyer|nome.*usuario/i.test(h)),
+        sku: headers.findIndex(h => /^n[uú]mero\s*de\s*refer[eê]ncia\s*sku$|^sku$|código.*produto|product.*id/i.test(h)),
+        produto_nome: headers.findIndex(h => /^nome\s*do\s*produto$|produto|item|product.*name|titulo.*produto/i.test(h)),
+        quantidade: headers.findIndex(h => /^quantidade$|qty|qtd|quantity/i.test(h)),
+        preco_total: headers.findIndex(h => /^subtotal\s*do\s*produto$|total|valor|price|preço/i.test(h)),
+        // Endereço
+        endereco_rua: headers.findIndex(h => /^endere[çc]o\s*de\s*entrega$|^rua$|endereco|address|logradouro/i.test(h)),
+        endereco_bairro: headers.findIndex(h => /^bairro$/i.test(h)),
+        endereco_cidade: headers.findIndex(h => /^cidade$/i.test(h)),
+        endereco_estado: headers.findIndex(h => /^uf$/i.test(h)),
+        endereco_cep: headers.findIndex(h => /^cep$/i.test(h)),
+        // Rastreamento e logística
+        codigo_rastreamento: headers.findIndex(h => /^n[uú]mero\s*de\s*rastreamento$|rastreamento|tracking|rastreio/i.test(h)),
+        tipo_logistico: headers.findIndex(h => /^op[çc][aã]o\s*de\s*envio$|tipo.*log[ií]stico|logistic|envio/i.test(h)),
+        // Custos e taxas
+        receita_flex: headers.findIndex(h => /^valor\s*estimado\s*do\s*frete$|receita.*flex|frete.*estimado/i.test(h)),
+        custo_envio: headers.findIndex(h => /^taxa\s*de\s*envio\s*reversa$|custo.*envio|shipping.*cost/i.test(h)),
+        custo_fixo: headers.findIndex(h => /^taxa\s*de\s*servi[çc]o$|custo.*fixo|service.*fee/i.test(h)),
+        taxa_marketplace: headers.findIndex(h => /^taxa\s*de\s*comiss[aã]o$|taxa.*marketplace|comiss[aã]o|commission/i.test(h)),
+        // Cancelamento
+        motivo_cancelamento: headers.findIndex(h => /^cancelar\s*motivo$|motivo.*cancel|cancel.*reason/i.test(h)),
       };
 
       // Criar registro de importação
@@ -243,6 +260,23 @@ export default function PedidosShopee() {
               produto_nome: colMap.produto_nome >= 0 ? String(row[colMap.produto_nome] || "") : null,
               quantidade: quantidade,
               preco_total: colMap.preco_total >= 0 ? parseNumber(row[colMap.preco_total]) : null,
+              // Endereço
+              endereco_rua: colMap.endereco_rua >= 0 ? String(row[colMap.endereco_rua] || "") : null,
+              endereco_bairro: colMap.endereco_bairro >= 0 ? String(row[colMap.endereco_bairro] || "") : null,
+              endereco_cidade: colMap.endereco_cidade >= 0 ? String(row[colMap.endereco_cidade] || "") : null,
+              endereco_estado: colMap.endereco_estado >= 0 ? String(row[colMap.endereco_estado] || "") : null,
+              endereco_cep: colMap.endereco_cep >= 0 ? String(row[colMap.endereco_cep] || "") : null,
+              // Rastreamento e logística
+              codigo_rastreamento: colMap.codigo_rastreamento >= 0 ? String(row[colMap.codigo_rastreamento] || "") : null,
+              tipo_logistico: colMap.tipo_logistico >= 0 ? String(row[colMap.tipo_logistico] || "") : null,
+              // Custos e taxas
+              frete: colMap.receita_flex >= 0 ? parseNumber(row[colMap.receita_flex]) : null,
+              custo_envio: colMap.custo_envio >= 0 ? parseNumber(row[colMap.custo_envio]) : null,
+              custo_fixo: colMap.custo_fixo >= 0 ? parseNumber(row[colMap.custo_fixo]) : null,
+              taxa_marketplace: colMap.taxa_marketplace >= 0 ? parseNumber(row[colMap.taxa_marketplace]) : null,
+              // Cancelamento
+              motivo_cancelamento: colMap.motivo_cancelamento >= 0 ? String(row[colMap.motivo_cancelamento] || "") : null,
+              // Metadados
               importacao_id: importacao.id,
               baixa_estoque_realizada: false,
               dados_originais: JSON.parse(JSON.stringify(Object.fromEntries(headers.map((h, idx) => [h, row[idx]])))),
