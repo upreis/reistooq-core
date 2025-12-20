@@ -41,16 +41,10 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'ShoppingCart'
           },
           {
-            id: 'oms-clientes',
-            label: 'Clientes',
-            path: '/oms/clientes',
+            id: 'oms-cadastro',
+            label: 'Cadastro',
+            path: '/oms/cadastro',
             icon: 'Users'
-          },
-          {
-            id: 'oms-vendedores',
-            label: 'Vendedores',
-            path: '/oms/vendedores',
-            icon: 'UserCheck'
           },
           {
             id: 'oms-configuracoes',

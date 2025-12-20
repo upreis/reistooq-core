@@ -15,14 +15,9 @@ const navItems = [
     icon: ShoppingCart,
   },
   {
-    path: "/oms/clientes",
-    label: "Clientes",
+    path: "/oms/cadastro",
+    label: "Cadastro",
     icon: Users,
-  },
-  {
-    path: "/oms/vendedores",
-    label: "Vendedores",
-    icon: UserCheck,
   },
   {
     path: "/oms/configuracoes",
