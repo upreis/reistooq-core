@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
+import pLimit from "p-limit";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -233,90 +234,105 @@ export default function PedidosShopee() {
       let baixasRealizadas = 0;
       const detalhesErros: Array<{ linha: number; erro: string }> = [];
 
-      for (let i = 0; i < dataRows.length; i++) {
-        const row = dataRows[i];
-        const linhaNum = i + 2;
+      const total = dataRows.length;
+      const limit = pLimit(8);
+      let processed = 0;
 
-        try {
-          const orderId = String(row[colMap.order_id] || "").trim();
-          if (!orderId) {
-            detalhesErros.push({ linha: linhaNum, erro: "ID do pedido não encontrado" });
-            erros++;
-            continue;
-          }
+      await Promise.all(
+        dataRows.map((row, i) =>
+          limit(async () => {
+            const linhaNum = i + 2;
 
-          const sku = colMap.sku >= 0 ? String(row[colMap.sku] || "").trim() || null : null;
-          const quantidade = colMap.quantidade >= 0 ? Number(row[colMap.quantidade]) || 1 : 1;
+            try {
+              const orderId = String(row[colMap.order_id] || "").trim();
+              if (!orderId) {
+                detalhesErros.push({ linha: linhaNum, erro: "ID do pedido não encontrado" });
+                erros++;
+                return;
+              }
 
-          const { error: insertError } = await supabase
-            .from("pedidos_shopee")
-            .insert([{
-              organization_id: organizationId,
-              order_id: orderId,
-              order_status: colMap.order_status >= 0 ? String(row[colMap.order_status] || "") : null,
-              data_pedido: colMap.data_pedido >= 0 ? parseShopeeDate(row[colMap.data_pedido]) : null,
-              comprador_nome: colMap.comprador_nome >= 0 ? String(row[colMap.comprador_nome] || "") : null,
-              sku: sku,
-              produto_nome: colMap.produto_nome >= 0 ? String(row[colMap.produto_nome] || "") : null,
-              quantidade: quantidade,
-              preco_total: colMap.preco_total >= 0 ? parseNumber(row[colMap.preco_total]) : null,
-              // Endereço
-              endereco_rua: colMap.endereco_rua >= 0 ? String(row[colMap.endereco_rua] || "") : null,
-              endereco_bairro: colMap.endereco_bairro >= 0 ? String(row[colMap.endereco_bairro] || "") : null,
-              endereco_cidade: colMap.endereco_cidade >= 0 ? String(row[colMap.endereco_cidade] || "") : null,
-              endereco_estado: colMap.endereco_estado >= 0 ? String(row[colMap.endereco_estado] || "") : null,
-              endereco_cep: colMap.endereco_cep >= 0 ? String(row[colMap.endereco_cep] || "") : null,
-              // Rastreamento e logística
-              codigo_rastreamento: colMap.codigo_rastreamento >= 0 ? String(row[colMap.codigo_rastreamento] || "") : null,
-              tipo_logistico: colMap.tipo_logistico >= 0 ? String(row[colMap.tipo_logistico] || "") : null,
-              // Custos e taxas
-              frete: colMap.receita_flex >= 0 ? parseNumber(row[colMap.receita_flex]) : null,
-              custo_envio: colMap.custo_envio >= 0 ? parseNumber(row[colMap.custo_envio]) : null,
-              custo_fixo: colMap.custo_fixo >= 0 ? parseNumber(row[colMap.custo_fixo]) : null,
-              taxa_marketplace: colMap.taxa_marketplace >= 0 ? parseNumber(row[colMap.taxa_marketplace]) : null,
-              // Cancelamento
-              motivo_cancelamento: colMap.motivo_cancelamento >= 0 ? String(row[colMap.motivo_cancelamento] || "") : null,
-              // Metadados
-              importacao_id: importacao.id,
-              baixa_estoque_realizada: false,
-              dados_originais: JSON.parse(JSON.stringify(Object.fromEntries(headers.map((h, idx) => [h, row[idx]])))),
-            }]);
+              const sku = colMap.sku >= 0 ? String(row[colMap.sku] || "").trim() || null : null;
+              const quantidade = colMap.quantidade >= 0 ? Number(row[colMap.quantidade]) || 1 : 1;
 
-          if (insertError) {
-            if (insertError.code === "23505") {
-              duplicados++;
-            } else {
-              detalhesErros.push({ linha: linhaNum, erro: insertError.message });
+              const { error: insertError } = await supabase.from("pedidos_shopee").insert([
+                {
+                  organization_id: organizationId,
+                  order_id: orderId,
+                  order_status: colMap.order_status >= 0 ? String(row[colMap.order_status] || "") : null,
+                  data_pedido: colMap.data_pedido >= 0 ? parseShopeeDate(row[colMap.data_pedido]) : null,
+                  comprador_nome: colMap.comprador_nome >= 0 ? String(row[colMap.comprador_nome] || "") : null,
+                  sku: sku,
+                  produto_nome: colMap.produto_nome >= 0 ? String(row[colMap.produto_nome] || "") : null,
+                  quantidade: quantidade,
+                  preco_total: colMap.preco_total >= 0 ? parseNumber(row[colMap.preco_total]) : null,
+                  // Endereço
+                  endereco_rua: colMap.endereco_rua >= 0 ? String(row[colMap.endereco_rua] || "") : null,
+                  endereco_bairro: colMap.endereco_bairro >= 0 ? String(row[colMap.endereco_bairro] || "") : null,
+                  endereco_cidade: colMap.endereco_cidade >= 0 ? String(row[colMap.endereco_cidade] || "") : null,
+                  endereco_estado: colMap.endereco_estado >= 0 ? String(row[colMap.endereco_estado] || "") : null,
+                  endereco_cep: colMap.endereco_cep >= 0 ? String(row[colMap.endereco_cep] || "") : null,
+                  // Rastreamento e logística
+                  codigo_rastreamento:
+                    colMap.codigo_rastreamento >= 0 ? String(row[colMap.codigo_rastreamento] || "") : null,
+                  tipo_logistico: colMap.tipo_logistico >= 0 ? String(row[colMap.tipo_logistico] || "") : null,
+                  // Custos e taxas
+                  frete: colMap.receita_flex >= 0 ? parseNumber(row[colMap.receita_flex]) : null,
+                  custo_envio: colMap.custo_envio >= 0 ? parseNumber(row[colMap.custo_envio]) : null,
+                  custo_fixo: colMap.custo_fixo >= 0 ? parseNumber(row[colMap.custo_fixo]) : null,
+                  taxa_marketplace: colMap.taxa_marketplace >= 0 ? parseNumber(row[colMap.taxa_marketplace]) : null,
+                  // Cancelamento
+                  motivo_cancelamento:
+                    colMap.motivo_cancelamento >= 0 ? String(row[colMap.motivo_cancelamento] || "") : null,
+                  // Metadados
+                  importacao_id: importacao.id,
+                  baixa_estoque_realizada: false,
+                  dados_originais: JSON.parse(
+                    JSON.stringify(Object.fromEntries(headers.map((h, idx) => [h, (row as unknown[])[idx]])))
+                  ),
+                },
+              ]);
+
+              if (insertError) {
+                if (insertError.code === "23505") {
+                  duplicados++;
+                } else {
+                  detalhesErros.push({ linha: linhaNum, erro: insertError.message });
+                  erros++;
+                }
+                return;
+              }
+
+              novos++;
+
+              // Dar baixa automática no estoque
+              if (sku) {
+                const baixaOk = await processarBaixaEstoque(sku, quantidade);
+                if (baixaOk) {
+                  baixasRealizadas++;
+                  await supabase
+                    .from("pedidos_shopee")
+                    .update({
+                      baixa_estoque_realizada: true,
+                      data_baixa_estoque: new Date().toISOString(),
+                    })
+                    .eq("organization_id", organizationId)
+                    .eq("order_id", orderId)
+                    .eq("sku", sku);
+                }
+              }
+            } catch (rowError) {
+              detalhesErros.push({ linha: linhaNum, erro: String(rowError) });
               erros++;
+            } finally {
+              processed++;
+              // Atualiza UI com menos frequência para não travar o render
+              if (processed % 10 === 0 || processed === total) {
+                setProgress(Math.round((processed / total) * 100));
+              }
             }
-            continue;
-          }
-
-          novos++;
-
-          // Dar baixa automática no estoque
-          if (sku) {
-            const baixaOk = await processarBaixaEstoque(sku, quantidade);
-            if (baixaOk) {
-              baixasRealizadas++;
-              await supabase
-                .from("pedidos_shopee")
-                .update({
-                  baixa_estoque_realizada: true,
-                  data_baixa_estoque: new Date().toISOString(),
-                })
-                .eq("organization_id", organizationId)
-                .eq("order_id", orderId)
-                .eq("sku", sku);
-            }
-          }
-        } catch (rowError) {
-          detalhesErros.push({ linha: linhaNum, erro: String(rowError) });
-          erros++;
-        }
-
-        setProgress(Math.round(((i + 1) / dataRows.length) * 100));
-      }
+          })
+        )
+      );
 
       // Atualizar registro de importação
       await supabase
