@@ -294,8 +294,10 @@ export default function PedidosShopee() {
           // Custos e taxas - receita_flex só preenche se "Opção de envio" for "Shopee Entrega Direta", caso contrário 0
           frete: (() => {
             const opcaoEnvio = colMap.opcao_envio >= 0 ? String(row[colMap.opcao_envio] || "") : "";
+            const valorFrete = colMap.valor_estimado_frete >= 0 ? parseNumber(row[colMap.valor_estimado_frete]) : 0;
+            console.log(`[DEBUG] Opção envio: "${opcaoEnvio}", Valor frete: ${valorFrete}, colMap.valor_estimado_frete: ${colMap.valor_estimado_frete}`);
             if (opcaoEnvio.toLowerCase().includes("shopee entrega direta")) {
-              return colMap.valor_estimado_frete >= 0 ? parseNumber(row[colMap.valor_estimado_frete]) : 0;
+              return valorFrete;
             }
             return 0;
           })(),
