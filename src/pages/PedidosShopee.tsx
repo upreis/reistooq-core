@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw, Trash2, CheckSquare, Square } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
+import { Checkbox } from "@/components/ui/checkbox";
+import { StickyActionBar } from "@/components/mobile/standard/StickyActionBar";
 import { cn } from "@/lib/utils";
 
 interface ImportResult {
@@ -58,10 +60,74 @@ export default function PedidosShopee() {
   const [pedidos, setPedidos] = useState<PedidoShopee[]>([]);
   const [loadingPedidos, setLoadingPedidos] = useState(false);
   const [activeTab, setActiveTab] = useState("importar");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { toast } = useToast();
   const { profile } = useCurrentProfile();
   const organizationId = profile?.organizacao_id;
+
+  // Seleção
+  const toggleSelectMode = useCallback(() => {
+    setIsSelectMode(prev => !prev);
+    if (isSelectMode) {
+      setSelectedIds(new Set());
+    }
+  }, [isSelectMode]);
+
+  const toggleSelectItem = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(pedidos.map(p => p.id)));
+  }, [pedidos]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  // Excluir selecionados
+  const deleteSelected = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("pedidos_shopee")
+        .delete()
+        .in("id", Array.from(selectedIds));
+
+      if (error) throw error;
+
+      toast({
+        title: "Pedidos excluídos",
+        description: `${selectedIds.size} pedido(s) excluído(s) com sucesso.`,
+      });
+
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      loadPedidos();
+    } catch (error) {
+      console.error("Erro ao excluir pedidos:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir os pedidos.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [selectedIds, toast]);
 
   const loadPedidos = useCallback(async () => {
     if (!organizationId) return;
@@ -448,15 +514,34 @@ export default function PedidosShopee() {
 
           <TabsContent value="pedidos">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
                 <div>
                   <CardTitle>Pedidos Importados</CardTitle>
                   <CardDescription>Últimos 200 pedidos importados da Shopee</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={loadPedidos} disabled={loadingPedidos}>
-                  <RefreshCw className={cn("h-4 w-4 mr-2", loadingPedidos && "animate-spin")} />
-                  Atualizar
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={isSelectMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={toggleSelectMode}
+                  >
+                    {isSelectMode ? (
+                      <>
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        Sair da Seleção
+                      </>
+                    ) : (
+                      <>
+                        <Square className="h-4 w-4 mr-2" />
+                        Selecionar
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={loadPedidos} disabled={loadingPedidos}>
+                    <RefreshCw className={cn("h-4 w-4 mr-2", loadingPedidos && "animate-spin")} />
+                    Atualizar
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {loadingPedidos ? (
@@ -474,6 +559,20 @@ export default function PedidosShopee() {
                     <Table>
                       <TableHeader>
                         <TableRow className="whitespace-nowrap">
+                          {isSelectMode && (
+                            <TableHead className="w-10">
+                              <Checkbox
+                                checked={selectedIds.size === pedidos.length && pedidos.length > 0}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    selectAll();
+                                  } else {
+                                    clearSelection();
+                                  }
+                                }}
+                              />
+                            </TableHead>
+                          )}
                           <TableHead>ID-Único</TableHead>
                           <TableHead>Empresa</TableHead>
                           <TableHead>Número do Pedido</TableHead>
@@ -524,8 +623,23 @@ export default function PedidosShopee() {
                       <TableBody>
                         {pedidos.map((pedido) => {
                           const valorLiquido = (pedido.preco_total ?? 0) - (pedido.frete ?? 0) - (pedido.desconto ?? 0);
+                          const isSelected = selectedIds.has(pedido.id);
                           return (
-                            <TableRow key={pedido.id} className="whitespace-nowrap">
+                            <TableRow 
+                              key={pedido.id} 
+                              className={cn(
+                                "whitespace-nowrap",
+                                isSelected && "bg-primary/5"
+                              )}
+                            >
+                              {isSelectMode && (
+                                <TableCell className="w-10">
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleSelectItem(pedido.id)}
+                                  />
+                                </TableCell>
+                              )}
                               {/* ID-Único */}
                               <TableCell className="font-mono text-xs">{pedido.id}</TableCell>
                               {/* Empresa */}
@@ -669,6 +783,23 @@ export default function PedidosShopee() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Barra de ações para selecionados */}
+      <StickyActionBar
+        selectedCount={selectedIds.size}
+        totalCount={pedidos.length}
+        onClearSelection={clearSelection}
+        actions={[
+          {
+            label: "Excluir Selecionados",
+            onClick: deleteSelected,
+            variant: "destructive",
+            icon: <Trash2 className="h-4 w-4" />,
+            loading: isDeleting,
+            disabled: isDeleting,
+          },
+        ]}
+      />
     </MobileAppShell>
   );
 }
