@@ -55,15 +55,18 @@ export function SidebarUIProvider({ children }: { children: ReactNode }) {
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
+  // Accordion behavior: only one group open at a time
   const toggleGroup = (groupId: string) => {
-    setOpenGroups(prev => ({
-      ...prev,
-      [groupId]: !prev[groupId]
-    }));
+    setOpenGroups(prev => {
+      const isCurrentlyOpen = prev[groupId];
+      // Close all groups and toggle the clicked one
+      return { [groupId]: !isCurrentlyOpen };
+    });
   };
 
   const openGroup = (groupId: string) => {
-    setOpenGroups(prev => ({ ...prev, [groupId]: true }));
+    // Close all other groups and open only this one
+    setOpenGroups({ [groupId]: true });
   };
 
   const closeGroup = (groupId: string) => {
