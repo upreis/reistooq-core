@@ -251,6 +251,8 @@ export default function ControleEstoquePage() {
           <EstoqueGridView
             products={paginatedProducts}
             allFilteredProducts={finalFilteredProducts}
+            selectedSegments={selectedSegments}
+            onSelectedSegmentsChange={setSelectedSegments}
             selectedProducts={selectedProducts}
             onSelectProduct={handleSelectProduct}
             onSelectAll={(selected) => handleSelectAll(selected, paginatedProducts, setSelectedProducts)}
