@@ -215,7 +215,7 @@ export default function Header() {
 
         {/* Navigation - Absolutely centered */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-com-envio' || location.pathname === '/devolucoesdevenda') && <OMSNavLimelight />}
+          {(location.pathname === '/pedidos' || location.pathname === '/pedidos-shopee' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-com-envio' || location.pathname === '/devolucoesdevenda') && <OMSNavLimelight />}
           {location.pathname.startsWith('/dashboardinicial') && <DashboardInicialNav />}
           {location.pathname.startsWith('/estoque') && <EstoqueNav />}
           {location.pathname.startsWith('/compras') && <ComprasNavLimelight />}
