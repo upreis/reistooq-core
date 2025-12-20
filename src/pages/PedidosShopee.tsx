@@ -215,7 +215,7 @@ export default function PedidosShopee() {
       const colMap = {
         // Obrigatórios
         order_id: headers.findIndex(h => /^id\s*do\s*pedido$|order.*id|número.*pedido|order_sn/i.test(h)),
-        order_status: headers.findIndex(h => /^situa[çc][aã]o\s*do\s*pedido$|status|situação|estado/i.test(h)),
+        order_status: headers.findIndex(h => /^status\s*do\s*pedido$|^situa[çc][aã]o\s*do\s*pedido$|status|situação|estado/i.test(h)),
         data_pedido: headers.findIndex(h => /^data\s*de\s*cria[çc][aã]o\s*do\s*pedido$|data.*pedido|data.*compra|created|criado/i.test(h)),
         comprador_nome: headers.findIndex(h => /^nome\s*de\s*usu[aá]rio.*comprador.*$|comprador|cliente|buyer|nome.*usuario/i.test(h)),
         sku: headers.findIndex(h => /^n[uú]mero\s*de\s*refer[eê]ncia\s*sku$|^sku$|código.*produto|product.*id/i.test(h)),
@@ -230,9 +230,9 @@ export default function PedidosShopee() {
         endereco_cep: headers.findIndex(h => /^cep$/i.test(h)),
         // Rastreamento e logística
         codigo_rastreamento: headers.findIndex(h => /^n[uú]mero\s*de\s*rastreamento$|rastreamento|tracking|rastreio/i.test(h)),
-        tipo_logistico: headers.findIndex(h => /^op[çc][aã]o\s*de\s*envio$|tipo.*log[ií]stico|logistic|envio/i.test(h)),
+        opcao_envio: headers.findIndex(h => /^op[çc][aã]o\s*de\s*envio$|tipo.*log[ií]stico|logistic|envio/i.test(h)),
         // Custos e taxas
-        receita_flex: headers.findIndex(h => /^valor\s*estimado\s*do\s*frete$|receita.*flex|frete.*estimado/i.test(h)),
+        valor_estimado_frete: headers.findIndex(h => /^valor\s*estimado\s*do\s*frete$|receita.*flex|frete.*estimado/i.test(h)),
         custo_envio: headers.findIndex(h => /^taxa\s*de\s*envio\s*reversa$|custo.*envio|shipping.*cost/i.test(h)),
         custo_fixo: headers.findIndex(h => /^taxa\s*de\s*servi[çc]o$|custo.*fixo|service.*fee/i.test(h)),
         taxa_marketplace: headers.findIndex(h => /^taxa\s*de\s*comiss[aã]o$|taxa.*marketplace|comiss[aã]o|commission/i.test(h)),
@@ -290,9 +290,15 @@ export default function PedidosShopee() {
           endereco_cep: colMap.endereco_cep >= 0 ? String(row[colMap.endereco_cep] || "") : null,
           // Rastreamento e logística
           codigo_rastreamento: colMap.codigo_rastreamento >= 0 ? String(row[colMap.codigo_rastreamento] || "") : null,
-          tipo_logistico: colMap.tipo_logistico >= 0 ? String(row[colMap.tipo_logistico] || "") : null,
-          // Custos e taxas
-          frete: colMap.receita_flex >= 0 ? parseNumber(row[colMap.receita_flex]) : null,
+          tipo_logistico: colMap.opcao_envio >= 0 ? String(row[colMap.opcao_envio] || "") : null,
+          // Custos e taxas - receita_flex só preenche se "Opção de envio" for "Shopee Entrega Direta"
+          frete: (() => {
+            const opcaoEnvio = colMap.opcao_envio >= 0 ? String(row[colMap.opcao_envio] || "") : "";
+            if (opcaoEnvio.toLowerCase().includes("shopee entrega direta")) {
+              return colMap.valor_estimado_frete >= 0 ? parseNumber(row[colMap.valor_estimado_frete]) : null;
+            }
+            return null;
+          })(),
           custo_envio: colMap.custo_envio >= 0 ? parseNumber(row[colMap.custo_envio]) : null,
           custo_fixo: colMap.custo_fixo >= 0 ? parseNumber(row[colMap.custo_fixo]) : null,
           taxa_marketplace: colMap.taxa_marketplace >= 0 ? parseNumber(row[colMap.taxa_marketplace]) : null,
