@@ -1,10 +1,6 @@
-import { useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { OMSNav } from "@/features/oms/components/OMSNav";
-import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
 import OrdersPage from "@/pages/oms/OrdersPage";
-import CustomersPage from "@/pages/oms/CustomersPage";
-import SalesRepsPage from "@/pages/oms/SalesRepsPage";
+import CadastroPage from "@/pages/oms/CadastroPage";
 import OMSSettingsPage from "@/pages/oms/OMSSettingsPage";
 import SimplePedidosPage from "@/components/pedidos/SimplePedidosPage";
 
@@ -24,8 +20,10 @@ const OMS = () => {
       <Routes>
         <Route index element={<Navigate to="pedidos" replace />} />
         <Route path="pedidos" element={<OrdersPage />} />
-        <Route path="clientes" element={<CustomersPage />} />
-        <Route path="vendedores" element={<SalesRepsPage />} />
+        <Route path="cadastro" element={<CadastroPage />} />
+        {/* Redirect old routes to new unified page */}
+        <Route path="clientes" element={<Navigate to="/oms/cadastro?tab=clientes" replace />} />
+        <Route path="vendedores" element={<Navigate to="/oms/cadastro?tab=vendedores" replace />} />
         <Route path="configuracoes" element={<OMSSettingsPage />} />
         <Route path="*" element={<Navigate to="pedidos" replace />} />
       </Routes>

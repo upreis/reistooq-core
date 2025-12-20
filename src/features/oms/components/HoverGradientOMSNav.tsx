@@ -30,17 +30,10 @@ const menuItems: HoverGradientMenuItem[] = [
   },
   { 
     icon: <Users className="h-5 w-5" />, 
-    label: "Clientes", 
-    href: "/oms/clientes", 
+    label: "Cadastro", 
+    href: "/oms/cadastro", 
     gradient: "radial-gradient(circle, rgba(147,51,234,0.15) 0%, rgba(126,34,206,0.06) 50%, rgba(88,28,135,0) 100%)", 
     iconColor: "group-hover:text-purple-500 dark:group-hover:text-purple-400" 
-  },
-  { 
-    icon: <UserCheck className="h-5 w-5" />, 
-    label: "Vendedores", 
-    href: "/oms/vendedores", 
-    gradient: "radial-gradient(circle, rgba(34,197,94,0.15) 0%, rgba(22,163,74,0.06) 50%, rgba(21,128,61,0) 100%)", 
-    iconColor: "group-hover:text-green-500 dark:group-hover:text-green-400" 
   },
   { 
     icon: <Settings className="h-5 w-5" />, 
