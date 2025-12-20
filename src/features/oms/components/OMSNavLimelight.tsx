@@ -42,7 +42,7 @@ export function OMSNavLimelight() {
     return {
       id: item.path,
       icon: item.customIcon ? (
-        <img src={item.customIcon} alt={item.label} className="w-7 h-7 object-contain" />
+        <img src={item.customIcon} alt={item.label} className="w-6 h-6 object-contain" />
       ) : (
         <Icon />
       ),
