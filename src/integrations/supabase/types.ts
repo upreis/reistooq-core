@@ -5234,15 +5234,19 @@ export type Database = {
       pedidos_shopee: {
         Row: {
           baixa_estoque_realizada: boolean | null
+          codigo_rastreamento: string | null
           comprador_nome: string | null
           comprador_telefone: string | null
           created_at: string
+          custo_envio: number | null
+          custo_fixo: number | null
           dados_originais: Json | null
           data_baixa_estoque: string | null
           data_entrega: string | null
           data_envio: string | null
           data_pedido: string | null
           desconto: number | null
+          endereco_bairro: string | null
           endereco_cep: string | null
           endereco_cidade: string | null
           endereco_estado: string | null
@@ -5250,6 +5254,7 @@ export type Database = {
           frete: number | null
           id: string
           importacao_id: string | null
+          motivo_cancelamento: string | null
           order_id: string
           order_status: string | null
           organization_id: string
@@ -5257,20 +5262,27 @@ export type Database = {
           preco_unitario: number | null
           produto_nome: string | null
           quantidade: number | null
+          receita_flex: number | null
           sku: string | null
+          taxa_marketplace: number | null
+          tipo_logistico: string | null
           updated_at: string
         }
         Insert: {
           baixa_estoque_realizada?: boolean | null
+          codigo_rastreamento?: string | null
           comprador_nome?: string | null
           comprador_telefone?: string | null
           created_at?: string
+          custo_envio?: number | null
+          custo_fixo?: number | null
           dados_originais?: Json | null
           data_baixa_estoque?: string | null
           data_entrega?: string | null
           data_envio?: string | null
           data_pedido?: string | null
           desconto?: number | null
+          endereco_bairro?: string | null
           endereco_cep?: string | null
           endereco_cidade?: string | null
           endereco_estado?: string | null
@@ -5278,6 +5290,7 @@ export type Database = {
           frete?: number | null
           id?: string
           importacao_id?: string | null
+          motivo_cancelamento?: string | null
           order_id: string
           order_status?: string | null
           organization_id: string
@@ -5285,20 +5298,27 @@ export type Database = {
           preco_unitario?: number | null
           produto_nome?: string | null
           quantidade?: number | null
+          receita_flex?: number | null
           sku?: string | null
+          taxa_marketplace?: number | null
+          tipo_logistico?: string | null
           updated_at?: string
         }
         Update: {
           baixa_estoque_realizada?: boolean | null
+          codigo_rastreamento?: string | null
           comprador_nome?: string | null
           comprador_telefone?: string | null
           created_at?: string
+          custo_envio?: number | null
+          custo_fixo?: number | null
           dados_originais?: Json | null
           data_baixa_estoque?: string | null
           data_entrega?: string | null
           data_envio?: string | null
           data_pedido?: string | null
           desconto?: number | null
+          endereco_bairro?: string | null
           endereco_cep?: string | null
           endereco_cidade?: string | null
           endereco_estado?: string | null
@@ -5306,6 +5326,7 @@ export type Database = {
           frete?: number | null
           id?: string
           importacao_id?: string | null
+          motivo_cancelamento?: string | null
           order_id?: string
           order_status?: string | null
           organization_id?: string
@@ -5313,7 +5334,10 @@ export type Database = {
           preco_unitario?: number | null
           produto_nome?: string | null
           quantidade?: number | null
+          receita_flex?: number | null
           sku?: string | null
+          taxa_marketplace?: number | null
+          tipo_logistico?: string | null
           updated_at?: string
         }
         Relationships: [
