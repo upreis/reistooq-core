@@ -353,23 +353,23 @@ export function EstoqueGridView({
                   >
                     <div
                       className={cn(
-                        "h-4 w-4 rounded border transition-colors",
+                        "h-5 w-5 rounded border-2 transition-colors flex items-center justify-center",
                         isSelected
                           ? "bg-primary border-primary"
-                          : "border-muted-foreground/50 hover:border-primary"
+                          : "bg-background/90 border-muted-foreground hover:border-primary"
                       )}
                     >
                       {isSelected && (
                         <svg
-                          className="h-4 w-4 text-primary-foreground"
+                          className="h-3.5 w-3.5 text-primary-foreground"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
+                          strokeWidth={3}
                         >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            strokeWidth={2}
                             d="M5 13l4 4L19 7"
                           />
                         </svg>
