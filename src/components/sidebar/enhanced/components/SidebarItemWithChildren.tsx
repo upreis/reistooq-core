@@ -52,8 +52,13 @@ export const SidebarItemWithChildren = memo(({
   const handleChevronClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // Same behavior as clicking the parent - navigate to first child and toggle
+    const firstChild = item.children?.[0];
+    if (firstChild?.path) {
+      navigate(firstChild.path);
+    }
     toggleGroup(item.id);
-  }, [item.id, toggleGroup]);
+  }, [item.id, item.children, navigate, toggleGroup]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
