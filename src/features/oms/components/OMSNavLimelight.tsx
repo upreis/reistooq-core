@@ -5,7 +5,7 @@ import { LimelightNav } from "@/components/ui/limelight-nav";
 const navItems = [
   {
     path: "/pedidos",
-    label: "Marketplace",
+    label: "Mercado Livre",
     icon: Store,
     preserveSearch: true,
   },
