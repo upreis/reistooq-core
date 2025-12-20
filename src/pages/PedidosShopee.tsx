@@ -291,13 +291,13 @@ export default function PedidosShopee() {
           // Rastreamento e logística
           codigo_rastreamento: colMap.codigo_rastreamento >= 0 ? String(row[colMap.codigo_rastreamento] || "") : null,
           tipo_logistico: colMap.opcao_envio >= 0 ? String(row[colMap.opcao_envio] || "") : null,
-          // Custos e taxas - receita_flex só preenche se "Opção de envio" for "Shopee Entrega Direta"
+          // Custos e taxas - receita_flex só preenche se "Opção de envio" for "Shopee Entrega Direta", caso contrário 0
           frete: (() => {
             const opcaoEnvio = colMap.opcao_envio >= 0 ? String(row[colMap.opcao_envio] || "") : "";
             if (opcaoEnvio.toLowerCase().includes("shopee entrega direta")) {
-              return colMap.valor_estimado_frete >= 0 ? parseNumber(row[colMap.valor_estimado_frete]) : null;
+              return colMap.valor_estimado_frete >= 0 ? parseNumber(row[colMap.valor_estimado_frete]) : 0;
             }
-            return null;
+            return 0;
           })(),
           custo_envio: colMap.custo_envio >= 0 ? parseNumber(row[colMap.custo_envio]) : null,
           custo_fixo: colMap.custo_fixo >= 0 ? parseNumber(row[colMap.custo_fixo]) : null,
