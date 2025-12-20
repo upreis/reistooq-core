@@ -23,6 +23,11 @@ import { SegmentFilter } from "./SegmentFilter";
 interface EstoqueGridViewProps {
   products: Product[];
   allFilteredProducts?: Product[]; // Todos os produtos filtrados (para calcular segmentos)
+
+  /** Segmentos selecionados (filtro global aplicado antes da paginação) */
+  selectedSegments: string[];
+  onSelectedSegmentsChange: (segments: string[]) => void;
+
   selectedProducts: string[];
   onSelectProduct: (productId: string, isSelected: boolean) => void;
   onSelectAll?: (selected: boolean) => void;
@@ -45,6 +50,8 @@ interface EstoqueGridViewProps {
 export function EstoqueGridView({
   products,
   allFilteredProducts,
+  selectedSegments,
+  onSelectedSegmentsChange,
   selectedProducts,
   onSelectProduct,
   onSelectAll,
@@ -64,21 +71,14 @@ export function EstoqueGridView({
 }: EstoqueGridViewProps) {
   const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
-  const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
   // Usa allFilteredProducts para segmentos (todos os produtos) ou fallback para products
   const productsForSegments = allFilteredProducts || products;
 
-  // Filtrar produtos da página atual por segmento selecionado
-  const filteredProducts = useMemo(() => {
-    if (selectedSegments.length === 0) return products;
-    
-    return products.filter((product) => {
-      const segment = product.categoria_principal || product.categoria || "Sem Categoria";
-      return selectedSegments.includes(segment);
-    });
-  }, [products, selectedSegments]);
+  // Importante: o filtro de segmento é aplicado no nível do ControleEstoquePage antes da paginação.
+  // Aqui, `products` já chega filtrado.
+  const filteredProducts = products;
 
   const total = totalProducts ?? products.length;
   const allSelected = filteredProducts.length > 0 && selectedProducts.length === filteredProducts.length;
@@ -105,7 +105,7 @@ export function EstoqueGridView({
   const getStockStatus = (product: Product) => {
     const qty = product.quantidade_atual ?? 0;
     const minStock = product.estoque_minimo ?? 0;
-    
+
     if (qty === 0) return { color: "text-red-500", bg: "border-red-500/30" };
     if (qty <= minStock) return { color: "text-amber-500", bg: "border-amber-500/30" };
     return { color: "text-green-500", bg: "border-green-500/30" };
@@ -302,7 +302,7 @@ export function EstoqueGridView({
       <SegmentFilter
         products={productsForSegments}
         selectedSegments={selectedSegments}
-        onSegmentChange={setSelectedSegments}
+        onSegmentChange={onSelectedSegmentsChange}
       />
 
       {/* Grid */}
@@ -310,8 +310,8 @@ export function EstoqueGridView({
         <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
           <Package className="h-12 w-12 mb-4" />
           <span className="text-sm">
-            {selectedSegments.length > 0 
-              ? "Nenhum produto neste segmento" 
+            {selectedSegments.length > 0
+              ? "Nenhum produto neste segmento"
               : "Nenhum produto encontrado"
             }
           </span>

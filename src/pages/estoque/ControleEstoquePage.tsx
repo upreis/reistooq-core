@@ -32,8 +32,11 @@ export default function ControleEstoquePage() {
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("list");
 
+  // Segmentos selecionados (precisa impactar paginação e totais)
+  const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
+
   const { toast } = useToast();
-  
+
   // Custom hooks
   const {
     products,
@@ -70,11 +73,12 @@ export default function ControleEstoquePage() {
     setSelectedProductType,
     selectedStatus: paginationSelectedStatus,
     setSelectedStatus: setPaginationSelectedStatus,
+    baseFilteredProducts,
     finalFilteredProducts,
     paginatedProducts,
     totalPages,
     handleSelectAll
-  } = useEstoquePagination(products);
+  } = useEstoquePagination(products, selectedSegments);
 
   // Handlers
   const handleSearch = () => {
@@ -86,6 +90,7 @@ export default function ControleEstoquePage() {
     setSelectedCategory("all");
     setPaginationSelectedStatus("all");
     setSelectedProductType("all");
+    setSelectedSegments([]);
     setSelectedProducts([]);
   };
 
