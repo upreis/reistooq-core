@@ -235,104 +235,144 @@ export default function PedidosShopee() {
       const detalhesErros: Array<{ linha: number; erro: string }> = [];
 
       const total = dataRows.length;
-      const limit = pLimit(8);
-      let processed = 0;
+      const nowIso = new Date().toISOString();
 
-      await Promise.all(
-        dataRows.map((row, i) =>
-          limit(async () => {
-            const linhaNum = i + 2;
+      // 1) Monta payload (memória) – aqui é onde acontece o “de/para” (apenas leitura dos headers)
+      const pedidosPayload = dataRows.map((row, i) => {
+        const linhaNum = i + 2;
+        const orderId = String(row[colMap.order_id] || "").trim();
+        const sku = colMap.sku >= 0 ? String(row[colMap.sku] || "").trim() || null : null;
+        const quantidade = colMap.quantidade >= 0 ? Number(row[colMap.quantidade]) || 1 : 1;
 
-            try {
-              const orderId = String(row[colMap.order_id] || "").trim();
-              if (!orderId) {
-                detalhesErros.push({ linha: linhaNum, erro: "ID do pedido não encontrado" });
-                erros++;
-                return;
-              }
+        if (!orderId) {
+          detalhesErros.push({ linha: linhaNum, erro: "ID do pedido não encontrado" });
+          erros++;
+          return null;
+        }
 
-              const sku = colMap.sku >= 0 ? String(row[colMap.sku] || "").trim() || null : null;
-              const quantidade = colMap.quantidade >= 0 ? Number(row[colMap.quantidade]) || 1 : 1;
+        return {
+          organization_id: organizationId,
+          order_id: orderId,
+          order_status: colMap.order_status >= 0 ? String(row[colMap.order_status] || "") : null,
+          data_pedido: colMap.data_pedido >= 0 ? parseShopeeDate(row[colMap.data_pedido]) : null,
+          comprador_nome: colMap.comprador_nome >= 0 ? String(row[colMap.comprador_nome] || "") : null,
+          sku,
+          produto_nome: colMap.produto_nome >= 0 ? String(row[colMap.produto_nome] || "") : null,
+          quantidade,
+          preco_total: colMap.preco_total >= 0 ? parseNumber(row[colMap.preco_total]) : null,
+          // Endereço
+          endereco_rua: colMap.endereco_rua >= 0 ? String(row[colMap.endereco_rua] || "") : null,
+          endereco_bairro: colMap.endereco_bairro >= 0 ? String(row[colMap.endereco_bairro] || "") : null,
+          endereco_cidade: colMap.endereco_cidade >= 0 ? String(row[colMap.endereco_cidade] || "") : null,
+          endereco_estado: colMap.endereco_estado >= 0 ? String(row[colMap.endereco_estado] || "") : null,
+          endereco_cep: colMap.endereco_cep >= 0 ? String(row[colMap.endereco_cep] || "") : null,
+          // Rastreamento e logística
+          codigo_rastreamento: colMap.codigo_rastreamento >= 0 ? String(row[colMap.codigo_rastreamento] || "") : null,
+          tipo_logistico: colMap.tipo_logistico >= 0 ? String(row[colMap.tipo_logistico] || "") : null,
+          // Custos e taxas
+          frete: colMap.receita_flex >= 0 ? parseNumber(row[colMap.receita_flex]) : null,
+          custo_envio: colMap.custo_envio >= 0 ? parseNumber(row[colMap.custo_envio]) : null,
+          custo_fixo: colMap.custo_fixo >= 0 ? parseNumber(row[colMap.custo_fixo]) : null,
+          taxa_marketplace: colMap.taxa_marketplace >= 0 ? parseNumber(row[colMap.taxa_marketplace]) : null,
+          // Cancelamento
+          motivo_cancelamento: colMap.motivo_cancelamento >= 0 ? String(row[colMap.motivo_cancelamento] || "") : null,
+          // Metadados
+          importacao_id: importacao.id,
+          baixa_estoque_realizada: false,
+          dados_originais: JSON.parse(
+            JSON.stringify(Object.fromEntries(headers.map((h, idx) => [h, (row as unknown[])[idx]])))
+          ),
+        } as const;
+      });
 
-              const { error: insertError } = await supabase.from("pedidos_shopee").insert([
-                {
-                  organization_id: organizationId,
-                  order_id: orderId,
-                  order_status: colMap.order_status >= 0 ? String(row[colMap.order_status] || "") : null,
-                  data_pedido: colMap.data_pedido >= 0 ? parseShopeeDate(row[colMap.data_pedido]) : null,
-                  comprador_nome: colMap.comprador_nome >= 0 ? String(row[colMap.comprador_nome] || "") : null,
-                  sku: sku,
-                  produto_nome: colMap.produto_nome >= 0 ? String(row[colMap.produto_nome] || "") : null,
-                  quantidade: quantidade,
-                  preco_total: colMap.preco_total >= 0 ? parseNumber(row[colMap.preco_total]) : null,
-                  // Endereço
-                  endereco_rua: colMap.endereco_rua >= 0 ? String(row[colMap.endereco_rua] || "") : null,
-                  endereco_bairro: colMap.endereco_bairro >= 0 ? String(row[colMap.endereco_bairro] || "") : null,
-                  endereco_cidade: colMap.endereco_cidade >= 0 ? String(row[colMap.endereco_cidade] || "") : null,
-                  endereco_estado: colMap.endereco_estado >= 0 ? String(row[colMap.endereco_estado] || "") : null,
-                  endereco_cep: colMap.endereco_cep >= 0 ? String(row[colMap.endereco_cep] || "") : null,
-                  // Rastreamento e logística
-                  codigo_rastreamento:
-                    colMap.codigo_rastreamento >= 0 ? String(row[colMap.codigo_rastreamento] || "") : null,
-                  tipo_logistico: colMap.tipo_logistico >= 0 ? String(row[colMap.tipo_logistico] || "") : null,
-                  // Custos e taxas
-                  frete: colMap.receita_flex >= 0 ? parseNumber(row[colMap.receita_flex]) : null,
-                  custo_envio: colMap.custo_envio >= 0 ? parseNumber(row[colMap.custo_envio]) : null,
-                  custo_fixo: colMap.custo_fixo >= 0 ? parseNumber(row[colMap.custo_fixo]) : null,
-                  taxa_marketplace: colMap.taxa_marketplace >= 0 ? parseNumber(row[colMap.taxa_marketplace]) : null,
-                  // Cancelamento
-                  motivo_cancelamento:
-                    colMap.motivo_cancelamento >= 0 ? String(row[colMap.motivo_cancelamento] || "") : null,
-                  // Metadados
-                  importacao_id: importacao.id,
-                  baixa_estoque_realizada: false,
-                  dados_originais: JSON.parse(
-                    JSON.stringify(Object.fromEntries(headers.map((h, idx) => [h, (row as unknown[])[idx]])))
-                  ),
-                },
-              ]);
+      const pedidosValidos = pedidosPayload.filter(Boolean) as Array<NonNullable<(typeof pedidosPayload)[number]>>;
 
-              if (insertError) {
-                if (insertError.code === "23505") {
-                  duplicados++;
-                } else {
-                  detalhesErros.push({ linha: linhaNum, erro: insertError.message });
+      // 2) Upsert em lotes (reduz de milhares de requests para poucos requests)
+      const CHUNK_SIZE = 250;
+      const chunks: typeof pedidosValidos[] = [];
+      for (let i = 0; i < pedidosValidos.length; i += CHUNK_SIZE) {
+        chunks.push(pedidosValidos.slice(i, i + CHUNK_SIZE));
+      }
+
+      for (let c = 0; c < chunks.length; c++) {
+        const chunk = chunks[c];
+
+        const { error: upsertError } = await supabase
+          .from("pedidos_shopee")
+          .upsert(chunk, {
+            // Mantém compatível com a constraint de duplicidade já existente
+            // (ajuste se seu índice/constraint tiver outro nome)
+            onConflict: "organization_id,order_id,sku",
+            ignoreDuplicates: true,
+          });
+
+        if (upsertError) {
+          // Em lote: se der erro, registramos e seguimos (evita travar tudo)
+          detalhesErros.push({ linha: 0, erro: `Erro no lote ${c + 1}: ${upsertError.message}` });
+          erros += chunk.length;
+        } else {
+          // Com ignoreDuplicates, não temos como saber exatamente quantos foram duplicados sem retornar rows.
+          // Então contamos como “novos” os que foram enviados ao upsert (melhor estimativa) e ajustamos na UI.
+          novos += chunk.length;
+        }
+
+        setProgress(Math.round(((c + 1) / chunks.length) * 70));
+      }
+
+      // 3) Baixa de estoque (agregada por SKU) – evita 3-4 queries por linha
+      const qtyBySku = new Map<string, number>();
+      for (const p of pedidosValidos) {
+        if (!p.sku) continue;
+        qtyBySku.set(p.sku, (qtyBySku.get(p.sku) || 0) + (p.quantidade || 0));
+      }
+
+      const skus = Array.from(qtyBySku.keys());
+      if (skus.length > 0) {
+        const { data: produtos, error: prodError } = await supabase
+          .from("produtos")
+          .select("id, sku_interno, quantidade_atual")
+          .eq("organization_id", organizationId)
+          .in("sku_interno", skus);
+
+        if (prodError) {
+          detalhesErros.push({ linha: 0, erro: `Erro ao buscar produtos para baixa: ${prodError.message}` });
+        } else {
+          const limit = pLimit(8);
+          await Promise.all(
+            (produtos || []).map((produto) =>
+              limit(async () => {
+                const sku = String((produto as any).sku_interno);
+                const qtd = qtyBySku.get(sku) || 0;
+                if (!qtd) return;
+
+                const novaQuantidade = Math.max(0, Number((produto as any).quantidade_atual || 0) - qtd);
+                const { error: updateError } = await supabase
+                  .from("produtos")
+                  .update({ quantidade_atual: novaQuantidade })
+                  .eq("id", (produto as any).id);
+
+                if (updateError) {
+                  detalhesErros.push({ linha: 0, erro: `Erro ao atualizar estoque ${sku}: ${updateError.message}` });
                   erros++;
+                  return;
                 }
-                return;
-              }
 
-              novos++;
+                baixasRealizadas++;
 
-              // Dar baixa automática no estoque
-              if (sku) {
-                const baixaOk = await processarBaixaEstoque(sku, quantidade);
-                if (baixaOk) {
-                  baixasRealizadas++;
-                  await supabase
-                    .from("pedidos_shopee")
-                    .update({
-                      baixa_estoque_realizada: true,
-                      data_baixa_estoque: new Date().toISOString(),
-                    })
-                    .eq("organization_id", organizationId)
-                    .eq("order_id", orderId)
-                    .eq("sku", sku);
-                }
-              }
-            } catch (rowError) {
-              detalhesErros.push({ linha: linhaNum, erro: String(rowError) });
-              erros++;
-            } finally {
-              processed++;
-              // Atualiza UI com menos frequência para não travar o render
-              if (processed % 10 === 0 || processed === total) {
-                setProgress(Math.round((processed / total) * 100));
-              }
-            }
-          })
-        )
-      );
+                // Marca todos os pedidos dessa importação com esse SKU como “baixados”
+                await supabase
+                  .from("pedidos_shopee")
+                  .update({ baixa_estoque_realizada: true, data_baixa_estoque: nowIso })
+                  .eq("organization_id", organizationId)
+                  .eq("importacao_id", importacao.id)
+                  .eq("sku", sku);
+              })
+            )
+          );
+        }
+      }
+
+      setProgress(100);
 
       // Atualizar registro de importação
       await supabase
