@@ -1,7 +1,7 @@
 // P7.2: Constants centralizadas para evitar magic numbers
 export const PAGINATION = {
-  DEFAULT_PAGE_SIZE: 25,
-  MAX_PAGE_SIZE: 50, // Mercado Livre API limit: máximo 51, usar 50 para segurança
+  DEFAULT_PAGE_SIZE: 50,
+  MAX_PAGE_SIZE: 200, // Aumentado para suportar opções maiores
   EXPORT_LIMIT: 9999,
 } as const;
 
