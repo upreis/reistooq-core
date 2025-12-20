@@ -1,12 +1,14 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { ShoppingCart, Users, Settings, Store, UserCheck, PackageX, FileText } from "lucide-react";
+import { ShoppingCart, Users, Settings, UserCheck, PackageX, FileText } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
+import mercadoLivreLogo from "@/assets/mercado-livre-logo.png";
 
 const navItems = [
   {
     path: "/pedidos",
     label: "Mercado Livre",
-    icon: Store,
+    icon: null,
+    customIcon: mercadoLivreLogo,
     preserveSearch: true,
   },
   {
@@ -39,7 +41,11 @@ export function OMSNavLimelight() {
     const Icon = item.icon;
     return {
       id: item.path,
-      icon: <Icon />,
+      icon: item.customIcon ? (
+        <img src={item.customIcon} alt={item.label} className="w-5 h-5 object-contain" />
+      ) : (
+        <Icon />
+      ),
       label: item.label,
       onClick: () => {
         if (item.preserveSearch && location.pathname === '/pedidos') {
