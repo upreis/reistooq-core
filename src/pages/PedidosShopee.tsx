@@ -68,6 +68,33 @@ export default function PedidosShopee() {
   const { profile } = useCurrentProfile();
   const organizationId = profile?.organizacao_id;
 
+  // Carregar pedidos (definido antes de ser usado)
+  const loadPedidos = useCallback(async () => {
+    if (!organizationId) return;
+
+    setLoadingPedidos(true);
+    try {
+      const { data, error } = await supabase
+        .from("pedidos_shopee")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      if (error) throw error;
+      setPedidos((data as PedidoShopee[]) || []);
+    } catch (error) {
+      console.error("Erro ao carregar pedidos:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os pedidos.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPedidos(false);
+    }
+  }, [organizationId, toast]);
+
   // Seleção
   const toggleSelectMode = useCallback(() => {
     setIsSelectMode(prev => !prev);
@@ -127,33 +154,8 @@ export default function PedidosShopee() {
     } finally {
       setIsDeleting(false);
     }
-  }, [selectedIds, toast]);
+  }, [selectedIds, toast, loadPedidos]);
 
-  const loadPedidos = useCallback(async () => {
-    if (!organizationId) return;
-
-    setLoadingPedidos(true);
-    try {
-      const { data, error } = await supabase
-        .from("pedidos_shopee")
-        .select("*")
-        .eq("organization_id", organizationId)
-        .order("created_at", { ascending: false })
-        .limit(200);
-
-      if (error) throw error;
-      setPedidos((data as PedidoShopee[]) || []);
-    } catch (error) {
-      console.error("Erro ao carregar pedidos:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os pedidos.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingPedidos(false);
-    }
-  }, [organizationId, toast]);
 
   useEffect(() => {
     if (activeTab === "pedidos" && organizationId) {
