@@ -30,13 +30,26 @@ interface PedidoShopee {
   order_id: string;
   order_status: string | null;
   data_pedido: string | null;
+  data_envio: string | null;
+  data_entrega: string | null;
   comprador_nome: string | null;
+  comprador_telefone: string | null;
+  endereco_rua: string | null;
+  endereco_cidade: string | null;
+  endereco_estado: string | null;
+  endereco_cep: string | null;
   sku: string | null;
   produto_nome: string | null;
   quantidade: number;
+  preco_unitario: number | null;
   preco_total: number | null;
+  frete: number | null;
+  desconto: number | null;
   baixa_estoque_realizada: boolean;
+  data_baixa_estoque: string | null;
   created_at: string;
+  updated_at: string;
+  dados_originais: Record<string, unknown> | null;
 }
 
 export default function PedidosShopee() {
@@ -482,45 +495,193 @@ export default function PedidosShopee() {
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Pedido</TableHead>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Comprador</TableHead>
+                        <TableRow className="whitespace-nowrap">
+                          <TableHead>ID-Único</TableHead>
+                          <TableHead>Empresa</TableHead>
+                          <TableHead>Número do Pedido</TableHead>
+                          <TableHead>Nome Completo</TableHead>
+                          <TableHead>Data do Pedido</TableHead>
+                          <TableHead>Atualizado</TableHead>
                           <TableHead>SKU</TableHead>
-                          <TableHead>Produto</TableHead>
-                          <TableHead className="text-center">Qtd</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                          <TableHead className="text-center">Baixa</TableHead>
+                          <TableHead>Quantidade</TableHead>
+                          <TableHead>Título do Produto</TableHead>
+                          <TableHead className="text-right">Valor Total</TableHead>
+                          <TableHead className="text-right">Receita Flex</TableHead>
+                          <TableHead className="text-right">Taxa Marketplace</TableHead>
+                          <TableHead className="text-right">Custo Envio</TableHead>
+                          <TableHead className="text-right">Custo Fixo Meli</TableHead>
+                          <TableHead className="text-right">Valor Líquido</TableHead>
+                          <TableHead>Método Pagamento</TableHead>
+                          <TableHead>Status Pagamento</TableHead>
+                          <TableHead>CPF/CNPJ</TableHead>
+                          <TableHead>SKU Estoque</TableHead>
+                          <TableHead>SKU KIT</TableHead>
+                          <TableHead>Quantidade KIT</TableHead>
+                          <TableHead>Total de Itens</TableHead>
+                          <TableHead>Status da Baixa</TableHead>
+                          <TableHead>Status Insumos</TableHead>
+                          <TableHead>Marketplace</TableHead>
+                          <TableHead>Local de Estoque</TableHead>
+                          <TableHead>Situação do Pedido</TableHead>
+                          <TableHead>Status do Envio</TableHead>
+                          <TableHead>Tipo Logístico</TableHead>
+                          <TableHead>Medalha</TableHead>
+                          <TableHead>Reputação</TableHead>
+                          <TableHead>Condição</TableHead>
+                          <TableHead>Substatus do Envio</TableHead>
+                          <TableHead>Código Rastreamento</TableHead>
+                          <TableHead>Rastreamento</TableHead>
+                          <TableHead>Rua</TableHead>
+                          <TableHead>Número</TableHead>
+                          <TableHead>Bairro</TableHead>
+                          <TableHead>CEP</TableHead>
+                          <TableHead>Cidade</TableHead>
+                          <TableHead>UF</TableHead>
+                          <TableHead>Data Criação ML</TableHead>
+                          <TableHead>Pack ID</TableHead>
+                          <TableHead>Pickup ID</TableHead>
+                          <TableHead>Tags do Pedido</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {pedidos.map((pedido) => (
-                          <TableRow key={pedido.id}>
-                            <TableCell className="font-mono text-sm">{pedido.order_id}</TableCell>
-                            <TableCell className="text-sm">
-                              {pedido.data_pedido
-                                ? format(new Date(pedido.data_pedido), "dd/MM/yy", { locale: ptBR })
-                                : "-"}
-                            </TableCell>
-                            <TableCell className="max-w-[150px] truncate">{pedido.comprador_nome || "-"}</TableCell>
-                            <TableCell className="font-mono text-xs">{pedido.sku || "-"}</TableCell>
-                            <TableCell className="max-w-[200px] truncate text-sm">{pedido.produto_nome || "-"}</TableCell>
-                            <TableCell className="text-center">{pedido.quantidade}</TableCell>
-                            <TableCell className="text-right">
-                              {pedido.preco_total ? `R$ ${pedido.preco_total.toFixed(2)}` : "-"}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {pedido.baixa_estoque_realizada ? (
-                                <Badge variant="default" className="bg-green-600">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Sim
+                        {pedidos.map((pedido) => {
+                          const valorLiquido = (pedido.preco_total ?? 0) - (pedido.frete ?? 0) - (pedido.desconto ?? 0);
+                          return (
+                            <TableRow key={pedido.id} className="whitespace-nowrap">
+                              {/* ID-Único */}
+                              <TableCell className="font-mono text-xs">{pedido.id}</TableCell>
+                              {/* Empresa */}
+                              <TableCell>Shopee</TableCell>
+                              {/* Número do Pedido */}
+                              <TableCell className="font-mono text-sm">{pedido.order_id}</TableCell>
+                              {/* Nome Completo */}
+                              <TableCell className="max-w-[150px] truncate">{pedido.comprador_nome ?? "-"}</TableCell>
+                              {/* Data do Pedido */}
+                              <TableCell className="text-sm">
+                                {pedido.data_pedido
+                                  ? format(new Date(pedido.data_pedido), "dd/MM/yy", { locale: ptBR })
+                                  : "-"}
+                              </TableCell>
+                              {/* Atualizado */}
+                              <TableCell className="text-sm">
+                                {pedido.updated_at
+                                  ? format(new Date(pedido.updated_at), "dd/MM/yy HH:mm", { locale: ptBR })
+                                  : "-"}
+                              </TableCell>
+                              {/* SKU */}
+                              <TableCell className="font-mono text-xs">{pedido.sku ?? "-"}</TableCell>
+                              {/* Quantidade */}
+                              <TableCell className="text-center">{pedido.quantidade}</TableCell>
+                              {/* Título do Produto */}
+                              <TableCell className="max-w-[200px] truncate text-sm">{pedido.produto_nome ?? "-"}</TableCell>
+                              {/* Valor Total */}
+                              <TableCell className="text-right">
+                                {pedido.preco_total != null ? `R$ ${pedido.preco_total.toFixed(2)}` : "-"}
+                              </TableCell>
+                              {/* Receita Flex */}
+                              <TableCell className="text-right text-muted-foreground">-</TableCell>
+                              {/* Taxa Marketplace */}
+                              <TableCell className="text-right text-muted-foreground">-</TableCell>
+                              {/* Custo Envio */}
+                              <TableCell className="text-right">
+                                {pedido.frete != null ? `R$ ${pedido.frete.toFixed(2)}` : "-"}
+                              </TableCell>
+                              {/* Custo Fixo Meli */}
+                              <TableCell className="text-right text-muted-foreground">-</TableCell>
+                              {/* Valor Líquido */}
+                              <TableCell className="text-right font-medium">
+                                {pedido.preco_total != null ? `R$ ${valorLiquido.toFixed(2)}` : "-"}
+                              </TableCell>
+                              {/* Método Pagamento */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Status Pagamento */}
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">
+                                  {pedido.order_status ?? "N/A"}
                                 </Badge>
-                              ) : (
-                                <Badge variant="secondary">Não</Badge>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              </TableCell>
+                              {/* CPF/CNPJ */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* SKU Estoque */}
+                              <TableCell className="font-mono text-xs">{pedido.sku ?? "-"}</TableCell>
+                              {/* SKU KIT */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Quantidade KIT */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Total de Itens */}
+                              <TableCell className="text-center">{pedido.quantidade}</TableCell>
+                              {/* Status da Baixa */}
+                              <TableCell className="text-center">
+                                {pedido.baixa_estoque_realizada ? (
+                                  <Badge variant="default" className="bg-green-600 text-xs">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Baixado
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-xs">Pendente</Badge>
+                                )}
+                              </TableCell>
+                              {/* Status Insumos */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Marketplace */}
+                              <TableCell>
+                                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/30 text-xs">
+                                  Shopee
+                                </Badge>
+                              </TableCell>
+                              {/* Local de Estoque */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Situação do Pedido */}
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">
+                                  {pedido.order_status ?? "N/A"}
+                                </Badge>
+                              </TableCell>
+                              {/* Status do Envio */}
+                              <TableCell>
+                                {pedido.data_envio ? (
+                                  <Badge variant="default" className="text-xs">Enviado</Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-xs">Pendente</Badge>
+                                )}
+                              </TableCell>
+                              {/* Tipo Logístico */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Medalha */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Reputação */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Condição */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Substatus do Envio */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Código Rastreamento */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Rastreamento */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Rua */}
+                              <TableCell className="max-w-[150px] truncate">{pedido.endereco_rua ?? "-"}</TableCell>
+                              {/* Número */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Bairro */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* CEP */}
+                              <TableCell>{pedido.endereco_cep ?? "-"}</TableCell>
+                              {/* Cidade */}
+                              <TableCell>{pedido.endereco_cidade ?? "-"}</TableCell>
+                              {/* UF */}
+                              <TableCell>{pedido.endereco_estado ?? "-"}</TableCell>
+                              {/* Data Criação ML */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Pack ID */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Pickup ID */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {/* Tags do Pedido */}
+                              <TableCell className="text-muted-foreground">-</TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
