@@ -237,39 +237,31 @@ export class MapeamentoService {
         ? await InsumosValidationService.validarInsumosPedidos(skusEstoqueValidos)
         : new Map();
 
-      // 🔍 VERIFICAR COMPOSIÇÕES
+      // 🔍 VERIFICAR COMPOSIÇÕES - Agora busca componentes DIRETAMENTE para todos os SKUs
       const skusParaVerificarComposicao = [...produtosInfoMap.keys()];
       let composicoesMap = new Map<string, { temComposicao: boolean; componentes?: any[] }>();
-      
-      if (skusParaVerificarComposicao.length > 0) {
-        const { data: produtosComposicoes } = await supabase
-          .from('produtos_composicoes')
-          .select('sku_interno')
-          .in('sku_interno', skusParaVerificarComposicao)
-          .eq('ativo', true);
 
-        if (produtosComposicoes) {
-          for (const prodComp of produtosComposicoes) {
-            // 🛡️ CRÍTICO: Buscar componentes NO LOCAL ESPECÍFICO
-            let queryComponentes = supabase
-              .from('produto_componentes')
-              .select('*')
-              .eq('sku_produto', prodComp.sku_interno);
-            
-            // 🛡️ Filtrar por local_id se fornecido
-            if (localEstoqueId) {
-              queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
-            }
-            
-            const { data: componentes } = await queryComponentes;
-            
-            const temComponentes = componentes && componentes.length > 0;
-            
-            composicoesMap.set(prodComp.sku_interno, {
-              temComposicao: temComponentes,
-              componentes: componentes || []
-            });
+      if (skusParaVerificarComposicao.length > 0) {
+        // Buscar componentes diretamente em produto_componentes para todos os SKUs
+        for (const skuProduto of skusParaVerificarComposicao) {
+          let queryComponentes = supabase
+            .from('produto_componentes')
+            .select('*')
+            .eq('sku_produto', skuProduto);
+
+          // 🛡️ Filtrar por local_id se fornecido
+          if (localEstoqueId) {
+            queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
           }
+
+          const { data: componentes } = await queryComponentes;
+
+          const temComponentes = componentes && componentes.length > 0;
+
+          composicoesMap.set(skuProduto, {
+            temComposicao: temComponentes,
+            componentes: componentes || []
+          });
         }
       }
 
@@ -298,27 +290,21 @@ export class MapeamentoService {
             statusBaixa = 'sem_estoque';
             skuCadastradoNoEstoque = true;
           } else {
-            // ✅ Se há estoque direto no local, não depende de composição/componentes
-            if (produtoInfo.temEstoqueDireto) {
-              statusBaixa = 'pronto_baixar';
-              skuCadastradoNoEstoque = true;
+            // 🔍 Verificar se produto está em produtos_composicoes E tem componentes no local
+            const composicaoData = composicoesMap.get(skuEstoque);
+
+            if (!composicaoData?.temComposicao) {
+              // NÃO tem composição cadastrada no local = Avisa o usuário
+              statusBaixa = 'sem_composicao';
+            } else if (!composicaoData?.componentes || composicaoData.componentes.length === 0) {
+              // Está em produtos_composicoes mas sem componentes cadastrados no local
+              statusBaixa = 'sem_composicao';
             } else {
-              // 🔍 Verificar se produto está em produtos_composicoes E tem componentes no local
-              const composicaoData = composicoesMap.get(skuEstoque);
-
-              if (!composicaoData?.temComposicao) {
-                // NÃO tem componentes cadastrados no local específico = Sem Composição
-                statusBaixa = 'sem_composicao';
-              } else if (!composicaoData?.componentes || composicaoData.componentes.length === 0) {
-                // Está em produtos_composicoes mas sem componentes cadastrados no local
-                statusBaixa = 'sem_composicao';
-              } else {
-                // Tem composição E componentes no local = Pronto para baixar
-                statusBaixa = 'pronto_baixar';
-              }
-
-              skuCadastradoNoEstoque = true;
+              // Tem composição E componentes no local = Pronto para baixar
+              statusBaixa = 'pronto_baixar';
             }
+
+            skuCadastradoNoEstoque = true;
           }
         }
 
