@@ -351,27 +351,47 @@ export class MapeamentoService {
     if (skusPedido.length === 0) return;
 
     try {
-      // Verificar se já existem registros (evitar duplicatas)
+      // 🛡️ Normalizar SKUs para uppercase para comparação case-insensitive
+      const skusNormalizados = [...new Set(skusPedido.map(sku => sku.toUpperCase()))];
+      
+      // Buscar TODOS os mapeamentos existentes e comparar case-insensitive
       const { data: existentes, error: errorCheck } = await supabase
         .from('mapeamentos_depara')
-        .select('sku_pedido')
-        .in('sku_pedido', skusPedido);
+        .select('sku_pedido');
 
       if (errorCheck) {
         console.error('Erro ao verificar SKUs existentes:', errorCheck);
         return;
       }
 
-      const skusExistentes = new Set((existentes || []).map(item => item.sku_pedido));
-      const skusParaCriar = skusPedido.filter(sku => !skusExistentes.has(sku));
+      // Criar Set com SKUs existentes normalizados (uppercase)
+      const skusExistentes = new Set(
+        (existentes || []).map(item => item.sku_pedido?.toUpperCase())
+      );
+      
+      // Filtrar apenas SKUs que NÃO existem (comparação case-insensitive)
+      const skusParaCriar = skusPedido.filter(sku => 
+        !skusExistentes.has(sku.toUpperCase())
+      );
 
-      if (skusParaCriar.length === 0) {
+      // Remover duplicados do próprio array (mantendo primeira ocorrência)
+      const skusUnicos: string[] = [];
+      const vistos = new Set<string>();
+      for (const sku of skusParaCriar) {
+        const upper = sku.toUpperCase();
+        if (!vistos.has(upper)) {
+          vistos.add(upper);
+          skusUnicos.push(sku);
+        }
+      }
+
+      if (skusUnicos.length === 0) {
         console.log('✅ Todos os SKUs já possuem registros no De-Para');
         return;
       }
 
       // Criar novos mapeamentos com apenas sku_pedido preenchido
-      const novosMapeamentos = skusParaCriar.map(sku => ({
+      const novosMapeamentos = skusUnicos.map(sku => ({
         sku_pedido: sku,
         sku_correspondente: null,
         sku_simples: null, 
@@ -391,7 +411,7 @@ export class MapeamentoService {
       if (errorInsert) {
         console.error('Erro ao criar mapeamentos automáticos:', errorInsert);
       } else {
-        console.log(`✅ Criados ${skusParaCriar.length} mapeamentos automáticos:`, skusParaCriar);
+        console.log(`✅ Criados ${skusUnicos.length} mapeamentos automáticos:`, skusUnicos);
       }
 
     } catch (err) {
