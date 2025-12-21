@@ -101,7 +101,11 @@ export function usePedidosMappings(options: UsePedidosMappingsOptions = {}): Use
           // Processar apenas uma vez por pedido
           try {
             const verificacaoResult = await MapeamentoService.verificarMapeamentos(skus);
-            const verificacao = verificacaoResult.find((v: any) => v.skuPedido === skus[0]);
+            // 🔧 CASE-INSENSITIVE: Buscar resultado comparando em uppercase
+            const skuBuscaUpper = skus[0]?.toUpperCase();
+            const verificacao = verificacaoResult.find((v: any) => 
+              v.skuPedido?.toUpperCase() === skuBuscaUpper
+            );
 
             const resultado = {
               sucesso: true,
