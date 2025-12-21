@@ -106,8 +106,11 @@ export class MapeamentoService {
         .map(m => m.skuEstoque)
         .filter((sku): sku is string => !!sku);
 
-      let produtosInfoMap = new Map<string, { existe: boolean; quantidade: number; temEstoqueNoLocal: boolean }>();
-      
+      let produtosInfoMap = new Map<
+        string,
+        { existe: boolean; quantidade: number; temEstoqueNoLocal: boolean; temEstoqueDireto?: boolean }
+      >();
+
       if (skusParaVerificar.length > 0) {
         // Primeiro: buscar informações básicas dos produtos
         const { data: produtosExistentes } = await supabase
@@ -117,36 +120,73 @@ export class MapeamentoService {
           .eq('ativo', true);
 
         if (produtosExistentes) {
+          // ✅ Se temos localEstoqueId, primeiro checar o estoque direto do produto no local.
+          // Se existir estoque direto suficiente, NÃO depende de composição/componentes.
+          let estoqueDiretoPorProdutoId = new Map<string, number>();
+
+          if (localEstoqueId) {
+            const idsProdutos = produtosExistentes.map(p => p.id).filter(Boolean);
+
+            if (idsProdutos.length > 0) {
+              const { data: estoqueDireto } = await supabase
+                .from('estoque_por_local')
+                .select('produto_id, quantidade')
+                .in('produto_id', idsProdutos)
+                .eq('local_id', localEstoqueId);
+
+              for (const row of estoqueDireto || []) {
+                estoqueDiretoPorProdutoId.set(row.produto_id, row.quantidade || 0);
+              }
+            }
+          }
+
           for (const produto of produtosExistentes) {
-            // Para cada produto (composição), buscar seus componentes NO LOCAL ESPECÍFICO
+            const qtdNecessariaProduto = quantidadePorSku?.get(produto.sku_interno) || 1;
+
+            // ✅ Prioridade: estoque direto no local (produto final já existe no local)
+            if (localEstoqueId) {
+              const qtdDireta = estoqueDiretoPorProdutoId.get(produto.id) || 0;
+
+              if (qtdDireta >= qtdNecessariaProduto) {
+                produtosInfoMap.set(produto.sku_interno, {
+                  existe: true,
+                  quantidade: qtdDireta,
+                  temEstoqueNoLocal: true,
+                  temEstoqueDireto: true
+                });
+                continue;
+              }
+            }
+
+            // Caso não tenha estoque direto suficiente, cai para a validação por componentes no local
             let queryComponentes = supabase
               .from('produto_componentes')
               .select('sku_componente, quantidade')
               .eq('sku_produto', produto.sku_interno);
-            
+
             // 🛡️ CRÍTICO: Filtrar por local_id se fornecido
             if (localEstoqueId) {
               queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
             }
-            
+
             const { data: componentes } = await queryComponentes;
-            
+
             const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
-            
+
             if (!componentes || componentes.length === 0) {
-              // Sem componentes no local específico = sem composição neste local
-              console.warn(`⚠️ Produto ${produto.sku_interno} NÃO possui componentes cadastrados${localInfo}`);
+              // Sem componentes no local específico = não conseguimos montar no local
               produtosInfoMap.set(produto.sku_interno, {
                 existe: true,
                 quantidade: 0,
-                temEstoqueNoLocal: false
+                temEstoqueNoLocal: false,
+                temEstoqueDireto: false
               });
               continue;
             }
-            
+
             // Verificar estoque de CADA COMPONENTE no local específico
             let temEstoqueSuficiente = true;
-            
+
             for (const comp of componentes) {
               // Buscar produto_id do componente
               const { data: produtoComponente } = await supabase
@@ -154,42 +194,43 @@ export class MapeamentoService {
                 .select('id, sku_interno')
                 .eq('sku_interno', comp.sku_componente)
                 .maybeSingle();
-              
+
               if (!produtoComponente) {
                 console.warn(`⚠️ Componente ${comp.sku_componente} não encontrado`);
                 temEstoqueSuficiente = false;
                 break;
               }
-              
+
               // Se há localEstoqueId, verificar estoque_por_local
               if (localEstoqueId) {
-                const quantidadeNecessariaComponente = comp.quantidade * (quantidadePorSku?.get(produto.sku_interno) || 1);
-                
+                const quantidadeNecessariaComponente =
+                  comp.quantidade * (quantidadePorSku?.get(produto.sku_interno) || 1);
+
                 const { data: estoqueLocal } = await supabase
                   .from('estoque_por_local')
                   .select('quantidade')
                   .eq('produto_id', produtoComponente.id)
                   .eq('local_id', localEstoqueId)
                   .maybeSingle();
-                
+
                 const quantidadeDisponivel = estoqueLocal?.quantidade || 0;
-                
+
                 if (quantidadeDisponivel < quantidadeNecessariaComponente) {
                   temEstoqueSuficiente = false;
                   break;
                 }
               }
             }
-            
+
             produtosInfoMap.set(produto.sku_interno, {
               existe: true,
               quantidade: temEstoqueSuficiente ? 1 : 0,
-              temEstoqueNoLocal: temEstoqueSuficiente
+              temEstoqueNoLocal: temEstoqueSuficiente,
+              temEstoqueDireto: false
             });
           }
         }
       }
-
       // 🔧 VALIDAÇÃO DE INSUMOS
       const skusEstoqueValidos = skusParaVerificar.filter(Boolean);
       const validacoesInsumos = skusEstoqueValidos.length > 0 
@@ -257,21 +298,27 @@ export class MapeamentoService {
             statusBaixa = 'sem_estoque';
             skuCadastradoNoEstoque = true;
           } else {
-            // 🔍 Verificar se produto está em produtos_composicoes E tem componentes no local
-            const composicaoData = composicoesMap.get(skuEstoque);
-            const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
-            
-            if (!composicaoData?.temComposicao) {
-              // NÃO tem componentes cadastrados no local específico = Sem Composição
-              statusBaixa = 'sem_composicao';
-            } else if (!composicaoData?.componentes || composicaoData.componentes.length === 0) {
-              // Está em produtos_composicoes mas sem componentes cadastrados no local
-              statusBaixa = 'sem_composicao';
-            } else {
-              // Tem composição E componentes no local = Pronto para baixar
+            // ✅ Se há estoque direto no local, não depende de composição/componentes
+            if (produtoInfo.temEstoqueDireto) {
               statusBaixa = 'pronto_baixar';
+              skuCadastradoNoEstoque = true;
+            } else {
+              // 🔍 Verificar se produto está em produtos_composicoes E tem componentes no local
+              const composicaoData = composicoesMap.get(skuEstoque);
+
+              if (!composicaoData?.temComposicao) {
+                // NÃO tem componentes cadastrados no local específico = Sem Composição
+                statusBaixa = 'sem_composicao';
+              } else if (!composicaoData?.componentes || composicaoData.componentes.length === 0) {
+                // Está em produtos_composicoes mas sem componentes cadastrados no local
+                statusBaixa = 'sem_composicao';
+              } else {
+                // Tem composição E componentes no local = Pronto para baixar
+                statusBaixa = 'pronto_baixar';
+              }
+
+              skuCadastradoNoEstoque = true;
             }
-            skuCadastradoNoEstoque = true;
           }
         }
 
