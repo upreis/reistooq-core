@@ -34,10 +34,15 @@ export class MapeamentoService {
     if (skusPedido.length === 0) return [];
 
     try {
+      // 🔧 CASE-INSENSITIVE: Normalizar SKUs para uppercase para busca
+      const skusUppercase = skusPedido.map(sku => sku.toUpperCase());
+      const skusLowercase = skusPedido.map(sku => sku.toLowerCase());
+      const todosSkus = [...new Set([...skusPedido, ...skusUppercase, ...skusLowercase])];
+      
       const { data, error } = await supabase
         .from('mapeamentos_depara')
         .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
-        .in('sku_pedido', skusPedido)
+        .in('sku_pedido', todosSkus)
         .eq('ativo', true);
 
       if (error) {
@@ -49,20 +54,33 @@ export class MapeamentoService {
         }));
       }
 
-      // Cria um mapa dos mapeamentos encontrados
-      const mapeamentosMap = new Map(
-        (data || []).map(item => [
-          item.sku_pedido,
-          {
-            skuEstoque: item.sku_correspondente, // SKU Correto (para coluna SKU Estoque)
-            skuKit: item.sku_simples,           // SKU Unitário (para coluna SKU Kit)
+      // 🔧 CASE-INSENSITIVE: Criar mapa com chave em uppercase para busca case-insensitive
+      // Priorizar registros que têm sku_correspondente preenchido
+      const mapeamentosMap = new Map<string, { skuEstoque: string | null; skuKit: string | null; quantidadeKit: number }>();
+      
+      // Ordenar para que registros com sku_correspondente preenchido venham por último (sobrescrevendo os vazios)
+      const dadosOrdenados = [...(data || [])].sort((a, b) => {
+        const aTemValor = a.sku_correspondente ? 1 : 0;
+        const bTemValor = b.sku_correspondente ? 1 : 0;
+        return aTemValor - bTemValor; // Registros com valor vêm por último
+      });
+      
+      for (const item of dadosOrdenados) {
+        const keyUpper = item.sku_pedido.toUpperCase();
+        const valorExistente = mapeamentosMap.get(keyUpper);
+        
+        // Só sobrescreve se não existe ou se o novo registro tem sku_correspondente preenchido
+        if (!valorExistente || item.sku_correspondente) {
+          mapeamentosMap.set(keyUpper, {
+            skuEstoque: item.sku_correspondente,
+            skuKit: item.sku_simples,
             quantidadeKit: item.quantidade || 1
-          }
-        ])
-      );
+          });
+        }
+      }
 
-      // 🤖 INTELIGÊNCIA AUTOMÁTICA: Criar mapeamentos para SKUs sem correspondência
-      const skusSemMapeamento = skusPedido.filter(sku => !mapeamentosMap.has(sku));
+      // 🤖 INTELIGÊNCIA AUTOMÁTICA: Criar mapeamentos para SKUs sem correspondência (busca case-insensitive)
+      const skusSemMapeamento = skusPedido.filter(sku => !mapeamentosMap.has(sku.toUpperCase()));
       
       if (skusSemMapeamento.length > 0) {
         console.log(`🤖 Criando mapeamentos automáticos para ${skusSemMapeamento.length} SKUs:`, skusSemMapeamento);
@@ -214,7 +232,8 @@ export class MapeamentoService {
 
       // Retorna resultado para todos os SKUs com statusBaixa calculado e validação de insumos
       return skusPedido.map(sku => {
-        const mapeamento = mapeamentosMap.get(sku);
+        // 🔧 CASE-INSENSITIVE: Buscar pelo SKU em uppercase
+        const mapeamento = mapeamentosMap.get(sku.toUpperCase());
         const temMapeamento = !!mapeamento;
         const skuEstoque = mapeamento?.skuEstoque;
         
@@ -438,10 +457,15 @@ export class MapeamentoService {
     });
 
     try {
+      // 🔧 CASE-INSENSITIVE: Buscar com variações de case
+      const skusUppercase = skusPedido.map(sku => sku.toUpperCase());
+      const skusLowercase = skusPedido.map(sku => sku.toLowerCase());
+      const todosSkus = [...new Set([...skusPedido, ...skusUppercase, ...skusLowercase])];
+      
       const { data: mapeamentos, error } = await supabase
         .from('mapeamentos_depara')
         .select('sku_pedido, sku_correspondente, sku_simples, quantidade, ativo')
-        .in('sku_pedido', skusPedido)
+        .in('sku_pedido', todosSkus)
         .eq('ativo', true);
 
       if (error) {
@@ -449,10 +473,22 @@ export class MapeamentoService {
         return pedidos;
       }
 
-      // Criar um mapa de mapeamentos por SKU
-      const mapeamentosMap = new Map(
-        mapeamentos?.map(m => [m.sku_pedido, m]) || []
-      );
+      // 🔧 CASE-INSENSITIVE: Criar mapa com chave em uppercase, priorizando registros com sku_correspondente preenchido
+      const mapeamentosMap = new Map<string, typeof mapeamentos[0]>();
+      
+      const dadosOrdenados = [...(mapeamentos || [])].sort((a, b) => {
+        const aTemValor = a.sku_correspondente ? 1 : 0;
+        const bTemValor = b.sku_correspondente ? 1 : 0;
+        return aTemValor - bTemValor;
+      });
+      
+      for (const m of dadosOrdenados) {
+        const keyUpper = m.sku_pedido.toUpperCase();
+        const valorExistente = mapeamentosMap.get(keyUpper);
+        if (!valorExistente || m.sku_correspondente) {
+          mapeamentosMap.set(keyUpper, m);
+        }
+      }
 
       // Enriquecer cada pedido com dados de mapeamento
       return pedidos.map(pedido => {
@@ -461,14 +497,14 @@ export class MapeamentoService {
         let qtdKit = null;
         let statusEstoque: 'pronto_baixar' | 'sem_estoque' | 'pedido_baixado' = 'pronto_baixar';
 
-        // Procurar mapeamento pelos itens ou pela obs
+        // 🔧 CASE-INSENSITIVE: Procurar mapeamento pelos itens ou pela obs
         if (pedido.itens && pedido.itens.length > 0) {
           const itemComMapeamento = pedido.itens.find(item => 
-            mapeamentosMap.has(item.sku)
+            mapeamentosMap.has(item.sku.toUpperCase())
           );
           
           if (itemComMapeamento) {
-            const mapeamento = mapeamentosMap.get(itemComMapeamento.sku);
+            const mapeamento = mapeamentosMap.get(itemComMapeamento.sku.toUpperCase());
             skuEstoque = mapeamento?.sku_correspondente || mapeamento?.sku_simples;
             skuKit = mapeamento?.sku_pedido;
             qtdKit = mapeamento?.quantidade;
@@ -478,10 +514,10 @@ export class MapeamentoService {
         } else if (pedido.obs) {
           // Fallback para buscar na obs
           const skusDaObs = pedido.obs.split(',').map(s => s.trim());
-          const skuComMapeamento = skusDaObs.find(sku => mapeamentosMap.has(sku));
+          const skuComMapeamento = skusDaObs.find(sku => mapeamentosMap.has(sku.toUpperCase()));
           
           if (skuComMapeamento) {
-            const mapeamento = mapeamentosMap.get(skuComMapeamento);
+            const mapeamento = mapeamentosMap.get(skuComMapeamento.toUpperCase());
             skuEstoque = mapeamento?.sku_correspondente || mapeamento?.sku_simples;
             skuKit = mapeamento?.sku_pedido;
             qtdKit = mapeamento?.quantidade;
