@@ -92,10 +92,20 @@ export class SkuMappingService {
       const orgId = await this.getCurrentOrgId();
       console.log('🏢 Organization ID obtido:', orgId);
 
+      const skuPedido = mapping.sku_pedido?.trim();
+      
+      // 🛡️ Validar se já existe (case-insensitive)
+      if (skuPedido) {
+        const jaExiste = await this.validateSkuExists(skuPedido);
+        if (jaExiste) {
+          throw new Error(`SKU "${skuPedido}" já existe no sistema (verificação case-insensitive)`);
+        }
+      }
+
       const payload = {
-        sku_pedido: mapping.sku_pedido?.trim(),
-        sku_correspondente: mapping.sku_correspondente?.trim() || mapping.sku_pedido?.trim(),
-        sku_simples: mapping.sku_simples?.trim() || mapping.sku_pedido?.trim(),
+        sku_pedido: skuPedido,
+        sku_correspondente: mapping.sku_correspondente?.trim() || skuPedido,
+        sku_simples: mapping.sku_simples?.trim() || skuPedido,
         quantidade: mapping.quantidade ?? 1,
         ativo: mapping.ativo ?? true,
         observacoes: mapping.observacoes?.trim(),
@@ -176,11 +186,15 @@ export class SkuMappingService {
     }
   }
 
+  /**
+   * 🛡️ Valida se SKU já existe (CASE-INSENSITIVE)
+   * Previne duplicados como "SKU-1" e "sku-1"
+   */
   static async validateSkuExists(sku: string): Promise<boolean> {
     const { data, error } = await supabase
       .from('mapeamentos_depara')
       .select('id')
-      .eq('sku_pedido', sku)
+      .ilike('sku_pedido', sku.trim())
       .maybeSingle();
 
     if (error) {
