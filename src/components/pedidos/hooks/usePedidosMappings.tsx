@@ -113,7 +113,8 @@ export function usePedidosMappings(options: UsePedidosMappingsOptions = {}): Use
                 skuEstoque: verificacao?.skuEstoque || null,
                 skuKit: verificacao?.skuKit || skus[0],
                 quantidade: verificacao?.quantidadeKit || 1,
-                statusBaixa: verificacao?.temMapeamento ? 'pronto_baixar' : 'sem_mapear'
+                // 🔧 FIX: Usar o statusBaixa retornado pelo serviço, não sobrescrever
+                statusBaixa: verificacao?.statusBaixa || (verificacao?.temMapeamento ? 'pronto_baixar' : 'sem_mapear')
               }
             };
 
