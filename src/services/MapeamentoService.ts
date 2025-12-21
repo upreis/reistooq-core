@@ -34,16 +34,18 @@ export class MapeamentoService {
     if (skusPedido.length === 0) return [];
 
     try {
-      // 🔧 CASE-INSENSITIVE: Normalizar SKUs para uppercase para busca
-      const skusUppercase = skusPedido.map(sku => sku.toUpperCase());
-      const skusLowercase = skusPedido.map(sku => sku.toLowerCase());
-      const todosSkus = [...new Set([...skusPedido, ...skusUppercase, ...skusLowercase])];
-      
-      const { data, error } = await supabase
+      // 🔧 CASE-INSENSITIVE: Buscar TODOS os mapeamentos ativos e filtrar no JS
+      // O .in() do Supabase é case-sensitive, então buscamos tudo e filtramos
+      const { data: todosMapeamentos, error } = await supabase
         .from('mapeamentos_depara')
         .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
-        .in('sku_pedido', todosSkus)
         .eq('ativo', true);
+      
+      // Filtrar apenas os SKUs que correspondem (case-insensitive)
+      const skusPedidoUpper = new Set(skusPedido.map(s => s.toUpperCase()));
+      const data = (todosMapeamentos || []).filter(m => 
+        m.sku_pedido && skusPedidoUpper.has(m.sku_pedido.toUpperCase())
+      );
 
       if (error) {
         console.error('Erro ao verificar mapeamentos:', error);
@@ -477,16 +479,17 @@ export class MapeamentoService {
     });
 
     try {
-      // 🔧 CASE-INSENSITIVE: Buscar com variações de case
-      const skusUppercase = skusPedido.map(sku => sku.toUpperCase());
-      const skusLowercase = skusPedido.map(sku => sku.toLowerCase());
-      const todosSkus = [...new Set([...skusPedido, ...skusUppercase, ...skusLowercase])];
-      
-      const { data: mapeamentos, error } = await supabase
+      // 🔧 CASE-INSENSITIVE: Buscar todos e filtrar no JS (o .in() é case-sensitive)
+      const { data: todosMapeamentos, error } = await supabase
         .from('mapeamentos_depara')
         .select('sku_pedido, sku_correspondente, sku_simples, quantidade, ativo')
-        .in('sku_pedido', todosSkus)
         .eq('ativo', true);
+      
+      // Filtrar apenas os SKUs que correspondem (case-insensitive)
+      const skusPedidoUpper = new Set(skusPedido.map(s => s.toUpperCase()));
+      const mapeamentos = (todosMapeamentos || []).filter(m => 
+        m.sku_pedido && skusPedidoUpper.has(m.sku_pedido.toUpperCase())
+      );
 
       if (error) {
         console.error('Erro ao buscar mapeamentos:', error);
