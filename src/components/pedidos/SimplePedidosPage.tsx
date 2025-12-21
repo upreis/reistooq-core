@@ -81,6 +81,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
 import { StatusInsumoWithTooltip } from './StatusInsumoWithTooltip';
 import { CadastroInsumoRapidoModal } from './CadastroInsumoRapidoModal';
+import { CadastroComposicaoRapidoModal } from './CadastroComposicaoRapidoModal';
 import { ConfiguracaoLocaisModal } from './ConfiguracaoLocaisModal';
 import { useLocalEstoqueEnriquecimento } from '@/hooks/useLocalEstoqueEnriquecimento';
 import { LoadingIndicator } from './LoadingIndicator';
@@ -288,9 +289,17 @@ function SimplePedidosPage({ className }: Props) {
   const [showMapeamentoModal, setShowMapeamentoModal] = useState(false);
   const [pedidoParaMapeamento, setPedidoParaMapeamento] = useState<any>(null);
   
+  // 📦 Estado do modal de composição rápida
+  const [showComposicaoModal, setShowComposicaoModal] = useState(false);
+  const [composicaoModalData, setComposicaoModalData] = useState<{
+    skuProduto: string;
+    localEstoqueId: string;
+    localEstoqueNome: string;
+  } | null>(null);
+  
   // 🗺️ Estado do modal de configuração de locais
   const [showLocaisModal, setShowLocaisModal] = useState(false);
-  
+
   // 🧠 P3.2: Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE (debounce aumentado)
   const {
     mappingData,
@@ -530,6 +539,25 @@ function SimplePedidosPage({ className }: Props) {
     
     return () => {
       window.removeEventListener('openMapeamentoModal', handleOpenMapeamentoModal);
+    };
+  }, []);
+
+  // 📦 Listener para abrir modal de composição
+  useEffect(() => {
+    const handleOpenComposicaoModal = (event: any) => {
+      const { skuProduto, localEstoqueId, localEstoqueNome } = event.detail;
+      setComposicaoModalData({
+        skuProduto,
+        localEstoqueId,
+        localEstoqueNome
+      });
+      setShowComposicaoModal(true);
+    };
+
+    window.addEventListener('openComposicaoModal', handleOpenComposicaoModal);
+    
+    return () => {
+      window.removeEventListener('openComposicaoModal', handleOpenComposicaoModal);
     };
   }, []);
   
@@ -1010,7 +1038,24 @@ function SimplePedidosPage({ className }: Props) {
         contasML={accounts}
       />
 
-      {/* 📄 RODAPÉ FIXADO COM PAGINAÇÃO */}
+      {/* 📦 MODAL: Cadastro Rápido de Composição */}
+      <CadastroComposicaoRapidoModal
+        isOpen={showComposicaoModal}
+        onClose={() => {
+          setShowComposicaoModal(false);
+          setComposicaoModalData(null);
+        }}
+        skuProduto={composicaoModalData?.skuProduto || ''}
+        localEstoqueId={composicaoModalData?.localEstoqueId}
+        localEstoqueNome={composicaoModalData?.localEstoqueNome}
+        onSuccess={() => {
+          // Recarregar mapeamentos após cadastrar composição
+          if (orders && orders.length > 0) {
+            mappingActions.processOrdersMappings(orders);
+          }
+        }}
+      />
+
       {!loading && total > 0 && (
         <div 
           className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${

@@ -912,11 +912,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                               texto = "SKU não cadastrado no estoque";
                               isClickable = false;
                             }
-                            // 🛡️ PRIORIDADE 2: Sem composição cadastrada
+                            // 🛡️ PRIORIDADE 2: Sem composição cadastrada - CLICÁVEL para cadastrar
                             else if (statusBaixa === 'sem_composicao') {
                               variant = "warning";
                               texto = "Sem Composição";
-                              isClickable = false;
+                              isClickable = true; // ✅ Agora é clicável
                             }
                             // 🛡️ PRIORIDADE 3: Sem estoque
                             else if (statusBaixa === 'sem_estoque') {
@@ -953,22 +953,42 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                 }`}
                                 title={
                                   isClickable
-                                    ? "Clique para criar mapeamento"
+                                    ? statusBaixa === 'sem_composicao' 
+                                      ? "Clique para cadastrar composição"
+                                      : "Clique para criar mapeamento"
                                     : undefined
                                 }
                                 onClick={() => {
                                   if (isClickable) {
-                                    console.log('🔗 Abrindo modal de mapeamento para pedido (status_baixa):', {
-                                      order,
-                                      order_items: order.order_items,
-                                      skus_produtos: order.skus_produtos,
-                                      titulo_anuncio: order.titulo_anuncio
-                                    });
-                                    
-                                    // Disparar evento para abrir modal de mapeamento
-                                    window.dispatchEvent(new CustomEvent('openMapeamentoModal', {
-                                      detail: { pedido: order }
-                                    }));
+                                    // 🔧 Se for sem_composicao, abre modal de composição
+                                    if (statusBaixa === 'sem_composicao') {
+                                      console.log('📦 Abrindo modal de composição para pedido:', {
+                                        order,
+                                        skuEstoque: mapping?.skuEstoque,
+                                        localEstoqueId: order.local_estoque_id,
+                                        localEstoqueNome: order.local_estoque
+                                      });
+                                      
+                                      window.dispatchEvent(new CustomEvent('openComposicaoModal', {
+                                        detail: {
+                                          skuProduto: mapping?.skuEstoque || mapping?.skuKit || skus[0],
+                                          localEstoqueId: order.local_estoque_id,
+                                          localEstoqueNome: order.local_estoque
+                                        }
+                                      }));
+                                    } else {
+                                      // Modal de mapeamento
+                                      console.log('🔗 Abrindo modal de mapeamento para pedido (status_baixa):', {
+                                        order,
+                                        order_items: order.order_items,
+                                        skus_produtos: order.skus_produtos,
+                                        titulo_anuncio: order.titulo_anuncio
+                                      });
+                                      
+                                      window.dispatchEvent(new CustomEvent('openMapeamentoModal', {
+                                        detail: { pedido: order }
+                                      }));
+                                    }
                                   }
                                 }}
                               >
