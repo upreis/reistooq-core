@@ -155,27 +155,38 @@ export function CadastroComposicaoRapidoModal({
 
     setSaving(true);
     try {
-      // Buscar organization_id de um produto existente
-      const { data: produtoData } = await supabase
-        .from('produtos')
-        .select('organization_id')
-        .limit(1)
-        .single();
+      // Buscar organization_id do usuário atual via RPC
+      const { data: orgData, error: orgError } = await supabase.rpc('get_current_org_id');
+      
+      let organizationId = orgData;
+      
+      // Fallback: buscar de um produto existente
+      if (!organizationId) {
+        const { data: produtoData } = await supabase
+          .from('produtos')
+          .select('organization_id')
+          .limit(1)
+          .single();
+        
+        organizationId = produtoData?.organization_id;
+      }
 
-      if (!produtoData?.organization_id) {
+      if (!organizationId) {
         throw new Error('Organização não encontrada');
       }
 
-      const organizationId = produtoData.organization_id;
+      console.log('📦 Organization ID:', organizationId);
+      console.log('📦 Deletando composições existentes:', { skuProduto, localEstoqueId });
 
       // Deletar composições existentes deste produto NESTE LOCAL
-      const { error: deleteError } = await supabase
+      const { data: deleted, error: deleteError } = await supabase
         .from('produto_componentes')
         .delete()
         .eq('sku_produto', skuProduto)
-        .eq('local_id', localEstoqueId);
+        .eq('local_id', localEstoqueId)
+        .select();
 
-      if (deleteError) throw deleteError;
+      console.log('📦 Deletados:', deleted, deleteError);
 
       // Inserir novos componentes
       const componentesParaInserir = componentesValidos.map(comp => ({
@@ -187,11 +198,19 @@ export function CadastroComposicaoRapidoModal({
         local_id: localEstoqueId
       }));
 
-      const { error: insertError } = await supabase
-        .from('produto_componentes')
-        .insert(componentesParaInserir);
+      console.log('📦 Inserindo componentes:', componentesParaInserir);
 
-      if (insertError) throw insertError;
+      const { data: inserted, error: insertError } = await supabase
+        .from('produto_componentes')
+        .insert(componentesParaInserir)
+        .select();
+
+      console.log('📦 Inseridos:', inserted, insertError);
+
+      if (insertError) {
+        console.error('❌ Erro ao inserir:', insertError);
+        throw insertError;
+      }
 
       toast({
         title: "Composição cadastrada!",
