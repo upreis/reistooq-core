@@ -47,6 +47,17 @@ export function CadastroComposicaoRapidoModal({
   const { toast } = useToast();
   const { getProducts } = useProducts();
 
+  // Log para debug dos props recebidos
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🎯 [CadastroComposicaoModal] Props recebidos:', {
+        skuProduto,
+        localEstoqueId,
+        localEstoqueNome
+      });
+    }
+  }, [isOpen, skuProduto, localEstoqueId, localEstoqueNome]);
+
   // Carregar informações do produto
   useEffect(() => {
     const loadProdutoInfo = async () => {
