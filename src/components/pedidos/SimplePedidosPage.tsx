@@ -1049,9 +1049,10 @@ function SimplePedidosPage({ className }: Props) {
         localEstoqueId={composicaoModalData?.localEstoqueId}
         localEstoqueNome={composicaoModalData?.localEstoqueNome}
         onSuccess={() => {
-          // Recarregar mapeamentos após cadastrar composição
+          // Forçar reprocessamento dos mapeamentos após cadastrar composição
           if (orders && orders.length > 0) {
-            mappingActions.processOrdersMappings(orders);
+            // Usar reprocessMappings para limpar cache e forçar atualização
+            mappingActions.reprocessMappings(orders);
           }
         }}
       />
