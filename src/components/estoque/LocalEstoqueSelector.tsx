@@ -224,7 +224,15 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
 
     setDeletando(true);
     try {
-      // 1. Deletar todos os registros de estoque_por_local
+      // 1. Deletar todas as movimentações de estoque deste local
+      const { error: movError } = await supabase
+        .from('movimentacoes_estoque')
+        .delete()
+        .eq('local_id', localParaDeletar.id);
+
+      if (movError) throw movError;
+
+      // 2. Deletar todos os registros de estoque_por_local
       const { error: estoqueError } = await supabase
         .from('estoque_por_local')
         .delete()
@@ -232,7 +240,7 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
 
       if (estoqueError) throw estoqueError;
 
-      // 2. Deletar o local de estoque
+      // 3. Deletar o local de estoque
       const { error: localError } = await supabase
         .from('locais_estoque')
         .delete()
