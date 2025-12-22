@@ -35,7 +35,7 @@ const sortOptions = [
   { id: "category", name: "Por Categoria", sortBy: "categoria", sortOrder: "asc" },
 ];
 
-export function ComposicoesEstoque({ localId }: { localId?: string }) {
+export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string; localVendaId?: string }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoComposicao | null>(null);
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});

@@ -723,6 +723,53 @@ export type Database = {
           },
         ]
       }
+      composicoes_local_venda: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          local_venda_id: string
+          observacoes: string | null
+          organization_id: string
+          quantidade: number
+          sku_insumo: string
+          sku_produto: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          local_venda_id: string
+          observacoes?: string | null
+          organization_id: string
+          quantidade?: number
+          sku_insumo: string
+          sku_produto: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          local_venda_id?: string
+          observacoes?: string | null
+          organization_id?: string
+          quantidade?: number
+          sku_insumo?: string
+          sku_produto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "composicoes_local_venda_local_venda_id_fkey"
+            columns: ["local_venda_id"]
+            isOneToOne: false
+            referencedRelation: "locais_venda"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compras_importacoes_historico: {
         Row: {
           created_at: string | null
@@ -3075,6 +3122,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      locais_venda: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          icone: string | null
+          id: string
+          local_estoque_id: string | null
+          nome: string
+          organization_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          local_estoque_id?: string | null
+          nome: string
+          organization_id: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          local_estoque_id?: string | null
+          nome?: string
+          organization_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locais_venda_local_estoque_id_fkey"
+            columns: ["local_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       logistic_events: {
         Row: {
