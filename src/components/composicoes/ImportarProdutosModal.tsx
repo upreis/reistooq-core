@@ -80,17 +80,17 @@ export function ImportarProdutosModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             Importar Produtos do Controle de Estoque
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 flex-1">
+        <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden">
           {/* Busca */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome ou SKU..."
@@ -101,7 +101,7 @@ export function ImportarProdutosModal({
           </div>
 
           {/* Cabeçalho com seleção */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={selectedIds.length === produtosFiltrados.length && produtosFiltrados.length > 0}
@@ -117,7 +117,7 @@ export function ImportarProdutosModal({
           </div>
 
           {/* Lista de produtos */}
-          <ScrollArea className="flex-1 border rounded-lg">
+          <ScrollArea className="flex-1 min-h-0 border rounded-lg">
             {isLoading ? (
               <div className="p-8 text-center text-muted-foreground">
                 Carregando produtos...
