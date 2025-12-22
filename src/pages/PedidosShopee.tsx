@@ -97,6 +97,7 @@ export default function PedidosShopee() {
   const [empresasShopee, setEmpresasShopee] = useState<Array<{ id: string; nome: string; nickname?: string }>>([]);
   const [novaEmpresa, setNovaEmpresa] = useState({ nome: "", nickname: "" });
   const [editandoEmpresa, setEditandoEmpresa] = useState<string | null>(null);
+  const [empresaSelecionadaUpload, setEmpresaSelecionadaUpload] = useState<string>("");
 
   const { toast } = useToast();
   const { profile } = useCurrentProfile();
@@ -189,12 +190,12 @@ export default function PedidosShopee() {
     }
   };
 
-  // Carregar empresas ao abrir o modal
+  // Carregar empresas ao abrir o modal ou aba de importação
   useEffect(() => {
-    if (showEmpresasModal) {
+    if (showEmpresasModal || activeTab === "importar") {
       loadEmpresas();
     }
-  }, [showEmpresasModal, loadEmpresas]);
+  }, [showEmpresasModal, activeTab, loadEmpresas]);
 
   // Pedidos filtrados
   const filteredPedidos = pedidos.filter((pedido) => {
@@ -324,6 +325,18 @@ export default function PedidosShopee() {
       });
       return;
     }
+
+    if (!empresaSelecionadaUpload) {
+      toast({
+        title: "Empresa obrigatória",
+        description: "Selecione uma empresa antes de importar o arquivo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Buscar o nome da empresa selecionada
+    const empresaNome = empresasShopee.find(e => e.id === empresaSelecionadaUpload)?.nome || "";
 
     setIsProcessing(true);
     setProgress(0);
