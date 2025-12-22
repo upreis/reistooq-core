@@ -90,6 +90,7 @@ export function EstoqueFilters({
     { value: "all", label: "Todos", icon: Package },
     { value: "active_only", label: "Apenas Ativos", icon: Package },
     { value: "inactive_only", label: "Apenas Inativos", icon: X },
+    { value: "in_stock", label: "Com estoque", icon: Package },
     { value: "low", label: "Estoque baixo", icon: AlertTriangle },
     { value: "out", label: "Sem estoque", icon: AlertTriangle },
     { value: "high", label: "Estoque alto", icon: TrendingUp },

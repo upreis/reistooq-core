@@ -109,6 +109,8 @@ export function useEstoquePagination(products: Product[], selectedSegments: stri
       // Filtros de estoque
       filtered = filtered.filter(product => {
         switch (selectedStatus) {
+          case "in_stock":
+            return product.quantidade_atual >= 1;
           case "low":
             return product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
           case "out":
