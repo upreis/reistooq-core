@@ -99,6 +99,89 @@ export default function PedidosShopee() {
   const [editandoEmpresa, setEditandoEmpresa] = useState<string | null>(null);
   const [empresaSelecionadaUpload, setEmpresaSelecionadaUpload] = useState<string>("");
 
+  // Definição das colunas da tabela com visibilidade padrão
+  const defaultHiddenColumns = [
+    "metodoPagamento", "statusPagamento", "cpfCnpj", "medalha", "reputacao", 
+    "condicao", "substatusEnvio", "rastreamento", "dataCriacaoSpee", 
+    "packId", "pickupId", "tagsPedido"
+  ];
+
+  const allColumns = [
+    { key: "idUnico", label: "ID-Único", defaultVisible: true },
+    { key: "empresa", label: "Empresa", defaultVisible: true },
+    { key: "numeroPedido", label: "Número do Pedido", defaultVisible: true },
+    { key: "nomeCompleto", label: "Nome Completo", defaultVisible: true },
+    { key: "dataPedido", label: "Data do Pedido", defaultVisible: true },
+    { key: "atualizado", label: "Atualizado", defaultVisible: true },
+    { key: "sku", label: "SKU", defaultVisible: true },
+    { key: "quantidade", label: "Quantidade", defaultVisible: true },
+    { key: "tituloProduto", label: "Título do Produto", defaultVisible: true },
+    { key: "valorTotal", label: "Valor Total", defaultVisible: true },
+    { key: "receitaEntregaDireta", label: "Receita Entrega Direta", defaultVisible: true },
+    { key: "taxaTransacao", label: "Taxa de Transação", defaultVisible: true },
+    { key: "custoEnvio", label: "Custo Envio", defaultVisible: true },
+    { key: "taxaServico", label: "Taxa de serviço", defaultVisible: true },
+    { key: "valorLiquido", label: "Valor Líquido", defaultVisible: true },
+    { key: "metodoPagamento", label: "Método Pagamento", defaultVisible: false },
+    { key: "statusPagamento", label: "Status Pagamento", defaultVisible: false },
+    { key: "cpfCnpj", label: "CPF/CNPJ", defaultVisible: false },
+    { key: "skuEstoque", label: "SKU Estoque", defaultVisible: true },
+    { key: "skuKit", label: "SKU KIT", defaultVisible: true },
+    { key: "quantidadeKit", label: "Quantidade KIT", defaultVisible: true },
+    { key: "totalItens", label: "Total de Itens", defaultVisible: true },
+    { key: "statusBaixa", label: "Status da Baixa", defaultVisible: true },
+    { key: "statusInsumos", label: "Status Insumos", defaultVisible: true },
+    { key: "marketplace", label: "Marketplace", defaultVisible: true },
+    { key: "localEstoque", label: "Local de Estoque", defaultVisible: true },
+    { key: "situacaoPedido", label: "Situação do Pedido", defaultVisible: true },
+    { key: "statusEnvio", label: "Status do Envio", defaultVisible: true },
+    { key: "tipoLogistico", label: "Tipo Logístico", defaultVisible: true },
+    { key: "medalha", label: "Medalha", defaultVisible: false },
+    { key: "reputacao", label: "Reputação", defaultVisible: false },
+    { key: "condicao", label: "Condição", defaultVisible: false },
+    { key: "substatusEnvio", label: "Substatus do Envio", defaultVisible: false },
+    { key: "codigoRastreamento", label: "Código Rastreamento", defaultVisible: true },
+    { key: "rastreamento", label: "Rastreamento", defaultVisible: false },
+    { key: "rua", label: "Rua", defaultVisible: true },
+    { key: "numero", label: "Número", defaultVisible: true },
+    { key: "bairro", label: "Bairro", defaultVisible: true },
+    { key: "cep", label: "CEP", defaultVisible: true },
+    { key: "cidade", label: "Cidade", defaultVisible: true },
+    { key: "uf", label: "UF", defaultVisible: true },
+    { key: "dataCriacaoSpee", label: "Data Criação SPee", defaultVisible: false },
+    { key: "packId", label: "Pack ID", defaultVisible: false },
+    { key: "pickupId", label: "Pickup ID", defaultVisible: false },
+    { key: "tagsPedido", label: "Tags do Pedido", defaultVisible: false },
+  ];
+
+  // Carregar visibilidade das colunas do localStorage ou usar padrão
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem("pedidos_shopee_columns");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // Se falhar ao parsear, usa o padrão
+      }
+    }
+    // Padrão: todas visíveis exceto as especificadas
+    return allColumns.reduce((acc, col) => {
+      acc[col.key] = col.defaultVisible;
+      return acc;
+    }, {} as Record<string, boolean>);
+  });
+
+  // Salvar no localStorage quando mudar
+  const toggleColumn = (key: string) => {
+    setColumnVisibility(prev => {
+      const newVisibility = { ...prev, [key]: !prev[key] };
+      localStorage.setItem("pedidos_shopee_columns", JSON.stringify(newVisibility));
+      return newVisibility;
+    });
+  };
+
+  const isColumnVisible = (key: string) => columnVisibility[key] !== false;
+
   const { toast } = useToast();
   const { profile } = useCurrentProfile();
   const organizationId = profile?.organizacao_id;
@@ -845,10 +928,34 @@ export default function PedidosShopee() {
                   </Popover>
                   
                   {/* Botão Colunas */}
-                  <Button variant="outline" size="sm">
-                    <Columns className="h-4 w-4 mr-2" />
-                    Colunas
-                  </Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Columns className="h-4 w-4 mr-2" />
+                        Colunas
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 max-h-96 overflow-y-auto" align="end">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium mb-3">Colunas visíveis</p>
+                        {allColumns.map((col) => (
+                          <div key={col.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`col-${col.key}`}
+                              checked={isColumnVisible(col.key)}
+                              onCheckedChange={() => toggleColumn(col.key)}
+                            />
+                            <label
+                              htmlFor={`col-${col.key}`}
+                              className="text-sm cursor-pointer flex-1"
+                            >
+                              {col.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   
                   {/* Botão Locais */}
                   <Button variant="outline" size="sm" onClick={() => setShowLocaisModal(true)}>
@@ -893,51 +1000,51 @@ export default function PedidosShopee() {
                               />
                             </TableHead>
                           )}
-                          <TableHead>ID-Único</TableHead>
-                          <TableHead>Empresa</TableHead>
-                          <TableHead>Número do Pedido</TableHead>
-                          <TableHead>Nome Completo</TableHead>
-                          <TableHead>Data do Pedido</TableHead>
-                          <TableHead>Atualizado</TableHead>
-                          <TableHead>SKU</TableHead>
-                          <TableHead>Quantidade</TableHead>
-                          <TableHead>Título do Produto</TableHead>
-                          <TableHead className="text-right">Valor Total</TableHead>
-                          <TableHead className="text-right">Receita Entrega Direta</TableHead>
-                          <TableHead className="text-right">Taxa de Transação</TableHead>
-                          <TableHead className="text-right">Custo Envio</TableHead>
-                          <TableHead className="text-right">Taxa de serviço</TableHead>
-                          <TableHead className="text-right">Valor Líquido</TableHead>
-                          <TableHead>Método Pagamento</TableHead>
-                          <TableHead>Status Pagamento</TableHead>
-                          <TableHead>CPF/CNPJ</TableHead>
-                          <TableHead>SKU Estoque</TableHead>
-                          <TableHead>SKU KIT</TableHead>
-                          <TableHead>Quantidade KIT</TableHead>
-                          <TableHead>Total de Itens</TableHead>
-                          <TableHead>Status da Baixa</TableHead>
-                          <TableHead>Status Insumos</TableHead>
-                          <TableHead>Marketplace</TableHead>
-                          <TableHead>Local de Estoque</TableHead>
-                          <TableHead>Situação do Pedido</TableHead>
-                          <TableHead>Status do Envio</TableHead>
-                          <TableHead>Tipo Logístico</TableHead>
-                          <TableHead>Medalha</TableHead>
-                          <TableHead>Reputação</TableHead>
-                          <TableHead>Condição</TableHead>
-                          <TableHead>Substatus do Envio</TableHead>
-                          <TableHead>Código Rastreamento</TableHead>
-                          <TableHead>Rastreamento</TableHead>
-                          <TableHead>Rua</TableHead>
-                          <TableHead>Número</TableHead>
-                          <TableHead>Bairro</TableHead>
-                          <TableHead>CEP</TableHead>
-                          <TableHead>Cidade</TableHead>
-                          <TableHead>UF</TableHead>
-                          <TableHead>Data Criação SPee</TableHead>
-                          <TableHead>Pack ID</TableHead>
-                          <TableHead>Pickup ID</TableHead>
-                          <TableHead>Tags do Pedido</TableHead>
+                          {isColumnVisible("idUnico") && <TableHead>ID-Único</TableHead>}
+                          {isColumnVisible("empresa") && <TableHead>Empresa</TableHead>}
+                          {isColumnVisible("numeroPedido") && <TableHead>Número do Pedido</TableHead>}
+                          {isColumnVisible("nomeCompleto") && <TableHead>Nome Completo</TableHead>}
+                          {isColumnVisible("dataPedido") && <TableHead>Data do Pedido</TableHead>}
+                          {isColumnVisible("atualizado") && <TableHead>Atualizado</TableHead>}
+                          {isColumnVisible("sku") && <TableHead>SKU</TableHead>}
+                          {isColumnVisible("quantidade") && <TableHead>Quantidade</TableHead>}
+                          {isColumnVisible("tituloProduto") && <TableHead>Título do Produto</TableHead>}
+                          {isColumnVisible("valorTotal") && <TableHead className="text-right">Valor Total</TableHead>}
+                          {isColumnVisible("receitaEntregaDireta") && <TableHead className="text-right">Receita Entrega Direta</TableHead>}
+                          {isColumnVisible("taxaTransacao") && <TableHead className="text-right">Taxa de Transação</TableHead>}
+                          {isColumnVisible("custoEnvio") && <TableHead className="text-right">Custo Envio</TableHead>}
+                          {isColumnVisible("taxaServico") && <TableHead className="text-right">Taxa de serviço</TableHead>}
+                          {isColumnVisible("valorLiquido") && <TableHead className="text-right">Valor Líquido</TableHead>}
+                          {isColumnVisible("metodoPagamento") && <TableHead>Método Pagamento</TableHead>}
+                          {isColumnVisible("statusPagamento") && <TableHead>Status Pagamento</TableHead>}
+                          {isColumnVisible("cpfCnpj") && <TableHead>CPF/CNPJ</TableHead>}
+                          {isColumnVisible("skuEstoque") && <TableHead>SKU Estoque</TableHead>}
+                          {isColumnVisible("skuKit") && <TableHead>SKU KIT</TableHead>}
+                          {isColumnVisible("quantidadeKit") && <TableHead>Quantidade KIT</TableHead>}
+                          {isColumnVisible("totalItens") && <TableHead>Total de Itens</TableHead>}
+                          {isColumnVisible("statusBaixa") && <TableHead>Status da Baixa</TableHead>}
+                          {isColumnVisible("statusInsumos") && <TableHead>Status Insumos</TableHead>}
+                          {isColumnVisible("marketplace") && <TableHead>Marketplace</TableHead>}
+                          {isColumnVisible("localEstoque") && <TableHead>Local de Estoque</TableHead>}
+                          {isColumnVisible("situacaoPedido") && <TableHead>Situação do Pedido</TableHead>}
+                          {isColumnVisible("statusEnvio") && <TableHead>Status do Envio</TableHead>}
+                          {isColumnVisible("tipoLogistico") && <TableHead>Tipo Logístico</TableHead>}
+                          {isColumnVisible("medalha") && <TableHead>Medalha</TableHead>}
+                          {isColumnVisible("reputacao") && <TableHead>Reputação</TableHead>}
+                          {isColumnVisible("condicao") && <TableHead>Condição</TableHead>}
+                          {isColumnVisible("substatusEnvio") && <TableHead>Substatus do Envio</TableHead>}
+                          {isColumnVisible("codigoRastreamento") && <TableHead>Código Rastreamento</TableHead>}
+                          {isColumnVisible("rastreamento") && <TableHead>Rastreamento</TableHead>}
+                          {isColumnVisible("rua") && <TableHead>Rua</TableHead>}
+                          {isColumnVisible("numero") && <TableHead>Número</TableHead>}
+                          {isColumnVisible("bairro") && <TableHead>Bairro</TableHead>}
+                          {isColumnVisible("cep") && <TableHead>CEP</TableHead>}
+                          {isColumnVisible("cidade") && <TableHead>Cidade</TableHead>}
+                          {isColumnVisible("uf") && <TableHead>UF</TableHead>}
+                          {isColumnVisible("dataCriacaoSpee") && <TableHead>Data Criação SPee</TableHead>}
+                          {isColumnVisible("packId") && <TableHead>Pack ID</TableHead>}
+                          {isColumnVisible("pickupId") && <TableHead>Pickup ID</TableHead>}
+                          {isColumnVisible("tagsPedido") && <TableHead>Tags do Pedido</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -967,140 +1074,230 @@ export default function PedidosShopee() {
                                 </TableCell>
                               )}
                               {/* ID-Único: order_id-sku */}
-                              <TableCell className="font-mono text-xs">
-                                {pedido.order_id}{pedido.sku ? `-${pedido.sku}` : ''}
-                              </TableCell>
+                              {isColumnVisible("idUnico") && (
+                                <TableCell className="font-mono text-xs">
+                                  {pedido.order_id}{pedido.sku ? `-${pedido.sku}` : ''}
+                                </TableCell>
+                              )}
                               {/* Empresa */}
-                              <TableCell>{(pedido as any).empresa ?? "Shopee"}</TableCell>
+                              {isColumnVisible("empresa") && (
+                                <TableCell>{(pedido as any).empresa ?? "Shopee"}</TableCell>
+                              )}
                               {/* Número do Pedido */}
-                              <TableCell className="font-mono text-sm">{pedido.order_id}</TableCell>
+                              {isColumnVisible("numeroPedido") && (
+                                <TableCell className="font-mono text-sm">{pedido.order_id}</TableCell>
+                              )}
                               {/* Nome Completo */}
-                              <TableCell className="max-w-[150px] truncate">{pedido.comprador_nome ?? "-"}</TableCell>
+                              {isColumnVisible("nomeCompleto") && (
+                                <TableCell className="max-w-[150px] truncate">{pedido.comprador_nome ?? "-"}</TableCell>
+                              )}
                               {/* Data do Pedido */}
-                              <TableCell className="text-sm">
-                                {pedido.data_pedido
-                                  ? format(new Date(pedido.data_pedido), "dd/MM/yy", { locale: ptBR })
-                                  : "-"}
-                              </TableCell>
+                              {isColumnVisible("dataPedido") && (
+                                <TableCell className="text-sm">
+                                  {pedido.data_pedido
+                                    ? format(new Date(pedido.data_pedido), "dd/MM/yy", { locale: ptBR })
+                                    : "-"}
+                                </TableCell>
+                              )}
                               {/* Atualizado */}
-                              <TableCell className="text-sm">
-                                {pedido.updated_at
-                                  ? format(new Date(pedido.updated_at), "dd/MM/yy HH:mm", { locale: ptBR })
-                                  : "-"}
-                              </TableCell>
+                              {isColumnVisible("atualizado") && (
+                                <TableCell className="text-sm">
+                                  {pedido.updated_at
+                                    ? format(new Date(pedido.updated_at), "dd/MM/yy HH:mm", { locale: ptBR })
+                                    : "-"}
+                                </TableCell>
+                              )}
                               {/* SKU */}
-                              <TableCell className="font-mono text-xs">{pedido.sku ?? "-"}</TableCell>
+                              {isColumnVisible("sku") && (
+                                <TableCell className="font-mono text-xs">{pedido.sku ?? "-"}</TableCell>
+                              )}
                               {/* Quantidade */}
-                              <TableCell className="text-center">{pedido.quantidade}</TableCell>
+                              {isColumnVisible("quantidade") && (
+                                <TableCell className="text-center">{pedido.quantidade}</TableCell>
+                              )}
                               {/* Título do Produto */}
-                              <TableCell className="max-w-[200px] truncate text-sm">{pedido.produto_nome ?? "-"}</TableCell>
+                              {isColumnVisible("tituloProduto") && (
+                                <TableCell className="max-w-[200px] truncate text-sm">{pedido.produto_nome ?? "-"}</TableCell>
+                              )}
                               {/* Valor Total */}
-                              <TableCell className="text-right">
-                                {pedido.preco_total != null ? `R$ ${pedido.preco_total.toFixed(2)}` : "-"}
-                              </TableCell>
+                              {isColumnVisible("valorTotal") && (
+                                <TableCell className="text-right">
+                                  {pedido.preco_total != null ? `R$ ${pedido.preco_total.toFixed(2)}` : "-"}
+                                </TableCell>
+                              )}
                               {/* Receita Flex */}
-                              <TableCell className="text-right">
-                                {pedido.receita_flex != null ? `R$ ${Number(pedido.receita_flex).toFixed(2)}` : "-"}
-                              </TableCell>
+                              {isColumnVisible("receitaEntregaDireta") && (
+                                <TableCell className="text-right">
+                                  {pedido.receita_flex != null ? `R$ ${Number(pedido.receita_flex).toFixed(2)}` : "-"}
+                                </TableCell>
+                              )}
                               {/* Taxa Marketplace */}
-                              <TableCell className="text-right">
-                                {pedido.taxa_marketplace != null ? `R$ ${Number(pedido.taxa_marketplace).toFixed(2)}` : "-"}
-                              </TableCell>
+                              {isColumnVisible("taxaTransacao") && (
+                                <TableCell className="text-right">
+                                  {pedido.taxa_marketplace != null ? `R$ ${Number(pedido.taxa_marketplace).toFixed(2)}` : "-"}
+                                </TableCell>
+                              )}
                               {/* Custo Envio */}
-                              <TableCell className="text-right">
-                                {pedido.custo_envio != null ? `R$ ${Number(pedido.custo_envio).toFixed(2)}` : "-"}
-                              </TableCell>
-                              {/* Custo Fixo Meli */}
-                              <TableCell className="text-right">
-                                {pedido.custo_fixo != null ? `R$ ${Number(pedido.custo_fixo).toFixed(2)}` : "-"}
-                              </TableCell>
+                              {isColumnVisible("custoEnvio") && (
+                                <TableCell className="text-right">
+                                  {pedido.custo_envio != null ? `R$ ${Number(pedido.custo_envio).toFixed(2)}` : "-"}
+                                </TableCell>
+                              )}
+                              {/* Custo Fixo */}
+                              {isColumnVisible("taxaServico") && (
+                                <TableCell className="text-right">
+                                  {pedido.custo_fixo != null ? `R$ ${Number(pedido.custo_fixo).toFixed(2)}` : "-"}
+                                </TableCell>
+                              )}
                               {/* Valor Líquido */}
-                              <TableCell className="text-right font-medium">
-                                {pedido.preco_total != null ? `R$ ${valorLiquido.toFixed(2)}` : "-"}
-                              </TableCell>
+                              {isColumnVisible("valorLiquido") && (
+                                <TableCell className="text-right font-medium">
+                                  {pedido.preco_total != null ? `R$ ${valorLiquido.toFixed(2)}` : "-"}
+                                </TableCell>
+                              )}
                               {/* Método Pagamento */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("metodoPagamento") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Status Pagamento */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("statusPagamento") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* CPF/CNPJ */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("cpfCnpj") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* SKU Estoque */}
-                              <TableCell className="font-mono text-xs">{pedido.sku ?? "-"}</TableCell>
+                              {isColumnVisible("skuEstoque") && (
+                                <TableCell className="font-mono text-xs">{pedido.sku ?? "-"}</TableCell>
+                              )}
                               {/* SKU KIT */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("skuKit") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Quantidade KIT */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("quantidadeKit") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Total de Itens */}
-                              <TableCell className="text-center">{pedido.quantidade}</TableCell>
+                              {isColumnVisible("totalItens") && (
+                                <TableCell className="text-center">{pedido.quantidade}</TableCell>
+                              )}
                               {/* Status da Baixa */}
-                              <TableCell className="text-center">
-                                {pedido.baixa_estoque_realizada ? (
-                                  <Badge variant="default" className="bg-green-600 text-xs">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Baixado
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="secondary" className="text-xs">Pendente</Badge>
-                                )}
-                              </TableCell>
+                              {isColumnVisible("statusBaixa") && (
+                                <TableCell className="text-center">
+                                  {pedido.baixa_estoque_realizada ? (
+                                    <Badge variant="default" className="bg-green-600 text-xs">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Baixado
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary" className="text-xs">Pendente</Badge>
+                                  )}
+                                </TableCell>
+                              )}
                               {/* Status Insumos */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("statusInsumos") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Marketplace */}
-                              <TableCell>
-                                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/30 text-xs">
-                                  Shopee
-                                </Badge>
-                              </TableCell>
+                              {isColumnVisible("marketplace") && (
+                                <TableCell>
+                                  <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/30 text-xs">
+                                    Shopee
+                                  </Badge>
+                                </TableCell>
+                              )}
                               {/* Local de Estoque */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("localEstoque") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Situação do Pedido */}
-                              <TableCell>
-                                <Badge variant="outline" className="text-xs">
-                                  {pedido.order_status ?? "N/A"}
-                                </Badge>
-                              </TableCell>
+                              {isColumnVisible("situacaoPedido") && (
+                                <TableCell>
+                                  <Badge variant="outline" className="text-xs">
+                                    {pedido.order_status ?? "N/A"}
+                                  </Badge>
+                                </TableCell>
+                              )}
                               {/* Status do Envio */}
-                              <TableCell>
-                                {pedido.data_envio ? (
-                                  <Badge variant="default" className="text-xs">Enviado</Badge>
-                                ) : (
-                                  <Badge variant="secondary" className="text-xs">Pendente</Badge>
-                                )}
-                              </TableCell>
+                              {isColumnVisible("statusEnvio") && (
+                                <TableCell>
+                                  {pedido.data_envio ? (
+                                    <Badge variant="default" className="text-xs">Enviado</Badge>
+                                  ) : (
+                                    <Badge variant="secondary" className="text-xs">Pendente</Badge>
+                                  )}
+                                </TableCell>
+                              )}
                               {/* Tipo Logístico */}
-                              <TableCell>{pedido.tipo_logistico ?? "-"}</TableCell>
+                              {isColumnVisible("tipoLogistico") && (
+                                <TableCell>{pedido.tipo_logistico ?? "-"}</TableCell>
+                              )}
                               {/* Medalha */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("medalha") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Reputação */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("reputacao") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Condição */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("condicao") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Substatus do Envio */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("substatusEnvio") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Código Rastreamento */}
-                              <TableCell className="font-mono text-xs">{pedido.codigo_rastreamento ?? "-"}</TableCell>
+                              {isColumnVisible("codigoRastreamento") && (
+                                <TableCell className="font-mono text-xs">{pedido.codigo_rastreamento ?? "-"}</TableCell>
+                              )}
                               {/* Rastreamento */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("rastreamento") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Rua */}
-                              <TableCell className="max-w-[150px] truncate">{pedido.endereco_rua ?? "-"}</TableCell>
+                              {isColumnVisible("rua") && (
+                                <TableCell className="max-w-[150px] truncate">{pedido.endereco_rua ?? "-"}</TableCell>
+                              )}
                               {/* Número */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("numero") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Bairro */}
-                              <TableCell>{pedido.endereco_bairro ?? "-"}</TableCell>
+                              {isColumnVisible("bairro") && (
+                                <TableCell>{pedido.endereco_bairro ?? "-"}</TableCell>
+                              )}
                               {/* CEP */}
-                              <TableCell>{pedido.endereco_cep ?? "-"}</TableCell>
+                              {isColumnVisible("cep") && (
+                                <TableCell>{pedido.endereco_cep ?? "-"}</TableCell>
+                              )}
                               {/* Cidade */}
-                              <TableCell>{pedido.endereco_cidade ?? "-"}</TableCell>
+                              {isColumnVisible("cidade") && (
+                                <TableCell>{pedido.endereco_cidade ?? "-"}</TableCell>
+                              )}
                               {/* UF */}
-                              <TableCell>{pedido.endereco_estado ?? "-"}</TableCell>
-                              {/* Data Criação ML */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("uf") && (
+                                <TableCell>{pedido.endereco_estado ?? "-"}</TableCell>
+                              )}
+                              {/* Data Criação SPee */}
+                              {isColumnVisible("dataCriacaoSpee") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Pack ID */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("packId") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Pickup ID */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("pickupId") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                               {/* Tags do Pedido */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              {isColumnVisible("tagsPedido") && (
+                                <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
                             </TableRow>
                           );
                         })}
