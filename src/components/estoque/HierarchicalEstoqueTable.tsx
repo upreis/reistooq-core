@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell, Trash2, Link as LinkIcon } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell, Trash2, Link as LinkIcon, Grid3X3, LayoutList } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,8 @@ import { Product } from "@/hooks/useProducts";
 import { SkuGroup, groupProductsBySku } from "@/utils/skuGrouping";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HoverableProductImage } from "./HoverableProductImage";
+
+export type LayoutMode = "list" | "grid";
 
 interface HierarchicalEstoqueTableProps {
   products: Product[];
@@ -50,6 +53,9 @@ interface HierarchicalEstoqueTableProps {
   showHierarchy?: boolean;
   expandedGroups?: Set<string>;
   onExpandedGroupsChange?: (groups: Set<string>) => void;
+  // Layout mode
+  layoutMode?: LayoutMode;
+  onLayoutChange?: (mode: LayoutMode) => void;
 }
 
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
@@ -254,6 +260,30 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Layout Toggle */}
+            {props.onLayoutChange && (
+              <div className="flex items-center gap-0.5 rounded-md bg-secondary/50 p-0.5">
+                {(["list", "grid"] as const).map((mode) => {
+                  const Icon = mode === "grid" ? Grid3X3 : LayoutList;
+                  return (
+                    <button
+                      key={mode}
+                      onClick={() => props.onLayoutChange?.(mode)}
+                      className={cn(
+                        "rounded p-1.5 transition-all",
+                        props.layoutMode === mode
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      )}
+                      aria-label={`Visualização em ${mode === "grid" ? "grade" : "lista"}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            
             {props.onToggleToolbar && (
               <Popover>
                 <PopoverTrigger asChild>
