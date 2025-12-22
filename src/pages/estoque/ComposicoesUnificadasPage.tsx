@@ -3,12 +3,15 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
 import InsumosPage from "./InsumosPage";
-import { Layers, PackageCheck } from "lucide-react";
+import { Layers, PackageCheck, Store } from "lucide-react";
 import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
+import { LocalVendaSelector } from "@/components/estoque/LocalVendaSelector";
 import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
+import { useLocalVendaAtivo } from "@/hooks/useLocalVendaAtivo";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Separator } from "@/components/ui/separator";
 
 export default function ComposicoesUnificadasPage() {
   const location = useLocation();
@@ -16,6 +19,7 @@ export default function ComposicoesUnificadasPage() {
   const [activeTab, setActiveTab] = useState("produtos");
   const [reloadKey, setReloadKey] = useState(0);
   const { localAtivo } = useLocalEstoqueAtivo();
+  const { localVendaAtivo } = useLocalVendaAtivo();
   const isMobile = useIsMobile();
 
   // Sync tab with route
@@ -30,7 +34,7 @@ export default function ComposicoesUnificadasPage() {
   // Reload data when local changes
   useEffect(() => {
     setReloadKey(prev => prev + 1);
-  }, [localAtivo?.id]);
+  }, [localAtivo?.id, localVendaAtivo?.id]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -46,13 +50,35 @@ export default function ComposicoesUnificadasPage() {
     <div className="space-y-6">
       {/* Seletor de Local de Estoque - Ocultar no mobile */}
       {!isMobile && (
-        <div className="flex items-center gap-4 pb-4 border-b">
-          <LocalEstoqueSelector />
-          {localAtivo && (
-            <span className="text-sm text-muted-foreground">
-              📍 Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
-            </span>
-          )}
+        <div className="space-y-4 pb-4 border-b">
+          {/* Linha 1: Local de Estoque */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
+              <span className="font-medium">📦 Estoque:</span>
+            </div>
+            <LocalEstoqueSelector />
+            {localAtivo && (
+              <span className="text-xs text-muted-foreground">
+                Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
+              </span>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Linha 2: Local de Venda */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
+              <Store className="h-4 w-4" />
+              <span className="font-medium">Venda:</span>
+            </div>
+            <LocalVendaSelector />
+            {localVendaAtivo && (
+              <span className="text-xs text-muted-foreground">
+                Composições de: <strong className="text-foreground">{localVendaAtivo.nome}</strong>
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -80,7 +106,11 @@ export default function ComposicoesUnificadasPage() {
         </TabsList>
 
         <TabsContent value="produtos" className="mt-6">
-          <ComposicoesEstoque localId={localAtivo?.id} key={`produtos-${reloadKey}`} />
+          <ComposicoesEstoque 
+            localId={localAtivo?.id} 
+            localVendaId={localVendaAtivo?.id}
+            key={`produtos-${reloadKey}`} 
+          />
         </TabsContent>
 
         <TabsContent value="insumos" className="mt-6">
