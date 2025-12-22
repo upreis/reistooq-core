@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Search, X, Link as LinkIcon, Trash2, Plus, ChevronDown, ChevronUp, Bell } from "lucide-react";
+import { Package, Search, X, Link as LinkIcon, Trash2, Plus, ChevronDown, ChevronUp, Bell, Grid3X3, LayoutList } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SegmentFilter } from "./SegmentFilter";
+
+export type LayoutMode = "list" | "grid";
 
 interface EstoqueGridViewProps {
   products: Product[];
@@ -45,6 +47,9 @@ interface EstoqueGridViewProps {
   notificationsCollapsed?: boolean;
   onToggleNotifications?: (collapsed: boolean) => void;
   notificationsCount?: number;
+  // Layout mode
+  layoutMode?: LayoutMode;
+  onLayoutChange?: (mode: LayoutMode) => void;
 }
 
 export function EstoqueGridView({
@@ -68,6 +73,8 @@ export function EstoqueGridView({
   notificationsCollapsed,
   onToggleNotifications,
   notificationsCount,
+  layoutMode = "grid",
+  onLayoutChange,
 }: EstoqueGridViewProps) {
   const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
@@ -230,6 +237,30 @@ export function EstoqueGridView({
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Layout Toggle */}
+          {onLayoutChange && (
+            <div className="flex items-center gap-0.5 rounded-md bg-secondary/50 p-0.5">
+              {(["list", "grid"] as const).map((mode) => {
+                const Icon = mode === "grid" ? Grid3X3 : LayoutList;
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => onLayoutChange(mode)}
+                    className={cn(
+                      "rounded p-1.5 transition-all",
+                      layoutMode === mode
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    )}
+                    aria-label={`Visualização em ${mode === "grid" ? "grade" : "lista"}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          
           {/* Filtros Popover */}
           {onToggleToolbar && (
             <Popover>

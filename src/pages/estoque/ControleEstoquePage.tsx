@@ -290,6 +290,8 @@ export default function ControleEstoquePage() {
             notificationsCollapsed={notificationsCollapsed}
             onToggleNotifications={setNotificationsCollapsed}
             notificationsCount={notificationsCount}
+            layoutMode={layoutMode}
+            onLayoutChange={setLayoutMode}
           />
         </div>
       ) : (
