@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Plus, Settings, LinkIcon, Trash2, Upload, Filter, Search, X } from "lucide-react";
+import { Plus, Settings, LinkIcon, Trash2, Upload, Filter, Search, X, Layers, ChevronsUpDown, ChevronsDownUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -51,6 +51,11 @@ interface EstoqueActionButtonsProps {
   onSearch: () => void;
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  // Controles de visualização hierárquica
+  showHierarchy?: boolean;
+  onToggleHierarchy?: () => void;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
 }
 
 export function EstoqueActionButtons({
@@ -73,7 +78,11 @@ export function EstoqueActionButtons({
   hasActiveFilters,
   onSearch,
   searchTerm,
-  onSearchChange
+  onSearchChange,
+  showHierarchy = true,
+  onToggleHierarchy,
+  onExpandAll,
+  onCollapseAll
 }: EstoqueActionButtonsProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -207,8 +216,6 @@ export function EstoqueActionButtons({
                   </Select>
                 </div>
 
-                {/* TODO: Implementar filtros de Faixa de Preço e Estoque quando houver integração com a lógica de filtragem */}
-
                 <div className="flex justify-between">
                   <Button variant="outline" size="sm" onClick={onClearFilters}>
                     Limpar Filtros
@@ -220,6 +227,37 @@ export function EstoqueActionButtons({
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Separador */}
+          <div className="h-8 w-px bg-border mx-1" />
+
+          {/* Visualização Hierárquica */}
+          {onToggleHierarchy && (
+            <Button
+              variant={showHierarchy ? "default" : "outline"}
+              size="sm"
+              onClick={onToggleHierarchy}
+            >
+              <Layers className="h-4 w-4 mr-2" />
+              Visualização Hierárquica
+            </Button>
+          )}
+          
+          {/* Expandir Todos */}
+          {showHierarchy && onExpandAll && (
+            <Button variant="ghost" size="sm" onClick={onExpandAll}>
+              <ChevronsUpDown className="h-4 w-4 mr-2" />
+              Expandir Todos
+            </Button>
+          )}
+          
+          {/* Recolher Todos */}
+          {showHierarchy && onCollapseAll && (
+            <Button variant="ghost" size="sm" onClick={onCollapseAll}>
+              <ChevronsDownUp className="h-4 w-4 mr-2" />
+              Recolher Todos
+            </Button>
+          )}
         </div>
       )}
 

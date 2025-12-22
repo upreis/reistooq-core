@@ -8,36 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { 
   Search, 
-  Filter, 
   X,
   Package,
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Plus,
-  Upload,
-  Download,
-  BarChart3,
-  SlidersHorizontal,
-  Layers,
-  ChevronsDownUp,
-  ChevronsUpDown
+  Plus
 } from "lucide-react";
-import { HierarchicalCategoryFilter } from '@/features/products/components/HierarchicalCategoryFilter';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EstoqueFilterSheet } from "./EstoqueFilterSheet";
 
@@ -69,16 +48,6 @@ interface EstoqueFiltersProps {
   // Callbacks para criar produtos
   onCreateParent?: () => void;
   onCreateChild?: () => void;
-  // Controles de visualização hierárquica
-  showHierarchy?: boolean;
-  onToggleHierarchy?: () => void;
-  onExpandAll?: () => void;
-  onCollapseAll?: () => void;
-  // Callbacks de ações
-  onImport?: () => void;
-  onExport?: () => void;
-  onReports?: () => void;
-  onAdvancedFilters?: () => void;
 }
 
 export function EstoqueFilters({
@@ -99,14 +68,6 @@ export function EstoqueFilters({
   onHierarchicalFiltersChange,
   onCreateParent,
   onCreateChild,
-  showHierarchy = true,
-  onToggleHierarchy,
-  onExpandAll,
-  onCollapseAll,
-  onImport,
-  onExport,
-  onReports,
-  onAdvancedFilters,
 }: EstoqueFiltersProps) {
   // Removido: priceRange e stockRange eram estados locais não utilizados na filtragem real
   const isMobile = useIsMobile();
@@ -189,78 +150,6 @@ export function EstoqueFilters({
               </DropdownMenu>
             )}
           </>
-        )}
-
-        {/* Layout Desktop - botões de ação */}
-        {!isMobile && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Importar */}
-            {onImport && (
-              <Button variant="outline" size="sm" onClick={onImport} className="h-9">
-                <Upload className="w-4 h-4 mr-2" />
-                Importar
-              </Button>
-            )}
-
-            {/* Exportar */}
-            {onExport && (
-              <Button variant="outline" size="sm" onClick={onExport} className="h-9">
-                <Download className="w-4 h-4 mr-2" />
-                Exportar
-              </Button>
-            )}
-
-            {/* Relatórios */}
-            {onReports && (
-              <Button variant="outline" size="sm" onClick={onReports} className="h-9">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Relatórios
-              </Button>
-            )}
-
-            {/* Filtros Avançados - Popover com controles de hierarquia */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9">
-                  <SlidersHorizontal className="w-4 h-4 mr-2" />
-                  Filtros Avançados
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-3" align="start">
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-muted-foreground">Visualização</p>
-                  <div className="flex flex-col gap-2">
-                    {/* Visualização Hierárquica */}
-                    {onToggleHierarchy && (
-                      <Button
-                        variant={showHierarchy ? "default" : "outline"}
-                        size="sm"
-                        onClick={onToggleHierarchy}
-                        className="justify-start h-9"
-                      >
-                        <Layers className="w-4 h-4 mr-2" />
-                        Visualização Hierárquica
-                      </Button>
-                    )}
-                    
-                    {/* Expandir/Recolher - só mostra se hierarquia está ativa */}
-                    {showHierarchy && onExpandAll && (
-                      <Button variant="ghost" size="sm" onClick={onExpandAll} className="justify-start h-9">
-                        <ChevronsUpDown className="w-4 h-4 mr-2" />
-                        Expandir Todos
-                      </Button>
-                    )}
-                    {showHierarchy && onCollapseAll && (
-                      <Button variant="ghost" size="sm" onClick={onCollapseAll} className="justify-start h-9">
-                        <ChevronsDownUp className="w-4 h-4 mr-2" />
-                        Recolher Todos
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
         )}
       </div>
 
