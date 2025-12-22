@@ -13,17 +13,17 @@ interface NotesHeaderProps {
 
 export function NotesHeader({ stats, showArchived, onCreateNote, onToggleArchived }: NotesHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold text-foreground">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-0.5">
+        <h1 className="text-xl font-semibold text-foreground">
           {showArchived ? 'Notas Arquivadas' : 'Minhas Notas'}
         </h1>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{showArchived ? stats.archived : stats.total} notas</span>
           {!showArchived && stats.pinned > 0 && (
             <>
               <span>•</span>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs px-1.5 py-0">
                 {stats.pinned} fixadas
               </Badge>
             </>
@@ -31,14 +31,14 @@ export function NotesHeader({ stats, showArchived, onCreateNote, onToggleArchive
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <Button
           variant="outline"
           size="sm"
           onClick={onToggleArchived}
-          className="gap-2"
+          className="h-7 px-2.5 text-xs gap-1.5"
         >
-          <Archive className="h-4 w-4" />
+          <Archive className="h-3.5 w-3.5" />
           {showArchived ? 'Ver Ativas' : 'Ver Arquivadas'}
         </Button>
         
@@ -46,9 +46,9 @@ export function NotesHeader({ stats, showArchived, onCreateNote, onToggleArchive
           <Button
             onClick={onCreateNote}
             size="sm"
-            className="gap-2"
+            className="h-7 px-2.5 text-xs gap-1.5"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
             Nova Nota
           </Button>
         )}

@@ -228,13 +228,13 @@ export const UserManager: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Users className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/10 rounded-lg">
+            <Users className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Gerenciar Usuários</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-xl font-bold">Gerenciar Usuários</h2>
+            <p className="text-muted-foreground text-sm">
               Administre os usuários da sua organização
             </p>
           </div>
@@ -242,12 +242,12 @@ export const UserManager: React.FC = () => {
       </div>
 
       {/* Search */}
-      <div className="flex gap-4">
+      <div className="flex gap-2">
         <Input
           placeholder="Buscar usuários por nome ou email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="max-w-sm h-7 text-xs"
         />
       </div>
 

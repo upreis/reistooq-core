@@ -230,44 +230,44 @@ export const UnifiedAlertsManager: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Bell className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/10 rounded-lg">
+            <Bell className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Alertas e Anúncios</h2>
-            <p className="text-muted-foreground">
-              Gerencie alertas do sistema e anúncios para usuários de forma centralizada
+            <h2 className="text-xl font-bold">Alertas e Anúncios</h2>
+            <p className="text-muted-foreground text-sm">
+              Gerencie alertas do sistema e anúncios para usuários
             </p>
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <Input
             placeholder="Buscar alertas e anúncios..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
+            className="w-56 h-7 text-xs"
           />
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4 h-8">
+          <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs h-7">
+            <Settings className="h-3.5 w-3.5" />
             Visão Geral
           </TabsTrigger>
-          <TabsTrigger value="system-alerts" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
+          <TabsTrigger value="system-alerts" className="flex items-center gap-1.5 text-xs h-7">
+            <Bell className="h-3.5 w-3.5" />
             Alertas do Sistema
           </TabsTrigger>
-          <TabsTrigger value="announcements" className="flex items-center gap-2">
-            <Megaphone className="h-4 w-4" />
+          <TabsTrigger value="announcements" className="flex items-center gap-1.5 text-xs h-7">
+            <Megaphone className="h-3.5 w-3.5" />
             Anúncios
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+          <TabsTrigger value="analytics" className="flex items-center gap-1.5 text-xs h-7">
+            <Calendar className="h-3.5 w-3.5" />
             Relatórios
           </TabsTrigger>
         </TabsList>

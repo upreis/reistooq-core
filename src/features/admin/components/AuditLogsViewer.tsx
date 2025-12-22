@@ -84,34 +84,38 @@ export const AuditLogsViewer: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <History className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/10 rounded-lg">
+            <History className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Logs de Auditoria</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-xl font-bold">Logs de Auditoria</h2>
+            <p className="text-muted-foreground text-sm">
               Acompanhe todas as atividades do sistema
             </p>
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <Button
             variant="outline"
+            size="sm"
+            className="h-7 px-2.5 text-xs gap-1.5"
             onClick={() => setShowFilters(!showFilters)}
           >
-            <Filter className="w-4 h-4 mr-2" />
+            <Filter className="w-3.5 h-3.5" />
             Filtros
           </Button>
           <Button
             variant="outline"
+            size="sm"
+            className="h-7 px-2.5 text-xs gap-1.5"
             onClick={exportLogs}
           >
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="w-3.5 h-3.5" />
             Exportar
           </Button>
-          <Button onClick={refreshLogs}>
+          <Button size="sm" className="h-7 px-2.5 text-xs" onClick={refreshLogs}>
             Atualizar
           </Button>
         </div>

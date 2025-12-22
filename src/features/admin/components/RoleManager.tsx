@@ -291,22 +291,22 @@ export const RoleManager: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Shield className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/10 rounded-lg">
+            <Shield className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Gerenciar Cargos</h2>
-            <p className="text-muted-foreground">
-              Configure cargos e permissões baseados nos módulos reais do sistema: Dashboard, OMS, Compras, Estoque, Administração, etc.
+            <h2 className="text-xl font-bold">Gerenciar Cargos</h2>
+            <p className="text-muted-foreground text-sm">
+              Configure cargos e permissões baseados nos módulos reais do sistema
             </p>
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" disabled={isCleaningDuplicates}>
+              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs" disabled={isCleaningDuplicates}>
                 {isCleaningDuplicates ? 'Limpando...' : 'Limpar Duplicatas'}
               </Button>
             </AlertDialogTrigger>
@@ -329,8 +329,8 @@ export const RoleManager: React.FC = () => {
 
           <Dialog open={showForm} onOpenChange={setShowForm}>
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingRole(undefined)}>
-                <Plus className="w-4 h-4 mr-2" />
+              <Button size="sm" className="h-7 px-2.5 text-xs gap-1.5" onClick={() => setEditingRole(undefined)}>
+                <Plus className="w-3.5 h-3.5" />
                 Novo Cargo
               </Button>
             </DialogTrigger>
@@ -355,12 +355,12 @@ export const RoleManager: React.FC = () => {
       </div>
 
       {/* Search */}
-      <div className="flex gap-4">
+      <div className="flex gap-2">
         <Input
           placeholder="Buscar cargos..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="max-w-sm h-7 text-xs"
         />
       </div>
 

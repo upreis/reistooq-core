@@ -57,11 +57,11 @@ export default function CotacoesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="nacionais">Cotações Nacionais</TabsTrigger>
-          <TabsTrigger value="internacionais">Cotações Internacionais</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 h-8">
+          <TabsTrigger value="nacionais" className="text-xs h-7">Cotações Nacionais</TabsTrigger>
+          <TabsTrigger value="internacionais" className="text-xs h-7">Cotações Internacionais</TabsTrigger>
         </TabsList>
         
         <TabsContent value="nacionais">

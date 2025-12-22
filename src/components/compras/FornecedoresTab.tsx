@@ -95,20 +95,20 @@ export const FornecedoresTab: React.FC<FornecedoresTabProps> = ({
   const valorTotalGeral = fornecedores.reduce((acc, f) => acc + (f.valor_total || 0), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
+      <div className="flex flex-col sm:flex-row justify-between gap-2">
         <div className="flex-1">
           <Input
             placeholder="Buscar fornecedores por nome, CNPJ ou categoria..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-md"
+            className="max-w-md h-7 text-xs"
           />
         </div>
         
-        <Button className="gap-2" onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4" />
+        <Button size="sm" className="h-7 px-2.5 text-xs gap-1.5" onClick={() => setShowForm(true)}>
+          <Plus className="h-3.5 w-3.5" />
           Novo Fornecedor
         </Button>
       </div>

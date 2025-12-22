@@ -70,21 +70,21 @@ const AdminPerfil = () => {
 
       {/* Profile Tabs */}
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="profile" className="flex items-center space-x-2">
-            <Eye className="w-4 h-4" />
+        <TabsList className="grid w-full grid-cols-4 h-8">
+          <TabsTrigger value="profile" className="flex items-center gap-1.5 text-xs h-7">
+            <Eye className="w-3.5 h-3.5" />
             <span>Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="followers" className="flex items-center space-x-2">
-            <Users className="w-4 h-4" />
+          <TabsTrigger value="followers" className="flex items-center gap-1.5 text-xs h-7">
+            <Users className="w-3.5 h-3.5" />
             <span>Followers</span>
           </TabsTrigger>
-          <TabsTrigger value="friends" className="flex items-center space-x-2">
-            <Users className="w-4 h-4" />
+          <TabsTrigger value="friends" className="flex items-center gap-1.5 text-xs h-7">
+            <Users className="w-3.5 h-3.5" />
             <span>Friends</span>
           </TabsTrigger>
-          <TabsTrigger value="gallery" className="flex items-center space-x-2">
-            <Eye className="w-4 h-4" />
+          <TabsTrigger value="gallery" className="flex items-center gap-1.5 text-xs h-7">
+            <Eye className="w-3.5 h-3.5" />
             <span>Gallery</span>
           </TabsTrigger>
         </TabsList>

@@ -6,14 +6,14 @@ import { AlertTriangle, Bell, Clock, CheckCircle, Settings, X, Filter, Search } 
 
 const Alertas = () => {
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Central de Alertas</h1>
-          <p className="text-muted-foreground">Monitore alertas críticos do seu estoque</p>
+          <h1 className="text-xl font-bold">Central de Alertas</h1>
+          <p className="text-muted-foreground text-sm">Monitore alertas críticos do seu estoque</p>
         </div>
-        <Button variant="outline">
-          <Settings className="w-4 h-4 mr-2" />
+        <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs gap-1.5">
+          <Settings className="w-3.5 h-3.5" />
           Configurar Alertas
         </Button>
       </div>
