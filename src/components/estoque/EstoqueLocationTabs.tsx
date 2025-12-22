@@ -236,9 +236,9 @@ export function EstoqueLocationTabs({
       {/* Lado esquerdo: Locais de estoque */}
       <div className="flex items-center gap-4">
         {/* Seção: Unitário Geral (Estoque Principal) */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Unitário Geral
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
+            Unitário geral
           </span>
           <div className="flex items-center gap-2">
             {localPrincipal && renderLocalButton(localPrincipal, false)}
@@ -252,8 +252,8 @@ export function EstoqueLocationTabs({
 
         {/* Seção: Fullfilment */}
         {locaisFullfilment.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
               Fullfilment
             </span>
             <div className="flex items-center gap-2 flex-wrap">
@@ -269,8 +269,8 @@ export function EstoqueLocationTabs({
 
         {/* Seção: In-house (inclui filial e outros) */}
         {locaisInhouse.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
               In-house
             </span>
             <div className="flex items-center gap-2 flex-wrap">
