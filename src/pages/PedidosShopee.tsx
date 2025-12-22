@@ -22,6 +22,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { ConfiguracaoLocaisModal } from "@/components/pedidos/ConfiguracaoLocaisModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface ImportResult {
   total: number;
@@ -132,13 +134,14 @@ export default function PedidosShopee() {
     if (!organizationId) return;
     try {
       const { data, error } = await supabase
-        .from("empresas_shopee")
+        .from("empresas_shopee" as any)
         .select("*")
         .eq("organization_id", organizationId)
         .order("nome", { ascending: true });
       
       if (error) throw error;
-      setEmpresasShopee(data?.map(e => ({ id: e.id, nome: e.nome, nickname: e.nickname })) || []);
+      const empresas = data as unknown as Array<{ id: string; nome: string; nickname: string | null }> | null;
+      setEmpresasShopee(empresas?.map(e => ({ id: e.id, nome: e.nome, nickname: e.nickname || undefined })) || []);
     } catch (error) {
       console.error("Erro ao carregar empresas:", error);
     }
@@ -149,7 +152,7 @@ export default function PedidosShopee() {
     if (!organizationId || !novaEmpresa.nome.trim()) return;
     try {
       const { data, error } = await supabase
-        .from("empresas_shopee")
+        .from("empresas_shopee" as any)
         .insert({
           organization_id: organizationId,
           nome: novaEmpresa.nome.trim(),
@@ -159,7 +162,8 @@ export default function PedidosShopee() {
         .single();
       
       if (error) throw error;
-      setEmpresasShopee(prev => [...prev, { id: data.id, nome: data.nome, nickname: data.nickname }]);
+      const empresa = data as unknown as { id: string; nome: string; nickname: string | null };
+      setEmpresasShopee(prev => [...prev, { id: empresa.id, nome: empresa.nome, nickname: empresa.nickname || undefined }]);
       setNovaEmpresa({ nome: "", nickname: "" });
       toast({ title: "Sucesso", description: "Empresa adicionada com sucesso!" });
     } catch (error) {
@@ -172,7 +176,7 @@ export default function PedidosShopee() {
   const excluirEmpresa = async (id: string) => {
     try {
       const { error } = await supabase
-        .from("empresas_shopee")
+        .from("empresas_shopee" as any)
         .delete()
         .eq("id", id);
       
@@ -791,6 +795,12 @@ export default function PedidosShopee() {
                     <MapPin className="h-4 w-4 mr-2" />
                     Locais
                   </Button>
+                  
+                  {/* Botão Empresas */}
+                  <Button variant="outline" size="sm" onClick={() => setShowEmpresasModal(true)}>
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Empresas
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1065,8 +1075,95 @@ export default function PedidosShopee() {
       <ConfiguracaoLocaisModal
         open={showLocaisModal}
         onOpenChange={setShowLocaisModal}
-        contasML={[{ id: "shopee", name: "Shopee", nickname: "Shopee" }]}
+        contasML={empresasShopee.map(e => ({ id: e.id, name: e.nome, nickname: e.nickname }))}
       />
+
+      {/* Modal de Gerenciamento de Empresas */}
+      <Dialog open={showEmpresasModal} onOpenChange={setShowEmpresasModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Gerenciar Empresas
+            </DialogTitle>
+            <DialogDescription>
+              Cadastre as empresas/lojas de onde você importa as vendas da Shopee
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Formulário para adicionar nova empresa */}
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Nova Empresa
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Nome da Empresa *</Label>
+                  <Input
+                    placeholder="Ex: Loja Principal"
+                    value={novaEmpresa.nome}
+                    onChange={(e) => setNovaEmpresa({ ...novaEmpresa, nome: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Apelido (opcional)</Label>
+                  <Input
+                    placeholder="Ex: LP"
+                    value={novaEmpresa.nickname}
+                    onChange={(e) => setNovaEmpresa({ ...novaEmpresa, nickname: e.target.value })}
+                  />
+                </div>
+              </div>
+              <Button 
+                className="mt-3" 
+                size="sm" 
+                onClick={adicionarEmpresa}
+                disabled={!novaEmpresa.nome.trim()}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar
+              </Button>
+            </div>
+            
+            {/* Lista de empresas cadastradas */}
+            <div>
+              <h4 className="text-sm font-semibold mb-2">Empresas Cadastradas</h4>
+              {empresasShopee.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground border rounded-lg">
+                  <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Nenhuma empresa cadastrada</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {empresasShopee.map((empresa) => (
+                    <div 
+                      key={empresa.id} 
+                      className="flex items-center justify-between p-3 border rounded-lg bg-background"
+                    >
+                      <div>
+                        <p className="font-medium">{empresa.nome}</p>
+                        {empresa.nickname && (
+                          <p className="text-xs text-muted-foreground">{empresa.nickname}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => excluirEmpresa(empresa.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MobileAppShell>
   );
 }
