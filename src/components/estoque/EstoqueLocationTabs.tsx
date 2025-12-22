@@ -19,11 +19,11 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const TIPO_ICONS: Record<string, React.ReactNode> = {
-  principal: <Building2 className="h-4 w-4" />,
-  fullfilment: <Package className="h-4 w-4" />,
-  inhouse: <Building2 className="h-4 w-4" />,
-  filial: <Building2 className="h-4 w-4" />,
-  outro: <Package className="h-4 w-4" />
+  principal: <Building2 className="h-3 w-3" />,
+  fullfilment: <Package className="h-3 w-3" />,
+  inhouse: <Building2 className="h-3 w-3" />,
+  filial: <Building2 className="h-3 w-3" />,
+  outro: <Package className="h-3 w-3" />
 };
 
 export type LayoutMode = "list" | "grid";
@@ -204,12 +204,12 @@ export function EstoqueLocationTabs({
           size="sm"
           onClick={() => handleLocalChange(local.id)}
           className={cn(
-            "flex items-center gap-2 transition-all h-10 px-4",
-            isActive && isPrincipal && "bg-amber-500 hover:bg-amber-600 text-amber-950 border-amber-500 shadow-md",
-            isActive && !isPrincipal && "shadow-md"
+            "flex items-center gap-1.5 transition-all h-7 px-2.5 text-xs",
+            isActive && isPrincipal && "bg-amber-500 hover:bg-amber-600 text-amber-950 border-amber-500 shadow-sm",
+            isActive && !isPrincipal && "shadow-sm"
           )}
         >
-          {TIPO_ICONS[local.tipo] || <Package className="h-4 w-4" />}
+          {TIPO_ICONS[local.tipo] || <Package className="h-3 w-3" />}
           <span className="font-medium">{local.nome}</span>
         </Button>
         {/* Botão de excluir */}
@@ -217,14 +217,14 @@ export function EstoqueLocationTabs({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={(e) => {
               e.stopPropagation();
               setLocalParaDeletar(local);
             }}
             title="Excluir local"
           >
-            <X className="h-3 w-3" />
+            <X className="h-2.5 w-2.5" />
           </Button>
         )}
       </div>
@@ -247,7 +247,7 @@ export function EstoqueLocationTabs({
 
         {/* Separador vertical - Fullfilment */}
         {locaisFullfilment.length > 0 && (
-          <div className="h-12 w-px bg-muted-foreground/40" />
+          <div className="h-8 w-px bg-muted-foreground/30" />
         )}
 
         {/* Seção: Fullfilment */}
@@ -264,7 +264,7 @@ export function EstoqueLocationTabs({
 
         {/* Separador vertical - In-house */}
         {locaisInhouse.length > 0 && (
-          <div className="h-12 w-px bg-muted-foreground/40" />
+          <div className="h-8 w-px bg-muted-foreground/30" />
         )}
 
         {/* Seção: In-house (inclui filial e outros) */}
