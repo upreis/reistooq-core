@@ -134,28 +134,26 @@ export function SkuMapPage() {
   const headerActions = undefined;
 
   const actionButtons = (
-    <div className="flex gap-2">
+    <div className="flex gap-1.5">
       <Button
         variant="outline"
-        size="sm"
-        className="h-9 text-sm"
+        className="h-7 px-2.5 text-xs gap-1.5"
         onClick={handleExport}
         disabled={isExporting}
       >
-        <Download className="w-3.5 h-3.5 mr-1.5" />
+        <Download className="w-3 h-3" />
         {isExporting ? 'Exportando...' : 'Exportar'}
       </Button>
       <Button
         variant="outline"
-        size="sm"
-        className="h-9 text-sm"
+        className="h-7 px-2.5 text-xs gap-1.5"
         onClick={() => setShowImportWizard(true)}
       >
-        <Upload className="w-3.5 h-3.5 mr-1.5" />
+        <Upload className="w-3 h-3" />
         Importar
       </Button>
-      <Button size="sm" className="h-9 text-sm" onClick={() => setShowCreateForm(true)}>
-        <Plus className="w-3.5 h-3.5 mr-1.5" />
+      <Button className="h-7 px-2.5 text-xs gap-1.5" onClick={() => setShowCreateForm(true)}>
+        <Plus className="w-3 h-3" />
         Novo Mapeamento
       </Button>
     </div>

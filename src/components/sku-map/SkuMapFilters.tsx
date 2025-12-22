@@ -31,33 +31,33 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
 
   return (
     <Card>
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4" />
-            <span className="font-medium text-sm">Filtros</span>
+      <CardContent className="p-2.5">
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3 h-3" />
+            <span className="font-medium text-xs">Filtros</span>
             {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-[10px] h-4 px-1">
                 {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
               </Badge>
             )}
             {activeFiltersCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={onReset} className="h-7 px-2">
-                <X className="w-3 h-3 mr-1" />
+              <Button variant="ghost" onClick={onReset} className="h-6 px-2 text-xs">
+                <X className="w-2.5 h-2.5 mr-1" />
                 Limpar
               </Button>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             {/* Search */}
-            <div className="relative flex-1 min-w-[180px] max-w-[280px]">
-              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <div className="relative flex-1 min-w-[140px] max-w-[220px]">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
               <Input
                 placeholder="Buscar por SKU..."
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-8 h-9 text-sm"
+                className="pl-7 h-7 text-xs"
               />
             </div>
 
@@ -66,7 +66,7 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
               value={filters.status}
               onValueChange={(value) => onFiltersChange({ status: value as "todos" | "ativos" | "inativos" })}
             >
-              <SelectTrigger className="w-[110px] h-9 text-sm">
+              <SelectTrigger className="w-[90px] h-7 text-xs">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -81,7 +81,7 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
               value={filters.preenchimento}
               onValueChange={(value) => onFiltersChange({ preenchimento: value as "todos" | "pendentes" | "completos" })}
             >
-              <SelectTrigger className="w-[120px] h-9 text-sm">
+              <SelectTrigger className="w-[100px] h-7 text-xs">
                 <SelectValue placeholder="Preenchimento" />
               </SelectTrigger>
               <SelectContent>
@@ -96,7 +96,7 @@ export function SkuMapFilters({ filters, onFiltersChange, onReset, actions }: Sk
               value={filters.pageSize.toString()}
               onValueChange={(value) => onFiltersChange({ pageSize: parseInt(value, 10) })}
             >
-              <SelectTrigger className="w-[100px] h-9 text-sm">
+              <SelectTrigger className="w-[80px] h-7 text-xs">
                 <SelectValue placeholder="Itens" />
               </SelectTrigger>
               <SelectContent>
