@@ -337,7 +337,7 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
 
   return (
     <>
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 flex-wrap">
         {locais.map((local) => {
           const isActive = localAtivo?.id === local.id;
           const isPrincipal = local.tipo === 'principal';
@@ -346,44 +346,43 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
             <div key={local.id} className="relative group">
               <Button
                 variant={isActive ? "default" : "outline"}
-                size="sm"
                 onClick={() => handleLocalChange(local.id)}
                 className={cn(
-                  "flex items-center gap-2 transition-all",
+                  "flex items-center gap-1.5 transition-all h-7 px-2.5 text-xs",
                   isActive && "shadow-md",
-                  showActions && !isPrincipal && "pr-16"
+                  showActions && !isPrincipal && "pr-12"
                 )}
               >
-                <span>{TIPO_ICONS[local.tipo] || '📍'}</span>
+                <span className="text-sm">{TIPO_ICONS[local.tipo] || '📍'}</span>
                 <span>{local.nome}</span>
               </Button>
               
               {showActions && !isPrincipal && (
-                <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute -top-1.5 -right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
+                    className="h-5 w-5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       abrirEdicao(local);
                     }}
                     title="Editar local"
                   >
-                    <Edit className="h-3 w-3" />
+                    <Edit className="h-2.5 w-2.5" />
                   </Button>
                   {!local.is_system && (
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm"
+                      className="h-5 w-5 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         setLocalParaDeletar(local);
                       }}
                       title="Excluir local"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-2.5 w-2.5" />
                     </Button>
                   )}
                 </div>
