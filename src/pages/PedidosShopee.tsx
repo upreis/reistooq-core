@@ -52,6 +52,10 @@ interface PedidoShopee {
   custo_envio: number | null;
   custo_fixo: number | null;
 
+  // Rastreamento e logística
+  codigo_rastreamento: string | null;
+  tipo_logistico: string | null;
+
   // Outros
   frete: number | null;
   desconto: number | null;
@@ -799,7 +803,7 @@ export default function PedidosShopee() {
                                 )}
                               </TableCell>
                               {/* Tipo Logístico */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              <TableCell>{pedido.tipo_logistico ?? "-"}</TableCell>
                               {/* Medalha */}
                               <TableCell className="text-muted-foreground">-</TableCell>
                               {/* Reputação */}
@@ -809,7 +813,7 @@ export default function PedidosShopee() {
                               {/* Substatus do Envio */}
                               <TableCell className="text-muted-foreground">-</TableCell>
                               {/* Código Rastreamento */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              <TableCell className="font-mono text-xs">{pedido.codigo_rastreamento ?? "-"}</TableCell>
                               {/* Rastreamento */}
                               <TableCell className="text-muted-foreground">-</TableCell>
                               {/* Rua */}
