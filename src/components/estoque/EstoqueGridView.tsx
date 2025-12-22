@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, Search, X, Link as LinkIcon, Trash2, Plus, ChevronDown, ChevronUp, Bell } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
@@ -72,6 +72,22 @@ export function EstoqueGridView({
   const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
+
+  // Cleanup ao desmontar - CRÍTICO para evitar travamento da página
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      setHoveredProductIndex(null);
+    };
+  }, []);
+
+  // Reset hover quando produtos mudam
+  useEffect(() => {
+    setHoveredProductIndex(null);
+  }, [products]);
 
   // Usa allFilteredProducts para segmentos (todos os produtos) ou fallback para products
   const productsForSegments = allFilteredProducts || products;
@@ -84,23 +100,25 @@ export function EstoqueGridView({
   const allSelected = filteredProducts.length > 0 && selectedProducts.length === filteredProducts.length;
 
   // Update image position only when hovering
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (hoveredProductIndex !== null && gridContainerRef.current) {
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (hoveredProductIndex !== null && gridContainerRef.current && isMountedRef.current) {
       const rect = gridContainerRef.current.getBoundingClientRect();
       setImagePosition({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       });
     }
-  };
+  }, [hoveredProductIndex]);
 
-  const handleMouseEnter = (index: number) => {
-    setHoveredProductIndex(index);
-  };
+  const handleMouseEnter = useCallback((index: number) => {
+    if (isMountedRef.current) {
+      setHoveredProductIndex(index);
+    }
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setHoveredProductIndex(null);
-  };
+  }, []);
 
   const getStockStatus = (product: Product) => {
     const qty = product.quantidade_atual ?? 0;

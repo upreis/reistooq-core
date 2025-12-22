@@ -24,6 +24,7 @@ export const HoverableProductImage: React.FC<HoverableProductImageProps> = ({
   const [smoothPosition, setSmoothPosition] = useState({ x: 0, y: 0 });
   const animationRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
 
   const allImages = [src, ...fallbackImages].filter(Boolean) as string[];
   const currentImage = allImages[currentImageIndex];
@@ -40,6 +41,20 @@ export const HoverableProductImage: React.FC<HoverableProductImageProps> = ({
     lg: 'h-6 w-6',
   };
 
+  // Cleanup ao desmontar - CRÍTICO para evitar travamento
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      setIsHovered(false);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
+  }, []);
+
   // Animação suave para seguir o mouse
   useEffect(() => {
     const lerp = (start: number, end: number, factor: number) => {
@@ -47,6 +62,8 @@ export const HoverableProductImage: React.FC<HoverableProductImageProps> = ({
     };
 
     const animate = () => {
+      if (!isMountedRef.current) return;
+      
       setSmoothPosition((prev) => ({
         x: lerp(prev.x, mousePosition.x, 0.15),
         y: lerp(prev.y, mousePosition.y, 0.15),
@@ -54,25 +71,30 @@ export const HoverableProductImage: React.FC<HoverableProductImageProps> = ({
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    if (isHovered && currentImage) {
+    if (isHovered && currentImage && isMountedRef.current) {
       animationRef.current = requestAnimationFrame(animate);
     }
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
   }, [mousePosition, isHovered, currentImage]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    setMousePosition({ x: e.clientX, y: e.clientY });
+    if (isMountedRef.current) {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    }
   }, []);
 
   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
-    setMousePosition({ x: e.clientX, y: e.clientY });
-    setSmoothPosition({ x: e.clientX, y: e.clientY });
-    setIsHovered(true);
+    if (isMountedRef.current) {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+      setSmoothPosition({ x: e.clientX, y: e.clientY });
+      setIsHovered(true);
+    }
   }, []);
 
   const handleMouseLeave = useCallback(() => {
