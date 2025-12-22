@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Plus, Loader2, Copy } from 'lucide-react';
+import { MapPin, Plus, Loader2, Copy, RefreshCw } from 'lucide-react';
 import { TipoLocalEstoque } from '@/features/estoque/types/locais.types';
 
 interface GerenciarLocaisModalProps {
@@ -32,6 +32,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
   const [endereco, setEndereco] = useState('');
   const [descricao, setDescricao] = useState('');
   const [clonarEstoquePrincipal, setClonarEstoquePrincipal] = useState(false);
+  const [sincronizarAutomatico, setSincronizarAutomatico] = useState(false);
   const { toast } = useToast();
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -42,6 +43,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
       setEndereco('');
       setDescricao('');
       setClonarEstoquePrincipal(false);
+      setSincronizarAutomatico(false);
     }
   };
 
@@ -94,7 +96,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
         return;
       }
 
-      // Criar o local
+      // Criar o local com flag de sincronização
       const { data: novoLocal, error: localError } = await supabase
         .from('locais_estoque')
         .insert([{
@@ -103,7 +105,8 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
           tipo,
           endereco: endereco.trim() || null,
           descricao: descricao.trim() || null,
-          ativo: true
+          ativo: true,
+          sincronizar_com_principal: sincronizarAutomatico
         }])
         .select()
         .single();
@@ -153,9 +156,17 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
         }
       }
       
-      const mensagem = clonarEstoquePrincipal && produtosClonados > 0
-        ? `${nome} foi criado com ${produtosClonados} produto${produtosClonados > 1 ? 's' : ''} clonado${produtosClonados > 1 ? 's' : ''} do Estoque Principal.`
-        : `${nome} foi criado. Use transferências para mover produtos para este local.`;
+      let mensagem = '';
+      if (sincronizarAutomatico) {
+        mensagem = `${nome} foi criado com sincronização automática ativada. Todas as mudanças no Estoque Principal serão espelhadas automaticamente.`;
+        if (clonarEstoquePrincipal && produtosClonados > 0) {
+          mensagem += ` ${produtosClonados} produto${produtosClonados > 1 ? 's' : ''} clonado${produtosClonados > 1 ? 's' : ''}.`;
+        }
+      } else if (clonarEstoquePrincipal && produtosClonados > 0) {
+        mensagem = `${nome} foi criado com ${produtosClonados} produto${produtosClonados > 1 ? 's' : ''} clonado${produtosClonados > 1 ? 's' : ''} do Estoque Principal.`;
+      } else {
+        mensagem = `${nome} foi criado. Use transferências para mover produtos para este local.`;
+      }
 
       toast({
         title: 'Local criado com sucesso!',
@@ -251,6 +262,31 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
             />
           </div>
 
+          {/* Opção de sincronização automática */}
+          <div className={`flex items-center justify-between p-3 rounded-lg border ${sincronizarAutomatico ? 'bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-700' : 'bg-muted/30'}`}>
+            <div className="flex items-center gap-3">
+              <RefreshCw className={`h-4 w-4 ${sincronizarAutomatico ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`} />
+              <div>
+                <Label htmlFor="sincronizar" className="text-sm font-medium cursor-pointer">
+                  Sincronizar automaticamente
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Espelhar todas as mudanças do Estoque Principal
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="sincronizar"
+              checked={sincronizarAutomatico}
+              onCheckedChange={(checked) => {
+                setSincronizarAutomatico(checked);
+                // Se ativar sincronização, ativar clone também
+                if (checked) setClonarEstoquePrincipal(true);
+              }}
+              disabled={loading}
+            />
+          </div>
+
           {/* Opção de clonar do Estoque Principal */}
           <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
             <div className="flex items-center gap-3">
@@ -260,7 +296,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
                   Clonar do Estoque Principal
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Copiar todos os itens e quantidades
+                  Copiar todos os itens e quantidades iniciais
                 </p>
               </div>
             </div>
@@ -268,20 +304,39 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
               id="clonar"
               checked={clonarEstoquePrincipal}
               onCheckedChange={setClonarEstoquePrincipal}
-              disabled={loading}
+              disabled={loading || sincronizarAutomatico}
             />
           </div>
 
-          <div className={`p-3 rounded-lg border ${clonarEstoquePrincipal ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800' : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'}`}>
-            {clonarEstoquePrincipal ? (
+          {/* Info box dinâmico */}
+          <div className={`p-3 rounded-lg border ${
+            sincronizarAutomatico 
+              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
+              : clonarEstoquePrincipal 
+                ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800' 
+                : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'
+          }`}>
+            {sincronizarAutomatico ? (
+              <>
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>🔄 Espelho em tempo real:</strong>
+                </p>
+                <ul className="text-xs text-green-700 dark:text-green-300 mt-1 space-y-1">
+                  <li>• Novos produtos adicionados ao Principal → aparecem aqui</li>
+                  <li>• Quantidades alteradas no Principal → refletidas aqui</li>
+                  <li>• Produtos removidos do Principal → removidos daqui</li>
+                  <li>• <strong>Sincronização 100% automática</strong></li>
+                </ul>
+              </>
+            ) : clonarEstoquePrincipal ? (
               <>
                 <p className="text-sm text-amber-800 dark:text-amber-200">
-                  <strong>⚡ Modo clonar:</strong>
+                  <strong>⚡ Clone único:</strong>
                 </p>
                 <ul className="text-xs text-amber-700 dark:text-amber-300 mt-1 space-y-1">
                   <li>• Todos os produtos do Estoque Principal serão copiados</li>
                   <li>• As quantidades serão <strong>idênticas</strong> ao principal</li>
-                  <li>• Ideal para iniciar um novo local com estoque completo</li>
+                  <li>• Após criado, os estoques são <strong>independentes</strong></li>
                 </ul>
               </>
             ) : (
@@ -291,8 +346,8 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
                 </p>
                 <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 space-y-1">
                   <li>• O local será criado <strong>vazio</strong></li>
-                  <li>• Produtos são adicionados automaticamente ao <strong>transferir estoque</strong></li>
-                  <li>• Composições são criadas conforme necessário no local</li>
+                  <li>• Produtos são adicionados ao <strong>transferir estoque</strong></li>
+                  <li>• Composições são criadas conforme necessário</li>
                 </ul>
               </>
             )}
@@ -310,16 +365,17 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
           <Button
             onClick={criarLocal}
             disabled={loading || !nome.trim()}
+            className={sincronizarAutomatico ? 'bg-green-600 hover:bg-green-700' : ''}
           >
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                {clonarEstoquePrincipal ? 'Clonando...' : 'Criando...'}
+                {sincronizarAutomatico ? 'Sincronizando...' : clonarEstoquePrincipal ? 'Clonando...' : 'Criando...'}
               </>
             ) : (
               <>
-                {clonarEstoquePrincipal ? <Copy className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                {clonarEstoquePrincipal ? 'Criar e Clonar' : 'Criar Local'}
+                {sincronizarAutomatico ? <RefreshCw className="h-4 w-4 mr-2" /> : clonarEstoquePrincipal ? <Copy className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                {sincronizarAutomatico ? 'Criar Espelho' : clonarEstoquePrincipal ? 'Criar e Clonar' : 'Criar Local'}
               </>
             )}
           </Button>

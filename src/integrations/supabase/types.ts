@@ -3044,6 +3044,7 @@ export type Database = {
           is_system: boolean
           nome: string
           organization_id: string
+          sincronizar_com_principal: boolean
           tipo: string
           updated_at: string
         }
@@ -3056,6 +3057,7 @@ export type Database = {
           is_system?: boolean
           nome: string
           organization_id: string
+          sincronizar_com_principal?: boolean
           tipo?: string
           updated_at?: string
         }
@@ -3068,6 +3070,7 @@ export type Database = {
           is_system?: boolean
           nome?: string
           organization_id?: string
+          sincronizar_com_principal?: boolean
           tipo?: string
           updated_at?: string
         }
