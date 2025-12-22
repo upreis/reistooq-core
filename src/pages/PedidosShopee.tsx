@@ -255,7 +255,7 @@ export default function PedidosShopee() {
         order_id: headers.findIndex(h => /^id\s*do\s*pedido$|order.*id|número.*pedido|order_sn/i.test(h)),
         order_status: headers.findIndex(h => /^status\s*do\s*pedido$|^situa[çc][aã]o\s*do\s*pedido$|status|situação|estado/i.test(h)),
         data_pedido: headers.findIndex(h => /^data\s*de\s*cria[çc][aã]o\s*do\s*pedido$|data.*pedido|data.*compra|created|criado/i.test(h)),
-        comprador_nome: headers.findIndex(h => /^nome\s*do\s*destinat[aá]rio$|^nome\s*completo$|destinatario|recipient/i.test(h)),
+        comprador_nome: headers.findIndex(h => /^nome\s*de\s*usu[aá]rio\s*\(comprador\)$|^nome\s*do\s*destinat[aá]rio$|^nome\s*completo$|buyer.*name/i.test(h)),
         sku: headers.findIndex(h => /^n[uú]mero\s*de\s*refer[eê]ncia\s*sku$|^sku$|código.*produto|product.*id/i.test(h)),
         produto_nome: headers.findIndex(h => /^nome\s*do\s*produto$|produto|item|product.*name|titulo.*produto/i.test(h)),
         quantidade: headers.findIndex(h => /^quantidade$|qty|qtd|quantity/i.test(h)),
