@@ -6,7 +6,6 @@ import ComposicoesUnificadasPage from "./estoque/ComposicoesUnificadasPage";
 import HistoricoMovimentacoesPage from "./estoque/HistoricoMovimentacoesPage";
 import DePara from "./DePara";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
-import { EstoqueLocationTabs } from "@/components/estoque/EstoqueLocationTabs";
 
 const EstoqueContent = () => {
   const breadcrumb = (
@@ -22,19 +21,13 @@ const EstoqueContent = () => {
       title="Estoque" 
       breadcrumb={breadcrumb}
     >
-      <div className="space-y-4">
-        {/* Seletor de locais com layout separado */}
-        <EstoqueLocationTabs />
-        
-        {/* Conteúdo das páginas */}
-        <Routes>
-          <Route index element={<ControleEstoquePage />} />
-          <Route path="de-para" element={<DePara />} />
-          <Route path="composicoes" element={<ComposicoesUnificadasPage />} />
-          <Route path="insumos" element={<ComposicoesUnificadasPage />} />
-          <Route path="historico" element={<HistoricoMovimentacoesPage />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route index element={<ControleEstoquePage />} />
+        <Route path="de-para" element={<DePara />} />
+        <Route path="composicoes" element={<ComposicoesUnificadasPage />} />
+        <Route path="insumos" element={<ComposicoesUnificadasPage />} />
+        <Route path="historico" element={<HistoricoMovimentacoesPage />} />
+      </Routes>
     </MobileAppShell>
   );
 };
