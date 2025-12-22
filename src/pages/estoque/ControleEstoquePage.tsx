@@ -11,11 +11,11 @@ import { EstoqueGridView } from "@/components/estoque/EstoqueGridView";
 import { useEstoqueData } from "./hooks/useEstoqueData";
 import { useEstoqueActions } from "./hooks/useEstoqueActions";
 import { useEstoquePagination } from "./hooks/useEstoquePagination";
-import { EstoqueHeader, LayoutMode } from "./components/EstoqueHeader";
 import { EstoqueActionButtons } from "./components/EstoqueActionButtons";
 import { EstoquePagination } from "./components/EstoquePagination";
 import { EstoqueModals } from "./components/EstoqueModals";
 import { TransferenciaEstoqueModal } from "@/components/estoque/TransferenciaEstoqueModal";
+import { EstoqueLocationTabs, LayoutMode } from "@/components/estoque/EstoqueLocationTabs";
 
 export default function ControleEstoquePage() {
   // Modal states
@@ -158,8 +158,8 @@ export default function ControleEstoquePage() {
 
   return (
     <div className="space-y-2">
-      <EstoqueHeader 
-        onLocalChange={loadProducts} 
+      <EstoqueLocationTabs 
+        onLocationChange={loadProducts} 
         onTransferClick={() => setTransferenciaModalOpen(true)}
         selectedProductsCount={selectedProducts.length}
         layoutMode={layoutMode}
