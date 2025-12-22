@@ -61,6 +61,8 @@ export const useProducts = () => {
 
     // Se filtro por local_id, buscar de estoque_por_local
     if (filters?.local_id) {
+      console.log('[useProducts] Buscando produtos para local_id:', filters.local_id, 'include_all_products:', filters.include_all_products);
+      
       // Buscar produtos com estoque no local usando LEFT JOIN
       // Isso garante que tenhamos acesso a TODOS os campos de produtos
       const { data: estoqueData, error } = await supabase
