@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { ConfiguracaoLocaisModal } from "@/components/pedidos/ConfiguracaoLocaisModal";
 
 interface ImportResult {
   total: number;
@@ -89,6 +90,7 @@ export default function PedidosShopee() {
     from: undefined,
     to: undefined,
   });
+  const [showLocaisModal, setShowLocaisModal] = useState(false);
 
   const { toast } = useToast();
   const { profile } = useCurrentProfile();
@@ -716,7 +718,7 @@ export default function PedidosShopee() {
                   </Button>
                   
                   {/* Botão Locais */}
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => setShowLocaisModal(true)}>
                     <MapPin className="h-4 w-4 mr-2" />
                     Locais
                   </Button>
@@ -988,6 +990,13 @@ export default function PedidosShopee() {
             disabled: isDeleting,
           },
         ]}
+      />
+
+      {/* Modal de Configuração de Locais */}
+      <ConfiguracaoLocaisModal
+        open={showLocaisModal}
+        onOpenChange={setShowLocaisModal}
+        contasML={[{ id: "shopee", name: "Shopee", nickname: "Shopee" }]}
       />
     </MobileAppShell>
   );
