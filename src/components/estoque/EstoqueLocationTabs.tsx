@@ -245,23 +245,6 @@ export function EstoqueLocationTabs({
           </div>
         </div>
 
-        {/* Separador vertical - Fullfilment */}
-        {locaisFullfilment.length > 0 && (
-          <div className="h-8 w-px bg-muted-foreground/30" />
-        )}
-
-        {/* Seção: Fullfilment */}
-        {locaisFullfilment.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
-              Fullfilment
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              {locaisFullfilment.map((local) => renderLocalButton(local))}
-            </div>
-          </div>
-        )}
-
         {/* Separador vertical - In-house */}
         {locaisInhouse.length > 0 && (
           <div className="h-8 w-px bg-muted-foreground/30" />
@@ -275,6 +258,23 @@ export function EstoqueLocationTabs({
             </span>
             <div className="flex items-center gap-2 flex-wrap">
               {locaisInhouse.map((local) => renderLocalButton(local))}
+            </div>
+          </div>
+        )}
+
+        {/* Separador vertical - Fullfilment */}
+        {locaisFullfilment.length > 0 && (
+          <div className="h-8 w-px bg-muted-foreground/30" />
+        )}
+
+        {/* Seção: Fullfilment */}
+        {locaisFullfilment.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
+              Fullfilment
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {locaisFullfilment.map((local) => renderLocalButton(local))}
             </div>
           </div>
         )}
