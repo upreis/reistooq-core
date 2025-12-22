@@ -70,23 +70,41 @@ export function useComposicoesEstoque(localId?: string) {
 
       console.log('🔍 SKUs componentes para buscar:', skusComponentes);
 
-      // Buscar informações dos produtos componentes
+      // Buscar informações dos produtos componentes (somente os SKUs necessários)
       const { data: produtosData, error: produtosError } = await supabase
         .from('produtos')
-        .select('sku_interno, nome, quantidade_atual');
+        .select('id, sku_interno, nome')
+        .in('sku_interno', skusComponentes as string[]);
 
       if (produtosError) throw produtosError;
 
-      console.log('📦 Produtos encontrados no estoque:', produtosData?.length);
-
       // Criar mapa de produtos para lookup rápido (normalizar chave)
-      const produtosMap = new Map();
-      produtosData?.forEach(produto => {
+      const produtosMap = new Map<string, { id: string; sku_interno: string; nome: string }>();
+      (produtosData || []).forEach((produto) => {
         const skuNormalizado = produto.sku_interno?.trim().toUpperCase();
-        produtosMap.set(skuNormalizado, produto);
+        if (skuNormalizado) produtosMap.set(skuNormalizado, produto);
       });
 
-      console.log('🗺️ Mapa de produtos criado:', produtosMap.size, 'produtos');
+      // Buscar estoque POR LOCAL para os componentes
+      const produtoIds = Array.from(new Set((produtosData || []).map((p) => p.id))).filter(Boolean);
+      const estoquePorProdutoId = new Map<string, number>();
+
+      if (produtoIds.length > 0) {
+        const { data: estoqueData, error: estoqueError } = await supabase
+          .from('estoque_por_local')
+          .select('produto_id, quantidade')
+          .eq('local_id', localId)
+          .in('produto_id', produtoIds as string[]);
+
+        if (estoqueError) throw estoqueError;
+
+        (estoqueData || []).forEach((row: any) => {
+          estoquePorProdutoId.set(row.produto_id, row.quantidade || 0);
+        });
+      }
+
+      console.log('📦 Produtos componentes encontrados:', produtosData?.length || 0);
+      console.log('📦 Estoque por local carregado:', estoquePorProdutoId.size);
 
       // Agrupar por SKU do produto
       const groupedComposicoes: Record<string, ProdutoComponente[]> = {};
@@ -97,17 +115,21 @@ export function useComposicoesEstoque(localId?: string) {
         
         // Buscar informações do produto componente (normalizar para comparação)
         const skuComponenteNormalizado = composicao.sku_componente?.trim().toUpperCase();
-        const produtoComponente = produtosMap.get(skuComponenteNormalizado);
-        
+        const produtoComponente = skuComponenteNormalizado ? produtosMap.get(skuComponenteNormalizado) : undefined;
+
         if (!produtoComponente) {
-          console.warn(`⚠️ Componente não encontrado no estoque: ${composicao.sku_componente}`);
+          console.warn(`⚠️ Componente não encontrado em produtos: ${composicao.sku_componente}`);
         }
-        
-        // Adicionar informações do estoque do componente
+
+        const estoqueLocal = produtoComponente?.id
+          ? (estoquePorProdutoId.get(produtoComponente.id) ?? 0)
+          : 0;
+
+        // Adicionar informações do estoque do componente (POR LOCAL)
         const componenteComEstoque: ProdutoComponente = {
           ...composicao,
           nome_componente: produtoComponente?.nome || composicao.sku_componente,
-          estoque_componente: produtoComponente?.quantidade_atual || 0
+          estoque_componente: estoqueLocal,
         };
         
         groupedComposicoes[composicao.sku_produto].push(componenteComEstoque);

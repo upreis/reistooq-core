@@ -165,11 +165,17 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         return;
       }
 
-      // Deletar TODAS as composições existentes deste produto
+      // Verificar se localId está presente
+      if (!localId) {
+        throw new Error('Local de estoque não definido');
+      }
+
+      // Deletar composições existentes deste produto NESTE LOCAL
       const { error: deleteError } = await supabase
         .from('produto_componentes')
         .delete()
-        .eq('sku_produto', produtoSku.trim());
+        .eq('sku_produto', produtoSku.trim())
+        .eq('local_id', localId);
 
       if (deleteError) {
         console.error('Erro ao deletar composições:', deleteError);
