@@ -703,61 +703,67 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           <CardTitle>Itens do Pedido</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produtos por SKU ou nome..."
-                value={productSearch}
-                onChange={(e) => {
-                  setProductSearch(e.target.value);
-                  handleSearch(e.target.value);
-                }}
-                className="pl-10"
-              />
+          <div className="relative">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar produtos por SKU ou nome..."
+                  value={productSearch}
+                  onChange={(e) => {
+                    setProductSearch(e.target.value);
+                    handleSearch(e.target.value);
+                  }}
+                  onBlur={() => {
+                    // Delay para permitir clique no item antes de fechar
+                    setTimeout(() => setSearchResults([]), 200);
+                  }}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowProductSelector(true)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Usar Seletor Avançado
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowProductSelector(true)}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Usar Seletor Avançado
-            </Button>
-          </div>
-          
-          {searchResults.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-              {searchResults.map((product) => (
-                <div
-                  key={product.id}
-                  className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                  onClick={() => addItem(product)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-medium">{product.title}</div>
-                      <div className="text-sm text-muted-foreground flex gap-4">
-                        <span>SKU: {product.sku}</span>
-                        {product.category && <span>Cat: {product.category}</span>}
-                        {product.barcode && <span>Código: {product.barcode}</span>}
+            
+            {searchResults.length > 0 && (
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                {searchResults.map((product) => (
+                  <div
+                    key={product.id}
+                    className="p-3 hover:bg-accent cursor-pointer border-b border-border last:border-b-0 text-popover-foreground"
+                    onClick={() => addItem(product)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium text-foreground">{product.title}</div>
+                        <div className="text-sm text-muted-foreground flex gap-4">
+                          <span>SKU: {product.sku}</span>
+                          {product.category && <span>Cat: {product.category}</span>}
+                          {product.barcode && <span>Código: {product.barcode}</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Estoque: {product.stock} unidades
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Estoque: {product.stock} unidades
+                      <div className="text-right">
+                        <div className="font-medium text-foreground">{formatCurrency(product.price)}</div>
+                        <Badge variant={product.stock > 0 ? "secondary" : "destructive"} className="text-xs">
+                          {product.stock > 0 ? "Disponível" : "Sem estoque"}
+                        </Badge>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">{formatCurrency(product.price)}</div>
-                      <Badge variant={product.stock > 0 ? "secondary" : "destructive"} className="text-xs">
-                        {product.stock > 0 ? "Disponível" : "Sem estoque"}
-                      </Badge>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
 
           {formData.items.length === 0 && (
             <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
