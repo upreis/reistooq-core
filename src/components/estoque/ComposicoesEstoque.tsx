@@ -694,15 +694,15 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
   return (
     <div className="space-y-6">
       {/* Barra de busca + botões de ação na mesma linha */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-1.5 flex-wrap">
         {/* Campo de busca */}
-        <div className="relative min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative min-w-[140px]">
+          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Pesquisar"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10"
+            className="pl-8 h-7 text-xs"
           />
         </div>
 
@@ -730,33 +730,33 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                   console.error('Erro ao criar composição:', error);
                 }
               }}
-              className="gap-2 h-10"
+              className="gap-1.5 h-7 px-2.5 text-xs"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3 h-3" />
               Nova Composição
             </Button>
             <Button
               variant="outline"
               onClick={() => setImportProdutosModalOpen(true)}
-              className="gap-2 h-10"
+              className="gap-1.5 h-7 px-2.5 text-xs"
             >
-              <Import className="w-3.5 h-3.5" />
+              <Import className="w-3 h-3" />
               Importar do Estoque
             </Button>
             <Button
               variant="outline"
               onClick={() => setImportModalOpen(true)}
-              className="gap-2 h-10"
+              className="gap-1.5 h-7 px-2.5 text-xs"
             >
-              <Upload className="w-3.5 h-3.5" />
+              <Upload className="w-3 h-3" />
               Importar Excel
             </Button>
             <Button
               variant="outline"
               onClick={handleDownloadComposicoes}
-              className="gap-2 h-10"
+              className="gap-1.5 h-7 px-2.5 text-xs"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3 h-3" />
               Baixar Dados
             </Button>
             <Tooltip>
@@ -764,9 +764,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                 <Button
                   variant="outline"
                   onClick={limparComposicoesOrfas}
-                  className="gap-2 h-10 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  className="gap-1.5 h-7 px-2.5 text-xs border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3 h-3" />
                   Limpar Órfãs
                 </Button>
               </TooltipTrigger>
@@ -777,41 +777,41 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
             <Button
               variant="outline"
               onClick={toggleSelectMode}
-              className="gap-2 h-10"
+              className="gap-1.5 h-7 px-2.5 text-xs"
             >
-              <CheckCircle className="w-3.5 h-3.5" />
+              <CheckCircle className="w-3 h-3" />
               Selecionar
             </Button>
           </>
         ) : (
           <>
-            <Badge variant="secondary" className="text-sm px-3 py-2 h-10 flex items-center">
+            <Badge variant="secondary" className="text-xs px-2 py-1 h-7 flex items-center">
               {selectedCount} selecionado(s)
             </Badge>
             <Button
               variant="outline"
               onClick={() => selectAll(produtosFinaisFiltrados)}
-              className="gap-2 h-10"
+              className="gap-1.5 h-7 px-2.5 text-xs"
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3 h-3" />
               Selecionar Todos
             </Button>
             <Button
               variant="outline"
               onClick={() => handleBulkStatusChange(true)}
               disabled={selectedCount === 0}
-              className="gap-2 h-10 border-green-500 text-green-600 hover:bg-green-50"
+              className="gap-1.5 h-7 px-2.5 text-xs border-green-500 text-green-600 hover:bg-green-50"
             >
-              <Package className="w-4 h-4" />
+              <Package className="w-3 h-3" />
               Ativar ({selectedCount})
             </Button>
             <Button
               variant="outline"
               onClick={() => handleBulkStatusChange(false)}
               disabled={selectedCount === 0}
-              className="gap-2 h-10 border-orange-500 text-orange-600 hover:bg-orange-50"
+              className="gap-1.5 h-7 px-2.5 text-xs border-orange-500 text-orange-600 hover:bg-orange-50"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
               Desativar ({selectedCount})
             </Button>
             <AlertDialog>
@@ -819,9 +819,9 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                 <Button
                   variant="destructive"
                   disabled={selectedCount === 0}
-                  className="gap-2 h-10"
+                  className="gap-1.5 h-7 px-2.5 text-xs"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3 h-3" />
                   Excluir ({selectedCount})
                 </Button>
               </AlertDialogTrigger>
@@ -843,11 +843,10 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
             </AlertDialog>
             <Button
               variant="outline"
-              size="sm"
               onClick={toggleSelectMode}
-              className="gap-1.5 h-9"
+              className="gap-1.5 h-7 px-2.5 text-xs"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3 h-3" />
               Cancelar
             </Button>
           </>

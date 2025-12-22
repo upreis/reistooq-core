@@ -68,13 +68,13 @@ export default function ComposicoesUnificadasPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="produtos" className="flex items-center gap-2">
-            <Layers className="h-4 w-4" />
+        <TabsList className="grid w-full max-w-xs grid-cols-2 h-8">
+          <TabsTrigger value="produtos" className="flex items-center gap-1.5 text-xs h-7 px-2.5">
+            <Layers className="h-3 w-3" />
             Produtos
           </TabsTrigger>
-          <TabsTrigger value="insumos" className="flex items-center gap-2">
-            <PackageCheck className="h-4 w-4" />
+          <TabsTrigger value="insumos" className="flex items-center gap-1.5 text-xs h-7 px-2.5">
+            <PackageCheck className="h-3 w-3" />
             Insumos
           </TabsTrigger>
         </TabsList>
