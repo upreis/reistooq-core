@@ -125,109 +125,6 @@ export function EstoqueActionButtons({
           
           <EstoqueReports products={products} />
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="w-4 h-4" />
-                Filtros Avançados
-                {hasActiveFilters && (
-                  <Badge variant="secondary" className="ml-1">
-                    •
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 bg-background z-50">
-              <div className="space-y-4">
-                {/* Filtro de categoria */}
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Categoria</h4>
-                  <Select value={selectedCategory} onValueChange={onCategoryChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Categoria" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      <SelectItem value="all">Todas categorias</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Filtro de status */}
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Status do Estoque</h4>
-                  <Select value={selectedStatus} onValueChange={onStatusChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      {statusOptions.map((option) => {
-                        const IconComponent = option.icon;
-                        return (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center">
-                              <IconComponent className="w-4 h-4 mr-2" />
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Filtro de tipo de produto */}
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Tipo de Produto</h4>
-                  <Select value={selectedProductType} onValueChange={onProductTypeChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tipo de Produto" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      <SelectItem value="all">
-                        <div className="flex items-center">
-                          <Package className="w-4 h-4 mr-2" />
-                          Todos os Produtos
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="parent">
-                        <div className="flex items-center">
-                          <Package className="w-4 h-4 mr-2" />
-                          Apenas Produtos Pai
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="child">
-                        <div className="flex items-center">
-                          <Package className="w-4 h-4 mr-2" />
-                          Apenas Produtos Filho
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="standalone">
-                        <div className="flex items-center">
-                          <Package className="w-4 h-4 mr-2" />
-                          Produtos Sem Vínculo
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" size="sm" onClick={onClearFilters}>
-                    Limpar Filtros
-                  </Button>
-                  <Button size="sm" onClick={onSearch}>
-                    Aplicar
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-
           {/* Separador */}
           <div className="h-8 w-px bg-border mx-1" />
 
@@ -258,6 +155,105 @@ export function EstoqueActionButtons({
               Recolher Todos
             </Button>
           )}
+
+          {/* Separador */}
+          <div className="h-8 w-px bg-border mx-1" />
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Filter className="w-4 h-4" />
+                Filtros Avançados
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-1">
+                    •
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 bg-background z-50">
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm">Filtros Avançados</h4>
+                
+                {/* Campo de busca */}
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Buscar</label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Nome, SKU, categoria..."
+                      value={searchTerm}
+                      onChange={(e) => onSearchChange(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+
+                {/* Categoria */}
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Categoria</label>
+                  <Select value={selectedCategory} onValueChange={onCategoryChange}>
+                    <SelectTrigger className="w-full bg-background">
+                      <SelectValue placeholder="Todas categorias" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="all">Todas</SelectItem>
+                      {categories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Status</label>
+                  <Select value={selectedStatus} onValueChange={onStatusChange}>
+                    <SelectTrigger className="w-full bg-background">
+                      <SelectValue placeholder="Todos os status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {statusOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <option.icon className="h-4 w-4 text-muted-foreground" />
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Tipo de Produto */}
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">Tipo de Produto</label>
+                  <Select value={selectedProductType} onValueChange={onProductTypeChange}>
+                    <SelectTrigger className="w-full bg-background">
+                      <SelectValue placeholder="Todos os tipos" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="parent">Produto Pai</SelectItem>
+                      <SelectItem value="child">Produto Filho</SelectItem>
+                      <SelectItem value="standalone">Produto Único</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Ações */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button variant="outline" size="sm" onClick={onClearFilters}>
+                    Limpar Filtros
+                  </Button>
+                  <Button size="sm" onClick={onSearch}>
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       )}
 
