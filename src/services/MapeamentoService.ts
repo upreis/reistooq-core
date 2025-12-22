@@ -108,8 +108,11 @@ export class MapeamentoService {
 
       let produtosInfoMap = new Map<
         string,
-        { existe: boolean; quantidade: number; temEstoqueNoLocal: boolean; temEstoqueDireto?: boolean }
+        { existe: boolean; quantidade: number; temEstoqueNoLocal: boolean; temEstoqueDireto?: boolean; ehKit?: boolean }
       >();
+
+      // 🎯 NOVO: Map para armazenar composições (usado para kits que não existem no estoque)
+      let composicoesMap = new Map<string, { temComposicao: boolean; componentes?: any[] }>();
 
       if (skusParaVerificar.length > 0) {
         // Primeiro: buscar informações básicas dos produtos
@@ -119,9 +122,107 @@ export class MapeamentoService {
           .in('sku_interno', skusParaVerificar)
           .eq('ativo', true);
 
-        if (produtosExistentes) {
+        // 🎯 NOVO: Criar set de SKUs que existem no estoque
+        const skusExistentesSet = new Set(
+          (produtosExistentes || []).map(p => p.sku_interno)
+        );
+
+        // 🎯 NOVO: Identificar SKUs que NÃO existem no estoque (possíveis kits)
+        const skusNaoExistentes = skusParaVerificar.filter(sku => !skusExistentesSet.has(sku));
+
+        // 🎯 NOVO: Para SKUs que não existem no estoque, verificar se têm composição
+        for (const skuKit of skusNaoExistentes) {
+          let queryComponentes = supabase
+            .from('produto_componentes')
+            .select('sku_componente, quantidade')
+            .eq('sku_produto', skuKit);
+
+          if (localEstoqueId) {
+            queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
+          }
+
+          const { data: componentes } = await queryComponentes;
+
+          if (componentes && componentes.length > 0) {
+            console.log(`🎯 Kit detectado: ${skuKit} com ${componentes.length} componentes`);
+            
+            // Verificar estoque de CADA COMPONENTE
+            let temEstoqueSuficiente = true;
+            let componentesFaltando: string[] = [];
+
+            for (const comp of componentes) {
+              const { data: produtoComponente } = await supabase
+                .from('produtos')
+                .select('id, sku_interno')
+                .eq('sku_interno', comp.sku_componente)
+                .eq('ativo', true)
+                .maybeSingle();
+
+              if (!produtoComponente) {
+                console.warn(`⚠️ Componente ${comp.sku_componente} não cadastrado no estoque`);
+                temEstoqueSuficiente = false;
+                componentesFaltando.push(comp.sku_componente);
+                continue;
+              }
+
+              if (localEstoqueId) {
+                const quantidadeNecessaria = comp.quantidade * (quantidadePorSku?.get(skuKit) || 1);
+
+                const { data: estoqueLocal } = await supabase
+                  .from('estoque_por_local')
+                  .select('quantidade')
+                  .eq('produto_id', produtoComponente.id)
+                  .eq('local_id', localEstoqueId)
+                  .maybeSingle();
+
+                const quantidadeDisponivel = estoqueLocal?.quantidade || 0;
+
+                if (quantidadeDisponivel < quantidadeNecessaria) {
+                  console.warn(`⚠️ Componente ${comp.sku_componente}: disponível ${quantidadeDisponivel}, necessário ${quantidadeNecessaria}`);
+                  temEstoqueSuficiente = false;
+                  componentesFaltando.push(`${comp.sku_componente} (${quantidadeDisponivel}/${quantidadeNecessaria})`);
+                }
+              }
+            }
+
+            // 🎯 Kit existe via composição - marcar como existente
+            produtosInfoMap.set(skuKit, {
+              existe: true,
+              quantidade: temEstoqueSuficiente ? 1 : 0,
+              temEstoqueNoLocal: temEstoqueSuficiente,
+              temEstoqueDireto: false,
+              ehKit: true
+            });
+
+            composicoesMap.set(skuKit, {
+              temComposicao: true,
+              componentes: componentes
+            });
+
+            if (!temEstoqueSuficiente) {
+              console.log(`⚠️ Kit ${skuKit} sem estoque suficiente. Faltando: ${componentesFaltando.join(', ')}`);
+            } else {
+              console.log(`✅ Kit ${skuKit} com estoque suficiente para todos os componentes`);
+            }
+          } else {
+            // SKU não existe E não tem composição = realmente não cadastrado
+            produtosInfoMap.set(skuKit, {
+              existe: false,
+              quantidade: 0,
+              temEstoqueNoLocal: false,
+              temEstoqueDireto: false,
+              ehKit: false
+            });
+
+            composicoesMap.set(skuKit, {
+              temComposicao: false,
+              componentes: []
+            });
+          }
+        }
+
+        if (produtosExistentes && produtosExistentes.length > 0) {
           // ✅ Se temos localEstoqueId, primeiro checar o estoque direto do produto no local.
-          // Se existir estoque direto suficiente, NÃO depende de composição/componentes.
           let estoqueDiretoPorProdutoId = new Map<string, number>();
 
           if (localEstoqueId) {
@@ -152,7 +253,8 @@ export class MapeamentoService {
                   existe: true,
                   quantidade: qtdDireta,
                   temEstoqueNoLocal: true,
-                  temEstoqueDireto: true
+                  temEstoqueDireto: true,
+                  ehKit: false
                 });
                 continue;
               }
@@ -164,22 +266,24 @@ export class MapeamentoService {
               .select('sku_componente, quantidade')
               .eq('sku_produto', produto.sku_interno);
 
-            // 🛡️ CRÍTICO: Filtrar por local_id se fornecido
             if (localEstoqueId) {
               queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
             }
 
             const { data: componentes } = await queryComponentes;
 
-            const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
-
             if (!componentes || componentes.length === 0) {
-              // Sem componentes no local específico = não conseguimos montar no local
               produtosInfoMap.set(produto.sku_interno, {
                 existe: true,
                 quantidade: 0,
                 temEstoqueNoLocal: false,
-                temEstoqueDireto: false
+                temEstoqueDireto: false,
+                ehKit: false
+              });
+
+              composicoesMap.set(produto.sku_interno, {
+                temComposicao: false,
+                componentes: []
               });
               continue;
             }
@@ -188,7 +292,6 @@ export class MapeamentoService {
             let temEstoqueSuficiente = true;
 
             for (const comp of componentes) {
-              // Buscar produto_id do componente
               const { data: produtoComponente } = await supabase
                 .from('produtos')
                 .select('id, sku_interno')
@@ -201,7 +304,6 @@ export class MapeamentoService {
                 break;
               }
 
-              // Se há localEstoqueId, verificar estoque_por_local
               if (localEstoqueId) {
                 const quantidadeNecessariaComponente =
                   comp.quantidade * (quantidadePorSku?.get(produto.sku_interno) || 1);
@@ -226,40 +328,42 @@ export class MapeamentoService {
               existe: true,
               quantidade: temEstoqueSuficiente ? 1 : 0,
               temEstoqueNoLocal: temEstoqueSuficiente,
-              temEstoqueDireto: false
+              temEstoqueDireto: false,
+              ehKit: false
+            });
+
+            composicoesMap.set(produto.sku_interno, {
+              temComposicao: true,
+              componentes: componentes
             });
           }
         }
       }
+
       // 🔧 VALIDAÇÃO DE INSUMOS
       const skusEstoqueValidos = skusParaVerificar.filter(Boolean);
       const validacoesInsumos = skusEstoqueValidos.length > 0 
         ? await InsumosValidationService.validarInsumosPedidos(skusEstoqueValidos)
         : new Map();
 
-      // 🔍 VERIFICAR COMPOSIÇÕES - Agora busca componentes DIRETAMENTE para todos os SKUs
-      const skusParaVerificarComposicao = [...produtosInfoMap.keys()];
-      let composicoesMap = new Map<string, { temComposicao: boolean; componentes?: any[] }>();
+      // 🔍 VERIFICAR COMPOSIÇÕES para SKUs que ainda não foram verificados
+      const skusParaVerificarComposicao = [...produtosInfoMap.keys()].filter(sku => !composicoesMap.has(sku));
 
       if (skusParaVerificarComposicao.length > 0) {
-        // Buscar componentes diretamente em produto_componentes para todos os SKUs
         for (const skuProduto of skusParaVerificarComposicao) {
           let queryComponentes = supabase
             .from('produto_componentes')
             .select('*')
             .eq('sku_produto', skuProduto);
 
-          // 🛡️ Filtrar por local_id se fornecido
           if (localEstoqueId) {
             queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
           }
 
           const { data: componentes } = await queryComponentes;
 
-          const temComponentes = componentes && componentes.length > 0;
-
           composicoesMap.set(skuProduto, {
-            temComposicao: temComponentes,
+            temComposicao: componentes && componentes.length > 0,
             componentes: componentes || []
           });
         }
