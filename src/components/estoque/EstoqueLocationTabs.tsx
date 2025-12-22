@@ -62,6 +62,8 @@ export function EstoqueLocationTabs({
 
       if (error) throw error;
 
+      console.log('[EstoqueLocationTabs] Locais carregados:', data?.map(l => ({ nome: l.nome, tipo: l.tipo })));
+
       const locaisOrdenados = (data || []).sort((a, b) => {
         if (a.tipo === 'principal') return -1;
         if (b.tipo === 'principal') return 1;
