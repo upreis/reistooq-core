@@ -176,7 +176,7 @@ export function EstoqueGridView({
                 onCheckedChange={() => handleSelectAll()}
               />
               <span className="text-sm text-muted-foreground">
-                Selecionar Todos ({selectedProducts.length}/{filteredProducts.length})
+                Todos ({selectedProducts.length}/{filteredProducts.length})
               </span>
             </div>
           )}
