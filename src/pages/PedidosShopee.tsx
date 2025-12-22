@@ -650,8 +650,10 @@ export default function PedidosShopee() {
                                   />
                                 </TableCell>
                               )}
-                              {/* ID-Único */}
-                              <TableCell className="font-mono text-xs">{pedido.id}</TableCell>
+                              {/* ID-Único: order_id-sku */}
+                              <TableCell className="font-mono text-xs">
+                                {pedido.order_id}{pedido.sku ? `-${pedido.sku}` : ''}
+                              </TableCell>
                               {/* Empresa */}
                               <TableCell>Shopee</TableCell>
                               {/* Número do Pedido */}
