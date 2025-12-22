@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Plus, Loader2 } from 'lucide-react';
+import { MapPin, Plus, Loader2, Copy } from 'lucide-react';
 import { TipoLocalEstoque } from '@/features/estoque/types/locais.types';
 
 interface GerenciarLocaisModalProps {
@@ -30,6 +31,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
   const [tipo, setTipo] = useState<TipoLocalEstoque>('outro');
   const [endereco, setEndereco] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [clonarEstoquePrincipal, setClonarEstoquePrincipal] = useState(false);
   const { toast } = useToast();
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -39,6 +41,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
       setTipo('outro');
       setEndereco('');
       setDescricao('');
+      setClonarEstoquePrincipal(false);
     }
   };
 
@@ -68,7 +71,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
       // ✅ VALIDAÇÃO: Verificar se já existe um local com o mesmo nome na mesma organização
       const { data: locaisExistentes, error: checkError } = await supabase
         .from('locais_estoque')
-        .select('id, nome')
+        .select('id, nome, tipo')
         .eq('organization_id', profile.organizacao_id)
         .eq('ativo', true);
 
@@ -107,11 +110,56 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
 
       if (localError) throw localError;
 
-      // ✅ Novo local criado VAZIO - produtos serão adicionados via transferência
+      // ✅ Se opção de clonar estiver ativada, copiar itens do Estoque Principal
+      let produtosClonados = 0;
+      if (clonarEstoquePrincipal) {
+        // Encontrar o Estoque Principal
+        const localPrincipal = (locaisExistentes || []).find(l => l.tipo === 'principal');
+        
+        if (localPrincipal) {
+          // Buscar todos os itens do Estoque Principal
+          const { data: itensPrincipal, error: itensError } = await supabase
+            .from('estoque_por_local')
+            .select('produto_id, quantidade')
+            .eq('local_id', localPrincipal.id)
+            .eq('organization_id', profile.organizacao_id);
+
+          if (itensError) {
+            console.error('Erro ao buscar itens do estoque principal:', itensError);
+          } else if (itensPrincipal && itensPrincipal.length > 0) {
+            // Inserir os mesmos itens no novo local
+            const novosItens = itensPrincipal.map(item => ({
+              organization_id: profile.organizacao_id,
+              local_id: novoLocal.id,
+              produto_id: item.produto_id,
+              quantidade: item.quantidade
+            }));
+
+            const { error: insertError } = await supabase
+              .from('estoque_por_local')
+              .insert(novosItens);
+
+            if (insertError) {
+              console.error('Erro ao clonar itens:', insertError);
+              toast({
+                title: 'Aviso',
+                description: 'Local criado, mas houve um erro ao clonar os itens do estoque principal.',
+                variant: 'destructive'
+              });
+            } else {
+              produtosClonados = itensPrincipal.length;
+            }
+          }
+        }
+      }
       
+      const mensagem = clonarEstoquePrincipal && produtosClonados > 0
+        ? `${nome} foi criado com ${produtosClonados} produto${produtosClonados > 1 ? 's' : ''} clonado${produtosClonados > 1 ? 's' : ''} do Estoque Principal.`
+        : `${nome} foi criado. Use transferências para mover produtos para este local.`;
+
       toast({
         title: 'Local criado com sucesso!',
-        description: `${nome} foi criado. Use transferências para mover produtos para este local.`
+        description: mensagem
       });
 
       // Disparar evento para recarregar lista de locais
@@ -148,7 +196,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
             Criar Novo Local de Estoque
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Crie um novo local de estoque vazio. Produtos serão adicionados via transferência.
+            Crie um novo local de estoque. Você pode começar vazio ou clonar do Estoque Principal.
           </p>
         </DialogHeader>
         
@@ -203,15 +251,51 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
             />
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>ℹ️ Como funciona:</strong>
-            </p>
-            <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 space-y-1">
-              <li>• O local será criado <strong>vazio</strong></li>
-              <li>• Produtos são adicionados automaticamente ao <strong>transferir estoque</strong></li>
-              <li>• Composições são criadas conforme necessário no local</li>
-            </ul>
+          {/* Opção de clonar do Estoque Principal */}
+          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-3">
+              <Copy className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <Label htmlFor="clonar" className="text-sm font-medium cursor-pointer">
+                  Clonar do Estoque Principal
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Copiar todos os itens e quantidades
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="clonar"
+              checked={clonarEstoquePrincipal}
+              onCheckedChange={setClonarEstoquePrincipal}
+              disabled={loading}
+            />
+          </div>
+
+          <div className={`p-3 rounded-lg border ${clonarEstoquePrincipal ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800' : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'}`}>
+            {clonarEstoquePrincipal ? (
+              <>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  <strong>⚡ Modo clonar:</strong>
+                </p>
+                <ul className="text-xs text-amber-700 dark:text-amber-300 mt-1 space-y-1">
+                  <li>• Todos os produtos do Estoque Principal serão copiados</li>
+                  <li>• As quantidades serão <strong>idênticas</strong> ao principal</li>
+                  <li>• Ideal para iniciar um novo local com estoque completo</li>
+                </ul>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>ℹ️ Como funciona:</strong>
+                </p>
+                <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 space-y-1">
+                  <li>• O local será criado <strong>vazio</strong></li>
+                  <li>• Produtos são adicionados automaticamente ao <strong>transferir estoque</strong></li>
+                  <li>• Composições são criadas conforme necessário no local</li>
+                </ul>
+              </>
+            )}
           </div>
         </div>
 
@@ -230,12 +314,12 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Criando...
+                {clonarEstoquePrincipal ? 'Clonando...' : 'Criando...'}
               </>
             ) : (
               <>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Local
+                {clonarEstoquePrincipal ? <Copy className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                {clonarEstoquePrincipal ? 'Criar e Clonar' : 'Criar Local'}
               </>
             )}
           </Button>
