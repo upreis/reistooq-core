@@ -634,10 +634,10 @@ export default function PedidosShopee() {
                           <TableHead>Quantidade</TableHead>
                           <TableHead>Título do Produto</TableHead>
                           <TableHead className="text-right">Valor Total</TableHead>
-                          <TableHead className="text-right">Receita Flex</TableHead>
-                          <TableHead className="text-right">Taxa Marketplace</TableHead>
+                          <TableHead className="text-right">Receita Entrega Direta</TableHead>
+                          <TableHead className="text-right">Taxa de Transação</TableHead>
                           <TableHead className="text-right">Custo Envio</TableHead>
-                          <TableHead className="text-right">Custo Fixo Meli</TableHead>
+                          <TableHead className="text-right">Taxa de serviço</TableHead>
                           <TableHead className="text-right">Valor Líquido</TableHead>
                           <TableHead>Método Pagamento</TableHead>
                           <TableHead>Status Pagamento</TableHead>
@@ -665,7 +665,7 @@ export default function PedidosShopee() {
                           <TableHead>CEP</TableHead>
                           <TableHead>Cidade</TableHead>
                           <TableHead>UF</TableHead>
-                          <TableHead>Data Criação ML</TableHead>
+                          <TableHead>Data Criação SPee</TableHead>
                           <TableHead>Pack ID</TableHead>
                           <TableHead>Pickup ID</TableHead>
                           <TableHead>Tags do Pedido</TableHead>
