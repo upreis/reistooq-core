@@ -219,6 +219,35 @@ export default function PedidosShopee() {
       const headers = (rows[0] as unknown[]).map(h => String(h || ""));
       const dataRows = rows.slice(1) as unknown[][];
 
+      // Função para encontrar coluna com dados (para colunas duplicadas, pega a que tem valores)
+      const findColumnWithData = (regex: RegExp): number => {
+        const matchingIndices: number[] = [];
+        headers.forEach((h, idx) => {
+          if (regex.test(h)) matchingIndices.push(idx);
+        });
+        
+        if (matchingIndices.length <= 1) {
+          return matchingIndices[0] ?? -1;
+        }
+        
+        // Se há múltiplas colunas, pegar a que tem mais dados preenchidos
+        const dataSample = rows.slice(1, Math.min(11, rows.length)) as unknown[][];
+        let bestIdx = matchingIndices[0];
+        let bestCount = 0;
+        
+        for (const idx of matchingIndices) {
+          const filledCount = dataSample.filter(row => {
+            const val = String(row[idx] || "").trim();
+            return val !== "" && val !== "null" && val !== "undefined";
+          }).length;
+          if (filledCount > bestCount) {
+            bestCount = filledCount;
+            bestIdx = idx;
+          }
+        }
+        return bestIdx;
+      };
+
       // Mapear colunas - De/Para planilha Shopee
       const colMap = {
         // Obrigatórios
@@ -230,12 +259,12 @@ export default function PedidosShopee() {
         produto_nome: headers.findIndex(h => /^nome\s*do\s*produto$|produto|item|product.*name|titulo.*produto/i.test(h)),
         quantidade: headers.findIndex(h => /^quantidade$|qty|qtd|quantity/i.test(h)),
         preco_total: headers.findIndex(h => /^subtotal\s*do\s*produto$|total|valor|price|preço/i.test(h)),
-        // Endereço
+        // Endereço - usa função para pegar coluna com dados em caso de duplicatas
         endereco_rua: headers.findIndex(h => /^endere[çc]o\s*de\s*entrega$|^rua$|endereco|address|logradouro/i.test(h)),
-        endereco_bairro: headers.findIndex(h => /^bairro$/i.test(h)),
-        endereco_cidade: headers.findIndex(h => /^cidade$/i.test(h)),
-        endereco_estado: headers.findIndex(h => /^uf$/i.test(h)),
-        endereco_cep: headers.findIndex(h => /^cep$/i.test(h)),
+        endereco_bairro: findColumnWithData(/^bairro$/i),
+        endereco_cidade: findColumnWithData(/^cidade$/i),
+        endereco_estado: findColumnWithData(/^uf$/i),
+        endereco_cep: findColumnWithData(/^cep$/i),
         // Rastreamento e logística
         codigo_rastreamento: headers.findIndex(h => /^n[uú]mero\s*de\s*rastreamento$|rastreamento|tracking|rastreio/i.test(h)),
         opcao_envio: headers.findIndex(h => /^op[çc][aã]o\s*de\s*envio$|tipo.*log[ií]stico|logistic|envio/i.test(h)),
