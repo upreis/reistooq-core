@@ -5,8 +5,6 @@ import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
 import InsumosPage from "./InsumosPage";
 import { Layers, PackageCheck } from "lucide-react";
 import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
-import { GerenciarLocaisModal } from "@/components/estoque/GerenciarLocaisModal";
-import { useToast } from "@/hooks/use-toast";
 import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -17,7 +15,6 @@ export default function ComposicoesUnificadasPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("produtos");
   const [reloadKey, setReloadKey] = useState(0);
-  const { toast } = useToast();
   const { localAtivo } = useLocalEstoqueAtivo();
   const isMobile = useIsMobile();
 
@@ -44,34 +41,18 @@ export default function ComposicoesUnificadasPage() {
     }
   };
 
-  const handleLocalChange = () => {
-    toast({
-      title: "Local criado com sucesso!",
-      description: "Recarregando dados...",
-    });
-    
-    // Recarregar locais e dados
-    window.dispatchEvent(new Event('reload-locais-estoque'));
-    
-    setTimeout(() => {
-      setReloadKey(prev => prev + 1);
-    }, 500);
-  };
 
   return (
     <div className="space-y-6">
       {/* Seletor de Local de Estoque - Ocultar no mobile */}
       {!isMobile && (
-        <div className="flex items-center justify-between gap-4 pb-4 border-b">
-          <div className="flex items-center gap-3">
-            <LocalEstoqueSelector />
-            {localAtivo && (
-              <span className="text-sm text-muted-foreground">
-                📍 Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
-              </span>
-            )}
-          </div>
-          <GerenciarLocaisModal onSuccess={handleLocalChange} />
+        <div className="flex items-center gap-4 pb-4 border-b">
+          <LocalEstoqueSelector />
+          {localAtivo && (
+            <span className="text-sm text-muted-foreground">
+              📍 Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
+            </span>
+          )}
         </div>
       )}
 
