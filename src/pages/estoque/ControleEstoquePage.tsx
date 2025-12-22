@@ -199,10 +199,6 @@ export default function ControleEstoquePage() {
         hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
         onCreateParent={() => setParentProductModalOpen(true)}
         onCreateChild={() => setChildProductModalOpen(true)}
-        showHierarchy={showHierarchy}
-        onToggleHierarchy={() => setShowHierarchy(!showHierarchy)}
-        onExpandAll={handleExpandAll}
-        onCollapseAll={handleCollapseAll}
       />
 
       <EstoqueNotifications 
@@ -260,6 +256,10 @@ export default function ControleEstoquePage() {
           onSearch={handleSearch}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          showHierarchy={showHierarchy}
+          onToggleHierarchy={() => setShowHierarchy(!showHierarchy)}
+          onExpandAll={handleExpandAll}
+          onCollapseAll={handleCollapseAll}
         />
       )}
 
