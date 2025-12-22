@@ -104,94 +104,11 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
 
       if (localError) throw localError;
 
-      // Buscar todos os produtos ativos da organização (apenas produtos, não composições)
-      const { data: produtosAtivos, error: produtosError } = await supabase
-        .from('produtos')
-        .select('id')
-        .eq('organization_id', profile.organizacao_id)
-        .eq('ativo', true);
-
-      if (produtosError) throw produtosError;
-
-      // Criar registros de estoque_por_local com quantidade 0 para cada produto
-      if (produtosAtivos && produtosAtivos.length > 0) {
-        const estoqueInicial = produtosAtivos.map(produto => ({
-          produto_id: produto.id,
-          local_id: novoLocal.id,
-          quantidade: 0,
-          organization_id: profile.organizacao_id
-        }));
-
-        const { error: estoqueError } = await supabase
-          .from('estoque_por_local')
-          .insert(estoqueInicial);
-
-        if (estoqueError) throw estoqueError;
-      }
-
-      // 📋 CLONAR COMPOSIÇÕES DO LOCAL PRINCIPAL
-      const { data: localPrincipal } = await supabase
-        .from('locais_estoque')
-        .select('id')
-        .eq('organization_id', profile.organizacao_id)
-        .eq('tipo', 'principal')
-        .single();
-
-      let componentesPrincipal: any[] = [];
-      let insumosPrincipal: any[] = [];
-
-      if (localPrincipal) {
-        // Clonar produto_componentes
-        const { data: compData } = await supabase
-          .from('produto_componentes')
-          .select('*')
-          .eq('local_id', localPrincipal.id);
-
-        componentesPrincipal = compData || [];
-
-        if (componentesPrincipal.length > 0) {
-          const componentesClonados = componentesPrincipal.map(comp => ({
-            organization_id: comp.organization_id,
-            sku_produto: comp.sku_produto,
-            sku_componente: comp.sku_componente,
-            nome_componente: comp.nome_componente,
-            quantidade: comp.quantidade,
-            unidade_medida_id: comp.unidade_medida_id,
-            local_id: novoLocal.id
-          }));
-
-          await supabase.from('produto_componentes').insert(componentesClonados);
-        }
-
-        // Clonar composicoes_insumos
-        const { data: insData } = await supabase
-          .from('composicoes_insumos')
-          .select('*')
-          .eq('local_id', localPrincipal.id);
-
-        insumosPrincipal = insData || [];
-
-        if (insumosPrincipal.length > 0) {
-          const insumosClonados = insumosPrincipal.map(ins => ({
-            organization_id: ins.organization_id,
-            sku_produto: ins.sku_produto,
-            sku_insumo: ins.sku_insumo,
-            quantidade: ins.quantidade,
-            observacoes: ins.observacoes,
-            ativo: ins.ativo,
-            local_id: novoLocal.id
-          }));
-
-          await supabase.from('composicoes_insumos').insert(insumosClonados);
-        }
-      }
-
-      const totalItens = produtosAtivos?.length || 0;
-      const totalComposicoes = componentesPrincipal.length + insumosPrincipal.length;
+      // ✅ Novo local criado VAZIO - produtos serão adicionados via transferência
       
       toast({
         title: 'Local criado com sucesso!',
-        description: `${nome} foi criado com ${totalItens} produtos de estoque e ${totalComposicoes} composições clonadas.`
+        description: `${nome} foi criado. Use transferências para mover produtos para este local.`
       });
 
       // Disparar evento para recarregar lista de locais
@@ -228,7 +145,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
             Criar Novo Local de Estoque
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Crie um novo local de estoque com produtos iniciando em quantidade zero
+            Crie um novo local de estoque vazio. Produtos serão adicionados via transferência.
           </p>
         </DialogHeader>
         
@@ -288,9 +205,9 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
               <strong>ℹ️ Como funciona:</strong>
             </p>
             <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 space-y-1">
-              <li>• Todos os produtos serão adicionados com <strong>quantidade ZERO</strong></li>
-              <li>• Use transferências para mover estoque entre locais</li>
-              <li>• Cada local funciona de forma independente</li>
+              <li>• O local será criado <strong>vazio</strong></li>
+              <li>• Produtos são adicionados automaticamente ao <strong>transferir estoque</strong></li>
+              <li>• Composições são criadas conforme necessário no local</li>
             </ul>
           </div>
         </div>
