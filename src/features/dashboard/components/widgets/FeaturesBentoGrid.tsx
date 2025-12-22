@@ -19,6 +19,7 @@ const ACCOUNT_COLORS: Record<string, string> = {
   "HORE20240106205039": "border-orange-500 bg-orange-500",
   "LOJAOITO": "border-purple-500 bg-purple-500",
   "LUTHORSHOPLTDA": "border-cyan-500 bg-cyan-500",
+  "MSMARKETSTORE": "border-rose-500 bg-rose-500",
 };
 
 export type ViewMode = "day" | "month";
@@ -50,36 +51,29 @@ export function FeaturesBentoGrid() {
   }, [viewMode, selectedDate.getTime()]);
 
   // Fetch ALL integration accounts (diretamente da tabela de integrações)
+  // IMPORTANTE: Usa apenas a RLS do Supabase para garantir que todas as contas da org apareçam
   const { data: accounts = [] } = useQuery({
     queryKey: ["integration-accounts-dashboard"],
     queryFn: async () => {
-      // Buscar organization_id do usuário
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('organizacao_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile?.organizacao_id) return [];
-
-      // Buscar TODAS as contas ativas da organização diretamente
+      // Buscar TODAS as contas ativas - a RLS já filtra por organização
       const { data, error } = await supabase
         .from("integration_accounts")
         .select("name")
-        .eq("organization_id", profile.organizacao_id)
         .eq("is_active", true)
-        .order("updated_at", { ascending: false });
+        .order("name", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[FeaturesBentoGrid] Error fetching accounts:", error);
+        throw error;
+      }
       
       const uniqueAccounts = [...new Set((data || []).map(d => d.name).filter(Boolean))];
+      console.log("[FeaturesBentoGrid] Loaded accounts:", uniqueAccounts);
       return uniqueAccounts as string[];
     },
-    staleTime: 30 * 1000, // 30 segundos para ver novas contas mais rápido
-    refetchOnWindowFocus: true, // Recarrega ao voltar para a aba
+    staleTime: 10 * 1000, // 10 segundos para ver novas contas mais rápido
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const getAccountColor = (account: string, isActive: boolean) => {
