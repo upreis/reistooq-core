@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,15 +9,15 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Store, Plus, Loader2 } from 'lucide-react';
 
+interface LocalEstoqueFixo {
+  id: string;
+  nome: string;
+}
+
 interface GerenciarLocaisVendaModalProps {
   trigger?: React.ReactNode;
   onSuccess?: () => void;
-}
-
-interface LocalEstoque {
-  id: string;
-  nome: string;
-  tipo: string;
+  localEstoqueFixo: LocalEstoqueFixo;
 }
 
 const TIPOS_LOCAL_VENDA = [
@@ -29,46 +29,20 @@ const TIPOS_LOCAL_VENDA = [
 
 const ICONES_DISPONIVEIS = ['🛒', '🏪', '📦', '🛍️', '💻', '📱', '🏬', '🎯'];
 
-export function GerenciarLocaisVendaModal({ trigger, onSuccess }: GerenciarLocaisVendaModalProps) {
+export function GerenciarLocaisVendaModal({ trigger, onSuccess, localEstoqueFixo }: GerenciarLocaisVendaModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState('marketplace');
-  const [localEstoqueId, setLocalEstoqueId] = useState<string>('');
   const [descricao, setDescricao] = useState('');
   const [icone, setIcone] = useState('🛒');
-  const [locaisEstoque, setLocaisEstoque] = useState<LocalEstoque[]>([]);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (open) {
-      carregarLocaisEstoque();
-    }
-  }, [open]);
-
-  const carregarLocaisEstoque = async () => {
-    const { data, error } = await supabase
-      .from('locais_estoque')
-      .select('id, nome, tipo')
-      .eq('ativo', true)
-      .order('nome');
-
-    if (!error && data) {
-      setLocaisEstoque(data);
-      // Selecionar o principal por padrão
-      const principal = data.find(l => l.tipo === 'principal');
-      if (principal) {
-        setLocalEstoqueId(principal.id);
-      }
-    }
-  };
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
       setNome('');
       setTipo('marketplace');
-      setLocalEstoqueId('');
       setDescricao('');
       setIcone('🛒');
     }
@@ -79,15 +53,6 @@ export function GerenciarLocaisVendaModal({ trigger, onSuccess }: GerenciarLocai
       toast({
         title: 'Campo obrigatório',
         description: 'Digite um nome para o local de venda.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!localEstoqueId) {
-      toast({
-        title: 'Campo obrigatório',
-        description: 'Selecione um local de estoque vinculado.',
         variant: 'destructive'
       });
       return;
@@ -130,7 +95,7 @@ export function GerenciarLocaisVendaModal({ trigger, onSuccess }: GerenciarLocai
           organization_id: profile.organizacao_id,
           nome: nome.trim(),
           tipo,
-          local_estoque_id: localEstoqueId,
+          local_estoque_id: localEstoqueFixo.id,
           descricao: descricao.trim() || null,
           icone,
           ativo: true
@@ -225,19 +190,11 @@ export function GerenciarLocaisVendaModal({ trigger, onSuccess }: GerenciarLocai
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="localEstoque">Local de Estoque Vinculado *</Label>
-            <Select value={localEstoqueId} onValueChange={setLocalEstoqueId} disabled={loading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o estoque de origem" />
-              </SelectTrigger>
-              <SelectContent>
-                {locaisEstoque.map((l) => (
-                  <SelectItem key={l.id} value={l.id}>
-                    {l.tipo === 'principal' ? '🏢' : '📦'} {l.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Local de Estoque Vinculado *</Label>
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-md border bg-muted/50">
+              <span>🏢</span>
+              <span className="font-medium">{localEstoqueFixo.nome}</span>
+            </div>
             <p className="text-xs text-muted-foreground">
               Os insumos serão retirados deste local de estoque quando houver vendas.
             </p>
@@ -277,7 +234,7 @@ export function GerenciarLocaisVendaModal({ trigger, onSuccess }: GerenciarLocai
           </Button>
           <Button
             onClick={criarLocalVenda}
-            disabled={loading || !nome.trim() || !localEstoqueId}
+            disabled={loading || !nome.trim()}
           >
             {loading ? (
               <>

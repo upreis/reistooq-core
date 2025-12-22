@@ -72,7 +72,12 @@ export default function ComposicoesUnificadasPage() {
               <Store className="h-4 w-4" />
               <span className="font-medium">Venda:</span>
             </div>
-            <LocalVendaSelector />
+            {localAtivo && (
+              <LocalVendaSelector 
+                localEstoqueId={localAtivo.id} 
+                localEstoqueNome={localAtivo.nome} 
+              />
+            )}
             {localVendaAtivo && (
               <span className="text-xs text-muted-foreground">
                 Composições de: <strong className="text-foreground">{localVendaAtivo.nome}</strong>
