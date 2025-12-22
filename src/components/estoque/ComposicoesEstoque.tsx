@@ -696,13 +696,13 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
       {/* Barra de busca + botões de ação na mesma linha */}
       <div className="flex items-center gap-3 flex-wrap">
         {/* Campo de busca */}
-        <div className="relative w-64">
+        <div className="relative min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar produtos..."
+            placeholder="Pesquisar"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-9"
+            className="pl-10 h-10"
           />
         </div>
 
@@ -730,7 +730,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                   console.error('Erro ao criar composição:', error);
                 }
               }}
-              className="gap-1.5 h-9 text-sm"
+              className="gap-2 h-10"
             >
               <Plus className="w-3.5 h-3.5" />
               Nova Composição
@@ -738,7 +738,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
             <Button
               variant="outline"
               onClick={() => setImportProdutosModalOpen(true)}
-              className="gap-1.5 h-9 text-sm"
+              className="gap-2 h-10"
             >
               <Import className="w-3.5 h-3.5" />
               Importar do Estoque
@@ -746,7 +746,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
             <Button
               variant="outline"
               onClick={() => setImportModalOpen(true)}
-              className="gap-1.5 h-9 text-sm"
+              className="gap-2 h-10"
             >
               <Upload className="w-3.5 h-3.5" />
               Importar Excel
@@ -754,7 +754,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
             <Button
               variant="outline"
               onClick={handleDownloadComposicoes}
-              className="gap-1.5 h-9 text-sm"
+              className="gap-2 h-10"
             >
               <Download className="w-3.5 h-3.5" />
               Baixar Dados
@@ -764,7 +764,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                 <Button
                   variant="outline"
                   onClick={limparComposicoesOrfas}
-                  className="gap-1.5 h-9 text-sm border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  className="gap-2 h-10 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Limpar Órfãs
@@ -777,7 +777,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
             <Button
               variant="outline"
               onClick={toggleSelectMode}
-              className="gap-1.5 h-9 text-sm"
+              className="gap-2 h-10"
             >
               <CheckCircle className="w-3.5 h-3.5" />
               Selecionar
@@ -785,47 +785,43 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
           </>
         ) : (
           <>
-            <Badge variant="secondary" className="text-sm px-3 py-1.5">
+            <Badge variant="secondary" className="text-sm px-3 py-2 h-10 flex items-center">
               {selectedCount} selecionado(s)
             </Badge>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => selectAll(produtosFinaisFiltrados)}
-              className="gap-1.5 h-9"
+              className="gap-2 h-10"
             >
-              <CheckCircle className="w-3.5 h-3.5" />
+              <CheckCircle className="w-4 h-4" />
               Selecionar Todos
             </Button>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => handleBulkStatusChange(true)}
               disabled={selectedCount === 0}
-              className="gap-1.5 h-9 border-green-500 text-green-600 hover:bg-green-50"
+              className="gap-2 h-10 border-green-500 text-green-600 hover:bg-green-50"
             >
-              <Package className="w-3.5 h-3.5" />
+              <Package className="w-4 h-4" />
               Ativar ({selectedCount})
             </Button>
             <Button
               variant="outline"
-              size="sm"
               onClick={() => handleBulkStatusChange(false)}
               disabled={selectedCount === 0}
-              className="gap-1.5 h-9 border-orange-500 text-orange-600 hover:bg-orange-50"
+              className="gap-2 h-10 border-orange-500 text-orange-600 hover:bg-orange-50"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
               Desativar ({selectedCount})
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="destructive"
-                  size="sm"
                   disabled={selectedCount === 0}
-                  className="gap-1.5 h-9"
+                  className="gap-2 h-10"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                   Excluir ({selectedCount})
                 </Button>
               </AlertDialogTrigger>
