@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Loader2, X, Edit } from 'lucide-react';
+import { MapPin, Loader2, X, Edit, RefreshCw } from 'lucide-react';
 import { LocalEstoque } from '@/features/estoque/types/locais.types';
 import { useLocalEstoqueAtivo } from '@/hooks/useLocalEstoqueAtivo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,7 +60,8 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
     nome: '',
     tipo: '',
     endereco: '',
-    descricao: ''
+    descricao: '',
+    sincronizar_com_principal: false
   });
   const { localAtivo, setLocalAtivo } = useLocalEstoqueAtivo();
   const { toast } = useToast();
@@ -152,7 +154,8 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
       nome: local.nome,
       tipo: local.tipo,
       endereco: local.endereco || '',
-      descricao: local.descricao || ''
+      descricao: local.descricao || '',
+      sincronizar_com_principal: (local as any).sincronizar_com_principal || false
     });
   };
 
@@ -202,15 +205,20 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
           tipo: formData.tipo,
           endereco: formData.endereco || null,
           descricao: formData.descricao || null,
+          sincronizar_com_principal: formData.sincronizar_com_principal,
           updated_at: new Date().toISOString()
         })
         .eq('id', localParaEditar.id);
 
       if (error) throw error;
 
+      const syncMessage = formData.sincronizar_com_principal 
+        ? ' Sincronização automática ativada.'
+        : '';
+
       toast({
         title: 'Local atualizado',
-        description: `${formData.nome} foi atualizado com sucesso.`,
+        description: `${formData.nome} foi atualizado com sucesso.${syncMessage}`,
       });
 
       // Atualizar local ativo se for o que está sendo editado
@@ -341,6 +349,7 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
         {locais.map((local) => {
           const isActive = localAtivo?.id === local.id;
           const isPrincipal = local.tipo === 'principal';
+          const isSynced = (local as any).sincronizar_com_principal;
           
           return (
             <div key={local.id} className="relative group">
@@ -350,11 +359,17 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
                 className={cn(
                   "flex items-center gap-1.5 transition-all h-7 px-2.5 text-xs",
                   isActive && "shadow-md",
-                  showActions && !isPrincipal && "pr-12"
+                  showActions && !isPrincipal && "pr-12",
+                  isSynced && !isActive && "border-green-400 dark:border-green-600"
                 )}
               >
                 <span className="text-sm">{TIPO_ICONS[local.tipo] || '📍'}</span>
                 <span>{local.nome}</span>
+                {isSynced && (
+                  <span title="Sincronizado com Principal">
+                    <RefreshCw className="h-3 w-3 text-green-500" />
+                  </span>
+                )}
               </Button>
               
               {showActions && !isPrincipal && (
@@ -452,6 +467,40 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
                 rows={3}
               />
             </div>
+
+            {/* Opção de sincronização automática */}
+            <div className={`flex items-center justify-between p-3 rounded-lg border ${formData.sincronizar_com_principal ? 'bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-700' : 'bg-muted/30'}`}>
+              <div className="flex items-center gap-3">
+                <RefreshCw className={`h-4 w-4 ${formData.sincronizar_com_principal ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`} />
+                <div>
+                  <Label htmlFor="sincronizar" className="text-sm font-medium cursor-pointer">
+                    Sincronizar automaticamente
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Espelhar todas as mudanças do Estoque Principal
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="sincronizar"
+                checked={formData.sincronizar_com_principal}
+                onCheckedChange={(checked) => setFormData({ ...formData, sincronizar_com_principal: checked })}
+                disabled={editando}
+              />
+            </div>
+
+            {formData.sincronizar_com_principal && (
+              <div className="p-3 rounded-lg border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>🔄 Espelho em tempo real:</strong>
+                </p>
+                <ul className="text-xs text-green-700 dark:text-green-300 mt-1 space-y-1">
+                  <li>• Novos produtos do Principal → aparecem aqui</li>
+                  <li>• Quantidades alteradas → refletidas automaticamente</li>
+                  <li>• Produtos removidos → removidos daqui também</li>
+                </ul>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
