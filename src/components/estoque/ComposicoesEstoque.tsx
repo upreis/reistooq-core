@@ -410,54 +410,54 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
 
     return (
       <Card key={product.id} className={cn(
-        "group hover:shadow-xl transition-all duration-300 relative",
+        "group hover:shadow-lg transition-all duration-300 relative",
         itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
       )}>
-        <CardContent className="p-3 md:p-6">
+        <CardContent className="p-2.5">
           {/* Checkbox de seleção */}
           {isSelectMode && (
-            <div className="absolute top-3 right-3 z-10">
+            <div className="absolute top-2 right-2 z-10">
               <Checkbox
                 checked={itemSelected}
                 onCheckedChange={() => selectItem(product.id)}
-                className="h-5 w-5"
+                className="h-4 w-4"
               />
             </div>
           )}
           
-          <header className="mb-5">
-            <h3 className="font-semibold text-lg text-foreground leading-snug line-clamp-2 mb-2 pr-8">{product.nome}</h3>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground font-medium">SKU:</span>
-              <Badge variant="outline" className="font-mono text-xs px-2 py-1">{product.sku_interno}</Badge>
+          <header className="mb-3">
+            <h3 className="font-semibold text-sm text-foreground leading-snug line-clamp-2 mb-1.5 pr-6">{product.nome}</h3>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground font-medium">SKU:</span>
+              <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5 h-5">{product.sku_interno}</Badge>
             </div>
           </header>
 
-          <section className="space-y-4">
+          <section className="space-y-2.5">
             {/* Resumo da composição com melhor layout */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-md bg-primary/10">
-                  <Boxes className="h-4 w-4 text-primary" />
+            <div className="flex items-center justify-between p-2 bg-muted/30 rounded-md">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded bg-primary/10">
+                  <Boxes className="h-3 w-3 text-primary" />
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-foreground">Composição</span>
-                  <p className="text-xs text-muted-foreground">{(composicoes?.length || 0)} componentes</p>
+                  <span className="text-xs font-medium text-foreground">Composição</span>
+                  <p className="text-[10px] text-muted-foreground">{(composicoes?.length || 0)} componentes</p>
                 </div>
               </div>
               
               {/* Status do estoque melhorado */}
               {composicoes && composicoes.length > 0 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {componenteLimitante ? (
-                    <div className="flex items-center gap-2 text-orange-600 cursor-help p-2 rounded-md bg-orange-50" title={`Limitado por ${componenteLimitante.nome}: ${componenteLimitante.estoque} disponível, precisa ${componenteLimitante.necessario}`}>
-                      <AlertTriangle className="h-4 w-4" />
-                      <span className="text-sm font-medium">{estoqueDisponivel}</span>
+                    <div className="flex items-center gap-1 text-orange-600 cursor-help px-1.5 py-1 rounded bg-orange-50" title={`Limitado por ${componenteLimitante.nome}: ${componenteLimitante.estoque} disponível, precisa ${componenteLimitante.necessario}`}>
+                      <AlertTriangle className="h-3 w-3" />
+                      <span className="text-xs font-medium">{estoqueDisponivel}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-green-600 p-2 rounded-md bg-green-50">
-                      <CheckCircle className="h-4 w-4" />
-                      <span className="text-sm font-medium">Disponível</span>
+                    <div className="flex items-center gap-1 text-green-600 px-1.5 py-1 rounded bg-green-50">
+                      <CheckCircle className="h-3 w-3" />
+                      <span className="text-xs font-medium">OK</span>
                     </div>
                   )}
                 </div>
@@ -466,37 +466,37 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
 
             {/* Resumo da composição */}
             {composicoes && composicoes.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Resumo sempre visível */}
-                <div className="bg-muted/30 rounded-lg border p-4 space-y-3">
+                <div className="bg-muted/30 rounded-md border p-2.5 space-y-2">
                   {/* Informações principais */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1 min-w-0">
-                      <span className="text-xs text-muted-foreground">Custo Total</span>
-                      <div className="text-sm font-semibold text-[var(--brand-yellow)] break-words">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-[10px] text-muted-foreground">Custo Total</span>
+                      <div className="text-xs font-semibold text-[var(--brand-yellow)] break-words">
                         {formatMoney(custoTotal)}
                       </div>
                     </div>
-                    <div className="space-y-1 min-w-0">
-                      <span className="text-xs text-muted-foreground">Pode Produzir</span>
-                      <div className="text-sm font-semibold text-[var(--brand-yellow)] break-words">
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-[10px] text-muted-foreground">Pode Produzir</span>
+                      <div className="text-xs font-semibold text-[var(--brand-yellow)] break-words">
                         {estoqueDisponivel} unid.
                       </div>
                     </div>
                   </div>
 
                   {/* Lista simplificada dos componentes */}
-                  <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground">Componentes necessários:</div>
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] font-medium text-muted-foreground">Componentes necessários:</div>
                     
                     {/* Cabeçalho das colunas */}
-                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 text-[10px] font-medium text-muted-foreground border-b pb-1">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-1.5 text-[9px] font-medium text-muted-foreground border-b pb-1">
                       <div className="truncate">SKU</div>
                       <div className="text-right">Custo Uni</div>
                       <div className="text-right">Qtd</div>
                     </div>
                     
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       {composicoes.map((comp, index) => {
                         const isLimitante = componenteLimitante?.sku === comp.sku_componente;
                         const custoUnitario = custosProdutos[comp.sku_componente] || 0;
@@ -507,7 +507,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                           <div key={index} className="relative">
                             {/* Badge "NÃO CADASTRADO" no canto superior */}
                             <div 
-                              className={`grid grid-cols-[1fr_auto_auto] gap-2 items-center text-xs rounded px-2 py-1 min-w-0 ${
+                              className={`grid grid-cols-[1fr_auto_auto] gap-1.5 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
                                 componenteNaoExiste
                                   ? 'bg-destructive text-destructive-foreground border border-destructive'
                                   : isLimitante 
@@ -516,31 +516,30 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                               }`}
                             >
                               {componenteNaoExiste ? (
-                                <div className="col-span-3 flex items-center justify-between gap-2 min-w-0">
-                                  <Badge variant="outline" className="border-destructive-foreground text-destructive-foreground font-mono text-[10px] px-1 py-0.5 flex-shrink-0 truncate max-w-[80px]">
+                                <div className="col-span-3 flex items-center justify-between gap-1.5 min-w-0">
+                                  <Badge variant="outline" className="border-destructive-foreground text-destructive-foreground font-mono text-[9px] px-1 py-0 flex-shrink-0 truncate max-w-[70px]">
                                     {comp.sku_componente}
                                   </Badge>
                                   <Button
                                     variant="outline"
-                                    size="sm"
                                     onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
-                                    className="h-5 px-2 text-[9px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary flex-shrink-0"
+                                    className="h-4 px-1.5 text-[8px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary flex-shrink-0"
                                   >
-                                    <Plus className="h-2 w-2 mr-1" />
+                                    <Plus className="h-2 w-2 mr-0.5" />
                                     Cadastrar
                                   </Button>
                                 </div>
                               ) : (
                                 <>
-                                  <div className="flex items-center gap-1 min-w-0">
-                                    <Badge variant="outline" className="font-mono text-[9px] px-1 py-0.5 truncate max-w-full">
+                                  <div className="flex items-center gap-0.5 min-w-0">
+                                    <Badge variant="outline" className="font-mono text-[8px] px-1 py-0 truncate max-w-full h-4">
                                       {comp.sku_componente}
                                     </Badge>
                                   </div>
-                                  <div className="text-right text-muted-foreground text-[10px] flex-shrink-0">
+                                  <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
                                     {formatMoney(custoUnitario)}
                                   </div>
-                                  <div className="text-right text-muted-foreground text-[10px] flex-shrink-0">
+                                  <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
                                     {comp.quantidade}x
                                   </div>
                                 </>
@@ -555,21 +554,20 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                 </div>
 
                 {/* Botões em linha */}
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                   <Button
                     variant="ghost"
-                    size="sm"
                     onClick={() => toggleCardExpansion(product.id)}
-                    className="flex-1 text-xs"
+                    className="flex-1 h-6 text-[10px] px-2"
                   >
                     {isExpanded ? (
                       <>
-                        <ChevronUp className="h-3 w-3 mr-1" />
-                        Ocultar análise
+                        <ChevronUp className="h-2.5 w-2.5 mr-1" />
+                        Ocultar
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="h-3 w-3 mr-1" />
+                        <ChevronDown className="h-2.5 w-2.5 mr-1" />
                         Ver análise
                       </>
                     )}
@@ -577,21 +575,20 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                   
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={() => abrirModalComposicoes(product)}
-                    className="flex-1 text-xs"
+                    className="flex-1 h-6 text-[10px] px-2"
                   >
-                    <Edit className="h-3 w-3 mr-1" />
+                    <Edit className="h-2.5 w-2.5 mr-1" />
                     Editar
                   </Button>
                 </div>
 
                 {/* Detalhes expandíveis */}
                 {isExpanded && (
-                  <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
-                    <div className="bg-card border rounded-lg p-4">
-                      <div className="text-xs font-medium text-muted-foreground mb-3">Análise detalhada por componente:</div>
-                      <div className="space-y-3">
+                  <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                    <div className="bg-card border rounded-md p-2.5">
+                      <div className="text-[10px] font-medium text-muted-foreground mb-2">Análise detalhada:</div>
+                      <div className="space-y-2">
                         {composicoes.map((comp, index) => {
                           const custoUnitario = custosProdutos[comp.sku_componente] || 0;
                           const custoTotalItem = custoUnitario * comp.quantidade;
@@ -602,7 +599,7 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                           const componenteNaoExiste = comp.nome_componente === comp.sku_componente;
                           
                           return (
-                            <div key={index} className={`border rounded-md p-3 space-y-2 ${
+                            <div key={index} className={`border rounded px-2 py-1.5 space-y-1.5 ${
                               componenteNaoExiste 
                                 ? 'border-destructive bg-destructive/10'
                                 : isLimitante 
@@ -610,54 +607,53 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                                 : 'border-border'
                             } relative`}>
                               {false ? (
-                                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-md font-medium">
+                                <div className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[8px] px-1.5 py-0.5 rounded font-medium">
                                   NÃO CADASTRADO
                                 </div>
                               ) : isLimitante && (
-                                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-md font-medium">
+                                <div className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[8px] px-1.5 py-0.5 rounded font-medium">
                                   LIMITANTE
                                 </div>
                               )}
                               <div className="flex items-center justify-between">
-                                <div className="text-sm font-medium truncate pr-2">
+                                <div className="text-xs font-medium truncate pr-2">
                                   {componenteNaoExiste ? comp.sku_componente : comp.nome_componente}
                                 </div>
-                                <Badge variant="outline" className={`font-mono text-[10px] truncate flex-shrink-0 ${
+                                <Badge variant="outline" className={`font-mono text-[8px] truncate flex-shrink-0 h-4 ${
                                   componenteNaoExiste ? 'border-destructive text-destructive' : ''
                                 }`}>
                                   {comp.sku_componente}
                                 </Badge>
                               </div>
                               
-                              <div className="grid grid-cols-4 gap-3 text-xs">
-                                <div className="text-center space-y-1">
+                              <div className="grid grid-cols-4 gap-2 text-[10px]">
+                                <div className="text-center space-y-0.5">
                                   <div className="text-muted-foreground whitespace-nowrap">Necessário</div>
                                   <div className="font-semibold">{comp.quantidade}</div>
                                 </div>
-                                <div className="text-center space-y-1">
+                                <div className="text-center space-y-0.5">
                                   <div className="text-muted-foreground whitespace-nowrap">Estoque</div>
                                   <div className="font-semibold">{estoqueComponente}</div>
                                 </div>
-                                <div className="text-center space-y-1">
+                                <div className="text-center space-y-0.5">
                                   <div className="text-muted-foreground whitespace-nowrap">P/ Fazer</div>
                                   <div className="font-semibold">{possiveisUnidades}</div>
                                 </div>
-                                <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground whitespace-nowrap">Custo Total</div>
+                                <div className="text-center space-y-0.5">
+                                  <div className="text-muted-foreground whitespace-nowrap">Custo</div>
                                   <div className="font-semibold">{formatMoney(custoTotalItem)}</div>
                                 </div>
                               </div>
                               
                               {/* Botão de cadastro para componentes não cadastrados */}
                               {componenteNaoExiste && (
-                                <div className="mt-2">
+                                <div className="mt-1.5">
                                   <Button
                                     variant="outline"
-                                    size="sm"
                                     onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
-                                    className="w-full text-xs bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
+                                    className="w-full h-5 text-[9px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
                                   >
-                                    <Plus className="h-3 w-3 mr-1" />
+                                    <Plus className="h-2.5 w-2.5 mr-1" />
                                     Cadastrar Produto
                                   </Button>
                                 </div>
@@ -671,13 +667,12 @@ export function ComposicoesEstoque({ localId }: { localId?: string }) {
                 )}
               </div>
             ) : (
-              <div className="text-xs text-muted-foreground italic border-2 border-dashed border-border rounded-lg p-3 text-center">
+              <div className="text-[10px] text-muted-foreground italic border border-dashed border-border rounded px-2 py-2 text-center">
                 Nenhuma composição cadastrada
                 <br />
                 <Button 
                   variant="ghost" 
-                  size="sm" 
-                  className="mt-1 h-auto p-0 text-xs"
+                  className="mt-1 h-5 px-2 text-[10px]"
                   onClick={() => abrirModalComposicoes(product)}
                 >
                   + Adicionar composição
