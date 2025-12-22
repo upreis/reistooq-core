@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw, Trash2, CheckSquare, Square, Search, Calendar, Columns, MapPin } from "lucide-react";
+import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw, Trash2, CheckSquare, Square, Search, Calendar, Columns, MapPin, Building2, Plus, X, Edit2, Save } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
@@ -91,6 +91,10 @@ export default function PedidosShopee() {
     to: undefined,
   });
   const [showLocaisModal, setShowLocaisModal] = useState(false);
+  const [showEmpresasModal, setShowEmpresasModal] = useState(false);
+  const [empresasShopee, setEmpresasShopee] = useState<Array<{ id: string; nome: string; nickname?: string }>>([]);
+  const [novaEmpresa, setNovaEmpresa] = useState({ nome: "", nickname: "" });
+  const [editandoEmpresa, setEditandoEmpresa] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { profile } = useCurrentProfile();
@@ -122,6 +126,71 @@ export default function PedidosShopee() {
       setLoadingPedidos(false);
     }
   }, [organizationId, toast]);
+
+  // Carregar empresas cadastradas
+  const loadEmpresas = useCallback(async () => {
+    if (!organizationId) return;
+    try {
+      const { data, error } = await supabase
+        .from("empresas_shopee")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .order("nome", { ascending: true });
+      
+      if (error) throw error;
+      setEmpresasShopee(data?.map(e => ({ id: e.id, nome: e.nome, nickname: e.nickname })) || []);
+    } catch (error) {
+      console.error("Erro ao carregar empresas:", error);
+    }
+  }, [organizationId]);
+
+  // Adicionar nova empresa
+  const adicionarEmpresa = async () => {
+    if (!organizationId || !novaEmpresa.nome.trim()) return;
+    try {
+      const { data, error } = await supabase
+        .from("empresas_shopee")
+        .insert({
+          organization_id: organizationId,
+          nome: novaEmpresa.nome.trim(),
+          nickname: novaEmpresa.nickname.trim() || null,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      setEmpresasShopee(prev => [...prev, { id: data.id, nome: data.nome, nickname: data.nickname }]);
+      setNovaEmpresa({ nome: "", nickname: "" });
+      toast({ title: "Sucesso", description: "Empresa adicionada com sucesso!" });
+    } catch (error) {
+      console.error("Erro ao adicionar empresa:", error);
+      toast({ title: "Erro", description: "Não foi possível adicionar a empresa.", variant: "destructive" });
+    }
+  };
+
+  // Excluir empresa
+  const excluirEmpresa = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("empresas_shopee")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      setEmpresasShopee(prev => prev.filter(e => e.id !== id));
+      toast({ title: "Sucesso", description: "Empresa removida com sucesso!" });
+    } catch (error) {
+      console.error("Erro ao excluir empresa:", error);
+      toast({ title: "Erro", description: "Não foi possível remover a empresa.", variant: "destructive" });
+    }
+  };
+
+  // Carregar empresas ao abrir o modal
+  useEffect(() => {
+    if (showEmpresasModal) {
+      loadEmpresas();
+    }
+  }, [showEmpresasModal, loadEmpresas]);
 
   // Pedidos filtrados
   const filteredPedidos = pedidos.filter((pedido) => {
