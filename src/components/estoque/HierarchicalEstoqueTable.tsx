@@ -193,8 +193,12 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
             {/* Checkbox para selecionar todos */}
             <div className="flex items-center gap-2 border-r pr-3">
               <Checkbox
-                checked={props.selectedProducts.length === props.products.length && props.products.length > 0}
-                onCheckedChange={props.onSelectAll}
+                checked={props.products.length > 0 && props.products.every(p => props.selectedProducts.includes(p.id))}
+                onCheckedChange={(checked) => {
+                  if (typeof checked === 'boolean') {
+                    props.onSelectAll(checked);
+                  }
+                }}
               />
               <span className="text-sm text-muted-foreground">
                 Selecionar Todos ({props.selectedProducts.length}/{props.products.length})
