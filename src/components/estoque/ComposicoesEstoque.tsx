@@ -10,6 +10,7 @@ import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useProdutosComposicoes, ProdutoComposicao } from "@/hooks/useProdutosComposicoes";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
+import { useComposicoesLocalVenda } from "@/hooks/useComposicoesLocalVenda";
 import { useComposicoesSelection } from "@/features/estoque/hooks/useComposicoesSelection";
 import { ComposicoesModal } from "./ComposicoesModal";
 import { ImportModal } from "./ImportModal";
@@ -84,13 +85,31 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
     isImporting
   } = useProdutosComposicoes();
 
-  const { getComposicoesForSku, loadComposicoes, composicoes } = useComposicoesEstoque(localId);
+  // Hook para composições de estoque (local de estoque)
+  const composicoesEstoqueHook = useComposicoesEstoque(localId);
+  
+  // Hook para composições de local de venda
+  const composicoesVendaHook = useComposicoesLocalVenda(localVendaId);
+
+  // Usar composições do local de venda se estiver selecionado, senão do estoque
+  const isLocalVendaMode = !!localVendaId;
+  const composicoesAtuais = isLocalVendaMode 
+    ? composicoesVendaHook.composicoes 
+    : composicoesEstoqueHook.composicoes;
+  
+  const getComposicoesForSku = isLocalVendaMode 
+    ? composicoesVendaHook.getComposicoesForSku 
+    : composicoesEstoqueHook.getComposicoesForSku;
+    
+  const loadComposicoes = isLocalVendaMode 
+    ? composicoesVendaHook.loadComposicoes 
+    : composicoesEstoqueHook.loadComposicoes;
 
   // Hook para produtos do controle de estoque (para criar novos produtos)
   const { createProduct } = useProducts();
 
   // Hook para filtros inteligentes
-  const { filters, setFilters, filteredData, stats } = useComposicoesFilters(produtos, composicoes, custosProdutos);
+  const { filters, setFilters, filteredData, stats } = useComposicoesFilters(produtos, composicoesAtuais, custosProdutos);
 
   // Sincronizar composições quando produtos carregarem
   useEffect(() => {
