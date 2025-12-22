@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw, Trash2, CheckSquare, Square } from "lucide-react";
+import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw, Trash2, CheckSquare, Square, Search, Calendar, Columns, MapPin } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
@@ -16,6 +16,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StickyActionBar } from "@/components/mobile/standard/StickyActionBar";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 interface ImportResult {
@@ -76,6 +80,15 @@ export default function PedidosShopee() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Filtros
+  const [filterTab, setFilterTab] = useState<"pendentes" | "historico">("pendentes");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEmpresa, setSelectedEmpresa] = useState<string>("todas");
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1),
+  });
 
   const { toast } = useToast();
   const { profile } = useCurrentProfile();
@@ -107,6 +120,37 @@ export default function PedidosShopee() {
       setLoadingPedidos(false);
     }
   }, [organizationId, toast]);
+
+  // Pedidos filtrados
+  const filteredPedidos = pedidos.filter((pedido) => {
+    // Filtro por aba (pendentes/histórico)
+    if (filterTab === "pendentes" && pedido.baixa_estoque_realizada) return false;
+    if (filterTab === "historico" && !pedido.baixa_estoque_realizada) return false;
+    
+    // Filtro por busca
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = 
+        pedido.order_id?.toLowerCase().includes(search) ||
+        pedido.sku?.toLowerCase().includes(search) ||
+        pedido.produto_nome?.toLowerCase().includes(search) ||
+        pedido.comprador_nome?.toLowerCase().includes(search) ||
+        pedido.codigo_rastreamento?.toLowerCase().includes(search);
+      if (!matchesSearch) return false;
+    }
+    
+    // Filtro por data
+    if (dateRange.from && pedido.data_pedido) {
+      const pedidoDate = new Date(pedido.data_pedido);
+      if (pedidoDate < dateRange.from) return false;
+    }
+    if (dateRange.to && pedido.data_pedido) {
+      const pedidoDate = new Date(pedido.data_pedido);
+      if (pedidoDate > dateRange.to) return false;
+    }
+    
+    return true;
+  });
 
   // Seleção
   const toggleSelectMode = useCallback(() => {
@@ -565,32 +609,116 @@ export default function PedidosShopee() {
 
           <TabsContent value="pedidos">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
-                <div>
-                  <CardTitle>Pedidos Importados</CardTitle>
-                  <CardDescription>Últimos 200 pedidos importados da Shopee</CardDescription>
+              <CardHeader className="flex flex-col gap-4">
+                <div className="flex flex-row items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <CardTitle>Pedidos Importados</CardTitle>
+                    <CardDescription>Últimos 200 pedidos importados da Shopee</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={isSelectMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={toggleSelectMode}
+                    >
+                      {isSelectMode ? (
+                        <>
+                          <CheckSquare className="h-4 w-4 mr-2" />
+                          Sair da Seleção
+                        </>
+                      ) : (
+                        <>
+                          <Square className="h-4 w-4 mr-2" />
+                          Selecionar
+                        </>
+                      )}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={loadPedidos} disabled={loadingPedidos}>
+                      <RefreshCw className={cn("h-4 w-4 mr-2", loadingPedidos && "animate-spin")} />
+                      Atualizar
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={isSelectMode ? "default" : "outline"}
-                    size="sm"
-                    onClick={toggleSelectMode}
-                  >
-                    {isSelectMode ? (
-                      <>
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                        Sair da Seleção
-                      </>
-                    ) : (
-                      <>
-                        <Square className="h-4 w-4 mr-2" />
-                        Selecionar
-                      </>
-                    )}
+                
+                {/* Barra de Filtros */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
+                  {/* Abas Pendentes / Histórico */}
+                  <div className="flex rounded-md overflow-hidden border">
+                    <Button
+                      variant={filterTab === "pendentes" ? "default" : "ghost"}
+                      size="sm"
+                      className="rounded-none"
+                      onClick={() => setFilterTab("pendentes")}
+                    >
+                      Pendentes ({pedidos.filter(p => !p.baixa_estoque_realizada).length})
+                    </Button>
+                    <Button
+                      variant={filterTab === "historico" ? "default" : "ghost"}
+                      size="sm"
+                      className="rounded-none"
+                      onClick={() => setFilterTab("historico")}
+                    >
+                      Histórico ({pedidos.filter(p => p.baixa_estoque_realizada).length})
+                    </Button>
+                  </div>
+                  
+                  {/* Campo de Pesquisa */}
+                  <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Pesquisar"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  
+                  {/* Seletor de Empresa */}
+                  <Select value={selectedEmpresa} onValueChange={setSelectedEmpresa}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Selecione a Empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas as Empresas</SelectItem>
+                      <SelectItem value="shopee">Shopee</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Seletor de Data */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="min-w-[200px] justify-start">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {dateRange.from && dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "dd/MM/yyyy")} - {format(dateRange.to, "dd/MM/yyyy")}
+                          </>
+                        ) : (
+                          "Selecione período"
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="range"
+                        selected={{ from: dateRange.from, to: dateRange.to }}
+                        onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                        numberOfMonths={2}
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {/* Botão Colunas */}
+                  <Button variant="outline" size="sm">
+                    <Columns className="h-4 w-4 mr-2" />
+                    Colunas
                   </Button>
-                  <Button variant="outline" size="sm" onClick={loadPedidos} disabled={loadingPedidos}>
-                    <RefreshCw className={cn("h-4 w-4 mr-2", loadingPedidos && "animate-spin")} />
-                    Atualizar
+                  
+                  {/* Botão Locais */}
+                  <Button variant="outline" size="sm">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Locais
                   </Button>
                 </div>
               </CardHeader>
@@ -599,11 +727,11 @@ export default function PedidosShopee() {
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
-                ) : pedidos.length === 0 ? (
+                ) : filteredPedidos.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Nenhum pedido importado ainda</p>
-                    <p className="text-sm">Importe uma planilha para começar</p>
+                    <p>{pedidos.length === 0 ? "Nenhum pedido importado ainda" : "Nenhum pedido encontrado com os filtros aplicados"}</p>
+                    <p className="text-sm">{pedidos.length === 0 ? "Importe uma planilha para começar" : "Tente ajustar os filtros"}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -613,7 +741,7 @@ export default function PedidosShopee() {
                           {isSelectMode && (
                             <TableHead className="w-10">
                               <Checkbox
-                                checked={selectedIds.size === pedidos.length && pedidos.length > 0}
+                                checked={selectedIds.size === filteredPedidos.length && filteredPedidos.length > 0}
                                 onCheckedChange={(checked) => {
                                   if (checked) {
                                     selectAll();
@@ -672,7 +800,7 @@ export default function PedidosShopee() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {pedidos.map((pedido) => {
+                        {filteredPedidos.map((pedido) => {
                           const valorLiquido =
                             (pedido.preco_total ?? 0) -
                             (pedido.receita_flex ?? 0) -
