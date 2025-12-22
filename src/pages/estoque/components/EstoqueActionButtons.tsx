@@ -114,13 +114,6 @@ export function EstoqueActionButtons({
           />
           
           <EstoqueReports products={products} />
-          
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/category-manager">
-              <Settings className="h-4 w-4 mr-2" />
-              Gerenciar Categorias
-            </Link>
-          </Button>
 
           <Popover>
             <PopoverTrigger asChild>
