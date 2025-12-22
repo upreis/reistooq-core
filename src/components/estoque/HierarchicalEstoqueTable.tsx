@@ -46,11 +46,22 @@ interface HierarchicalEstoqueTableProps {
   notificationsCollapsed?: boolean;
   onToggleNotifications?: (collapsed: boolean) => void;
   notificationsCount?: number;
+  // Controles de hierarquia externos
+  showHierarchy?: boolean;
+  expandedGroups?: Set<string>;
+  onExpandedGroupsChange?: (groups: Set<string>) => void;
 }
 
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [showHierarchy, setShowHierarchy] = useState(true);
+  // Estados internos como fallback se não forem passados externamente
+  const [internalExpandedGroups, setInternalExpandedGroups] = useState<Set<string>>(new Set());
+  const [internalShowHierarchy, setInternalShowHierarchy] = useState(true);
+  
+  // Usar estado externo se disponível, senão usar interno
+  const showHierarchy = props.showHierarchy ?? internalShowHierarchy;
+  const expandedGroups = props.expandedGroups ?? internalExpandedGroups;
+  const setExpandedGroups = props.onExpandedGroupsChange ?? setInternalExpandedGroups;
+  
   const isMobile = useIsMobile();
 
   // 🚀 OTIMIZAÇÃO: Memoizar agrupamento de produtos
@@ -157,15 +168,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
     return (
       <div className="space-y-4">
         {!isMobile && (
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowHierarchy(true)}
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Visualização Hierárquica
-            </Button>
+          <div className="flex items-center justify-end">
             <div className="text-sm text-muted-foreground">
               {props.products.length} produtos
             </div>
@@ -227,27 +230,6 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 )}
               </div>
             )}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowHierarchy(!showHierarchy)}
-            >
-              {showHierarchy ? <Package className="w-4 h-4 mr-2" /> : <Users className="w-4 h-4 mr-2" />}
-              {showHierarchy ? "Visualização Hierárquica" : "Visualização Tradicional"}
-            </Button>
-            
-            {showHierarchy && (
-              <>
-                <Button variant="ghost" size="sm" onClick={expandAll}>
-                  Expandir Todos
-                </Button>
-                <Button variant="ghost" size="sm" onClick={collapseAll}>
-                  Recolher Todos
-                </Button>
-              </>
-            )}
-            
             {props.onLinkChild && (
               <Button 
                 variant="secondary" 
