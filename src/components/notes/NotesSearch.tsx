@@ -31,12 +31,12 @@ export function NotesSearch({ filter, onFilterChange, onResetFilter }: NotesSear
     <div className="space-y-3">
       {/* Busca principal */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
         <Input
           placeholder="Buscar notas, tags ou conteúdo..."
           value={filter.searchQuery}
           onChange={(e) => onFilterChange({ ...filter, searchQuery: e.target.value })}
-          className="pl-10 pr-20"
+          className="pl-8 pr-16 h-7 text-xs"
         />
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           <Button

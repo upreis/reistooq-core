@@ -429,17 +429,17 @@ export const ImportacaoTab: React.FC<ImportacaoTabProps> = ({
 
       {/* Tabs de importação */}
       <Tabs defaultValue="excel" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="excel" className="gap-2">
-            <FileSpreadsheet className="h-4 w-4" />
+        <TabsList className="grid w-full grid-cols-3 h-8">
+          <TabsTrigger value="excel" className="gap-1.5 text-xs h-7">
+            <FileSpreadsheet className="h-3.5 w-3.5" />
             Excel/CSV
           </TabsTrigger>
-          <TabsTrigger value="xml" className="gap-2">
-            <FileX className="h-4 w-4" />
+          <TabsTrigger value="xml" className="gap-1.5 text-xs h-7">
+            <FileX className="h-3.5 w-3.5" />
             XML NF-e
           </TabsTrigger>
-          <TabsTrigger value="pdf" className="gap-2">
-            <FileText className="h-4 w-4" />
+          <TabsTrigger value="pdf" className="gap-1.5 text-xs h-7">
+            <FileText className="h-3.5 w-3.5" />
             PDF
           </TabsTrigger>
         </TabsList>

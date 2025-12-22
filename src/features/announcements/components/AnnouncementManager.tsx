@@ -362,13 +362,13 @@ export const AnnouncementManager: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Megaphone className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/10 rounded-lg">
+            <Megaphone className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Gerenciar Anúncios</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-xl font-bold">Gerenciar Anúncios</h2>
+            <p className="text-muted-foreground text-sm">
               Crie avisos para equipe, por cargo/role, usuários específicos e páginas
             </p>
           </div>
@@ -376,8 +376,8 @@ export const AnnouncementManager: React.FC = () => {
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingAnnouncement(undefined)}>
-              <Plus className="w-4 h-4 mr-2" />
+            <Button size="sm" className="h-7 px-2.5 text-xs gap-1.5" onClick={() => setEditingAnnouncement(undefined)}>
+              <Plus className="w-3.5 h-3.5" />
               Novo Anúncio
             </Button>
           </DialogTrigger>
@@ -397,12 +397,12 @@ export const AnnouncementManager: React.FC = () => {
       </div>
 
       {/* Search */}
-      <div className="flex gap-4">
+      <div className="flex gap-2">
         <Input
           placeholder="Buscar anúncios..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="max-w-sm h-7 text-xs"
         />
       </div>
 

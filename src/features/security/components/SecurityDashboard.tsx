@@ -151,11 +151,11 @@ export function SecurityDashboard() {
 
       {/* Tabs com Funcionalidades */}
       <Tabs defaultValue="access" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="access">Tentativas de Acesso</TabsTrigger>
-          <TabsTrigger value="schedule">Horários</TabsTrigger>
-          <TabsTrigger value="backup">Backups</TabsTrigger>
-          <TabsTrigger value="lgpd">LGPD</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 h-8">
+          <TabsTrigger value="access" className="text-xs h-7">Tentativas de Acesso</TabsTrigger>
+          <TabsTrigger value="schedule" className="text-xs h-7">Horários</TabsTrigger>
+          <TabsTrigger value="backup" className="text-xs h-7">Backups</TabsTrigger>
+          <TabsTrigger value="lgpd" className="text-xs h-7">LGPD</TabsTrigger>
         </TabsList>
 
         {/* Tab: Tentativas de Acesso */}

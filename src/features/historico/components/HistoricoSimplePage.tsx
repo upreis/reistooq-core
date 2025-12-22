@@ -165,54 +165,58 @@ export function HistoricoSimplePage() {
   return (
     <main className="container py-6 space-y-6">
       {/* Cabeçalho */}
-      <section className="mb-6">
+      <section className="mb-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <History className="h-6 w-6 text-primary" />
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-primary/10">
+              <History className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Histórico de Vendas</h1>
+              <h1 className="text-xl font-bold">Histórico de Vendas</h1>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="sm"
+              className="h-7 px-2.5 text-xs gap-1.5"
               onClick={() => setImportModalOpen(true)}
               disabled={isLoading}
             >
-              <Upload className="h-4 w-4 mr-2" />
+              <Upload className="h-3.5 w-3.5" />
               Importar
             </Button>
 
             <Button
               variant="outline"
               size="sm"
+              className="h-7 px-2.5 text-xs gap-1.5"
               onClick={() => setExportModalOpen(true)}
               disabled={isLoading || isExporting || total === 0}
             >
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-3.5 w-3.5" />
               {isExporting ? 'Exportando...' : 'Exportar'}
             </Button>
             
             <Button
               variant={isSelectMode ? "default" : "outline"}
               size="sm"
+              className="h-7 px-2.5 text-xs gap-1.5"
               onClick={toggleSelectMode}
             >
-              {isSelectMode ? <CheckSquare className="h-4 w-4 mr-2" /> : <Square className="h-4 w-4 mr-2" />}
+              {isSelectMode ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
               {isSelectMode ? 'Sair' : 'Selecionar'}
             </Button>
 
             <Button
               variant="outline"
               size="sm"
+              className="h-7 px-2.5 text-xs gap-1.5"
               onClick={() => refetch()}
               disabled={isLoading}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
           </div>

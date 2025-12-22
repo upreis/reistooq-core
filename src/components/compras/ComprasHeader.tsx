@@ -56,13 +56,13 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Principal */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestão de Compras</h1>
-          <p className="text-muted-foreground">
-            Gerencie pedidos, cotações e fornecedores de forma integrada
+          <h1 className="text-xl font-bold tracking-tight">Gestão de Compras</h1>
+          <p className="text-muted-foreground text-sm">
+            Gerencie pedidos, cotações e fornecedores
           </p>
         </div>
 
@@ -106,29 +106,29 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
 
       {/* Navegação por Abas */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="pedidos" className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" />
-            Pedidos de Compra
+        <TabsList className="grid w-full grid-cols-4 h-8">
+          <TabsTrigger value="pedidos" className="flex items-center gap-1.5 text-xs h-7">
+            <ShoppingCart className="h-3.5 w-3.5" />
+            Pedidos
             {stats.pedidos_pendentes > 0 && (
-              <Badge variant="secondary" className="ml-1">
+              <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">
                 {stats.pedidos_pendentes}
               </Badge>
             )}
           </TabsTrigger>
           
-          <TabsTrigger value="cotacoes" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+          <TabsTrigger value="cotacoes" className="flex items-center gap-1.5 text-xs h-7">
+            <FileText className="h-3.5 w-3.5" />
             Cotações
           </TabsTrigger>
 
-          <TabsTrigger value="fornecedores" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
+          <TabsTrigger value="fornecedores" className="flex items-center gap-1.5 text-xs h-7">
+            <Building className="h-3.5 w-3.5" />
             Fornecedores
           </TabsTrigger>
 
-          <TabsTrigger value="importacao" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+          <TabsTrigger value="importacao" className="flex items-center gap-1.5 text-xs h-7">
+            <TrendingUp className="h-3.5 w-3.5" />
             Importação
           </TabsTrigger>
         </TabsList>
