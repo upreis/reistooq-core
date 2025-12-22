@@ -23,10 +23,12 @@ export function useEstoqueData() {
     try {
       setLoading(true);
       
-      // Carrega todos os produtos - filtragem ativo/inativo é feita no frontend via useEstoquePagination
+      // Carrega produtos do local selecionado
+      // Para o Estoque Principal, mantemos a lista completa (inclui itens com zero)
       const allProducts = await getProducts({
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        local_id: localAtivo.id
+        local_id: localAtivo.id,
+        include_all_products: localAtivo.tipo === 'principal'
       });
 
       setProducts(allProducts);

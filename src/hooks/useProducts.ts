@@ -25,30 +25,76 @@ export const useProducts = () => {
     offset?: number;
     ativo?: boolean | 'all';
     local_id?: string;
+    /**
+     * Quando true, inclui também produtos que ainda não possuem registro em estoque_por_local,
+     * atribuindo quantidade 0. Para locais recém-criados isso deve ser false.
+     */
+    include_all_products?: boolean;
   }) => {
+    const applyClientFilters = (items: Product[]) => {
+      return items.filter((p) => {
+        // Aplicar filtros de ativo/inativo
+        if (filters?.ativo === true && !p.ativo) return false;
+        if (filters?.ativo === false && p.ativo) return false;
+
+        // Aplicar filtro de busca
+        if (filters?.search) {
+          const searchLower = filters.search.toLowerCase();
+          return (
+            p.nome?.toLowerCase().includes(searchLower) ||
+            p.sku_interno?.toLowerCase().includes(searchLower) ||
+            p.codigo_barras?.toLowerCase().includes(searchLower)
+          );
+        }
+
+        // Aplicar filtro de categoria
+        if (filters?.categoria && p.categoria !== filters.categoria) return false;
+
+        // Aplicar filtro de status
+        if (filters?.status && p.status !== filters.status) return false;
+
+        return true;
+      });
+    };
+
     // Buscar produtos com filtros aplicados
 
     // Se filtro por local_id, buscar de estoque_por_local
     if (filters?.local_id) {
       // Buscar produtos com estoque no local usando LEFT JOIN
       // Isso garante que tenhamos acesso a TODOS os campos de produtos
-      let query = supabase
+      const { data: estoqueData, error } = await supabase
         .from('estoque_por_local')
-        .select(`
+        .select(
+          `
           quantidade,
           local_id,
           produtos (*)
-        `)
+        `,
+        )
         .eq('local_id', filters.local_id)
         .order('created_at', { ascending: false });
 
-      const { data: estoqueData, error } = await query;
-      
-      
-      
       if (error) {
         console.error('Error fetching products from estoque_por_local:', error);
         throw error;
+      }
+
+      // Mapear dados para formato Product com quantidade do local
+      const productsWithLocalStock = (estoqueData || [])
+        .filter((item) => item.produtos)
+        .map((item) => {
+          const produto = item.produtos as unknown as Product;
+          return {
+            ...produto,
+            quantidade_atual: item.quantidade,
+          } as Product;
+        });
+
+      // Por padrão, locais não-principais devem ser “vazios” até receber transferência.
+      const includeAll = filters.include_all_products ?? false;
+      if (!includeAll) {
+        return applyClientFilters(productsWithLocalStock);
       }
 
       // Buscar TODOS os produtos para incluir os que não têm estoque local ainda
@@ -56,60 +102,21 @@ export const useProducts = () => {
         .from('produtos')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (allProductsError) {
         console.error('Error fetching all products:', allProductsError);
       }
 
-      
-
-      // Mapear dados para formato Product com quantidade do local
-      const productsWithLocalStock = (estoqueData || [])
-        .filter(item => item.produtos)
-        .map(item => {
-          const produto = item.produtos as unknown as Product;
-          return {
-            ...produto,
-            quantidade_atual: item.quantidade
-          } as Product;
-        });
-
       // Adicionar produtos que não estão em estoque_por_local
-      const existingProductIds = new Set(productsWithLocalStock.map(p => p.id));
+      const existingProductIds = new Set(productsWithLocalStock.map((p) => p.id));
       const productsWithoutLocalStock = (allProductsData || [])
-        .filter(p => !existingProductIds.has(p.id))
-        .map(p => ({
-          ...p as unknown as Product,
-          quantidade_atual: 0 // Produtos sem estoque local têm quantidade 0
+        .filter((p) => !existingProductIds.has(p.id))
+        .map((p) => ({
+          ...(p as unknown as Product),
+          quantidade_atual: 0, // Produtos sem estoque local têm quantidade 0
         }));
 
-      const allProducts = [...productsWithLocalStock, ...productsWithoutLocalStock]
-        .filter(p => {
-          // Aplicar filtros de ativo/inativo
-          if (filters?.ativo === true && !p.ativo) return false;
-          if (filters?.ativo === false && p.ativo) return false;
-          
-          // Aplicar filtro de busca
-          if (filters?.search) {
-            const searchLower = filters.search.toLowerCase();
-            return (
-              p.nome?.toLowerCase().includes(searchLower) ||
-              p.sku_interno?.toLowerCase().includes(searchLower) ||
-              p.codigo_barras?.toLowerCase().includes(searchLower)
-            );
-          }
-          
-          // Aplicar filtro de categoria
-          if (filters?.categoria && p.categoria !== filters.categoria) return false;
-          
-          // Aplicar filtro de status
-          if (filters?.status && p.status !== filters.status) return false;
-          
-          return true;
-        });
-
-      
-      return allProducts;
+      return applyClientFilters([...productsWithLocalStock, ...productsWithoutLocalStock]);
     }
 
     // Caso contrário, buscar normalmente da tabela produtos
