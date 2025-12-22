@@ -320,6 +320,8 @@ export default function ControleEstoquePage() {
             showHierarchy={showHierarchy}
             expandedGroups={expandedGroups}
             onExpandedGroupsChange={setExpandedGroups}
+            layoutMode={layoutMode}
+            onLayoutChange={setLayoutMode}
           />
         </TableWrapper>
       )}
