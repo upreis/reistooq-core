@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Building2, Package, Grid3X3, LayoutList, ArrowLeftRight, Plus } from 'lucide-react';
+import { Loader2, Building2, Package, ArrowLeftRight, Plus } from 'lucide-react';
 import { LocalEstoque } from '@/features/estoque/types/locais.types';
 import { useLocalEstoqueAtivo } from '@/hooks/useLocalEstoqueAtivo';
 import { Button } from '@/components/ui/button';
@@ -25,10 +25,6 @@ interface EstoqueLocationTabsProps {
   selectedProductsCount?: number;
 }
 
-const layoutIcons: Record<LayoutMode, typeof Grid3X3> = {
-  grid: Grid3X3,
-  list: LayoutList,
-};
 
 export function EstoqueLocationTabs({ 
   onLocationChange,
@@ -181,30 +177,6 @@ export function EstoqueLocationTabs({
 
       {/* Lado direito: Controles */}
       <div className="flex items-center gap-2">
-        {/* Layout Toggle */}
-        {onLayoutChange && (
-          <div className="flex items-center gap-0.5 rounded-md bg-secondary/50 p-0.5">
-            {(Object.keys(layoutIcons) as LayoutMode[]).map((mode) => {
-              const Icon = layoutIcons[mode];
-              return (
-                <button
-                  key={mode}
-                  onClick={() => onLayoutChange(mode)}
-                  className={cn(
-                    "rounded p-1.5 transition-all",
-                    layoutMode === mode
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  )}
-                  aria-label={`Visualização em ${mode === "grid" ? "grade" : "lista"}`}
-                >
-                  <Icon className="h-4 w-4" />
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {/* Transferir Estoque */}
         {onTransferClick && (
           <Button
