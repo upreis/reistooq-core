@@ -247,7 +247,7 @@ export function EstoqueLocationTabs({
 
         {/* Separador vertical - In-house */}
         {locaisInhouse.length > 0 && (
-          <div className="h-8 w-px bg-muted-foreground/40" />
+          <div className="h-8 w-px bg-muted-foreground/50" />
         )}
 
         {/* Seção: In-house (inclui filial e outros) */}
@@ -264,7 +264,7 @@ export function EstoqueLocationTabs({
 
         {/* Separador vertical - Fullfilment */}
         {locaisFullfilment.length > 0 && (
-          <div className="h-8 w-px bg-muted-foreground/40" />
+          <div className="h-8 w-px bg-muted-foreground/50" />
         )}
 
         {/* Seção: Fullfilment */}
