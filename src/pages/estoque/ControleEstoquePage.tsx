@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
 import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
@@ -7,6 +7,7 @@ import { EstoqueNotifications } from "@/components/estoque/EstoqueNotifications"
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 import { EstoqueGridView } from "@/components/estoque/EstoqueGridView";
+import { groupProductsBySku } from "@/utils/skuGrouping";
 
 import { useEstoqueData } from "./hooks/useEstoqueData";
 import { useEstoqueActions } from "./hooks/useEstoqueActions";
@@ -31,6 +32,10 @@ export default function ControleEstoquePage() {
   const [notificationsCollapsed, setNotificationsCollapsed] = useState(true);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("list");
+  
+  // Estado de visualização hierárquica
+  const [showHierarchy, setShowHierarchy] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Segmentos selecionados (precisa impactar paginação e totais)
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
@@ -79,6 +84,18 @@ export default function ControleEstoquePage() {
     totalPages,
     handleSelectAll
   } = useEstoquePagination(products, selectedSegments);
+
+  // Memoizar grupos para expandir/recolher
+  const groups = useMemo(() => groupProductsBySku(paginatedProducts), [paginatedProducts]);
+
+  // Handlers de hierarquia
+  const handleExpandAll = () => {
+    setExpandedGroups(new Set(groups.map(g => g.parentSku)));
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedGroups(new Set());
+  };
 
   // Handlers
   const handleSearch = () => {
@@ -182,6 +199,10 @@ export default function ControleEstoquePage() {
         hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
         onCreateParent={() => setParentProductModalOpen(true)}
         onCreateChild={() => setChildProductModalOpen(true)}
+        showHierarchy={showHierarchy}
+        onToggleHierarchy={() => setShowHierarchy(!showHierarchy)}
+        onExpandAll={handleExpandAll}
+        onCollapseAll={handleCollapseAll}
       />
 
       <EstoqueNotifications 
@@ -296,6 +317,9 @@ export default function ControleEstoquePage() {
             notificationsCollapsed={notificationsCollapsed}
             onToggleNotifications={setNotificationsCollapsed}
             notificationsCount={notificationsCount}
+            showHierarchy={showHierarchy}
+            expandedGroups={expandedGroups}
+            onExpandedGroupsChange={setExpandedGroups}
           />
         </TableWrapper>
       )}
