@@ -565,7 +565,7 @@ export default function PedidosShopee() {
         processarPlanilha(file);
       }
     },
-    [organizationId]
+    [organizationId, empresaSelecionadaUpload, empresasShopee]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
