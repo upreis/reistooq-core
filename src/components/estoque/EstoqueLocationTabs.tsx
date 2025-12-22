@@ -145,7 +145,7 @@ export function EstoqueLocationTabs({
 
         {/* Separador vertical */}
         {outrosLocais.length > 0 && (
-          <div className="h-12 w-px bg-border" />
+          <div className="h-12 w-px bg-muted-foreground/40" />
         )}
 
         {/* Seção: A Venda (Outros Locais - Fullfilments) */}
