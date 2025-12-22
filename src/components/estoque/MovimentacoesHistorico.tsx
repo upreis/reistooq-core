@@ -214,19 +214,19 @@ export function MovimentacoesHistorico() {
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input
               placeholder="Buscar por SKU ou produto..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-8 h-7 text-xs"
             />
           </div>
 
           <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-            <SelectTrigger>
+            <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder="Tipo de movimentação" />
             </SelectTrigger>
             <SelectContent>
@@ -237,7 +237,7 @@ export function MovimentacoesHistorico() {
           </Select>
 
           <Select value={origemFiltro} onValueChange={setOrigemFiltro}>
-            <SelectTrigger>
+            <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder="Origem" />
             </SelectTrigger>
             <SelectContent>
