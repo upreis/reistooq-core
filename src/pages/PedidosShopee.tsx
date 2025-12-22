@@ -86,8 +86,8 @@ export default function PedidosShopee() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmpresa, setSelectedEmpresa] = useState<string>("todas");
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1),
+    from: undefined,
+    to: undefined,
   });
 
   const { toast } = useToast();
