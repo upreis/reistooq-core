@@ -25,12 +25,16 @@ export function useEstoqueData() {
       
       // Carrega produtos do local selecionado
       // Para o Estoque Principal, mantemos a lista completa (inclui itens com zero)
+      const includeAllProducts = localAtivo.tipo === 'principal';
+      console.log('[useEstoqueData] Local:', localAtivo.nome, '| Tipo:', localAtivo.tipo, '| include_all_products:', includeAllProducts);
+      
       const allProducts = await getProducts({
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         local_id: localAtivo.id,
-        include_all_products: localAtivo.tipo === 'principal'
+        include_all_products: includeAllProducts
       });
 
+      console.log('[useEstoqueData] Produtos retornados:', allProducts.length);
       setProducts(allProducts);
     } catch (error) {
       toast({
