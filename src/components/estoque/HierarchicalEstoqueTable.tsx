@@ -204,7 +204,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 }}
               />
               <span className="text-sm text-muted-foreground">
-                Selecionar Todos ({props.selectedProducts.length}/{props.products.length})
+                Todos ({props.selectedProducts.length}/{props.products.length})
               </span>
             </div>
             
