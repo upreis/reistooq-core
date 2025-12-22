@@ -229,7 +229,7 @@ export function EstoqueLocationTabs({
           trigger={
             <Button variant="outline" size="sm" className="h-9">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Local de Estoque
+              Local de Estoque
             </Button>
           }
           onSuccess={() => {

@@ -134,7 +134,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
         {trigger || (
           <Button variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Novo Local de Estoque
+            Local de Estoque
           </Button>
         )}
       </DialogTrigger>
