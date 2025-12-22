@@ -59,7 +59,12 @@ const TIPOS_LOCAL_VENDA = [
 
 const ICONES_DISPONIVEIS = ['🛒', '🏪', '📦', '🛍️', '💻', '📱', '🏬', '🎯'];
 
-export function LocalVendaSelector() {
+interface LocalVendaSelectorProps {
+  localEstoqueId: string;
+  localEstoqueNome: string;
+}
+
+export function LocalVendaSelector({ localEstoqueId, localEstoqueNome }: LocalVendaSelectorProps) {
   const [locais, setLocais] = useState<LocalVenda[]>([]);
   const [locaisEstoque, setLocaisEstoque] = useState<LocalEstoque[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +90,7 @@ export function LocalVendaSelector() {
           .from('locais_venda')
           .select('*')
           .eq('ativo', true)
+          .eq('local_estoque_id', localEstoqueId)
           .order('nome'),
         supabase
           .from('locais_estoque')
@@ -99,9 +105,12 @@ export function LocalVendaSelector() {
       setLocais(locaisVendaRes.data || []);
       setLocaisEstoque(locaisEstoqueRes.data || []);
 
-      // Selecionar primeiro local se nenhum ativo
-      if (!localVendaAtivo && locaisVendaRes.data && locaisVendaRes.data.length > 0) {
-        const primeiro = locaisVendaRes.data[0];
+      // Selecionar primeiro local se nenhum ativo ou se o ativo não pertence ao estoque atual
+      const locaisDoEstoque = locaisVendaRes.data || [];
+      const localAtivoValido = localVendaAtivo && locaisDoEstoque.some(l => l.id === localVendaAtivo.id);
+      
+      if (!localAtivoValido && locaisDoEstoque.length > 0) {
+        const primeiro = locaisDoEstoque[0];
         setLocalVendaAtivo({
           id: primeiro.id,
           nome: primeiro.nome,
@@ -119,7 +128,7 @@ export function LocalVendaSelector() {
 
   useEffect(() => {
     carregarLocais();
-  }, []);
+  }, [localEstoqueId]);
 
   useEffect(() => {
     const handleReload = () => carregarLocais();
@@ -324,6 +333,7 @@ export function LocalVendaSelector() {
             </Button>
           }
           onSuccess={carregarLocais}
+          localEstoqueFixo={{ id: localEstoqueId, nome: localEstoqueNome }}
         />
       </div>
 
