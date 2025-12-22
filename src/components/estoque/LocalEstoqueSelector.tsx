@@ -137,6 +137,16 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
   };
 
   const abrirEdicao = (local: LocalEstoque) => {
+    // ✅ PROTEÇÃO: Não permitir editar o Estoque Principal (tipo 'principal' ou is_system)
+    if (local.tipo === 'principal' || local.is_system) {
+      toast({
+        title: 'Ação não permitida',
+        description: 'O Estoque Principal é um local do sistema e não pode ser editado.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setLocalParaEditar(local);
     setFormData({
       nome: local.nome,
@@ -148,6 +158,17 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
 
   const confirmarEdicao = async () => {
     if (!localParaEditar) return;
+
+    // ✅ PROTEÇÃO: Dupla verificação - não permitir editar o Estoque Principal
+    if (localParaEditar.tipo === 'principal' || localParaEditar.is_system) {
+      toast({
+        title: 'Ação não permitida',
+        description: 'O Estoque Principal é um local do sistema e não pode ser editado.',
+        variant: 'destructive'
+      });
+      setLocalParaEditar(null);
+      return;
+    }
 
     setEditando(true);
     try {
