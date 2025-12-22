@@ -233,7 +233,7 @@ export default function PedidosShopee() {
         opcao_envio: headers.findIndex(h => /^op[çc][aã]o\s*de\s*envio$|tipo.*log[ií]stico|logistic|envio/i.test(h)),
         // Custos e taxas
         valor_estimado_frete: headers.findIndex(h => /^valor\s*estimado\s*do\s*frete$|receita.*flex|frete.*estimado/i.test(h)),
-        custo_envio: headers.findIndex(h => /^taxa\s*de\s*envio\s*reversa$|custo.*envio|shipping.*cost/i.test(h)),
+        custo_envio: headers.findIndex(h => /^taxa\s*de\s*envio\s*reversa$/i.test(h)),
         custo_fixo: headers.findIndex(h => /^taxa\s*de\s*servi[çc]o$|custo.*fixo|service.*fee/i.test(h)),
         taxa_marketplace: headers.findIndex(h => /^taxa\s*de\s*comiss[aã]o$|taxa.*marketplace|comiss[aã]o|commission/i.test(h)),
         // Cancelamento
