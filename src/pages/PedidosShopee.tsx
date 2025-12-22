@@ -752,11 +752,7 @@ export default function PedidosShopee() {
                               {/* Método Pagamento */}
                               <TableCell className="text-muted-foreground">-</TableCell>
                               {/* Status Pagamento */}
-                              <TableCell>
-                                <Badge variant="outline" className="text-xs">
-                                  {pedido.order_status ?? "N/A"}
-                                </Badge>
-                              </TableCell>
+                              <TableCell className="text-muted-foreground">-</TableCell>
                               {/* CPF/CNPJ */}
                               <TableCell className="text-muted-foreground">-</TableCell>
                               {/* SKU Estoque */}
