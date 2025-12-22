@@ -1,6 +1,5 @@
 import { Package } from "lucide-react";
 import { EstoqueGuard } from '@/core/estoque/guards/EstoqueGuard';
-import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
 import { Routes, Route } from "react-router-dom";
 import ControleEstoquePage from "./estoque/ControleEstoquePage";
 import ComposicoesUnificadasPage from "./estoque/ComposicoesUnificadasPage";
@@ -24,9 +23,6 @@ const EstoqueContent = () => {
       breadcrumb={breadcrumb}
     >
       <div className="space-y-4">
-        {/* Navegação de abas acima */}
-        <EstoqueNav />
-        
         {/* Seletor de locais com layout separado */}
         <EstoqueLocationTabs />
         
