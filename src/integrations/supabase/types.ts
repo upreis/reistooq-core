@@ -5284,6 +5284,7 @@ export type Database = {
           data_envio: string | null
           data_pedido: string | null
           desconto: number | null
+          empresa: string | null
           endereco_bairro: string | null
           endereco_cep: string | null
           endereco_cidade: string | null
@@ -5320,6 +5321,7 @@ export type Database = {
           data_envio?: string | null
           data_pedido?: string | null
           desconto?: number | null
+          empresa?: string | null
           endereco_bairro?: string | null
           endereco_cep?: string | null
           endereco_cidade?: string | null
@@ -5356,6 +5358,7 @@ export type Database = {
           data_envio?: string | null
           data_pedido?: string | null
           desconto?: number | null
+          empresa?: string | null
           endereco_bairro?: string | null
           endereco_cep?: string | null
           endereco_cidade?: string | null
