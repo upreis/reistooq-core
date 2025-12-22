@@ -1858,6 +1858,44 @@ export type Database = {
           },
         ]
       }
+      empresas_shopee: {
+        Row: {
+          ativo: boolean | null
+          created_at: string
+          id: string
+          nickname: string | null
+          nome: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string
+          id?: string
+          nickname?: string | null
+          nome: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string
+          id?: string
+          nickname?: string | null
+          nome?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empresas_shopee_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estoque_por_local: {
         Row: {
           created_at: string
