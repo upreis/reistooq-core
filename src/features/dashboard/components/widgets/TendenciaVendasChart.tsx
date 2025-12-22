@@ -54,6 +54,7 @@ const ACCOUNT_COLORS: Record<string, string> = {
   "HORE20240106205039": "#f97316", // orange-500
   "LOJAOITO": "#a855f7",           // purple-500
   "LUTHORSHOPLTDA": "#06b6d4",     // cyan-500
+  "MSMARKETSTORE": "#f43f5e",      // rose-500
 };
 
 const DEFAULT_COLORS = [
