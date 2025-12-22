@@ -85,25 +85,25 @@ export function ReclamacoesFilterBar({
   return (
     <div className="flex items-center gap-3 flex-nowrap">
       {/* Busca Manual */}
-      <div className="min-w-[200px] flex-shrink-0">
+      <div className="min-w-[180px] flex-shrink-0">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Pesquisar"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 h-10"
+            className="pl-8 h-7 text-xs"
           />
         </div>
       </div>
 
       {/* Contas ML */}
-      <div className="min-w-[180px] flex-shrink-0">
+      <div className="min-w-[160px] flex-shrink-0">
         <Popover open={accountsPopoverOpen} onOpenChange={setAccountsPopoverOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between h-10"
+              className="w-full justify-between h-7 px-2.5 text-xs"
             >
               <span className="truncate">
                 {!selectedAccountIds || selectedAccountIds.length === 0 
@@ -113,7 +113,7 @@ export function ReclamacoesFilterBar({
                     : `${selectedAccountIds.length} Empresa${selectedAccountIds.length > 1 ? 's' : ''}`
                 }
               </span>
-              <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
+              <ChevronDown className="h-3.5 w-3.5 opacity-50 flex-shrink-0 ml-1.5" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-0" align="start">

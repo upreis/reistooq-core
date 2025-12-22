@@ -16,13 +16,13 @@ export default function CadastroPage() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="clientes" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
+        <TabsList className="grid w-full max-w-md grid-cols-2 h-8">
+          <TabsTrigger value="clientes" className="flex items-center gap-1.5 h-7 text-xs px-2.5">
+            <Users className="h-3.5 w-3.5" />
             Clientes
           </TabsTrigger>
-          <TabsTrigger value="vendedores" className="flex items-center gap-2">
-            <UserCheck className="h-4 w-4" />
+          <TabsTrigger value="vendedores" className="flex items-center gap-1.5 h-7 text-xs px-2.5">
+            <UserCheck className="h-3.5 w-3.5" />
             Vendedores
           </TabsTrigger>
         </TabsList>

@@ -418,25 +418,25 @@ export default function OrdersPageProfessional({
   return (
     <div className="space-y-6">
       {/* Header Principal */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestão Profissional de Pedidos</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl font-bold tracking-tight">Gestão Profissional de Pedidos</h1>
+          <p className="text-xs text-muted-foreground">
             Sistema completo de gerenciamento de pedidos OMS
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {showModeToggle && onToggleMode && (
-            <Button variant="outline" onClick={onToggleMode}>
+            <Button variant="outline" onClick={onToggleMode} className="h-7 px-2.5 text-xs">
               Modo Simples
             </Button>
           )}
-          <Button variant="outline" onClick={exportOrders}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={exportOrders} className="h-7 px-2.5 text-xs gap-1.5">
+            <Download className="h-3.5 w-3.5" />
             Exportar
           </Button>
-          <Button onClick={() => setOrderDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setOrderDialogOpen(true)} className="h-7 px-2.5 text-xs gap-1.5">
+            <Plus className="h-3.5 w-3.5" />
             Novo Pedido
           </Button>
         </div>
@@ -546,14 +546,14 @@ export default function OrdersPageProfessional({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <Label>Busca Geral</Label>
+              <Label className="text-xs">Busca Geral</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   placeholder="Número, cliente..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="pl-10"
+                  className="pl-8 h-7 text-xs"
                 />
               </div>
             </div>

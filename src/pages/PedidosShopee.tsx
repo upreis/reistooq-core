@@ -674,13 +674,13 @@ export default function PedidosShopee() {
     <MobileAppShell title="Pedidos Shopee" breadcrumb={breadcrumb}>
       <div className="space-y-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="importar">
-              <Upload className="h-4 w-4 mr-2" />
+          <TabsList className="h-8">
+            <TabsTrigger value="importar" className="h-7 px-2.5 text-xs gap-1.5">
+              <Upload className="h-3.5 w-3.5" />
               Importar
             </TabsTrigger>
-            <TabsTrigger value="pedidos">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
+            <TabsTrigger value="pedidos" className="h-7 px-2.5 text-xs gap-1.5">
+              <FileSpreadsheet className="h-3.5 w-3.5" />
               Pedidos ({pedidos.length})
             </TabsTrigger>
           </TabsList>
@@ -833,47 +833,45 @@ export default function PedidosShopee() {
                     <CardTitle>Pedidos Importados</CardTitle>
                     <CardDescription>Últimos 200 pedidos importados da Shopee</CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <Button
                       variant={isSelectMode ? "default" : "outline"}
-                      size="sm"
                       onClick={toggleSelectMode}
+                      className="h-7 px-2.5 text-xs gap-1.5"
                     >
                       {isSelectMode ? (
                         <>
-                          <CheckSquare className="h-4 w-4 mr-2" />
+                          <CheckSquare className="h-3.5 w-3.5" />
                           Sair da Seleção
                         </>
                       ) : (
                         <>
-                          <Square className="h-4 w-4 mr-2" />
+                          <Square className="h-3.5 w-3.5" />
                           Selecionar
                         </>
                       )}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={loadPedidos} disabled={loadingPedidos}>
-                      <RefreshCw className={cn("h-4 w-4 mr-2", loadingPedidos && "animate-spin")} />
+                    <Button variant="outline" onClick={loadPedidos} disabled={loadingPedidos} className="h-7 px-2.5 text-xs gap-1.5">
+                      <RefreshCw className={cn("h-3.5 w-3.5", loadingPedidos && "animate-spin")} />
                       Atualizar
                     </Button>
                   </div>
                 </div>
                 
                 {/* Barra de Filtros */}
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
+                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t">
                   {/* Abas Pendentes / Histórico */}
                   <div className="flex rounded-md overflow-hidden border">
                     <Button
                       variant={filterTab === "pendentes" ? "default" : "ghost"}
-                      size="sm"
-                      className="rounded-none"
+                      className="rounded-none h-7 px-2.5 text-xs"
                       onClick={() => setFilterTab("pendentes")}
                     >
                       Pendentes ({pedidos.filter(p => !p.baixa_estoque_realizada).length})
                     </Button>
                     <Button
                       variant={filterTab === "historico" ? "default" : "ghost"}
-                      size="sm"
-                      className="rounded-none"
+                      className="rounded-none h-7 px-2.5 text-xs"
                       onClick={() => setFilterTab("historico")}
                     >
                       Histórico ({pedidos.filter(p => p.baixa_estoque_realizada).length})
@@ -881,19 +879,19 @@ export default function PedidosShopee() {
                   </div>
                   
                   {/* Campo de Pesquisa */}
-                  <div className="relative flex-1 min-w-[200px] max-w-[300px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <div className="relative flex-1 min-w-[180px] max-w-[280px]">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
                       placeholder="Pesquisar"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
+                      className="pl-8 h-7 text-xs"
                     />
                   </div>
                   
                   {/* Seletor de Empresa */}
                   <Select value={selectedEmpresa} onValueChange={setSelectedEmpresa}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[160px] h-7 text-xs">
                       <SelectValue placeholder="Selecione a Empresa" />
                     </SelectTrigger>
                     <SelectContent>

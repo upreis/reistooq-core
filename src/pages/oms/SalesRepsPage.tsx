@@ -167,13 +167,13 @@ export default function SalesRepsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Vendedores</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl font-bold">Vendedores</h1>
+          <p className="text-xs text-muted-foreground">
             Gerencie seus representantes comerciais
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={handleCreate} className="h-7 px-2.5 text-xs gap-1.5">
+          <Plus className="h-3.5 w-3.5" />
           Novo Vendedor
         </Button>
       </div>

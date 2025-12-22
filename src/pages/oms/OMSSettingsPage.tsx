@@ -35,8 +35,8 @@ export default function OMSSettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Configurações OMS</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-xl font-bold tracking-tight">Configurações OMS</h1>
+        <p className="text-xs text-muted-foreground">
           Configure as opções do sistema de gestão de pedidos
         </p>
       </div>
@@ -50,20 +50,20 @@ export default function OMSSettingsPage() {
               Configurações Gerais
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="company">Nome da Empresa</Label>
-              <Input id="company" placeholder="Sua Empresa Ltda" />
+          <CardContent className="space-y-3 p-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="company" className="text-xs">Nome da Empresa</Label>
+              <Input id="company" placeholder="Sua Empresa Ltda" className="h-7 text-xs" />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" placeholder="00.000.000/0000-00" />
+            <div className="space-y-1.5">
+              <Label htmlFor="cnpj" className="text-xs">CNPJ</Label>
+              <Input id="cnpj" placeholder="00.000.000/0000-00" className="h-7 text-xs" />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="prefix">Prefixo de Pedidos</Label>
-              <Input id="prefix" placeholder="PED" />
+            <div className="space-y-1.5">
+              <Label htmlFor="prefix" className="text-xs">Prefixo de Pedidos</Label>
+              <Input id="prefix" placeholder="PED" className="h-7 text-xs" />
             </div>
 
             <Separator />
@@ -98,20 +98,20 @@ export default function OMSSettingsPage() {
               Configurações de E-mail
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="smtp-host">Servidor SMTP</Label>
-              <Input id="smtp-host" placeholder="smtp.gmail.com" />
+          <CardContent className="space-y-3 p-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="smtp-host" className="text-xs">Servidor SMTP</Label>
+              <Input id="smtp-host" placeholder="smtp.gmail.com" className="h-7 text-xs" />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="smtp-port">Porta</Label>
-                <Input id="smtp-port" placeholder="587" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="smtp-port" className="text-xs">Porta</Label>
+                <Input id="smtp-port" placeholder="587" className="h-7 text-xs" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="smtp-user">Usuário</Label>
-                <Input id="smtp-user" placeholder="usuario@empresa.com" />
+              <div className="space-y-1.5">
+                <Label htmlFor="smtp-user" className="text-xs">Usuário</Label>
+                <Input id="smtp-user" placeholder="usuario@empresa.com" className="h-7 text-xs" />
               </div>
             </div>
 
@@ -147,15 +147,15 @@ export default function OMSSettingsPage() {
               Configurações de Comissão
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="default-commission">Comissão Padrão (%)</Label>
-              <Input id="default-commission" type="number" placeholder="5.00" step="0.01" />
+          <CardContent className="space-y-3 p-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="default-commission" className="text-xs">Comissão Padrão (%)</Label>
+              <Input id="default-commission" type="number" placeholder="5.00" step="0.01" className="h-7 text-xs" />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="max-commission">Comissão Máxima (%)</Label>
-              <Input id="max-commission" type="number" placeholder="15.00" step="0.01" />
+            <div className="space-y-1.5">
+              <Label htmlFor="max-commission" className="text-xs">Comissão Máxima (%)</Label>
+              <Input id="max-commission" type="number" placeholder="15.00" step="0.01" className="h-7 text-xs" />
             </div>
 
             <Separator />
@@ -190,12 +190,12 @@ export default function OMSSettingsPage() {
               Dados de Exemplo
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+          <CardContent className="space-y-3 p-4">
+            <p className="text-xs text-muted-foreground">
               Popule o sistema com dados de exemplo para testes e demonstração.
             </p>
 
-            <Button onClick={handleSeedData} className="w-full">
+            <Button onClick={handleSeedData} className="w-full h-7 text-xs">
               Criar Dados de Exemplo
             </Button>
 
@@ -212,9 +212,9 @@ export default function OMSSettingsPage() {
       </div>
 
       {/* Botões de Ação */}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline">Cancelar</Button>
-        <Button>Salvar Configurações</Button>
+      <div className="flex justify-end gap-1.5">
+        <Button variant="outline" className="h-7 px-2.5 text-xs">Cancelar</Button>
+        <Button className="h-7 px-2.5 text-xs">Salvar Configurações</Button>
       </div>
     </div>
   );

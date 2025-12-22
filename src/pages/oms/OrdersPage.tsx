@@ -94,13 +94,13 @@ function OrdersPageSimple() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pedidos OMS</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl font-bold tracking-tight">Pedidos OMS</h1>
+          <p className="text-xs text-muted-foreground">
             Gerencie pedidos de venda B2B
           </p>
         </div>
-        <Button onClick={() => setOrderDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={() => setOrderDialogOpen(true)} className="h-7 px-2.5 text-xs gap-1.5">
+          <Plus className="h-3.5 w-3.5" />
           Novo Pedido
         </Button>
       </div>
@@ -152,21 +152,21 @@ function OrdersPageSimple() {
 
       {/* Filtros */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
+        <CardContent className="p-2.5">
+          <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Buscar por número, cliente ou representante..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-8 h-7 text-xs"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border rounded-md"
+              className="px-2.5 py-1 h-7 text-xs border rounded-md bg-background"
             >
               <option value="all">Todos os Status</option>
               <option value="draft">Rascunho</option>
