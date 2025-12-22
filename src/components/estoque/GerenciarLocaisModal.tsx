@@ -17,8 +17,8 @@ interface GerenciarLocaisModalProps {
 
 // ✅ IMPORTANTE: 'principal' removido - só pode existir um Estoque Principal por organização (criado automaticamente pelo sistema)
 const TIPOS_LOCAL = [
-  { value: 'fullfilment_ml', label: 'Fullfilment Mercado Livre', icon: '📦' },
-  { value: 'fullfilment_shopee', label: 'Fullfilment Shopee', icon: '🛍️' },
+  { value: 'fullfilment', label: 'Fullfilment', icon: '📦' },
+  { value: 'inhouse', label: 'In-house', icon: '🏠' },
   { value: 'filial', label: 'Filial', icon: '🏪' },
   { value: 'outro', label: 'Outro', icon: '📍' }
 ];

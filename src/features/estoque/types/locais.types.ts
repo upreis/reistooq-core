@@ -1,4 +1,4 @@
-export type TipoLocalEstoque = 'principal' | 'fullfilment_ml' | 'fullfilment_shopee' | 'filial' | 'outro';
+export type TipoLocalEstoque = 'principal' | 'fullfilment' | 'inhouse' | 'filial' | 'outro';
 
 export interface LocalEstoque {
   id: string;

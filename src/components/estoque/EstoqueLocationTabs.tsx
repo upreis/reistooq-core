@@ -20,8 +20,8 @@ import {
 
 const TIPO_ICONS: Record<string, React.ReactNode> = {
   principal: <Building2 className="h-4 w-4" />,
-  fullfilment_ml: <Package className="h-4 w-4" />,
-  fullfilment_shopee: <Package className="h-4 w-4" />,
+  fullfilment: <Package className="h-4 w-4" />,
+  inhouse: <Building2 className="h-4 w-4" />,
   filial: <Building2 className="h-4 w-4" />,
   outro: <Package className="h-4 w-4" />
 };
@@ -188,7 +188,46 @@ export function EstoqueLocationTabs({
   }
 
   const localPrincipal = locais.find(l => l.tipo === 'principal');
-  const outrosLocais = locais.filter(l => l.tipo !== 'principal');
+  const locaisFullfilment = locais.filter(l => l.tipo === 'fullfilment');
+  const locaisInhouse = locais.filter(l => l.tipo === 'inhouse' || l.tipo === 'filial' || l.tipo === 'outro');
+
+  const renderLocalButton = (local: LocalEstoque, canDelete: boolean = true) => {
+    const isActive = localAtivo?.id === local.id;
+    const isPrincipal = local.tipo === 'principal';
+    
+    return (
+      <div key={local.id} className="relative group">
+        <Button
+          variant={isActive ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleLocalChange(local.id)}
+          className={cn(
+            "flex items-center gap-2 transition-all h-10 px-4",
+            isActive && isPrincipal && "bg-amber-500 hover:bg-amber-600 text-amber-950 border-amber-500 shadow-md",
+            isActive && !isPrincipal && "shadow-md"
+          )}
+        >
+          {TIPO_ICONS[local.tipo] || <Package className="h-4 w-4" />}
+          <span className="font-medium">{local.nome}</span>
+        </Button>
+        {/* Botão de excluir */}
+        {canDelete && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLocalParaDeletar(local);
+            }}
+            title="Excluir local"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="flex items-start justify-between gap-4 pb-4 border-b border-border">
@@ -200,68 +239,40 @@ export function EstoqueLocationTabs({
             Unitário Geral
           </span>
           <div className="flex items-center gap-2">
-            {localPrincipal && (
-              <Button
-                variant={localAtivo?.id === localPrincipal.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleLocalChange(localPrincipal.id)}
-                className={cn(
-                  "flex items-center gap-2 transition-all h-10 px-4",
-                  localAtivo?.id === localPrincipal.id && "bg-amber-500 hover:bg-amber-600 text-amber-950 border-amber-500 shadow-md"
-                )}
-              >
-                {TIPO_ICONS['principal']}
-                <span className="font-medium">{localPrincipal.nome}</span>
-              </Button>
-            )}
+            {localPrincipal && renderLocalButton(localPrincipal, false)}
           </div>
         </div>
 
-        {/* Separador vertical */}
-        {outrosLocais.length > 0 && (
+        {/* Separador vertical - Fullfilment */}
+        {locaisFullfilment.length > 0 && (
           <div className="h-12 w-px bg-muted-foreground/40" />
         )}
 
-        {/* Seção: A Venda (Outros Locais - Fullfilments) */}
-        {outrosLocais.length > 0 && (
+        {/* Seção: Fullfilment */}
+        {locaisFullfilment.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              A Venda
+              Fullfilment
             </span>
             <div className="flex items-center gap-2 flex-wrap">
-              {outrosLocais.map((local) => {
-                const isActive = localAtivo?.id === local.id;
-                
-                return (
-                  <div key={local.id} className="relative group">
-                    <Button
-                      variant={isActive ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleLocalChange(local.id)}
-                      className={cn(
-                        "flex items-center gap-2 transition-all h-10 px-4",
-                        isActive && "shadow-md"
-                      )}
-                    >
-                      {TIPO_ICONS[local.tipo] || <Package className="h-4 w-4" />}
-                      <span className="font-medium">{local.nome}</span>
-                    </Button>
-                    {/* Botão de excluir */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLocalParaDeletar(local);
-                      }}
-                      title="Excluir local"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                );
-              })}
+              {locaisFullfilment.map((local) => renderLocalButton(local))}
+            </div>
+          </div>
+        )}
+
+        {/* Separador vertical - In-house */}
+        {locaisInhouse.length > 0 && (
+          <div className="h-12 w-px bg-muted-foreground/40" />
+        )}
+
+        {/* Seção: In-house (inclui filial e outros) */}
+        {locaisInhouse.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              In-house
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {locaisInhouse.map((local) => renderLocalButton(local))}
             </div>
           </div>
         )}
