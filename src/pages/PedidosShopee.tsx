@@ -44,6 +44,14 @@ interface PedidoShopee {
   quantidade: number;
   preco_unitario: number | null;
   preco_total: number | null;
+
+  // Custos / taxas
+  receita_flex: number | null;
+  taxa_marketplace: number | null;
+  custo_envio: number | null;
+  custo_fixo: number | null;
+
+  // Outros
   frete: number | null;
   desconto: number | null;
   baixa_estoque_realizada: boolean;
@@ -292,11 +300,10 @@ export default function PedidosShopee() {
           codigo_rastreamento: colMap.codigo_rastreamento >= 0 ? String(row[colMap.codigo_rastreamento] || "") : null,
           tipo_logistico: colMap.opcao_envio >= 0 ? String(row[colMap.opcao_envio] || "") : null,
           // Custos e taxas - receita_flex só preenche se "Opção de envio" for "Shopee Entrega Direta", caso contrário 0
-          frete: (() => {
+          receita_flex: (() => {
             const opcaoEnvio = colMap.opcao_envio >= 0 ? String(row[colMap.opcao_envio] || "") : "";
             const valorFrete = colMap.valor_estimado_frete >= 0 ? parseNumber(row[colMap.valor_estimado_frete]) : 0;
-            console.log(`[DEBUG] Opção envio: "${opcaoEnvio}", Valor frete: ${valorFrete}, colMap.valor_estimado_frete: ${colMap.valor_estimado_frete}`);
-            if (opcaoEnvio.toLowerCase().includes("shopee entrega direta")) {
+            if (opcaoEnvio.trim().toLowerCase() === "shopee entrega direta") {
               return valorFrete;
             }
             return 0;
@@ -632,7 +639,13 @@ export default function PedidosShopee() {
                       </TableHeader>
                       <TableBody>
                         {pedidos.map((pedido) => {
-                          const valorLiquido = (pedido.preco_total ?? 0) - (pedido.frete ?? 0) - (pedido.desconto ?? 0);
+                          const valorLiquido =
+                            (pedido.preco_total ?? 0) -
+                            (pedido.receita_flex ?? 0) -
+                            (pedido.taxa_marketplace ?? 0) -
+                            (pedido.custo_envio ?? 0) -
+                            (pedido.custo_fixo ?? 0) -
+                            (pedido.desconto ?? 0);
                           const isSelected = selectedIds.has(pedido.id);
                           return (
                             <TableRow 
@@ -683,15 +696,21 @@ export default function PedidosShopee() {
                                 {pedido.preco_total != null ? `R$ ${pedido.preco_total.toFixed(2)}` : "-"}
                               </TableCell>
                               {/* Receita Flex */}
-                              <TableCell className="text-right text-muted-foreground">-</TableCell>
+                              <TableCell className="text-right">
+                                {pedido.receita_flex != null ? `R$ ${Number(pedido.receita_flex).toFixed(2)}` : "-"}
+                              </TableCell>
                               {/* Taxa Marketplace */}
-                              <TableCell className="text-right text-muted-foreground">-</TableCell>
+                              <TableCell className="text-right">
+                                {pedido.taxa_marketplace != null ? `R$ ${Number(pedido.taxa_marketplace).toFixed(2)}` : "-"}
+                              </TableCell>
                               {/* Custo Envio */}
                               <TableCell className="text-right">
-                                {pedido.frete != null ? `R$ ${pedido.frete.toFixed(2)}` : "-"}
+                                {pedido.custo_envio != null ? `R$ ${Number(pedido.custo_envio).toFixed(2)}` : "-"}
                               </TableCell>
                               {/* Custo Fixo Meli */}
-                              <TableCell className="text-right text-muted-foreground">-</TableCell>
+                              <TableCell className="text-right">
+                                {pedido.custo_fixo != null ? `R$ ${Number(pedido.custo_fixo).toFixed(2)}` : "-"}
+                              </TableCell>
                               {/* Valor Líquido */}
                               <TableCell className="text-right font-medium">
                                 {pedido.preco_total != null ? `R$ ${valorLiquido.toFixed(2)}` : "-"}
