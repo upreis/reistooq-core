@@ -215,9 +215,25 @@ export function TransferenciaEstoqueModal({
 
           if (errorAtualizarDestino) throw errorAtualizarDestino;
         } else {
-          // Criar novo registro
-          const { data: orgData } = await supabase.auth.getUser();
-          const organization_id = orgData.user?.user_metadata?.organization_id;
+          // Criar novo registro - buscar organization_id via RPC
+          const { data: orgId } = await supabase.rpc('get_current_org_id');
+          
+          let organizationId = orgId;
+          
+          // Fallback: buscar de um produto existente
+          if (!organizationId) {
+            const { data: produtoData } = await supabase
+              .from('produtos')
+              .select('organization_id')
+              .eq('id', item.produtoId)
+              .single();
+            
+            organizationId = produtoData?.organization_id;
+          }
+          
+          if (!organizationId) {
+            throw new Error('Não foi possível obter o ID da organização');
+          }
           
           const { error: errorCriarDestino } = await supabase
             .from('estoque_por_local')
@@ -225,7 +241,7 @@ export function TransferenciaEstoqueModal({
               produto_id: item.produtoId,
               local_id: localDestinoId,
               quantidade: item.quantidadeTransferir,
-              organization_id
+              organization_id: organizationId
             }]);
 
           if (errorCriarDestino) throw errorCriarDestino;
