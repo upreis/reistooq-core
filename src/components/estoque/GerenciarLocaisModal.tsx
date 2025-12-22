@@ -65,18 +65,21 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
 
       if (!profile?.organizacao_id) throw new Error('Organização não encontrada');
 
-      // ✅ VALIDAÇÃO: Verificar se já existe um local com o mesmo nome
-      const { data: localExistente, error: checkError } = await supabase
+      // ✅ VALIDAÇÃO: Verificar se já existe um local com o mesmo nome na mesma organização
+      const { data: locaisExistentes, error: checkError } = await supabase
         .from('locais_estoque')
         .select('id, nome')
         .eq('organization_id', profile.organizacao_id)
-        .ilike('nome', nome.trim())
-        .single();
+        .eq('ativo', true);
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        // PGRST116 = nenhum resultado encontrado (ok para criar)
+      if (checkError) {
         throw checkError;
       }
+
+      // Comparação case-insensitive manual
+      const localExistente = (locaisExistentes || []).find(
+        l => l.nome.toLowerCase().trim() === nome.toLowerCase().trim()
+      );
 
       if (localExistente) {
         toast({
