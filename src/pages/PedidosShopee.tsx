@@ -479,6 +479,8 @@ export default function PedidosShopee() {
           taxa_marketplace: colMap.taxa_marketplace >= 0 ? parseNumber(row[colMap.taxa_marketplace]) : null,
           // Cancelamento
           motivo_cancelamento: colMap.motivo_cancelamento >= 0 ? String(row[colMap.motivo_cancelamento] || "") : null,
+          // Empresa selecionada pelo usuário no upload
+          empresa: empresaNome,
           // Metadados
           importacao_id: importacao.id,
           baixa_estoque_realizada: false,
@@ -611,16 +613,53 @@ export default function PedidosShopee() {
                   Arraste um arquivo Excel/CSV exportado da Shopee. Os pedidos serão importados (baixa de estoque pode ser feita manualmente depois).
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Seletor de Empresa - Obrigatório */}
+                <div className="space-y-2">
+                  <Label htmlFor="empresa-upload" className="flex items-center gap-1">
+                    <Building2 className="h-4 w-4" />
+                    Empresa <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={empresaSelecionadaUpload}
+                    onValueChange={setEmpresaSelecionadaUpload}
+                    disabled={isProcessing}
+                  >
+                    <SelectTrigger id="empresa-upload" className={cn(!empresaSelecionadaUpload && "border-destructive/50")}>
+                      <SelectValue placeholder="Selecione a empresa do arquivo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empresasShopee.length === 0 ? (
+                        <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                          Nenhuma empresa cadastrada. <br />
+                          <span className="text-xs">Use o botão "Empresas" para cadastrar.</span>
+                        </div>
+                      ) : (
+                        empresasShopee.map((empresa) => (
+                          <SelectItem key={empresa.id} value={empresa.id}>
+                            {empresa.nome} {empresa.nickname && `(${empresa.nickname})`}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {!empresaSelecionadaUpload && (
+                    <p className="text-xs text-muted-foreground">
+                      Selecione a empresa antes de importar. Todos os pedidos do arquivo serão associados a ela.
+                    </p>
+                  )}
+                </div>
+
+                {/* Dropzone */}
                 <div
                   {...getRootProps()}
                   className={cn(
                     "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
                     isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50",
-                    isProcessing && "opacity-50 cursor-not-allowed"
+                    (isProcessing || !empresaSelecionadaUpload) && "opacity-50 cursor-not-allowed"
                   )}
                 >
-                  <input {...getInputProps()} />
+                  <input {...getInputProps()} disabled={isProcessing || !empresaSelecionadaUpload} />
                   {isProcessing ? (
                     <div className="space-y-4">
                       <Loader2 className="h-10 w-10 mx-auto animate-spin text-primary" />
@@ -628,6 +667,14 @@ export default function PedidosShopee() {
                       <Progress value={progress} className="w-full max-w-xs mx-auto" />
                       <p className="text-xs text-muted-foreground">{progress}% concluído</p>
                     </div>
+                  ) : !empresaSelecionadaUpload ? (
+                    <>
+                      <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Selecione uma empresa acima para habilitar o upload
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">Suporta .xlsx, .xls e .csv</p>
+                    </>
                   ) : (
                     <>
                       <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
