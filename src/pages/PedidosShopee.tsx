@@ -36,6 +36,7 @@ interface PedidoShopee {
   comprador_nome: string | null;
   comprador_telefone: string | null;
   endereco_rua: string | null;
+  endereco_bairro: string | null;
   endereco_cidade: string | null;
   endereco_estado: string | null;
   endereco_cep: string | null;
@@ -816,7 +817,7 @@ export default function PedidosShopee() {
                               {/* Número */}
                               <TableCell className="text-muted-foreground">-</TableCell>
                               {/* Bairro */}
-                              <TableCell className="text-muted-foreground">-</TableCell>
+                              <TableCell>{pedido.endereco_bairro ?? "-"}</TableCell>
                               {/* CEP */}
                               <TableCell>{pedido.endereco_cep ?? "-"}</TableCell>
                               {/* Cidade */}
