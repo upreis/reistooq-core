@@ -172,6 +172,7 @@ export function EstoqueGridView({
             >
               <Checkbox 
                 checked={allSelected}
+                onClick={(e) => e.stopPropagation()}
                 onCheckedChange={() => handleSelectAll()}
               />
               <span className="text-sm text-muted-foreground">
