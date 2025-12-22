@@ -971,7 +971,7 @@ export default function PedidosShopee() {
                                 {pedido.order_id}{pedido.sku ? `-${pedido.sku}` : ''}
                               </TableCell>
                               {/* Empresa */}
-                              <TableCell>Shopee</TableCell>
+                              <TableCell>{(pedido as any).empresa ?? "Shopee"}</TableCell>
                               {/* Número do Pedido */}
                               <TableCell className="font-mono text-sm">{pedido.order_id}</TableCell>
                               {/* Nome Completo */}
