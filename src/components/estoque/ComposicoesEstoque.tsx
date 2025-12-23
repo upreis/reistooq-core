@@ -982,6 +982,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
         composicoes={produtoSelecionado ? getComposicoesForSku(produtoSelecionado.sku_interno) : []}
         onSave={handleSalvarComposicoes}
         localId={localId}
+        localVendaId={localVendaId}
       />
 
       {/* Modal de Importação de Excel */}
