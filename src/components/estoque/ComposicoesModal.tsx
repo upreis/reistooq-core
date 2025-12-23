@@ -21,6 +21,7 @@ interface ComposicoesModalProps {
   composicoes: ProdutoComponente[];
   onSave: () => void;
   localId?: string;
+  localVendaId?: string; // Se presente, salva em composicoes_local_venda
 }
 
 interface ComposicaoForm {
@@ -31,7 +32,7 @@ interface ComposicaoForm {
   unidade_medida_id: string;
 }
 
-export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave, localId }: ComposicoesModalProps) {
+export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave, localId, localVendaId }: ComposicoesModalProps) {
   const [formComposicoes, setFormComposicoes] = useState<ComposicaoForm[]>([]);
   const [saving, setSaving] = useState(false);
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
@@ -165,60 +166,98 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         return;
       }
 
-      // Verificar se localId está presente
-      if (!localId) {
-        throw new Error('Local de estoque não definido');
+      // Buscar organization_id
+      const { data: productData } = await supabase
+        .from('produtos')
+        .select('organization_id')
+        .limit(1)
+        .single();
+
+      if (!productData?.organization_id) {
+        throw new Error('Não foi possível obter o ID da organização');
       }
 
-      // Deletar composições existentes deste produto NESTE LOCAL
-      const { error: deleteError } = await supabase
-        .from('produto_componentes')
-        .delete()
-        .eq('sku_produto', produtoSku.trim())
-        .eq('local_id', localId);
+      // 🔀 MODO LOCAL DE VENDA: salvar em composicoes_local_venda
+      if (localVendaId) {
+        console.log('📦 Salvando composições em LOCAL DE VENDA:', localVendaId);
+        
+        // Deletar composições existentes deste produto NESTE LOCAL DE VENDA
+        const { error: deleteError } = await supabase
+          .from('composicoes_local_venda')
+          .delete()
+          .eq('sku_produto', produtoSku.trim())
+          .eq('local_venda_id', localVendaId);
 
-      if (deleteError) {
-        console.error('Erro ao deletar composições:', deleteError);
-        throw deleteError;
-      }
-
-      // Inserir novas composições se houver alguma válida
-      if (composicoesValidas.length > 0) {
-        // Buscar organization_id de um produto existente
-        const { data: productData } = await supabase
-          .from('produtos')
-          .select('organization_id')
-          .limit(1)
-          .single();
-
-        if (!productData?.organization_id) {
-          throw new Error('Não foi possível obter o ID da organização');
+        if (deleteError) {
+          console.error('Erro ao deletar composições local venda:', deleteError);
+          throw deleteError;
         }
 
-        // Verificar se localId está presente
+        // Inserir novas composições
+        if (composicoesValidas.length > 0) {
+          const composicoesParaInserir = composicoesValidas.map(comp => ({
+            organization_id: productData.organization_id,
+            local_venda_id: localVendaId,
+            sku_produto: produtoSku.trim().toUpperCase(),
+            sku_insumo: comp.sku_componente.trim().toUpperCase(),
+            quantidade: Math.round(comp.quantidade),
+            ativo: true
+          }));
+
+          console.log('📦 Inserindo composições local venda:', composicoesParaInserir);
+
+          const { error: insertError } = await supabase
+            .from('composicoes_local_venda')
+            .insert(composicoesParaInserir);
+
+          if (insertError) {
+            console.error('Erro ao inserir composições local venda:', insertError);
+            throw insertError;
+          }
+        }
+      } 
+      // 🔀 MODO ESTOQUE: salvar em produto_componentes
+      else {
         if (!localId) {
           throw new Error('Local de estoque não definido');
         }
+        
+        console.log('📦 Salvando composições em ESTOQUE:', localId);
 
-        const composicoesParaInserir = composicoesValidas.map(comp => ({
-          sku_produto: produtoSku.trim(),
-          sku_componente: comp.sku_componente.trim(),
-          nome_componente: comp.nome_componente.trim(),
-          quantidade: comp.quantidade,
-          unidade_medida_id: comp.unidade_medida_id || null,
-          organization_id: productData.organization_id,
-          local_id: localId
-        }));
-
-        console.log('📦 Inserindo composições:', composicoesParaInserir);
-
-        const { error: insertError } = await supabase
+        // Deletar composições existentes deste produto NESTE LOCAL
+        const { error: deleteError } = await supabase
           .from('produto_componentes')
-          .insert(composicoesParaInserir);
+          .delete()
+          .eq('sku_produto', produtoSku.trim())
+          .eq('local_id', localId);
 
-        if (insertError) {
-          console.error('Erro ao inserir composições:', insertError);
-          throw insertError;
+        if (deleteError) {
+          console.error('Erro ao deletar composições:', deleteError);
+          throw deleteError;
+        }
+
+        // Inserir novas composições se houver alguma válida
+        if (composicoesValidas.length > 0) {
+          const composicoesParaInserir = composicoesValidas.map(comp => ({
+            sku_produto: produtoSku.trim(),
+            sku_componente: comp.sku_componente.trim(),
+            nome_componente: comp.nome_componente.trim(),
+            quantidade: comp.quantidade,
+            unidade_medida_id: comp.unidade_medida_id || null,
+            organization_id: productData.organization_id,
+            local_id: localId
+          }));
+
+          console.log('📦 Inserindo composições estoque:', composicoesParaInserir);
+
+          const { error: insertError } = await supabase
+            .from('produto_componentes')
+            .insert(composicoesParaInserir);
+
+          if (insertError) {
+            console.error('Erro ao inserir composições:', insertError);
+            throw insertError;
+          }
         }
       }
 
