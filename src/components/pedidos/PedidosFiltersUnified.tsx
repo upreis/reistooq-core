@@ -117,29 +117,29 @@ export function PedidosFiltersUnified({
   const selectedContasML = filters.contasML || [];
 
   return (
-    <div className="flex items-center gap-3 flex-nowrap">
-      {/* Busca */}
-      <div className="min-w-[200px] flex-shrink-0">
+    <div className="flex items-center gap-1.5 flex-nowrap">
+      {/* Busca - Padrão Compacto */}
+      <div className="min-w-[180px] flex-shrink-0">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Pesquisar"
             value={filters.search || ''}
             onChange={(e) => onFilterChange('search', e.target.value)}
-            className="pl-10 h-10"
+            className="pl-8 h-7 text-xs"
           />
         </div>
       </div>
 
-      {/* Contas ML */}
-      <div className="min-w-[180px] flex-shrink-0">
+      {/* Contas ML - Padrão Compacto */}
+      <div className="min-w-[160px] flex-shrink-0">
         <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               role="combobox"
               aria-expanded={contasMLOpen}
-              className="w-full justify-between h-10"
+              className="w-full justify-between h-7 px-2.5 text-xs gap-1.5"
             >
               <span className="truncate">
                 {selectedContasML.length === 0 
@@ -149,12 +149,12 @@ export function PedidosFiltersUnified({
                   : `${selectedContasML.length} Empresas`
                 }
               </span>
-              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full p-0 bg-background border border-border z-50">
             <div className="p-2 space-y-2 max-h-64 overflow-y-auto">
-              <div className="text-sm font-medium px-2 py-1">Selecione as contas:</div>
+              <div className="text-xs font-medium px-2 py-1">Selecione as contas:</div>
               {contasML.map((conta) => (
                 <div key={conta.id} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
                   <Checkbox
@@ -162,21 +162,21 @@ export function PedidosFiltersUnified({
                     checked={selectedContasML.includes(conta.id)}
                     onCheckedChange={(checked) => handleContasMLChange(conta.id, checked as boolean)}
                   />
-                  <label htmlFor={`conta-${conta.id}`} className="text-sm cursor-pointer flex-1">
+                  <label htmlFor={`conta-${conta.id}`} className="text-xs cursor-pointer flex-1">
                     <div className="flex flex-col">
                       <span className="font-medium">{conta.nickname || conta.name}</span>
                       {conta.nickname && conta.name && conta.nickname !== conta.name && (
-                        <span className="text-xs text-muted-foreground">{conta.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{conta.name}</span>
                       )}
                       {conta.active === false && (
-                        <span className="text-xs text-destructive">Inativa</span>
+                        <span className="text-[10px] text-destructive">Inativa</span>
                       )}
                     </div>
                   </label>
                 </div>
               ))}
               {contasML.length === 0 && (
-                <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                <div className="px-2 py-4 text-xs text-muted-foreground text-center">
                   Nenhuma conta encontrada
                 </div>
               )}
@@ -186,7 +186,7 @@ export function PedidosFiltersUnified({
                     variant="outline"
                     size="sm"
                     onClick={() => onFilterChange('contasML', undefined)}
-                    className="w-full"
+                    className="w-full h-6 text-[10px]"
                   >
                     Limpar seleção
                   </Button>
@@ -197,8 +197,8 @@ export function PedidosFiltersUnified({
         </Popover>
       </div>
 
-      {/* Período */}
-      <div className="min-w-[180px] flex-shrink-0">
+      {/* Período - Padrão Compacto */}
+      <div className="min-w-[160px] flex-shrink-0">
         <SimplifiedPeriodFilter
           startDate={filters.dataInicio}
           endDate={filters.dataFim}
@@ -207,13 +207,13 @@ export function PedidosFiltersUnified({
             onFilterChange('dataFim', endDate);
           }}
           hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
-          className="h-10"
+          className="h-7"
           placeholder="Selecionar período"
         />
       </div>
 
-      {/* FlipButton - igual /vendas-com-envio */}
-      <div className="min-w-[220px] flex-shrink-0">
+      {/* FlipButton - Padrão Compacto */}
+      <div className="min-w-[180px] flex-shrink-0">
         <FlipButton
           text1="Cancelar a Busca"
           text2="Aplicar Filtros e Buscar"
@@ -222,14 +222,14 @@ export function PedidosFiltersUnified({
         />
       </div>
 
-      {/* Colunas */}
+      {/* Colunas - Padrão Compacto */}
       {columnManager && (
         <div className="flex-shrink-0">
           <ColumnManager 
             manager={columnManager}
             trigger={
-              <Button variant="outline" size="sm" className="h-10 px-3 gap-2">
-                <Columns3 className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs gap-1.5">
+                <Columns3 className="h-3 w-3" />
                 Colunas
               </Button>
             }
@@ -237,16 +237,16 @@ export function PedidosFiltersUnified({
         </div>
       )}
 
-      {/* Locais de Estoque */}
+      {/* Locais de Estoque - Padrão Compacto */}
       {onOpenConfigLocais && (
         <div className="flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={onOpenConfigLocais}
-            className="h-10 gap-2"
+            className="h-7 px-2.5 text-xs gap-1.5"
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="h-3 w-3" />
             Locais
           </Button>
         </div>

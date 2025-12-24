@@ -137,20 +137,20 @@ export function SimplifiedPeriodFilter({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "w-fit min-w-[160px] justify-between text-left font-normal h-9 px-3 text-sm transition-all",
+            "w-fit min-w-[140px] justify-between text-left font-normal h-7 px-2.5 text-xs transition-all gap-1.5",
             !hasDateRange && "text-muted-foreground",
             hasPendingChanges && "border-amber-300 bg-amber-50 text-amber-900",
             disabled && "opacity-50 cursor-not-allowed",
             className
           )}
         >
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <CalendarIcon className="h-3 w-3 shrink-0" />
             <span className="truncate">
               {formatPeriodDisplay()}
             </span>
           </div>
-          <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+          <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
       
