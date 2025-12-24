@@ -526,12 +526,12 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                     <div className="text-[10px] font-medium text-muted-foreground">Componentes necessários:</div>
                     
                     {/* Cabeçalho das colunas */}
-                    <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-1.5 text-[9px] font-medium text-muted-foreground border-b pb-1">
+                    <div className="grid grid-cols-[1fr_60px_50px_70px_40px] gap-3 text-[9px] font-medium text-muted-foreground border-b pb-1">
                       <div className="truncate">SKU</div>
-                      <div className="text-right">Estoque</div>
-                      <div className="text-right">Faz</div>
-                      <div className="text-right">Custo Uni</div>
-                      <div className="text-right">Qtd</div>
+                      <div>Estoque</div>
+                      <div>Faz</div>
+                      <div>Custo Uni</div>
+                      <div>Qtd</div>
                     </div>
                     
                     <div className="space-y-0.5">
@@ -545,7 +545,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                           <div key={index} className="relative">
                             {/* Badge "NÃO CADASTRADO" no canto superior */}
                             <div 
-                              className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-1.5 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
+                              className={`grid grid-cols-[1fr_60px_50px_70px_40px] gap-3 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
                                 componenteNaoExiste
                                   ? 'bg-destructive text-destructive-foreground border border-destructive'
                                   : isLimitante 
@@ -574,16 +574,16 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                                       {comp.sku_componente}
                                     </Badge>
                                   </div>
-                                  <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
+                                  <div className="text-muted-foreground text-[9px]">
                                     {comp.estoque_componente || 0}
                                   </div>
-                                  <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
+                                  <div className="text-muted-foreground text-[9px]">
                                     {Math.floor((comp.estoque_componente || 0) / comp.quantidade)}
                                   </div>
-                                  <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
+                                  <div className="text-muted-foreground text-[9px]">
                                     {formatMoney(custoUnitario)}
                                   </div>
-                                  <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
+                                  <div className="text-muted-foreground text-[9px]">
                                     {comp.quantidade}x
                                   </div>
                                 </>
