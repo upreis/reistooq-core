@@ -526,12 +526,12 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                     <div className="text-[10px] font-medium text-muted-foreground">Componentes necessários:</div>
                     
                     {/* Cabeçalho das colunas */}
-                    <div className="grid grid-cols-[1fr_60px_50px_70px_40px] gap-3 text-[9px] font-medium text-muted-foreground border-b pb-1">
+                    <div className="grid grid-cols-[1fr_50px_40px_60px_32px] gap-2 text-[9px] font-medium text-muted-foreground border-b pb-1">
                       <div className="truncate">SKU</div>
-                      <div>Estoque</div>
-                      <div>Faz</div>
-                      <div>Custo Uni</div>
-                      <div>Qtd</div>
+                      <div className="text-left">Estoque</div>
+                      <div className="text-left">Faz</div>
+                      <div className="text-left">Custo Uni</div>
+                      <div className="text-left">Qtd</div>
                     </div>
                     
                     <div className="space-y-0.5">
@@ -545,7 +545,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                           <div key={index} className="relative">
                             {/* Badge "NÃO CADASTRADO" no canto superior */}
                             <div 
-                              className={`grid grid-cols-[1fr_60px_50px_70px_40px] gap-3 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
+                              className={`grid grid-cols-[1fr_50px_40px_60px_32px] gap-2 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
                                 componenteNaoExiste
                                   ? 'bg-destructive text-destructive-foreground border border-destructive'
                                   : isLimitante 
