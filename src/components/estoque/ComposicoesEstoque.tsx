@@ -82,7 +82,8 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
     deleteProduto,
     importarDoEstoque,
     sincronizarComponentes,
-    isImporting
+    isImporting,
+    refetch: refetchProdutos
   } = useProdutosComposicoes();
 
   // Hook para composições de estoque (local de estoque)
@@ -128,8 +129,9 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
     setProdutoSelecionado(null);
   };
 
-  const handleSalvarComposicoes = () => {
-    loadComposicoes(); // Recarrega as composições
+  const handleSalvarComposicoes = async () => {
+    await loadComposicoes(); // Recarrega as composições
+    await refetchProdutos(); // Recarrega a lista de produtos para mostrar novos itens
     sincronizarComponentes(); // Sincroniza componentes em uso
   };
 
