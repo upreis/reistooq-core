@@ -24,7 +24,7 @@ export function FlipButton({
   return (
     <div className="w-full">
       <button
-        className={`w-full h-10 cursor-pointer px-3 font-medium shadow-sm border text-sm transition-all duration-200 rounded-md hover:scale-105 active:scale-95 ${
+        className={`w-full h-7 cursor-pointer px-2.5 font-medium shadow-sm border text-xs transition-all duration-200 rounded-md hover:scale-105 active:scale-95 ${
           show 
             ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' 
             : 'bg-primary text-primary-foreground hover:bg-primary/90'
