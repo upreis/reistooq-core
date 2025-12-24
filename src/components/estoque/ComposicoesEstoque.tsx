@@ -526,8 +526,10 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                     <div className="text-[10px] font-medium text-muted-foreground">Componentes necessários:</div>
                     
                     {/* Cabeçalho das colunas */}
-                    <div className="grid grid-cols-[1fr_auto_auto] gap-1.5 text-[9px] font-medium text-muted-foreground border-b pb-1">
+                    <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-1.5 text-[9px] font-medium text-muted-foreground border-b pb-1">
                       <div className="truncate">SKU</div>
+                      <div className="text-right">Estoque</div>
+                      <div className="text-right">Faz</div>
                       <div className="text-right">Custo Uni</div>
                       <div className="text-right">Qtd</div>
                     </div>
@@ -543,7 +545,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                           <div key={index} className="relative">
                             {/* Badge "NÃO CADASTRADO" no canto superior */}
                             <div 
-                              className={`grid grid-cols-[1fr_auto_auto] gap-1.5 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
+                              className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-1.5 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
                                 componenteNaoExiste
                                   ? 'bg-destructive text-destructive-foreground border border-destructive'
                                   : isLimitante 
@@ -552,7 +554,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                               }`}
                             >
                               {componenteNaoExiste ? (
-                                <div className="col-span-3 flex items-center justify-between gap-1.5 min-w-0">
+                                <div className="col-span-5 flex items-center justify-between gap-1.5 min-w-0">
                                   <Badge variant="outline" className="border-destructive-foreground text-destructive-foreground font-mono text-[9px] px-1 py-0 flex-shrink-0 truncate max-w-[70px]">
                                     {comp.sku_componente}
                                   </Badge>
@@ -571,6 +573,12 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                                     <Badge variant="outline" className="font-mono text-[8px] px-1 py-0 truncate max-w-full h-4">
                                       {comp.sku_componente}
                                     </Badge>
+                                  </div>
+                                  <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
+                                    {comp.estoque_componente || 0}
+                                  </div>
+                                  <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
+                                    {Math.floor((comp.estoque_componente || 0) / comp.quantidade)}
                                   </div>
                                   <div className="text-right text-muted-foreground text-[9px] flex-shrink-0">
                                     {formatMoney(custoUnitario)}
