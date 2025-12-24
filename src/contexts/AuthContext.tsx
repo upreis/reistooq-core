@@ -72,10 +72,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     React.useEffect(() => {
       console.log('🔧 AuthProvider: useEffect starting...');
+      let didCancel = false;
+
+      // Safety timeout: evita ficar preso em "loading" para sempre
+      const safetyTimeout = window.setTimeout(() => {
+        if (!didCancel) {
+          console.warn('⚠️ AuthProvider: safety timeout - liberando loading');
+          setLoading(false);
+        }
+      }, 10000);
+
       // Set up auth state listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
           console.log('🔧 Auth state change:', event);
+          window.clearTimeout(safetyTimeout);
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
@@ -91,14 +102,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       );
 
       // THEN check for existing session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log('🔧 Initial session check:', !!session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      });
+      supabase.auth
+        .getSession()
+        .then(({ data: { session } }) => {
+          console.log('🔧 Initial session check:', !!session);
+          window.clearTimeout(safetyTimeout);
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('❌ AuthProvider: getSession failed:', error);
+          window.clearTimeout(safetyTimeout);
+          setLoading(false);
+        });
 
-      return () => subscription.unsubscribe();
+      return () => {
+        didCancel = true;
+        window.clearTimeout(safetyTimeout);
+        subscription.unsubscribe();
+      };
     }, []);
 
   const signIn = async (email: string, password: string) => {
