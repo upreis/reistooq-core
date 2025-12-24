@@ -528,10 +528,10 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                     {/* Cabeçalho das colunas */}
                     <div className="grid grid-cols-[1fr_50px_40px_60px_32px] gap-2 text-[9px] font-medium text-muted-foreground border-b pb-1">
                       <div className="truncate">SKU</div>
-                      <div className="text-left">Estoque</div>
-                      <div className="text-left">Faz</div>
-                      <div className="text-left">Custo Uni</div>
-                      <div className="text-left">Qtd</div>
+                      <div className="text-center">Estoque</div>
+                      <div className="text-center">Faz</div>
+                      <div className="text-center">Custo Uni</div>
+                      <div className="text-center">Qtd</div>
                     </div>
                     
                     <div className="space-y-0.5">
@@ -574,16 +574,16 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                                       {comp.sku_componente}
                                     </Badge>
                                   </div>
-                                  <div className="text-muted-foreground text-[9px]">
+                                  <div className="text-center text-muted-foreground text-[9px]">
                                     {comp.estoque_componente || 0}
                                   </div>
-                                  <div className="text-muted-foreground text-[9px]">
+                                  <div className="text-center text-muted-foreground text-[9px]">
                                     {Math.floor((comp.estoque_componente || 0) / comp.quantidade)}
                                   </div>
-                                  <div className="text-muted-foreground text-[9px]">
+                                  <div className="text-center text-muted-foreground text-[9px]">
                                     {formatMoney(custoUnitario)}
                                   </div>
-                                  <div className="text-muted-foreground text-[9px]">
+                                  <div className="text-center text-muted-foreground text-[9px]">
                                     {comp.quantidade}x
                                   </div>
                                 </>
