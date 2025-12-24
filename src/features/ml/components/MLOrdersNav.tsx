@@ -34,13 +34,13 @@ export function MLOrdersNav() {
   const activeItem = subNavItems.find(item => location.pathname === item.path);
   const activeValue = activeItem ? activeItem.path : "/pedidos";
 
-  // Mapear para o formato do MagneticTabs
+  // Mapear para o formato do MagneticTabs - Padrão Compacto
   const magneticItems = subNavItems.map((item) => {
     const Icon = item.icon;
     return {
       id: item.path,
       label: item.label,
-      icon: <Icon className="w-5 h-5" />,
+      icon: <Icon className="h-3 w-3" />,
     };
   });
 

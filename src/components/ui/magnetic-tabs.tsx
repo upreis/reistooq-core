@@ -76,9 +76,9 @@ export const MagneticTabs = React.forwardRef<HTMLDivElement, MagneticTabsProps>(
         {...props}
       >
         <div className="relative">
-          {/* Hover Highlight */}
+          {/* Hover Highlight - Padrão Compacto */}
           <div
-            className="absolute h-[40px] transition-all duration-300 ease-out bg-[#0e0f1114] dark:bg-[#ffffff1a] rounded-[8px] flex items-center"
+            className="absolute h-7 transition-all duration-300 ease-out bg-[#0e0f1114] dark:bg-[#ffffff1a] rounded-md flex items-center"
             style={{
               ...hoverStyle,
               opacity: hoveredIndex !== null ? 1 : 0,
@@ -87,18 +87,18 @@ export const MagneticTabs = React.forwardRef<HTMLDivElement, MagneticTabsProps>(
 
           {/* Active Indicator */}
           <div
-            className="absolute bottom-[-6px] h-[2px] bg-primary transition-all duration-300 ease-out"
+            className="absolute bottom-[-4px] h-[2px] bg-primary transition-all duration-300 ease-out"
             style={activeStyle}
           />
 
-          {/* Tabs */}
-          <div className="relative flex space-x-[6px] items-center">
+          {/* Tabs - Padrão Compacto */}
+          <div className="relative flex space-x-[4px] items-center">
             {items.map((tab, index) => (
               <div
                 key={tab.id}
                 ref={(el) => (tabRefs.current[index] = el)}
                 className={cn(
-                  "px-4 py-2 cursor-pointer transition-colors duration-300 h-[40px] flex items-center gap-2",
+                  "px-2.5 py-1 cursor-pointer transition-colors duration-300 h-7 flex items-center gap-1.5",
                   index === activeIndex 
                     ? "text-foreground" 
                     : "text-muted-foreground"
@@ -110,8 +110,8 @@ export const MagneticTabs = React.forwardRef<HTMLDivElement, MagneticTabsProps>(
                   onValueChange?.(tab.id)
                 }}
               >
-                {tab.icon && <span className="text-lg">{tab.icon}</span>}
-                <div className="text-base font-semibold leading-5 whitespace-nowrap">
+                {tab.icon && <span className="text-xs">{tab.icon}</span>}
+                <div className="text-xs font-semibold leading-4 whitespace-nowrap">
                   {tab.label}
                 </div>
               </div>
