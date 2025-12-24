@@ -4,16 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'react-hot-toast';
-import { Plus, Trash2, Edit2, Save, X, MapPin } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Plus, Trash2, Edit2, Save, X, MapPin, Store } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   listarLocaisEstoque,
   listarMapeamentosLocais,
+  listarLocaisVenda,
   criarMapeamentoLocal,
   atualizarMapeamentoLocal,
   deletarMapeamentoLocal,
   LocalEstoque,
+  LocalVenda,
   MapeamentoLocalEstoque
 } from '@/services/LocalEstoqueService';
 import { translateLogisticType } from '@/lib/translations';
@@ -32,6 +34,7 @@ export function ConfiguracaoLocaisModal({
   contasML = []
 }: ConfiguracaoLocaisModalProps) {
   const [locais, setLocais] = useState<LocalEstoque[]>([]);
+  const [locaisVenda, setLocaisVenda] = useState<LocalVenda[]>([]);
   const [mapeamentos, setMapeamentos] = useState<MapeamentoLocalEstoque[]>([]);
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
@@ -43,6 +46,7 @@ export function ConfiguracaoLocaisModal({
     tipo_logistico: '',
     marketplace: '',
     local_estoque_id: '',
+    local_venda_id: '' as string | null,
     observacoes: ''
   });
 
@@ -67,12 +71,14 @@ export function ConfiguracaoLocaisModal({
   const carregarDados = async () => {
     try {
       setLoading(true);
-      const [locaisData, mapeamentosData] = await Promise.all([
+      const [locaisData, mapeamentosData, locaisVendaData] = await Promise.all([
         listarLocaisEstoque(),
-        listarMapeamentosLocais()
+        listarMapeamentosLocais(),
+        listarLocaisVenda()
       ]);
       setLocais(locaisData);
       setMapeamentos(mapeamentosData);
+      setLocaisVenda(locaisVendaData);
     } catch (error: any) {
       toast.error('Erro ao carregar dados: ' + error.message);
     } finally {
@@ -119,6 +125,7 @@ export function ConfiguracaoLocaisModal({
         tipo_logistico: '',
         marketplace: '',
         local_estoque_id: '',
+        local_venda_id: null,
         observacoes: ''
       });
       setEditando(null);
@@ -138,6 +145,7 @@ export function ConfiguracaoLocaisModal({
       tipo_logistico: mapeamento.tipo_logistico,
       marketplace: mapeamento.marketplace,
       local_estoque_id: mapeamento.local_estoque_id,
+      local_venda_id: mapeamento.local_venda_id || null,
       observacoes: mapeamento.observacoes || ''
     });
     setEditando(mapeamento.id);
@@ -164,6 +172,7 @@ export function ConfiguracaoLocaisModal({
       tipo_logistico: '',
       marketplace: '',
       local_estoque_id: '',
+      local_venda_id: null,
       observacoes: ''
     });
     setEditando(null);
@@ -298,7 +307,9 @@ export function ConfiguracaoLocaisModal({
                 <Label>Local de Estoque *</Label>
                 <Select
                   value={novoMapeamento.local_estoque_id}
-                  onValueChange={(value) => setNovoMapeamento({ ...novoMapeamento, local_estoque_id: value })}
+                  onValueChange={(value) => {
+                    setNovoMapeamento({ ...novoMapeamento, local_estoque_id: value, local_venda_id: null });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o local..." />
@@ -311,6 +322,46 @@ export function ConfiguracaoLocaisModal({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label className="flex items-center gap-1.5">
+                  <Store className="h-3 w-3" />
+                  Local de Venda (Composições)
+                </Label>
+                <Select
+                  value={novoMapeamento.local_venda_id || '_none'}
+                  onValueChange={(value) => {
+                    const selectedLocal = locaisVenda.find(lv => lv.id === value);
+                    if (value === '_none') {
+                      setNovoMapeamento({ ...novoMapeamento, local_venda_id: null });
+                    } else if (selectedLocal) {
+                      // Quando seleciona um local de venda, preenche automaticamente o estoque vinculado
+                      setNovoMapeamento({ 
+                        ...novoMapeamento, 
+                        local_venda_id: value,
+                        local_estoque_id: selectedLocal.local_estoque_id || novoMapeamento.local_estoque_id
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Usar composição padrão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Usar composição padrão do estoque</SelectItem>
+                    {locaisVenda
+                      .filter(lv => !novoMapeamento.local_estoque_id || lv.local_estoque_id === novoMapeamento.local_estoque_id)
+                      .map(local => (
+                        <SelectItem key={local.id} value={local.id}>
+                          {local.icone} {local.nome}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Quando selecionado, usará as composições específicas deste canal de venda
+                </p>
               </div>
 
               <div className="col-span-2">
@@ -357,11 +408,21 @@ export function ConfiguracaoLocaisModal({
                         <Badge variant="outline">{translateLogisticType(mapeamento.tipo_logistico)}</Badge>
                         <Badge>{mapeamento.marketplace}</Badge>
                       </div>
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">→ Local: </span>
-                        <span className="font-medium">
-                          {mapeamento.locais_estoque?.nome || 'Local não encontrado'}
-                        </span>
+                      <div className="text-sm space-y-0.5">
+                        <div>
+                          <span className="text-muted-foreground">→ Estoque: </span>
+                          <span className="font-medium">
+                            {mapeamento.locais_estoque?.nome || 'Local não encontrado'}
+                          </span>
+                        </div>
+                        {mapeamento.locais_venda && (
+                          <div>
+                            <span className="text-muted-foreground">→ Composição: </span>
+                            <span className="font-medium text-primary">
+                              {mapeamento.locais_venda.icone} {mapeamento.locais_venda.nome}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       {mapeamento.observacoes && (
                         <div className="text-xs text-muted-foreground mt-1">

@@ -3311,6 +3311,7 @@ export type Database = {
           empresa: string
           id: string
           local_estoque_id: string
+          local_venda_id: string | null
           marketplace: string
           observacoes: string | null
           organization_id: string
@@ -3324,6 +3325,7 @@ export type Database = {
           empresa: string
           id?: string
           local_estoque_id: string
+          local_venda_id?: string | null
           marketplace: string
           observacoes?: string | null
           organization_id: string
@@ -3337,6 +3339,7 @@ export type Database = {
           empresa?: string
           id?: string
           local_estoque_id?: string
+          local_venda_id?: string | null
           marketplace?: string
           observacoes?: string | null
           organization_id?: string
@@ -3349,6 +3352,13 @@ export type Database = {
             columns: ["local_estoque_id"]
             isOneToOne: false
             referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mapeamento_locais_estoque_local_venda_id_fkey"
+            columns: ["local_venda_id"]
+            isOneToOne: false
+            referencedRelation: "locais_venda"
             referencedColumns: ["id"]
           },
         ]

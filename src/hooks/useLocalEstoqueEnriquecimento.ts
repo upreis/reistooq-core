@@ -10,9 +10,16 @@ interface MapeamentoLocal {
   tipo_logistico: string;
   marketplace: string;
   local_estoque_id: string;
+  local_venda_id?: string | null;
   locais_estoque?: {
     id: string;
     nome: string;
+  };
+  locais_venda?: {
+    id: string;
+    nome: string;
+    icone: string;
+    local_estoque_id: string;
   };
 }
 
@@ -37,9 +44,16 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
             tipo_logistico,
             marketplace,
             local_estoque_id,
+            local_venda_id,
             locais_estoque (
               id,
               nome
+            ),
+            locais_venda (
+              id,
+              nome,
+              icone,
+              local_estoque_id
             )
           `)
           .eq('ativo', true);
@@ -148,7 +162,9 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
         if (isDev && index < 3) {
           console.log(`✅ [LocalEstoque] MAPEAMENTO ENCONTRADO!`, {
             local_estoque_id: mapeamento.local_estoque_id,
-            local_estoque_nome: mapeamento.locais_estoque.nome
+            local_estoque_nome: mapeamento.locais_estoque.nome,
+            local_venda_id: mapeamento.local_venda_id,
+            local_venda_nome: mapeamento.locais_venda?.nome
           });
         }
         return {
@@ -156,11 +172,15 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
           local_estoque_id: mapeamento.local_estoque_id,
           local_estoque: mapeamento.locais_estoque.nome,
           local_estoque_nome: mapeamento.locais_estoque.nome,
+          local_venda_id: mapeamento.local_venda_id || null,
+          local_venda_nome: mapeamento.locais_venda?.nome || null,
           unified: {
             ...(row.unified || {}),
             local_estoque_id: mapeamento.local_estoque_id,
             local_estoque: mapeamento.locais_estoque.nome,
-            local_estoque_nome: mapeamento.locais_estoque.nome
+            local_estoque_nome: mapeamento.locais_estoque.nome,
+            local_venda_id: mapeamento.local_venda_id || null,
+            local_venda_nome: mapeamento.locais_venda?.nome || null
           }
         };
       } else {
