@@ -291,8 +291,20 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
 
 
   // Aplicar filtro de busca aos dados já filtrados pelo hook
+  // IMPORTANTE: No modo local de venda, mostrar SOMENTE produtos que têm composições nesse local
   const produtosFinaisFiltrados = useMemo(() => {
-    return filteredData?.filter(produto => {
+    let produtosBase = filteredData || [];
+    
+    // Se estamos no modo local de venda, filtrar para mostrar apenas produtos
+    // que têm composições cadastradas NESTE local de venda específico
+    if (isLocalVendaMode && composicoesAtuais) {
+      const skusComComposicao = new Set(Object.keys(composicoesAtuais));
+      produtosBase = produtosBase.filter(produto => 
+        skusComComposicao.has(produto.sku_interno)
+      );
+    }
+    
+    return produtosBase.filter(produto => {
       const matchesSearch = !searchQuery || 
         produto.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
         produto.sku_interno.toLowerCase().includes(searchQuery.toLowerCase());
@@ -303,8 +315,8 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
         produto.subcategoria === hierarchicalFilters.subcategoria;
 
       return matchesSearch && matchesCategory;
-    }) || [];
-  }, [filteredData, searchQuery, hierarchicalFilters]);
+    });
+  }, [filteredData, searchQuery, hierarchicalFilters, isLocalVendaMode, composicoesAtuais]);
 
   // Carregar custos dos produtos quando as composições mudarem
   useEffect(() => {
