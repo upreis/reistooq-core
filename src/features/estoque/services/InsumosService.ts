@@ -1,37 +1,82 @@
 /**
  * 🔧 SERVIÇO - INSUMOS
  * Validações e baixa de insumos (1x por pedido)
+ * Suporta composições por local de venda (composicoes_local_venda) ou padrão (composicoes_insumos)
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import type { ValidacaoInsumo, ResultadoBaixaInsumos } from '../types/insumos.types';
 
+interface ComposicaoInsumo {
+  sku_insumo: string;
+  quantidade: number;
+}
+
 export class InsumosService {
   /**
-   * 🔍 Validar insumos para um pedido
-   * Verifica se há insumos cadastrados e se há estoque disponível
+   * 🔍 Buscar composições de insumos
+   * Prioriza composicoes_local_venda se localVendaId for fornecido
    */
-  static async validarInsumosParaPedido(skuProduto: string): Promise<{
-    tem_mapeamento: boolean;
-    tem_estoque: boolean;
-    insumos: ValidacaoInsumo[];
-  }> {
-    try {
-      // 1. Buscar insumos cadastrados para o produto
-      const { data: composicoes, error: erroComposicoes } = await supabase
-        .from('composicoes_insumos')
+  private static async buscarComposicoes(
+    skuProduto: string, 
+    localVendaId?: string | null
+  ): Promise<ComposicaoInsumo[]> {
+    // Se temos um local de venda, buscar composições específicas
+    if (localVendaId) {
+      const { data: composicoesLV, error: erroLV } = await supabase
+        .from('composicoes_local_venda')
         .select('sku_insumo, quantidade')
+        .eq('local_venda_id', localVendaId)
         .eq('sku_produto', skuProduto)
         .eq('ativo', true);
 
-      if (erroComposicoes) throw erroComposicoes;
+      if (!erroLV && composicoesLV && composicoesLV.length > 0) {
+        console.log(`📦 [Insumos] Usando composições do LOCAL DE VENDA para ${skuProduto}:`, composicoesLV.length);
+        return composicoesLV;
+      }
+      
+      console.log(`⚠️ [Insumos] Nenhuma composição específica para local de venda, usando padrão...`);
+    }
+
+    // Fallback: buscar composições padrão
+    const { data: composicoes, error } = await supabase
+      .from('composicoes_insumos')
+      .select('sku_insumo, quantidade')
+      .eq('sku_produto', skuProduto)
+      .eq('ativo', true);
+
+    if (error) throw error;
+    return composicoes || [];
+  }
+
+  /**
+   * 🔍 Validar insumos para um pedido
+   * Verifica se há insumos cadastrados e se há estoque disponível
+   * @param skuProduto - SKU do produto a validar
+   * @param localVendaId - ID do local de venda (opcional, para usar composições específicas)
+   */
+  static async validarInsumosParaPedido(
+    skuProduto: string,
+    localVendaId?: string | null
+  ): Promise<{
+    tem_mapeamento: boolean;
+    tem_estoque: boolean;
+    insumos: ValidacaoInsumo[];
+    fonte_composicao: 'local_venda' | 'padrao' | 'nenhuma';
+  }> {
+    try {
+      // 1. Buscar insumos cadastrados (prioriza local de venda)
+      const composicoes = await this.buscarComposicoes(skuProduto, localVendaId);
+      const fonteComposicao = localVendaId && composicoes.length > 0 ? 'local_venda' : 
+                              composicoes.length > 0 ? 'padrao' : 'nenhuma';
 
       // Se não há insumos cadastrados
-      if (!composicoes || composicoes.length === 0) {
+      if (composicoes.length === 0) {
         return {
           tem_mapeamento: false,
           tem_estoque: true, // Não bloqueia se não há mapeamento
-          insumos: []
+          insumos: [],
+          fonte_composicao: 'nenhuma'
         };
       }
 
@@ -75,14 +120,16 @@ export class InsumosService {
       return {
         tem_mapeamento: true,
         tem_estoque: todosExistem && todosSuficientes,
-        insumos: validacoes
+        insumos: validacoes,
+        fonte_composicao: fonteComposicao
       };
     } catch (error) {
       console.error('Erro ao validar insumos:', error);
       return {
         tem_mapeamento: false,
         tem_estoque: false,
-        insumos: []
+        insumos: [],
+        fonte_composicao: 'nenhuma'
       };
     }
   }
@@ -90,19 +137,18 @@ export class InsumosService {
   /**
    * 📥 Baixar insumos de um pedido
    * Baixa a quantidade cadastrada de cada insumo
+   * @param skuProduto - SKU do produto
+   * @param localVendaId - ID do local de venda (opcional, para usar composições específicas)
    */
-  static async baixarInsumosPedido(skuProduto: string): Promise<ResultadoBaixaInsumos> {
+  static async baixarInsumosPedido(
+    skuProduto: string,
+    localVendaId?: string | null
+  ): Promise<ResultadoBaixaInsumos> {
     try {
-      // 1. Buscar insumos cadastrados
-      const { data: composicoes, error: erroComposicoes } = await supabase
-        .from('composicoes_insumos')
-        .select('sku_insumo, quantidade')
-        .eq('sku_produto', skuProduto)
-        .eq('ativo', true);
+      // 1. Buscar insumos cadastrados (prioriza local de venda)
+      const composicoes = await this.buscarComposicoes(skuProduto, localVendaId);
 
-      if (erroComposicoes) throw erroComposicoes;
-
-      if (!composicoes || composicoes.length === 0) {
+      if (composicoes.length === 0) {
         return {
           success: true,
           total_processados: 0,
@@ -144,15 +190,16 @@ export class InsumosService {
 
   /**
    * 📊 Verificar estoque disponível de insumos
+   * @param skuProduto - SKU do produto
+   * @param localVendaId - ID do local de venda (opcional)
    */
-  static async verificarEstoqueInsumos(skuProduto: string): Promise<Map<string, number>> {
-    const { data: composicoes } = await supabase
-      .from('composicoes_insumos')
-      .select('sku_insumo')
-      .eq('sku_produto', skuProduto)
-      .eq('ativo', true);
+  static async verificarEstoqueInsumos(
+    skuProduto: string,
+    localVendaId?: string | null
+  ): Promise<Map<string, number>> {
+    const composicoes = await this.buscarComposicoes(skuProduto, localVendaId);
 
-    if (!composicoes || composicoes.length === 0) {
+    if (composicoes.length === 0) {
       return new Map();
     }
 

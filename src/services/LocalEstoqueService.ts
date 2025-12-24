@@ -8,6 +8,16 @@ export interface LocalEstoque {
   created_at: string;
 }
 
+export interface LocalVenda {
+  id: string;
+  nome: string;
+  tipo: string;
+  local_estoque_id: string;
+  icone?: string;
+  organization_id: string;
+  ativo: boolean;
+}
+
 export interface MapeamentoLocalEstoque {
   id: string;
   organization_id: string;
@@ -15,6 +25,7 @@ export interface MapeamentoLocalEstoque {
   tipo_logistico: string;
   marketplace: string;
   local_estoque_id: string;
+  local_venda_id?: string | null;
   ativo: boolean;
   observacoes?: string;
   created_at: string;
@@ -22,6 +33,12 @@ export interface MapeamentoLocalEstoque {
   locais_estoque?: {
     id: string;
     nome: string;
+  };
+  locais_venda?: {
+    id: string;
+    nome: string;
+    icone: string;
+    local_estoque_id: string;
   };
 }
 
@@ -50,6 +67,12 @@ export async function listarMapeamentosLocais(): Promise<MapeamentoLocalEstoque[
       locais_estoque (
         id,
         nome
+      ),
+      locais_venda (
+        id,
+        nome,
+        icone,
+        local_estoque_id
       )
     `)
     .eq('ativo', true)
@@ -57,6 +80,20 @@ export async function listarMapeamentosLocais(): Promise<MapeamentoLocalEstoque[
 
   if (error) throw error;
   return (data || []) as MapeamentoLocalEstoque[];
+}
+
+/**
+ * Buscar todos os locais de venda da organização
+ */
+export async function listarLocaisVenda(): Promise<LocalVenda[]> {
+  const { data, error } = await supabase
+    .from('locais_venda')
+    .select('*')
+    .eq('ativo', true)
+    .order('nome');
+
+  if (error) throw error;
+  return data || [];
 }
 
 /**
@@ -68,6 +105,7 @@ export async function criarMapeamentoLocal(
     tipo_logistico: string;
     marketplace: string;
     local_estoque_id: string;
+    local_venda_id?: string | null;
     ativo: boolean;
     observacoes?: string;
   }
@@ -95,6 +133,12 @@ export async function criarMapeamentoLocal(
       locais_estoque (
         id,
         nome
+      ),
+      locais_venda (
+        id,
+        nome,
+        icone,
+        local_estoque_id
       )
     `)
     .single();
@@ -113,6 +157,7 @@ export async function atualizarMapeamentoLocal(
     tipo_logistico?: string;
     marketplace?: string;
     local_estoque_id?: string;
+    local_venda_id?: string | null;
     ativo?: boolean;
     observacoes?: string;
   }
@@ -126,6 +171,12 @@ export async function atualizarMapeamentoLocal(
       locais_estoque (
         id,
         nome
+      ),
+      locais_venda (
+        id,
+        nome,
+        icone,
+        local_estoque_id
       )
     `)
     .single();
