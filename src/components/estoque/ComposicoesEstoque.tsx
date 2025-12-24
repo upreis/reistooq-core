@@ -298,9 +298,12 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
     // Se estamos no modo local de venda, filtrar para mostrar apenas produtos
     // que têm composições cadastradas NESTE local de venda específico
     if (isLocalVendaMode && composicoesAtuais) {
-      const skusComComposicao = new Set(Object.keys(composicoesAtuais));
+      // Normalizar SKUs para maiúsculo para comparação consistente
+      const skusComComposicao = new Set(
+        Object.keys(composicoesAtuais).map(sku => sku.toUpperCase())
+      );
       produtosBase = produtosBase.filter(produto => 
-        skusComComposicao.has(produto.sku_interno)
+        skusComComposicao.has(produto.sku_interno.toUpperCase())
       );
     }
     

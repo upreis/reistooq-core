@@ -11,9 +11,16 @@ export function useComposicoesLocalVenda(localVendaId?: string) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Buscar composições para um SKU específico
+  // Buscar composições para um SKU específico (case-insensitive)
   const getComposicoesForSku = useCallback((skuProduto: string): ProdutoComponente[] => {
-    return composicoes[skuProduto] || [];
+    const skuNormalizado = skuProduto.toUpperCase();
+    // Procurar pela chave normalizada
+    for (const [key, value] of Object.entries(composicoes)) {
+      if (key.toUpperCase() === skuNormalizado) {
+        return value;
+      }
+    }
+    return [];
   }, [composicoes]);
 
   // Carregar composições do local de venda
