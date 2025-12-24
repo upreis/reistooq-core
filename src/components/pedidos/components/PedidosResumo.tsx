@@ -187,8 +187,8 @@ export function PedidosResumo({
   const badgesVisiveis = badges.filter(badge => badge.valor > 0 || badge.destaque);
 
   return (
-    <div className={cn("flex items-center gap-2 flex-wrap", className)}>
-      <span className="text-sm font-medium text-muted-foreground">Resumo:</span>
+    <div className={cn("flex items-center gap-1.5 flex-wrap", className)}>
+      <span className="text-[10px] font-medium text-muted-foreground tracking-wide">Resumo:</span>
       
       {badgesVisiveis.map((badge) => {
         const Icon = badge.icon;
@@ -200,15 +200,15 @@ export function PedidosResumo({
             variant={badge.destaque ? "default" : "outline"}
             onClick={() => onFiltroClick?.(badge.id)}
             className={cn(
-              "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-all",
+              "flex items-center gap-1.5 text-[10px] h-5 px-1.5 py-0.5 cursor-pointer transition-all",
               badge.color,
-              isActive && "ring-2 ring-primary ring-offset-2 scale-105"
+              isActive && "ring-2 ring-primary ring-offset-1 scale-105"
             )}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-3 w-3" />
             <span className="font-normal">{badge.label}</span>
             <span className={cn(
-              "font-bold ml-1 px-1.5 py-0.5 rounded",
+              "font-bold ml-0.5 px-1 py-0 rounded text-[10px]",
               badge.destaque ? "bg-black/20" : "bg-primary/10"
             )}>
               {badge.valor}
