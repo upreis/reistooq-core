@@ -83,56 +83,33 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
     // selectedItems contém os SKUs dos produtos selecionados
     const skusParaDeletar = Array.from(selectedItems);
     
-    // Agrupar insumos por SKU de produto selecionado
-    const insumosParaDeletar: ComposicaoInsumoEnriquecida[] = [];
-    const skusSemInsumos: string[] = [];
-    
-    skusParaDeletar.forEach(skuProduto => {
-      const insumosDesteParaTodos = (insumosEnriquecidos || []).filter(
-        insumo => insumo.sku_produto === skuProduto
-      );
-      if (insumosDesteParaTodos.length > 0) {
-        insumosParaDeletar.push(...insumosDesteParaTodos);
-      } else {
-        // Produto sem insumos - tentar remover de produtos_composicoes (se existir lá)
-        skusSemInsumos.push(skuProduto);
-      }
-    });
-    
-    console.log('🗑️ DEBUG - Deletando:', {
-      selectedCount,
-      skusParaDeletar,
-      insumosParaDeletar: insumosParaDeletar.length,
-      skusSemInsumos
-    });
-    
-    if (insumosParaDeletar.length === 0 && skusSemInsumos.length === 0) {
+    if (skusParaDeletar.length === 0) {
       toast.error('Nenhum item selecionado');
       return;
     }
 
+    console.log('🗑️ DEBUG - Deletando SKUs:', skusParaDeletar);
+
     try {
       let insumosExcluidos = 0;
       let produtosExcluidos = 0;
-      let produtosIgnorados = 0;
       
-      // Deletar insumos (composições) dos produtos que têm
-      for (const insumo of insumosParaDeletar) {
-        console.log('🗑️ Deletando insumo:', insumo.id, insumo.sku_produto, insumo.sku_insumo);
-        await deleteInsumo(insumo.id);
-        insumosExcluidos++;
-      }
-      
-      // Tentar deletar produtos sem insumos da tabela produtos_composicoes
-      for (const sku of skusSemInsumos) {
-        console.log('🗑️ Tentando deletar produto sem insumo:', sku);
-        const result = await deleteProduto(sku);
-        if (result?.deleted) {
-          produtosExcluidos++;
-        } else {
-          // Produto está apenas em 'produtos' (estoque), não pode ser deletado
-          produtosIgnorados++;
+      for (const skuProduto of skusParaDeletar) {
+        // 1. Primeiro deletar todas as composições (insumos) deste produto no local de venda atual
+        const insumosDesteProduto = (insumosEnriquecidos || []).filter(
+          insumo => insumo.sku_produto === skuProduto
+        );
+        
+        for (const insumo of insumosDesteProduto) {
+          console.log('🗑️ Deletando insumo:', insumo.id, insumo.sku_produto, insumo.sku_insumo);
+          await deleteInsumo(insumo.id);
+          insumosExcluidos++;
         }
+        
+        // 2. Depois remover o produto da lista (produtos_composicoes)
+        console.log('🗑️ Removendo produto da lista:', skuProduto);
+        await deleteProduto(skuProduto);
+        produtosExcluidos++;
       }
       
       clearSelection();
@@ -140,20 +117,14 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
       
       // Montar mensagem de sucesso
       const partes: string[] = [];
+      if (produtosExcluidos > 0) {
+        partes.push(`${produtosExcluidos} produto(s)`);
+      }
       if (insumosExcluidos > 0) {
         partes.push(`${insumosExcluidos} composição(ões)`);
       }
-      if (produtosExcluidos > 0) {
-        partes.push(`${produtosExcluidos} produto(s) da lista`);
-      }
       
-      if (partes.length > 0) {
-        toast.success(`Excluído: ${partes.join(' e ')}`);
-      }
-      
-      if (produtosIgnorados > 0) {
-        toast.info(`${produtosIgnorados} produto(s) do estoque não podem ser removidos desta lista`);
-      }
+      toast.success(`Excluído: ${partes.join(' e ')}`);
     } catch (error: any) {
       console.error('❌ Erro ao excluir:', error);
       toast.error(error.message || 'Erro ao excluir itens selecionados');
