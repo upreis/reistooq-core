@@ -48,11 +48,16 @@ export function ImportarProdutosModal({
     }
   }, [open, getProducts]);
 
-  // Filtrar produtos do estoque
-  const produtosFiltrados = produtosEstoque.filter(produto => 
-    produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    produto.sku_interno.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrar apenas produtos filho (que têm sku_pai) e aplicar busca
+  const produtosFiltrados = produtosEstoque.filter(produto => {
+    // Só mostrar produtos filho (que têm sku_pai definido)
+    const isChild = produto.sku_pai && produto.sku_pai.trim() !== '';
+    if (!isChild) return false;
+    
+    // Aplicar filtro de busca
+    return produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      produto.sku_interno.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const handleSelectAll = () => {
     if (selectedIds.length === produtosFiltrados.length) {
@@ -117,7 +122,7 @@ export function ImportarProdutosModal({
           </div>
 
           {/* Lista de produtos */}
-          <ScrollArea className="flex-1 min-h-0 border rounded-lg">
+          <ScrollArea className="flex-1 min-h-[300px] max-h-[400px] border rounded-lg">
             {isLoading ? (
               <div className="p-8 text-center text-muted-foreground">
                 Carregando produtos...
