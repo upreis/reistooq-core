@@ -5,6 +5,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Package, Pencil, Trash2, AlertCircle, ChevronDown, ChevronUp, Layers, Edit } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,27 @@ export function InsumosComposicoesTable({
   localId,
   localVendaId // ✅ Receber localVendaId
 }: InsumosComposicoesTableProps) {
-  const { insumosEnriquecidos, isLoading } = useInsumosComposicoes(localId, localVendaId); // ✅ Passar ambos
+  const { insumosEnriquecidos, isLoading: isLoadingInsumos } = useInsumosComposicoes(localId, localVendaId); // ✅ Passar ambos
+
+  // Produtos base (para listar também quem ainda não tem insumo cadastrado)
+  const { data: produtosBase = [], isLoading: isLoadingProdutos } = useQuery({
+    queryKey: ["insumos-produtos-base"],
+    queryFn: async () => {
+      const [produtosRes, composicoesRes] = await Promise.all([
+        supabase.from('produtos').select('sku_interno, nome').eq('ativo', true),
+        supabase.from('produtos_composicoes').select('sku_interno, nome').eq('ativo', true),
+      ]);
+
+      const map = new Map<string, { sku: string; nome: string }>();
+      (produtosRes.data || []).forEach(p => map.set(p.sku_interno, { sku: p.sku_interno, nome: p.nome }));
+      (composicoesRes.data || []).forEach(p => map.set(p.sku_interno, { sku: p.sku_interno, nome: p.nome }));
+
+      return Array.from(map.values()).sort((a, b) => a.sku.localeCompare(b.sku));
+    },
+  });
+
+  const isLoading = isLoadingInsumos || isLoadingProdutos;
+
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
 
@@ -82,27 +103,37 @@ export function InsumosComposicoesTable({
   }, [insumosEnriquecidos]);
 
   // Agrupar insumos por produto e adicionar custo unitário
+  // Importante: incluir produtosBase mesmo quando ainda não têm insumos cadastrados
   const produtosComInsumos = useMemo(() => {
     const grupos: Record<string, ProdutoComInsumos> = {};
-    
+
+    // Começar pelos produtos base
+    produtosBase.forEach(p => {
+      grupos[p.sku] = {
+        sku_produto: p.sku,
+        nome_produto: p.nome || p.sku,
+        insumos: [],
+      };
+    });
+
+    // Preencher com as composições existentes
     insumosEnriquecidos.forEach(insumo => {
       if (!grupos[insumo.sku_produto]) {
         grupos[insumo.sku_produto] = {
           sku_produto: insumo.sku_produto,
           nome_produto: insumo.nome_produto || insumo.sku_produto,
-          insumos: []
+          insumos: [],
         };
       }
-      // Adicionar custo unitário ao insumo
       const insumoComCusto = {
         ...insumo,
-        custo_unitario: custosProdutos[insumo.sku_insumo] || 0
+        custo_unitario: custosProdutos[insumo.sku_insumo] || 0,
       } as any;
       grupos[insumo.sku_produto].insumos.push(insumoComCusto);
     });
-    
+
     return Object.values(grupos);
-  }, [insumosEnriquecidos, custosProdutos]);
+  }, [insumosEnriquecidos, custosProdutos, produtosBase]);
 
   // Filtrar produtos
   const produtosFiltrados = useMemo(() => {
@@ -166,7 +197,51 @@ export function InsumosComposicoesTable({
             const isExpanded = expandedCards.has(produto.sku_produto);
             const totalInsumosProduto = produto.insumos.length;
             const itemSelected = isSelected ? isSelected(produto.sku_produto) : false;
-            
+
+            // Produto ainda sem composição de insumos
+            if (totalInsumosProduto === 0) {
+              return (
+                <Card
+                  key={produto.sku_produto}
+                  className={cn(
+                    "group hover:shadow-xl transition-all duration-300 relative",
+                    itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
+                  )}
+                >
+                  <CardContent className="p-3 md:p-6">
+                    {isSelectMode && onSelectItem && (
+                      <div className="absolute top-3 right-3 z-10">
+                        <Checkbox
+                          checked={itemSelected}
+                          onCheckedChange={() => onSelectItem(produto.sku_produto)}
+                          className="h-5 w-5"
+                        />
+                      </div>
+                    )}
+
+                    <header className="mb-4">
+                      <h3 className="font-semibold text-lg text-foreground leading-snug line-clamp-2 mb-2 pr-8">
+                        {produto.nome_produto}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-medium">SKU:</span>
+                        <Badge variant="outline" className="font-mono text-xs px-2 py-1">
+                          {produto.sku_produto}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          Sem insumos
+                        </Badge>
+                      </div>
+                    </header>
+
+                    <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                      Nenhuma composição cadastrada para este produto ainda. Use "Nova Composição" para adicionar os insumos.
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+
             return (
               <Card key={produto.sku_produto} className={cn(
                 "group hover:shadow-xl transition-all duration-300 relative",
