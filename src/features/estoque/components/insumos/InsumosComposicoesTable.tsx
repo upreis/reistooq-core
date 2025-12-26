@@ -34,6 +34,8 @@ interface InsumosComposicoesTableProps {
   isSelected?: (id: string) => boolean;
   localId?: string;
   localVendaId?: string; // ✅ Adicionar localVendaId
+  /** Lista de SKUs atualmente visíveis (após filtros), usada pelo botão "Selecionar Todos" no pai */
+  onVisibleSkusChange?: (skus: string[]) => void;
 }
 
 export function InsumosComposicoesTable({ 
@@ -45,7 +47,8 @@ export function InsumosComposicoesTable({
   onSelectItem,
   isSelected,
   localId,
-  localVendaId // ✅ Receber localVendaId
+  localVendaId, // ✅ Receber localVendaId
+  onVisibleSkusChange,
 }: InsumosComposicoesTableProps) {
   const { insumosEnriquecidos, isLoading: isLoadingInsumos } = useInsumosComposicoes(localId, localVendaId); // ✅ Passar ambos
 
@@ -142,13 +145,18 @@ export function InsumosComposicoesTable({
       return (
         produto.sku_produto.toLowerCase().includes(termo) ||
         produto.nome_produto.toLowerCase().includes(termo) ||
-        produto.insumos.some(insumo => 
+        produto.insumos.some(insumo =>
           insumo.sku_insumo.toLowerCase().includes(termo) ||
           insumo.nome_insumo?.toLowerCase().includes(termo)
         )
       );
     });
   }, [produtosComInsumos, searchQuery]);
+
+  // Informar ao componente pai quais SKUs estão visíveis (para "Selecionar Todos")
+  useEffect(() => {
+    onVisibleSkusChange?.(produtosFiltrados.map(p => p.sku_produto));
+  }, [produtosFiltrados, onVisibleSkusChange]);
 
   // Calcular total de insumos ANTES de qualquer return condicional
   const totalInsumos = useMemo(() => {
