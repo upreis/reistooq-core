@@ -181,7 +181,13 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => selectAll(insumosEnriquecidos)}
+              onClick={() => {
+                // Criar lista de produtos únicos com id = sku_produto para compatibilidade com o hook
+                const produtosUnicos = Array.from(
+                  new Set((insumosEnriquecidos || []).map(i => i.sku_produto))
+                ).map(sku => ({ id: sku }));
+                selectAll(produtosUnicos);
+              }}
               className="gap-1.5 h-9"
             >
               <CheckCircle className="w-3.5 h-3.5" />
@@ -304,7 +310,12 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => selectAll(insumosEnriquecidos)}
+                onClick={() => {
+                  const produtosUnicos = Array.from(
+                    new Set((insumosEnriquecidos || []).map(i => i.sku_produto))
+                  ).map(sku => ({ id: sku }));
+                  selectAll(produtosUnicos);
+                }}
                 className="gap-1.5 text-xs"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
