@@ -69,11 +69,16 @@ export class AnnouncementService {
   }
 
   async createAnnouncement(data: AnnouncementCreate): Promise<Announcement> {
+    // Get organization_id for RLS compliance
+    const { data: orgId } = await supabase.rpc('get_current_org_id');
+    const { data: userData } = await supabase.auth.getUser();
+
     const { data: announcement, error } = await supabase
       .from('announcements')
       .insert({
         ...data,
-        created_by: (await supabase.auth.getUser()).data.user?.id!
+        created_by: userData.user?.id!,
+        organization_id: orgId
       })
       .select()
       .single();
