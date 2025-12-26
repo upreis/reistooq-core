@@ -303,26 +303,30 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                 {/* SKU do Produto */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">SKU do Produto</Label>
-                  <Select
-                    value={produtoSku}
-                    onValueChange={(value) => {
-                      setProdutoSku(value);
-                      const produto = produtos.find(p => p.sku === value);
-                      setProdutoNome(produto?.nome || '');
-                    }}
-                    disabled={loading || !!insumo}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o produto..." />
-                    </SelectTrigger>
-                    <SelectContent>
+                  <div className="relative">
+                    <Input
+                      list="produto-sku-list"
+                      value={produtoSku}
+                      onChange={(e) => {
+                        setProdutoSku(e.target.value);
+                        // Auto-completar nome se encontrar produto
+                        const produto = produtos.find(p => 
+                          p.sku.toLowerCase() === e.target.value.toLowerCase()
+                        );
+                        setProdutoNome(produto?.nome || '');
+                      }}
+                      disabled={loading || !!insumo}
+                      placeholder="Digite ou selecione um SKU..."
+                      className="w-full"
+                    />
+                    <datalist id="produto-sku-list">
                       {produtos.map(p => (
-                        <SelectItem key={p.sku} value={p.sku}>
-                          {p.sku}
-                        </SelectItem>
+                        <option key={p.sku} value={p.sku}>
+                          {p.nome}
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </datalist>
+                  </div>
                   {insumo && (
                     <p className="text-xs text-muted-foreground">
                       Produto bloqueado em modo de edição
