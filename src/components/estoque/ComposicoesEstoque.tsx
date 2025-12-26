@@ -293,35 +293,24 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
 
 
   // Aplicar filtro de busca aos dados já filtrados pelo hook
-  // IMPORTANTE: No modo local de venda, mostrar SOMENTE produtos que têm composições nesse local
   const produtosFinaisFiltrados = useMemo(() => {
-    let produtosBase = filteredData || [];
-    
-    // Se estamos no modo local de venda, filtrar para mostrar apenas produtos
-    // que têm composições cadastradas NESTE local de venda específico
-    if (isLocalVendaMode && composicoesAtuais) {
-      // Normalizar SKUs para maiúsculo para comparação consistente
-      const skusComComposicao = new Set(
-        Object.keys(composicoesAtuais).map(sku => sku.toUpperCase())
-      );
-      produtosBase = produtosBase.filter(produto => 
-        skusComComposicao.has(produto.sku_interno.toUpperCase())
-      );
-    }
-    
+    const produtosBase = filteredData || [];
+
     return produtosBase.filter(produto => {
-      const matchesSearch = !searchQuery || 
+      const matchesSearch =
+        !searchQuery ||
         produto.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
         produto.sku_interno.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesCategory = !hierarchicalFilters.categoriaPrincipal || 
+
+      const matchesCategory =
+        !hierarchicalFilters.categoriaPrincipal ||
         produto.categoria_principal === hierarchicalFilters.categoriaPrincipal ||
         produto.categoria === hierarchicalFilters.categoria ||
         produto.subcategoria === hierarchicalFilters.subcategoria;
 
       return matchesSearch && matchesCategory;
     });
-  }, [filteredData, searchQuery, hierarchicalFilters, isLocalVendaMode, composicoesAtuais]);
+  }, [filteredData, searchQuery, hierarchicalFilters]);
 
   // Carregar custos dos produtos quando as composições mudarem
   useEffect(() => {
