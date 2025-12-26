@@ -15,7 +15,7 @@ const navItems = [
   },
   {
     path: "/estoque/composicoes",
-    label: "Composições",
+    label: "Produtos",
     icon: Layers,
   },
   {
