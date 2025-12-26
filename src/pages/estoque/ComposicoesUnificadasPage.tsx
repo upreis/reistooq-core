@@ -101,7 +101,7 @@ export default function ComposicoesUnificadasPage() {
         )}
 
         {/* Renderiza diretamente o InsumosPage sem abas */}
-        <InsumosPage localId={localAtivo?.id} hideHeader key={`insumos-${reloadKey}`} />
+        <InsumosPage localId={localAtivo?.id} localVendaId={localVendaAtivo?.id} hideHeader key={`insumos-${reloadKey}`} />
       </div>
     );
   }

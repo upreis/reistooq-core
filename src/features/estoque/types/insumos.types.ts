@@ -6,7 +6,8 @@
 export interface ComposicaoInsumo {
   id: string;
   organization_id: string;
-  local_id: string; // ✅ CRÍTICO: Adicionar local_id
+  local_id?: string; // Para compatibilidade com composicoes_insumos
+  local_venda_id?: string; // Para composicoes_local_venda (independente por local)
   sku_produto: string;
   sku_insumo: string;
   quantidade: number; // Sempre 1

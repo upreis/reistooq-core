@@ -11,21 +11,22 @@ import type { ComposicaoInsumo, ComposicaoInsumoEnriquecida, InsumoFormData } fr
 
 type ComposicaoInsumoInsert = Database['public']['Tables']['composicoes_insumos']['Insert'];
 
-export function useInsumosComposicoes(localId?: string) {
+export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
   const queryClient = useQueryClient();
 
-  // 📥 Buscar todos os insumos filtrados por local
+  // 📥 Buscar todos os insumos filtrados por local de venda (independente por local de venda)
   const { data: insumos = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['composicoes-insumos', localId],
+    queryKey: ['composicoes-insumos', localVendaId],
     queryFn: async () => {
-      if (!localId) return [];
+      if (!localVendaId) return [];
 
-      console.log('🔍 [useInsumosComposicoes] Carregando insumos para local:', localId);
+      console.log('🔍 [useInsumosComposicoes] Carregando insumos para local de venda:', localVendaId);
       
+      // Buscar da tabela composicoes_local_venda (independente por local de venda)
       const { data, error } = await supabase
-        .from('composicoes_insumos')
+        .from('composicoes_local_venda')
         .select('*')
-        .eq('local_id', localId)
+        .eq('local_venda_id', localVendaId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -34,23 +35,28 @@ export function useInsumosComposicoes(localId?: string) {
       }
       
       console.log('✅ [useInsumosComposicoes] Insumos carregados:', data?.length);
-      return data as ComposicaoInsumo[];
+      // Mapear para o tipo ComposicaoInsumo
+      return data?.map(item => ({
+        ...item,
+        local_id: item.local_venda_id // Mapear local_venda_id para local_id para compatibilidade
+      })) as ComposicaoInsumo[];
     },
-    enabled: !!localId
+    enabled: !!localVendaId
   });
 
   // 📥 Buscar insumos enriquecidos (com nomes e estoque)
   const { data: insumosEnriquecidos = [] } = useQuery({
-    queryKey: ['composicoes-insumos-enriquecidos', localId],
+    queryKey: ['composicoes-insumos-enriquecidos', localVendaId],
     queryFn: async () => {
-      if (!localId) return [];
+      if (!localVendaId) return [];
 
-      console.log('🔍 [Enriquecidos] Carregando para local:', localId);
+      console.log('🔍 [Enriquecidos] Carregando para local de venda:', localVendaId);
 
+      // Buscar da tabela composicoes_local_venda
       const { data: composicoes, error } = await supabase
-        .from('composicoes_insumos')
+        .from('composicoes_local_venda')
         .select('*')
-        .eq('local_id', localId)
+        .eq('local_venda_id', localVendaId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -81,9 +87,18 @@ export function useInsumosComposicoes(localId?: string) {
         insumosMap.set(i.sku_interno, { nome: i.nome, estoque: i.quantidade_atual })
       );
 
-      // Enriquecer dados
+      // Enriquecer dados - adaptar campos da composicoes_local_venda
       const enriquecidos: ComposicaoInsumoEnriquecida[] = composicoes?.map(comp => ({
-        ...comp,
+        id: comp.id,
+        sku_produto: comp.sku_produto,
+        sku_insumo: comp.sku_insumo,
+        quantidade: comp.quantidade,
+        local_id: localVendaId, // Usar o local_venda_id como referência
+        organization_id: comp.organization_id,
+        observacoes: comp.observacoes,
+        ativo: comp.ativo,
+        created_at: comp.created_at,
+        updated_at: comp.updated_at,
         nome_produto: nomesProdutos.get(comp.sku_produto) || comp.sku_produto,
         nome_insumo: insumosMap.get(comp.sku_insumo)?.nome || comp.sku_insumo,
         estoque_disponivel: insumosMap.get(comp.sku_insumo)?.estoque || 0
@@ -92,7 +107,7 @@ export function useInsumosComposicoes(localId?: string) {
       console.log('✅ [Enriquecidos] Dados enriquecidos:', enriquecidos.length);
       return enriquecidos;
     },
-    enabled: !!localId
+    enabled: !!localVendaId
   });
 
   // 🔍 Buscar insumos de um produto específico
@@ -100,17 +115,17 @@ export function useInsumosComposicoes(localId?: string) {
     return insumos.filter(i => i.sku_produto === skuProduto);
   };
 
-  // ➕ Criar novo insumo
+  // ➕ Criar novo insumo (na tabela composicoes_local_venda)
   const createMutation = useMutation({
-    mutationFn: async (data: InsumoFormData & { local_id: string }) => {
+    mutationFn: async (data: InsumoFormData & { local_venda_id: string }) => {
       const { data: result, error } = await supabase
-        .from('composicoes_insumos')
+        .from('composicoes_local_venda')
         .insert({
           sku_produto: data.sku_produto,
           sku_insumo: data.sku_insumo,
           quantidade: data.quantidade,
           observacoes: data.observacoes || null,
-          local_id: data.local_id
+          local_venda_id: data.local_venda_id
         } as any)
         .select()
         .single();
@@ -127,18 +142,18 @@ export function useInsumosComposicoes(localId?: string) {
       console.error('Erro ao criar insumo:', error);
       
       if (error.code === '23505') {
-        toast.error('Este insumo já está cadastrado para este produto');
+        toast.error('Este insumo já está cadastrado para este produto neste local');
       } else {
         toast.error('Erro ao cadastrar insumo: ' + error.message);
       }
     }
   });
 
-  // ✏️ Atualizar insumo
+  // ✏️ Atualizar insumo (na tabela composicoes_local_venda)
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsumoFormData> }) => {
       const { data: result, error } = await supabase
-        .from('composicoes_insumos')
+        .from('composicoes_local_venda')
         .update({
           quantidade: data.quantidade,
           observacoes: data.observacoes
@@ -161,11 +176,11 @@ export function useInsumosComposicoes(localId?: string) {
     }
   });
 
-  // 🗑️ Excluir insumo
+  // 🗑️ Excluir insumo (da tabela composicoes_local_venda)
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('composicoes_insumos')
+        .from('composicoes_local_venda')
         .delete()
         .eq('id', id);
 
