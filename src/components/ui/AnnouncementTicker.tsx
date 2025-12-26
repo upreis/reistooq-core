@@ -21,7 +21,28 @@ interface Announcement {
   endDate?: string;
 }
 
-// Avisos carregados do banco (system_alerts)
+// Hook para buscar announcements da tabela announcements
+const useAnnouncementsFromDB = () => {
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const loadAnnouncements = async () => {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        setAnnouncements(data);
+      }
+    };
+    
+    loadAnnouncements();
+  }, []);
+  
+  return announcements;
+};
 
 // Normalização de rotas e aliases para compatibilidade com rotas antigas
 const routeAliases: Record<string, string[]> = {
@@ -81,7 +102,8 @@ export function AnnouncementTicker() {
   const { isHidden, setIsHidden, setHasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { isSidebarCollapsed } = useSidebarUI();
   const isMobile = useIsMobile();
-  const { alerts, dismissAlert } = useSystemAlerts();
+  const { alerts: systemAlerts, dismissAlert } = useSystemAlerts();
+  const dbAnnouncements = useAnnouncementsFromDB(); // Busca da tabela announcements
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -105,35 +127,56 @@ export function AnnouncementTicker() {
   const announcements = useMemo<Announcement[]>(() => {
     const currentRoute = location.pathname;
     
-    return alerts
+    // Combinar system_alerts e announcements
+    const fromSystemAlerts = systemAlerts
       .filter((a: any) => {
-        // Filtros básicos
         if (!a.active || (a.expires_at && new Date(a.expires_at) < new Date())) {
           return false;
         }
-        
-        // Se o alerta foi dispensado pelo usuário (e não sofreu atualização depois)
         const dismissedAt = dismissedAlerts.get(a.id);
         if (dismissedAt && new Date(a.updated_at) <= new Date(dismissedAt)) {
           return false;
         }
-        
-        // Filtrar por rota se especificado
         if (a.target_routes && a.target_routes.length > 0) {
           return a.target_routes.some((route: string) => routeMatches(currentRoute, route));
         }
-        
         return true;
       })
       .map((a: any) => ({ 
         id: a.id, 
         message: a.message, 
-        type: (a.kind as any), 
+        type: (a.alert_type || a.kind || 'info') as 'info' | 'warning' | 'success' | 'error', 
         active: true,
         href: a.href,
         link_label: a.link_label
       }));
-  }, [alerts, dismissedAlerts, location.pathname]);
+
+    // Processar announcements da tabela announcements
+    const fromAnnouncements = dbAnnouncements
+      .filter((a: any) => {
+        if (!a.active || (a.expires_at && new Date(a.expires_at) < new Date())) {
+          return false;
+        }
+        const dismissedAt = dismissedAlerts.get(a.id);
+        if (dismissedAt && new Date(a.updated_at) <= new Date(dismissedAt)) {
+          return false;
+        }
+        if (a.target_routes && a.target_routes.length > 0) {
+          return a.target_routes.some((route: string) => routeMatches(currentRoute, route));
+        }
+        return true;
+      })
+      .map((a: any) => ({ 
+        id: a.id, 
+        message: a.message, 
+        type: (a.kind || 'info') as 'info' | 'warning' | 'success' | 'error', 
+        active: true,
+        href: a.href,
+        link_label: a.link_label
+      }));
+
+    return [...fromSystemAlerts, ...fromAnnouncements];
+  }, [systemAlerts, dbAnnouncements, dismissedAlerts, location.pathname]);
   
   useEffect(() => {
     setHasAnnouncements(announcements.length > 0);
