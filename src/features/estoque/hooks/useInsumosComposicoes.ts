@@ -199,15 +199,39 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
   });
 
   // 🗑️ Excluir produto da lista (da tabela produtos_composicoes) - para produtos sem composições
+  // Só deleta se o produto existe em produtos_composicoes (não em produtos)
   const deleteProdutoMutation = useMutation({
     mutationFn: async (skuProduto: string) => {
-      console.log('🗑️ Excluindo produto da lista:', skuProduto);
+      console.log('🗑️ Tentando excluir produto da lista:', skuProduto);
+      
+      // Verificar se o produto existe em produtos_composicoes
+      const { data: produtoComposicao, error: checkError } = await supabase
+        .from('produtos_composicoes')
+        .select('id')
+        .eq('sku_interno', skuProduto)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error('❌ Erro ao verificar produto:', checkError);
+        throw checkError;
+      }
+      
+      if (!produtoComposicao) {
+        console.log('ℹ️ Produto não está em produtos_composicoes, ignorando:', skuProduto);
+        // Produto está apenas em 'produtos', não pode ser deletado
+        return { deleted: false, reason: 'not_in_composicoes' };
+      }
+      
+      // Produto existe em produtos_composicoes, pode deletar
       const { error } = await supabase
         .from('produtos_composicoes')
         .delete()
         .eq('sku_interno', skuProduto);
 
       if (error) throw error;
+      
+      console.log('✅ Produto excluído de produtos_composicoes:', skuProduto);
+      return { deleted: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['composicoes-insumos'] });
