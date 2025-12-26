@@ -73,11 +73,27 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
         
         // Buscar todos os insumos existentes para este produto NO LOCAL ATUAL
         try {
-          const { data: insumosExistentes, error } = await supabase
-            .from('composicoes_insumos')
-            .select('*')
-            .eq('sku_produto', insumo.sku_produto)
-            .eq('local_id', insumo.local_id); // ✅ CRÍTICO: Filtrar por local!
+          // Usar composicoes_local_venda se tiver local_venda_id, senão composicoes_insumos
+          let insumosExistentes: any[] = [];
+          let error: any = null;
+          
+          if (insumo.local_venda_id) {
+            const result = await supabase
+              .from('composicoes_local_venda')
+              .select('*')
+              .eq('sku_produto', insumo.sku_produto)
+              .eq('local_venda_id', insumo.local_venda_id);
+            insumosExistentes = result.data || [];
+            error = result.error;
+          } else if (insumo.local_id) {
+            const result = await supabase
+              .from('composicoes_insumos')
+              .select('*')
+              .eq('sku_produto', insumo.sku_produto)
+              .eq('local_id', insumo.local_id);
+            insumosExistentes = result.data || [];
+            error = result.error;
+          }
 
           if (error) throw error;
 
@@ -226,18 +242,33 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
       if (insumo) {
         console.log('🗑️ Deletando insumos existentes para:', {
           sku_produto: produtoSku,
+          local_venda_id: insumo.local_venda_id,
           local_id: insumo.local_id
         });
         
-        const { error: deleteError } = await supabase
-          .from('composicoes_insumos')
-          .delete()
-          .eq('sku_produto', produtoSku.trim())
-          .eq('local_id', insumo.local_id); // ✅ CRÍTICO: Filtrar por local!
+        // Usar a tabela correta baseado em qual ID está disponível
+        if (insumo.local_venda_id) {
+          const { error: deleteError } = await supabase
+            .from('composicoes_local_venda')
+            .delete()
+            .eq('sku_produto', produtoSku.trim())
+            .eq('local_venda_id', insumo.local_venda_id);
 
-        if (deleteError) {
-          console.error('❌ Erro ao deletar insumos existentes:', deleteError);
-          throw deleteError;
+          if (deleteError) {
+            console.error('❌ Erro ao deletar insumos existentes:', deleteError);
+            throw deleteError;
+          }
+        } else if (insumo.local_id) {
+          const { error: deleteError } = await supabase
+            .from('composicoes_insumos')
+            .delete()
+            .eq('sku_produto', produtoSku.trim())
+            .eq('local_id', insumo.local_id);
+
+          if (deleteError) {
+            console.error('❌ Erro ao deletar insumos existentes:', deleteError);
+            throw deleteError;
+          }
         }
         console.log('✅ Insumos do local deletados');
       }
