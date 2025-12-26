@@ -62,9 +62,11 @@ const ICONES_DISPONIVEIS = ['🛒', '🏪', '📦', '🛍️', '💻', '📱', '
 interface LocalVendaSelectorProps {
   localEstoqueId: string;
   localEstoqueNome: string;
+  /** Modo somente leitura - oculta botões de criar/editar/excluir */
+  readOnly?: boolean;
 }
 
-export function LocalVendaSelector({ localEstoqueId, localEstoqueNome }: LocalVendaSelectorProps) {
+export function LocalVendaSelector({ localEstoqueId, localEstoqueNome, readOnly = false }: LocalVendaSelectorProps) {
   const [locais, setLocais] = useState<LocalVenda[]>([]);
   const [locaisEstoque, setLocaisEstoque] = useState<LocalEstoque[]>([]);
   const [loading, setLoading] = useState(true);
@@ -294,47 +296,53 @@ export function LocalVendaSelector({ localEstoqueId, localEstoqueNome }: LocalVe
                   <span className="font-medium">{local.nome}</span>
                 </Button>
                 
-                <div className="absolute -top-1.5 -right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      abrirEdicao(local);
-                    }}
-                    title="Editar"
-                  >
-                    <Edit className="h-2 w-2" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLocalParaDeletar(local);
-                    }}
-                    title="Excluir"
-                  >
-                    <X className="h-2 w-2" />
-                  </Button>
-                </div>
+                {/* Botões de edição/exclusão - apenas no modo não-readOnly */}
+                {!readOnly && (
+                  <div className="absolute -top-1.5 -right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        abrirEdicao(local);
+                      }}
+                      title="Editar"
+                    >
+                      <Edit className="h-2 w-2" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocalParaDeletar(local);
+                      }}
+                      title="Excluir"
+                    >
+                      <X className="h-2 w-2" />
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           })
         )}
         
-        <GerenciarLocaisVendaModal
-          trigger={
-            <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs">
-              <Plus className="h-3 w-3 mr-1" />
-              Local de Venda
-            </Button>
-          }
-          onSuccess={carregarLocais}
-          localEstoqueFixo={{ id: localEstoqueId, nome: localEstoqueNome }}
-        />
+        {/* Botão de adicionar - apenas no modo não-readOnly */}
+        {!readOnly && (
+          <GerenciarLocaisVendaModal
+            trigger={
+              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs">
+                <Plus className="h-3 w-3 mr-1" />
+                Local de Venda
+              </Button>
+            }
+            onSuccess={carregarLocais}
+            localEstoqueFixo={{ id: localEstoqueId, nome: localEstoqueNome }}
+          />
+        )}
       </div>
 
       {/* Dialog de Edição */}

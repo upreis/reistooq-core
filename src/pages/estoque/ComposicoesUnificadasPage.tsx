@@ -136,7 +136,8 @@ export default function ComposicoesUnificadasPage() {
             {localAtivo && (
               <LocalVendaSelector 
                 localEstoqueId={localAtivo.id} 
-                localEstoqueNome={localAtivo.nome} 
+                localEstoqueNome={localAtivo.nome}
+                readOnly
               />
             )}
             {localVendaAtivo && (
