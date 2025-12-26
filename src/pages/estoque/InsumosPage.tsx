@@ -285,21 +285,60 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
             onClick={() => setShowInfo(!showInfo)}
             className="w-full p-3 flex items-center justify-between text-sm font-medium hover:bg-blue-500/5 transition-colors"
           >
-            <span>💡 Como funciona</span>
+            <span>💡 Como funciona a composição de insumos</span>
             {showInfo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
           {showInfo && (
-            <div className="px-4 pb-4 text-sm">
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                <li>
-                  <strong>Composições de Produtos:</strong> Componentes multiplicados pela quantidade 
-                  (ex: 3 produtos = 3x cada componente)
-                </li>
-                <li>
-                  <strong>Composições de Insumos:</strong> Sempre 1 unidade por pedido 
-                  (ex: 3 produtos do mesmo comprador = 1 etiqueta, 1 embalagem)
-                </li>
-              </ul>
+            <div className="px-4 pb-4 text-sm space-y-4">
+              <div className="text-muted-foreground">
+                <p className="mb-3">
+                  A composição de insumos é configurada <strong>por local de venda</strong>, não por tipo de estoque.
+                  Isso permite que cada canal tenha suas próprias regras de consumo de materiais.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Full/Fulfillment */}
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">📦</span>
+                    <h4 className="font-semibold text-emerald-600 dark:text-emerald-400">Estoque Full (Fulfillment)</h4>
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    Quando o estoque é transferido para o Full, os insumos já vão junto com os produtos.
+                    <strong className="block mt-1">Não há saída adicional do estoque físico na venda</strong> — apenas o que já foi enviado 
+                    (ex: etiqueta de identificação já colada no produto).
+                  </p>
+                </div>
+
+                {/* In-house */}
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🏠</span>
+                    <h4 className="font-semibold text-amber-600 dark:text-amber-400">Vendas In-house</h4>
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    A composição de insumos deve ser cadastrada <strong>para cada local de venda</strong>, 
+                    pois cada canal pode ter exigências diferentes.
+                  </p>
+                </div>
+              </div>
+
+              {/* Exemplo prático */}
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">📋</span>
+                  <h4 className="font-semibold">Exemplo Prático</h4>
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• <strong>Mercado Livre:</strong> 1 etiqueta 10x15 por venda</li>
+                  <li>• <strong>Shopee:</strong> 2 etiquetas 10x15 por venda</li>
+                  <li>• <strong>Loja própria:</strong> 1 etiqueta + 1 nota fiscal por venda</li>
+                </ul>
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Cada local de venda consome insumos de forma diferente, por isso a configuração é individual.
+                </p>
+              </div>
             </div>
           )}
         </div>
