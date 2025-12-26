@@ -14,7 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { InsumosComposicoesTable } from '@/features/estoque/components/insumos/InsumosComposicoesTable';
 import { InsumoForm } from '@/features/estoque/components/insumos/InsumoForm';
 import { InsumoDeleteDialog } from '@/features/estoque/components/insumos/InsumoDeleteDialog';
-import { useInsumosComposicoes } from '@/features/estoque/hooks/useInsumosComposicoes';
+import { ImportarProdutosModal } from '@/components/composicoes/ImportarProdutosModal';
+import { useInsumosComposicoes, useImportarInsumosDoEstoque } from '@/features/estoque/hooks/useInsumosComposicoes';
 import { useComposicoesSelection } from "@/features/estoque/hooks/useComposicoesSelection";
 import type { ComposicaoInsumoEnriquecida } from '@/features/estoque/types/insumos.types';
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 export default function InsumosPage({ hideHeader = false, localId, localVendaId }: { hideHeader?: boolean; localId?: string; localVendaId?: string }) {
   const { createInsumo, updateInsumo, deleteInsumo, insumosEnriquecidos } = useInsumosComposicoes(localId, localVendaId);
+  const { importarDoEstoque, isImporting } = useImportarInsumosDoEstoque();
   
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -29,6 +31,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   // Hook para seleção de itens
   const {
@@ -139,7 +142,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
             </Button>
             <Button
               variant="outline"
-              onClick={() => toast.info('Importar do Estoque - Em breve')}
+              onClick={() => setImportModalOpen(true)}
               className="gap-1.5 h-9 text-sm"
             >
               <Import className="w-3.5 h-3.5" />
@@ -370,6 +373,14 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
         }}
         onConfirm={handleConfirmDelete}
         insumo={insumoSelecionado}
+      />
+
+      {/* Modal de Importação de Produtos do Estoque */}
+      <ImportarProdutosModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        onImportar={importarDoEstoque}
+        isImporting={isImporting}
       />
     </div>
   );

@@ -219,3 +219,68 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
     isDeleting: deleteMutation.isPending
   };
 }
+
+/**
+ * Hook para importar produtos do estoque como insumos
+ */
+export function useImportarInsumosDoEstoque() {
+  const queryClient = useQueryClient();
+
+  const importMutation = useMutation({
+    mutationFn: async (produtoIds: string[]) => {
+      // Buscar produtos do estoque (incluindo organization_id)
+      const { data: produtosEstoque, error: fetchError } = await supabase
+        .from("produtos")
+        .select("*")
+        .in("id", produtoIds);
+
+      if (fetchError) throw fetchError;
+      if (!produtosEstoque || produtosEstoque.length === 0) {
+        throw new Error("Nenhum produto encontrado para importar");
+      }
+
+      // Converter para formato de produtos_composicoes (insumos ficam na tabela de composições)
+      const produtosParaImportar = produtosEstoque.map(produto => ({
+        sku_interno: produto.sku_interno,
+        nome: produto.nome,
+        descricao: produto.descricao,
+        categoria: produto.categoria,
+        preco_venda: produto.preco_venda || 0,
+        preco_custo: produto.preco_custo || 0,
+        quantidade_atual: produto.quantidade_atual || 0,
+        estoque_minimo: produto.estoque_minimo || 0,
+        url_imagem: produto.url_imagem,
+        codigo_barras: produto.codigo_barras,
+        status: "active",
+        ativo: true,
+        organization_id: produto.organization_id
+      }));
+
+      // Inserir na tabela de composições (com upsert para evitar duplicatas)
+      const { data, error } = await supabase
+        .from("produtos_composicoes")
+        .upsert(produtosParaImportar as any, {
+          onConflict: "sku_interno,organization_id",
+          ignoreDuplicates: false
+        })
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["produtos-composicoes"] });
+      queryClient.invalidateQueries({ queryKey: ["composicoes-insumos"] });
+      queryClient.invalidateQueries({ queryKey: ["composicoes-insumos-enriquecidos"] });
+      toast.success(`${data?.length || 0} produtos importados com sucesso!`);
+    },
+    onError: (error: any) => {
+      toast.error("Erro ao importar produtos: " + error.message);
+    },
+  });
+
+  return {
+    importarDoEstoque: importMutation.mutate,
+    isImporting: importMutation.isPending
+  };
+}
