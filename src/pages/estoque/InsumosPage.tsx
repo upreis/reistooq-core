@@ -20,8 +20,8 @@ import type { ComposicaoInsumoEnriquecida } from '@/features/estoque/types/insum
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export default function InsumosPage({ hideHeader = false, localId }: { hideHeader?: boolean; localId?: string }) {
-  const { createInsumo, updateInsumo, deleteInsumo, insumosEnriquecidos } = useInsumosComposicoes(localId);
+export default function InsumosPage({ hideHeader = false, localId, localVendaId }: { hideHeader?: boolean; localId?: string; localVendaId?: string }) {
+  const { createInsumo, updateInsumo, deleteInsumo, insumosEnriquecidos } = useInsumosComposicoes(localId, localVendaId);
   
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -59,12 +59,12 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
   };
 
   const handleFormSubmit = async (data: any) => {
-    if (!localId) {
-      toast.error('Nenhum local de estoque selecionado');
+    if (!localVendaId) {
+      toast.error('Selecione um local de venda primeiro');
       return;
     }
     // O InsumoForm sempre cria novos registros (ele deleta os antigos se estiver editando)
-    await createInsumo({ ...data, local_id: localId });
+    await createInsumo({ ...data, local_venda_id: localVendaId });
   };
 
   const handleConfirmDelete = async () => {
@@ -286,6 +286,7 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
           onSelectItem={selectItem}
           isSelected={isSelected}
           localId={localId}
+          localVendaId={localVendaId}
         />
       </div>
 

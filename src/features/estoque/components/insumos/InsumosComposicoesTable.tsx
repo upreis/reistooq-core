@@ -31,7 +31,8 @@ interface InsumosComposicoesTableProps {
   selectedItems?: Set<string>;
   onSelectItem?: (id: string) => void;
   isSelected?: (id: string) => boolean;
-  localId?: string; // ✅ CRÍTICO: Adicionar localId como prop
+  localId?: string;
+  localVendaId?: string; // ✅ Adicionar localVendaId
 }
 
 export function InsumosComposicoesTable({ 
@@ -42,9 +43,10 @@ export function InsumosComposicoesTable({
   selectedItems = new Set(),
   onSelectItem,
   isSelected,
-  localId // ✅ CRÍTICO: Receber localId como prop
+  localId,
+  localVendaId // ✅ Receber localVendaId
 }: InsumosComposicoesTableProps) {
-  const { insumosEnriquecidos, isLoading } = useInsumosComposicoes(localId); // ✅ CRÍTICO: Passar localId para o hook
+  const { insumosEnriquecidos, isLoading } = useInsumosComposicoes(localId, localVendaId); // ✅ Passar ambos
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
 
