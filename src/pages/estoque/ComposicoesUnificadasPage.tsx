@@ -106,6 +106,7 @@ export default function ComposicoesUnificadasPage() {
     );
   }
 
+  // Página de composições - renderiza diretamente sem abas
   return (
     <div className="space-y-6">
       {/* Seletor de Local de Estoque - Ocultar no mobile */}
@@ -157,31 +158,12 @@ export default function ComposicoesUnificadasPage() {
         </Alert>
       )}
 
-      {/* Tabs - apenas para página de composições */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full max-w-xs grid-cols-2 h-8">
-          <TabsTrigger value="produtos" className="flex items-center gap-1.5 text-xs h-7 px-2.5">
-            <Layers className="h-3 w-3" />
-            Produtos
-          </TabsTrigger>
-          <TabsTrigger value="insumos" className="flex items-center gap-1.5 text-xs h-7 px-2.5">
-            <PackageCheck className="h-3 w-3" />
-            Insumos
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="produtos" className="mt-6">
-          <ComposicoesEstoque 
-            localId={localAtivo?.id} 
-            localVendaId={localVendaAtivo?.id}
-            key={`produtos-${reloadKey}`} 
-          />
-        </TabsContent>
-
-        <TabsContent value="insumos" className="mt-6">
-          <InsumosPage localId={localAtivo?.id} hideHeader key={`insumos-${reloadKey}`} />
-        </TabsContent>
-      </Tabs>
+      {/* Renderiza diretamente o ComposicoesEstoque sem abas */}
+      <ComposicoesEstoque 
+        localId={localAtivo?.id} 
+        localVendaId={localVendaAtivo?.id}
+        key={`produtos-${reloadKey}`} 
+      />
     </div>
   );
 }
