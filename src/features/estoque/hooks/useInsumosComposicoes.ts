@@ -189,11 +189,33 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['composicoes-insumos'] });
       queryClient.invalidateQueries({ queryKey: ['composicoes-insumos-enriquecidos'] });
+      queryClient.invalidateQueries({ queryKey: ['insumos-produtos-base'] });
       toast.success('Insumo excluído com sucesso');
     },
     onError: (error: any) => {
       console.error('Erro ao excluir insumo:', error);
       toast.error('Erro ao excluir insumo: ' + error.message);
+    }
+  });
+
+  // 🗑️ Excluir produto da lista (da tabela produtos_composicoes) - para produtos sem composições
+  const deleteProdutoMutation = useMutation({
+    mutationFn: async (skuProduto: string) => {
+      console.log('🗑️ Excluindo produto da lista:', skuProduto);
+      const { error } = await supabase
+        .from('produtos_composicoes')
+        .delete()
+        .eq('sku_interno', skuProduto);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['composicoes-insumos'] });
+      queryClient.invalidateQueries({ queryKey: ['composicoes-insumos-enriquecidos'] });
+      queryClient.invalidateQueries({ queryKey: ['insumos-produtos-base'] });
+    },
+    onError: (error: any) => {
+      console.error('Erro ao excluir produto:', error);
     }
   });
 
@@ -212,11 +234,12 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
     createInsumo: createMutation.mutateAsync,
     updateInsumo: updateMutation.mutateAsync,
     deleteInsumo: deleteMutation.mutateAsync,
+    deleteProduto: deleteProdutoMutation.mutateAsync,
 
     // Mutation states
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending
+    isDeleting: deleteMutation.isPending || deleteProdutoMutation.isPending
   };
 }
 
