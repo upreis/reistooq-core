@@ -24,6 +24,13 @@ export default function ComposicoesUnificadasPage() {
 
   const isInsumosPage = location.pathname === '/estoque/insumos';
 
+  // ✅ Garantir que o local de venda respeita o estoque selecionado
+  // (evita “vazar” composições para outros estoques)
+  const localVendaIdDoEstoqueAtual =
+    localAtivo?.id && localVendaAtivo?.local_estoque_id === localAtivo.id
+      ? localVendaAtivo.id
+      : undefined;
+
   // Sync tab with route
   useEffect(() => {
     if (isInsumosPage) {
@@ -101,7 +108,12 @@ export default function ComposicoesUnificadasPage() {
         )}
 
         {/* Renderiza diretamente o InsumosPage sem abas */}
-        <InsumosPage localId={localAtivo?.id} localVendaId={localVendaAtivo?.id} hideHeader key={`insumos-${reloadKey}`} />
+        <InsumosPage
+          localId={localAtivo?.id}
+          localVendaId={localVendaIdDoEstoqueAtual}
+          hideHeader
+          key={`insumos-${reloadKey}`}
+        />
       </div>
     );
   }
@@ -137,7 +149,6 @@ export default function ComposicoesUnificadasPage() {
               <LocalVendaSelector 
                 localEstoqueId={localAtivo.id} 
                 localEstoqueNome={localAtivo.nome}
-                readOnly
               />
             )}
             {localVendaAtivo && (
@@ -162,7 +173,7 @@ export default function ComposicoesUnificadasPage() {
       {/* Renderiza diretamente o ComposicoesEstoque sem abas */}
       <ComposicoesEstoque 
         localId={localAtivo?.id} 
-        localVendaId={localVendaAtivo?.id}
+        localVendaId={localVendaIdDoEstoqueAtual}
         key={`produtos-${reloadKey}`} 
       />
     </div>
