@@ -261,8 +261,31 @@ export function InsumosComposicoesTable({
                       </div>
                     </header>
 
-                    <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-                      Nenhuma composição cadastrada para este produto ainda. Use "Nova Composição" para adicionar os insumos.
+                    <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground text-center">
+                      <p className="mb-2">Nenhuma composição cadastrada</p>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-7 px-3 text-xs"
+                        onClick={() => {
+                          // Criar um objeto ComposicaoInsumoEnriquecida para passar ao onEdit
+                          const insumoParaEditar: ComposicaoInsumoEnriquecida = {
+                            id: '',
+                            sku_produto: produto.sku_produto,
+                            sku_insumo: '',
+                            quantidade: 1,
+                            local_venda_id: localVendaId,
+                            organization_id: '',
+                            ativo: true,
+                            created_at: '',
+                            updated_at: '',
+                            nome_produto: produto.nome_produto
+                          };
+                          onEdit(insumoParaEditar);
+                        }}
+                      >
+                        + Adicionar composição
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
