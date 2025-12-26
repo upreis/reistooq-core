@@ -94,7 +94,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
       if (insumosDesteParaTodos.length > 0) {
         insumosParaDeletar.push(...insumosDesteParaTodos);
       } else {
-        // Produto sem insumos - será removido da tabela produtos_composicoes
+        // Produto sem insumos - tentar remover de produtos_composicoes (se existir lá)
         skusSemInsumos.push(skuProduto);
       }
     });
@@ -112,23 +112,48 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
     }
 
     try {
+      let insumosExcluidos = 0;
+      let produtosExcluidos = 0;
+      let produtosIgnorados = 0;
+      
       // Deletar insumos (composições) dos produtos que têm
       for (const insumo of insumosParaDeletar) {
         console.log('🗑️ Deletando insumo:', insumo.id, insumo.sku_produto, insumo.sku_insumo);
         await deleteInsumo(insumo.id);
+        insumosExcluidos++;
       }
       
-      // Deletar produtos sem insumos da tabela produtos_composicoes
+      // Tentar deletar produtos sem insumos da tabela produtos_composicoes
       for (const sku of skusSemInsumos) {
-        console.log('🗑️ Deletando produto sem insumo:', sku);
-        await deleteProduto(sku);
+        console.log('🗑️ Tentando deletar produto sem insumo:', sku);
+        const result = await deleteProduto(sku);
+        if (result?.deleted) {
+          produtosExcluidos++;
+        } else {
+          // Produto está apenas em 'produtos' (estoque), não pode ser deletado
+          produtosIgnorados++;
+        }
       }
       
       clearSelection();
       toggleSelectMode();
       
-      const totalDeletados = insumosParaDeletar.length + skusSemInsumos.length;
-      toast.success(`${totalDeletados} item(s) excluído(s) com sucesso`);
+      // Montar mensagem de sucesso
+      const partes: string[] = [];
+      if (insumosExcluidos > 0) {
+        partes.push(`${insumosExcluidos} composição(ões)`);
+      }
+      if (produtosExcluidos > 0) {
+        partes.push(`${produtosExcluidos} produto(s) da lista`);
+      }
+      
+      if (partes.length > 0) {
+        toast.success(`Excluído: ${partes.join(' e ')}`);
+      }
+      
+      if (produtosIgnorados > 0) {
+        toast.info(`${produtosIgnorados} produto(s) do estoque não podem ser removidos desta lista`);
+      }
     } catch (error: any) {
       console.error('❌ Erro ao excluir:', error);
       toast.error(error.message || 'Erro ao excluir itens selecionados');

@@ -22,6 +22,8 @@ interface ProdutoComInsumos {
   sku_produto: string;
   nome_produto: string;
   insumos: ComposicaoInsumoEnriquecida[];
+  /** Origem do produto: 'produtos' (estoque) ou 'composicoes' (deletável) */
+  origem?: 'produtos' | 'composicoes';
 }
 
 interface InsumosComposicoesTableProps {
@@ -53,6 +55,7 @@ export function InsumosComposicoesTable({
   const { insumosEnriquecidos, isLoading: isLoadingInsumos } = useInsumosComposicoes(localId, localVendaId); // ✅ Passar ambos
 
   // Produtos base (para listar também quem ainda não tem insumo cadastrado)
+  // Rastrear origem: 'produtos' (estoque) ou 'composicoes' (importados para composição)
   const { data: produtosBase = [], isLoading: isLoadingProdutos } = useQuery({
     queryKey: ["insumos-produtos-base"],
     queryFn: async () => {
@@ -61,9 +64,11 @@ export function InsumosComposicoesTable({
         supabase.from('produtos_composicoes').select('sku_interno, nome').eq('ativo', true),
       ]);
 
-      const map = new Map<string, { sku: string; nome: string }>();
-      (produtosRes.data || []).forEach(p => map.set(p.sku_interno, { sku: p.sku_interno, nome: p.nome }));
-      (composicoesRes.data || []).forEach(p => map.set(p.sku_interno, { sku: p.sku_interno, nome: p.nome }));
+      const map = new Map<string, { sku: string; nome: string; origem: 'produtos' | 'composicoes' }>();
+      // Primeiro adiciona produtos do estoque
+      (produtosRes.data || []).forEach(p => map.set(p.sku_interno, { sku: p.sku_interno, nome: p.nome, origem: 'produtos' }));
+      // Sobrescreve com produtos_composicoes (estes são deletáveis)
+      (composicoesRes.data || []).forEach(p => map.set(p.sku_interno, { sku: p.sku_interno, nome: p.nome, origem: 'composicoes' }));
 
       return Array.from(map.values()).sort((a, b) => a.sku.localeCompare(b.sku));
     },
@@ -110,12 +115,13 @@ export function InsumosComposicoesTable({
   const produtosComInsumos = useMemo(() => {
     const grupos: Record<string, ProdutoComInsumos> = {};
 
-    // Começar pelos produtos base
+    // Começar pelos produtos base - rastrear origem
     produtosBase.forEach(p => {
       grupos[p.sku] = {
         sku_produto: p.sku,
         nome_produto: p.nome || p.sku,
         insumos: [],
+        origem: p.origem, // Rastrear se é de 'produtos' ou 'composicoes'
       };
     });
 
