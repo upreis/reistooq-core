@@ -22,14 +22,16 @@ export default function ComposicoesUnificadasPage() {
   const { localVendaAtivo } = useLocalVendaAtivo();
   const isMobile = useIsMobile();
 
+  const isInsumosPage = location.pathname === '/estoque/insumos';
+
   // Sync tab with route
   useEffect(() => {
-    if (location.pathname === '/estoque/insumos') {
+    if (isInsumosPage) {
       setActiveTab('insumos');
     } else {
       setActiveTab('produtos');
     }
-  }, [location.pathname]);
+  }, [isInsumosPage]);
 
   // Reload data when local changes
   useEffect(() => {
@@ -45,6 +47,64 @@ export default function ComposicoesUnificadasPage() {
     }
   };
 
+  // Se for a página de insumos, renderiza diretamente sem abas
+  if (isInsumosPage) {
+    return (
+      <div className="space-y-6">
+        {/* Seletor de Local de Estoque - Ocultar no mobile */}
+        {!isMobile && (
+          <div className="space-y-4 pb-4 border-b">
+            {/* Linha 1: Local de Estoque */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
+                <span className="font-medium">📦 Estoque:</span>
+              </div>
+              <LocalEstoqueSelector />
+              {localAtivo && (
+                <span className="text-xs text-muted-foreground">
+                  Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
+                </span>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Linha 2: Local de Venda */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
+                <Store className="h-4 w-4" />
+                <span className="font-medium">Venda:</span>
+              </div>
+              {localAtivo && (
+                <LocalVendaSelector 
+                  localEstoqueId={localAtivo.id} 
+                  localEstoqueNome={localAtivo.nome} 
+                />
+              )}
+              {localVendaAtivo && (
+                <span className="text-xs text-muted-foreground">
+                  Composições de: <strong className="text-foreground">{localVendaAtivo.nome}</strong>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Alerta se nenhum local selecionado - Ocultar no mobile */}
+        {!isMobile && !localAtivo && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Selecione um local de estoque para visualizar e gerenciar as composições.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Renderiza diretamente o InsumosPage sem abas */}
+        <InsumosPage localId={localAtivo?.id} hideHeader key={`insumos-${reloadKey}`} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -97,7 +157,7 @@ export default function ComposicoesUnificadasPage() {
         </Alert>
       )}
 
-      {/* Tabs */}
+      {/* Tabs - apenas para página de composições */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full max-w-xs grid-cols-2 h-8">
           <TabsTrigger value="produtos" className="flex items-center gap-1.5 text-xs h-7 px-2.5">
