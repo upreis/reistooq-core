@@ -3,7 +3,7 @@
  * Ferramentas específicas para otimização de pedidos
  */
 
-import { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 
 /**
  * Debounce otimizado com cancelamento
@@ -230,8 +230,6 @@ export function lazyWithPreload<T extends React.ComponentType<any>>(
   return ComponentWithPreload;
 }
 
-// React import para lazy loading
-import React from 'react';
 
 /**
  * Otimização de re-renders para arrays
