@@ -121,51 +121,53 @@ export function ImportarProdutosModal({
             </Badge>
           </div>
 
-          {/* Lista de produtos */}
-          <ScrollArea className="flex-1 min-h-[300px] max-h-[400px] border rounded-lg">
-            {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground">
-                Carregando produtos...
-              </div>
-            ) : produtosFiltrados.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                Nenhum produto encontrado
-              </div>
-            ) : (
-              <div className="p-4 space-y-2">
-                {produtosFiltrados.map(produto => (
-                  <div
-                    key={produto.id}
-                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <Checkbox
-                      checked={selectedIds.includes(produto.id)}
-                      onCheckedChange={() => handleSelectProduto(produto.id)}
-                    />
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium truncate">{produto.nome}</h4>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {produto.sku_interno}
-                        </Badge>
-                      </div>
+          {/* Lista de produtos com scroll */}
+          <div className="flex-1 min-h-0 border rounded-lg overflow-hidden">
+            <ScrollArea className="h-[350px]">
+              {isLoading ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  Carregando produtos...
+                </div>
+              ) : produtosFiltrados.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  Nenhum produto encontrado
+                </div>
+              ) : (
+                <div className="p-4 space-y-2">
+                  {produtosFiltrados.map(produto => (
+                    <div
+                      key={produto.id}
+                      className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <Checkbox
+                        checked={selectedIds.includes(produto.id)}
+                        onCheckedChange={() => handleSelectProduto(produto.id)}
+                      />
                       
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        {produto.preco_venda && (
-                          <span>Preço: {formatMoney(produto.preco_venda)}</span>
-                        )}
-                        <span>Estoque: {produto.quantidade_atual}</span>
-                        {produto.categoria && (
-                          <span>Categoria: {produto.categoria}</span>
-                        )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium truncate">{produto.nome}</h4>
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {produto.sku_interno}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          {produto.preco_venda && (
+                            <span>Preço: {formatMoney(produto.preco_venda)}</span>
+                          )}
+                          <span>Estoque: {produto.quantidade_atual}</span>
+                          {produto.categoria && (
+                            <span>Categoria: {produto.categoria}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
 
           {/* Ações */}
           <div className="flex items-center justify-between pt-4 border-t">
