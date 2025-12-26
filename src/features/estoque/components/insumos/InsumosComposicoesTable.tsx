@@ -54,23 +54,27 @@ export function InsumosComposicoesTable({
 }: InsumosComposicoesTableProps) {
   const { insumosEnriquecidos, isLoading: isLoadingInsumos } = useInsumosComposicoes(localId, localVendaId); // ✅ Passar ambos
 
-  // Produtos base (para listar também quem ainda não tem insumo cadastrado)
-  // Rastrear origem: 'produtos' (estoque) ou 'composicoes' (importados para composição)
+  // Produtos base: apenas produtos que foram importados para produtos_composicoes
+  // Não mostrar produtos do estoque geral, apenas os que foram especificamente importados
   const { data: produtosBase = [], isLoading: isLoadingProdutos } = useQuery({
     queryKey: ["insumos-produtos-base"],
     queryFn: async () => {
-      const [produtosRes, composicoesRes] = await Promise.all([
-        supabase.from('produtos').select('sku_interno, nome').eq('ativo', true),
-        supabase.from('produtos_composicoes').select('sku_interno, nome').eq('ativo', true),
-      ]);
+      // Buscar APENAS de produtos_composicoes (importados para composição)
+      const { data, error } = await supabase
+        .from('produtos_composicoes')
+        .select('sku_interno, nome')
+        .eq('ativo', true);
+      
+      if (error) {
+        console.error('Erro ao carregar produtos composições:', error);
+        return [];
+      }
 
-      const map = new Map<string, { sku: string; nome: string; origem: 'produtos' | 'composicoes' }>();
-      // Primeiro adiciona produtos do estoque
-      (produtosRes.data || []).forEach(p => map.set(p.sku_interno, { sku: p.sku_interno, nome: p.nome, origem: 'produtos' }));
-      // Sobrescreve com produtos_composicoes (estes são deletáveis)
-      (composicoesRes.data || []).forEach(p => map.set(p.sku_interno, { sku: p.sku_interno, nome: p.nome, origem: 'composicoes' }));
-
-      return Array.from(map.values()).sort((a, b) => a.sku.localeCompare(b.sku));
+      return (data || []).map(p => ({ 
+        sku: p.sku_interno, 
+        nome: p.nome, 
+        origem: 'composicoes' as const 
+      })).sort((a, b) => a.sku.localeCompare(b.sku));
     },
   });
 
