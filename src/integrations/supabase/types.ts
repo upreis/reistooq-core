@@ -742,7 +742,7 @@ export type Database = {
           id?: string
           local_venda_id: string
           observacoes?: string | null
-          organization_id: string
+          organization_id?: string
           quantidade?: number
           sku_insumo: string
           sku_produto: string
