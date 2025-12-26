@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Package, ArrowLeftRight, Layers, Clock } from "lucide-react";
+import { Package, ArrowLeftRight, Layers, Clock, FlaskConical } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const navItems = [
@@ -17,6 +17,11 @@ const navItems = [
     path: "/estoque/composicoes",
     label: "Composições",
     icon: Layers,
+  },
+  {
+    path: "/estoque/insumos",
+    label: "Insumos",
+    icon: FlaskConical,
   },
   {
     path: "/estoque/historico",
