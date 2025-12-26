@@ -119,9 +119,15 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
   // ➕ Criar novo insumo (na tabela composicoes_local_venda)
   const createMutation = useMutation({
     mutationFn: async (data: InsumoFormData & { local_venda_id: string }) => {
+      const { data: orgId, error: orgError } = await supabase.rpc('get_current_org_id');
+      if (orgError || !orgId) {
+        throw new Error('Não foi possível obter a organização atual para salvar a composição.');
+      }
+
       const { data: result, error } = await supabase
         .from('composicoes_local_venda')
         .insert({
+          organization_id: orgId as unknown as string,
           sku_produto: data.sku_produto,
           sku_insumo: data.sku_insumo,
           quantidade: data.quantidade,
