@@ -93,7 +93,8 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
         sku_produto: comp.sku_produto,
         sku_insumo: comp.sku_insumo,
         quantidade: comp.quantidade,
-        local_id: localVendaId, // Usar o local_venda_id como referência
+        local_id: undefined, // Não usado para composicoes_local_venda
+        local_venda_id: localVendaId, // CRÍTICO: Usar local_venda_id para esta tabela
         organization_id: comp.organization_id,
         observacoes: comp.observacoes,
         ativo: comp.ativo,
