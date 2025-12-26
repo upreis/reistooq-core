@@ -3,6 +3,8 @@
  * Garante URLs seguras (HTTPS) e tratamento de erros
  */
 
+import React from 'react';
+
 /**
  * Converte URLs HTTP para HTTPS para evitar Mixed Content warnings
  * @param url - URL original da imagem
@@ -106,5 +108,3 @@ export const useSecureImage = (url: string | null | undefined, sanitize: boolean
   return { imgSrc, hasError, handleError };
 };
 
-// Re-export React for the hook
-import React from 'react';
