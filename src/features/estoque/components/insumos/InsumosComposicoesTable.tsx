@@ -268,20 +268,16 @@ export function InsumosComposicoesTable({
                         size="sm"
                         className="h-7 px-3 text-xs"
                         onClick={() => {
-                          // Criar um objeto ComposicaoInsumoEnriquecida para passar ao onEdit
-                          const insumoParaEditar: ComposicaoInsumoEnriquecida = {
-                            id: '',
+                          // Criar um objeto para adicionar nova composição (sem id = modo criação)
+                          const novaComposicao = {
                             sku_produto: produto.sku_produto,
                             sku_insumo: '',
                             quantidade: 1,
                             local_venda_id: localVendaId,
-                            organization_id: '',
                             ativo: true,
-                            created_at: '',
-                            updated_at: '',
                             nome_produto: produto.nome_produto
-                          };
-                          onEdit(insumoParaEditar);
+                          } as ComposicaoInsumoEnriquecida;
+                          onEdit(novaComposicao);
                         }}
                       >
                         + Adicionar composição
