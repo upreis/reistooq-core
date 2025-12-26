@@ -281,7 +281,9 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
           sku_produto: produtoSku.trim(),
           sku_insumo: comp.sku_insumo.trim(),
           quantidade: comp.quantidade,
-          observacoes: comp.observacoes || null
+          observacoes: comp.observacoes || null,
+          ...(insumo?.local_venda_id ? { local_venda_id: insumo.local_venda_id } : {}),
+          ...(insumo?.local_id ? { local_id: insumo.local_id } : {})
         });
       });
 
