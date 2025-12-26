@@ -3,7 +3,7 @@
  * Exibe insumos agrupados por produto em cards
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Package, Pencil, Trash2, AlertCircle, ChevronDown, ChevronUp, Layers, Edit } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -160,8 +160,17 @@ export function InsumosComposicoesTable({
   }, [produtosComInsumos, searchQuery]);
 
   // Informar ao componente pai quais SKUs estão visíveis (para "Selecionar Todos")
+  // Usando useRef para evitar loop infinito de re-renders
+  const previousSkusRef = useRef<string>('');
   useEffect(() => {
-    onVisibleSkusChange?.(produtosFiltrados.map(p => p.sku_produto));
+    const skus = produtosFiltrados.map(p => p.sku_produto);
+    const skusKey = skus.join(',');
+    
+    // Só chamar callback se os SKUs realmente mudaram
+    if (skusKey !== previousSkusRef.current) {
+      previousSkusRef.current = skusKey;
+      onVisibleSkusChange?.(skus);
+    }
   }, [produtosFiltrados, onVisibleSkusChange]);
 
   // Calcular total de insumos ANTES de qualquer return condicional
