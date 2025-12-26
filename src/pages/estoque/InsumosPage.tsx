@@ -32,6 +32,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [visibleSkus, setVisibleSkus] = useState<string[]>([]);
 
   // Hook para seleção de itens
   const {
@@ -182,11 +183,11 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
               variant="outline"
               size="sm"
               onClick={() => {
-                // Criar lista de produtos únicos com id = sku_produto para compatibilidade com o hook
-                const produtosUnicos = Array.from(
-                  new Set((insumosEnriquecidos || []).map(i => i.sku_produto))
-                ).map(sku => ({ id: sku }));
-                selectAll(produtosUnicos);
+                const skus = visibleSkus.length
+                  ? visibleSkus
+                  : Array.from(new Set((insumosEnriquecidos || []).map(i => i.sku_produto)));
+
+                selectAll(skus.map(sku => ({ id: sku })));
               }}
               className="gap-1.5 h-9"
             >
@@ -296,6 +297,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
           isSelected={isSelected}
           localId={localId}
           localVendaId={localVendaId}
+          onVisibleSkusChange={setVisibleSkus}
         />
       </div>
 
@@ -311,10 +313,11 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const produtosUnicos = Array.from(
-                    new Set((insumosEnriquecidos || []).map(i => i.sku_produto))
-                  ).map(sku => ({ id: sku }));
-                  selectAll(produtosUnicos);
+                  const skus = visibleSkus.length
+                    ? visibleSkus
+                    : Array.from(new Set((insumosEnriquecidos || []).map(i => i.sku_produto)));
+
+                  selectAll(skus.map(sku => ({ id: sku })));
                 }}
                 className="gap-1.5 text-xs"
               >
