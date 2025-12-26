@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function InsumosPage({ hideHeader = false, localId, localVendaId }: { hideHeader?: boolean; localId?: string; localVendaId?: string }) {
-  const { createInsumo, updateInsumo, deleteInsumo, insumosEnriquecidos } = useInsumosComposicoes(localId, localVendaId);
+  const { createInsumo, updateInsumo, deleteInsumo, deleteProduto, insumosEnriquecidos } = useInsumosComposicoes(localId, localVendaId);
   const { importarDoEstoque, isImporting } = useImportarInsumosDoEstoque();
   
   const [formOpen, setFormOpen] = useState(false);
@@ -80,40 +80,58 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
   };
 
   const handleDeleteSelected = async () => {
+    // selectedItems contém os SKUs dos produtos selecionados
+    const skusParaDeletar = Array.from(selectedItems);
+    
     // Agrupar insumos por SKU de produto selecionado
     const insumosParaDeletar: ComposicaoInsumoEnriquecida[] = [];
+    const skusSemInsumos: string[] = [];
     
-    // selectedItems contém os SKUs dos produtos selecionados
-    selectedItems.forEach(skuProduto => {
+    skusParaDeletar.forEach(skuProduto => {
       const insumosDesteParaTodos = (insumosEnriquecidos || []).filter(
         insumo => insumo.sku_produto === skuProduto
       );
-      insumosParaDeletar.push(...insumosDesteParaTodos);
+      if (insumosDesteParaTodos.length > 0) {
+        insumosParaDeletar.push(...insumosDesteParaTodos);
+      } else {
+        // Produto sem insumos - será removido da tabela produtos_composicoes
+        skusSemInsumos.push(skuProduto);
+      }
     });
     
-    console.log('🗑️ DEBUG - Deletando insumos:', {
+    console.log('🗑️ DEBUG - Deletando:', {
       selectedCount,
-      selectedItems: Array.from(selectedItems),
-      insumosParaDeletar,
-      totalInsumos: insumosParaDeletar.length
+      skusParaDeletar,
+      insumosParaDeletar: insumosParaDeletar.length,
+      skusSemInsumos
     });
     
-    if (insumosParaDeletar.length === 0) {
-      toast.error('Nenhum insumo selecionado');
+    if (insumosParaDeletar.length === 0 && skusSemInsumos.length === 0) {
+      toast.error('Nenhum item selecionado');
       return;
     }
 
     try {
+      // Deletar insumos (composições) dos produtos que têm
       for (const insumo of insumosParaDeletar) {
         console.log('🗑️ Deletando insumo:', insumo.id, insumo.sku_produto, insumo.sku_insumo);
         await deleteInsumo(insumo.id);
       }
+      
+      // Deletar produtos sem insumos da tabela produtos_composicoes
+      for (const sku of skusSemInsumos) {
+        console.log('🗑️ Deletando produto sem insumo:', sku);
+        await deleteProduto(sku);
+      }
+      
       clearSelection();
       toggleSelectMode();
-      toast.success(`${insumosParaDeletar.length} insumo(s) de ${selectedCount} produto(s) excluído(s) com sucesso`);
+      
+      const totalDeletados = insumosParaDeletar.length + skusSemInsumos.length;
+      toast.success(`${totalDeletados} item(s) excluído(s) com sucesso`);
     } catch (error: any) {
-      console.error('❌ Erro ao excluir insumos:', error);
-      toast.error(error.message || 'Erro ao excluir insumos selecionados');
+      console.error('❌ Erro ao excluir:', error);
+      toast.error(error.message || 'Erro ao excluir itens selecionados');
     } finally {
       setDeleteConfirmOpen(false);
     }
