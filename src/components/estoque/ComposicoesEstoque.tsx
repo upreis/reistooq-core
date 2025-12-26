@@ -92,19 +92,23 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
   // Hook para composições de local de venda
   const composicoesVendaHook = useComposicoesLocalVenda(localVendaId);
 
-  // Usar composições do local de venda se estiver selecionado, senão do estoque
+  // Na página /estoque/composicoes, somente usar composicoes_local_venda
+  // NÃO usar fallback para composicoes_insumos (essas são da página /estoque/insumos)
   const isLocalVendaMode = !!localVendaId;
+  
+  // Sempre usar composições do local de venda nesta página
+  // Se não há local de venda, composições ficam vazias (objeto vazio para manter tipo)
   const composicoesAtuais = isLocalVendaMode 
     ? composicoesVendaHook.composicoes 
-    : composicoesEstoqueHook.composicoes;
+    : ({} as typeof composicoesVendaHook.composicoes);
   
   const getComposicoesForSku = isLocalVendaMode 
     ? composicoesVendaHook.getComposicoesForSku 
-    : composicoesEstoqueHook.getComposicoesForSku;
+    : () => [];
     
   const loadComposicoes = isLocalVendaMode 
     ? composicoesVendaHook.loadComposicoes 
-    : composicoesEstoqueHook.loadComposicoes;
+    : async () => {};
 
   // Hook para produtos do controle de estoque (para criar novos produtos)
   const { createProduct } = useProducts();
