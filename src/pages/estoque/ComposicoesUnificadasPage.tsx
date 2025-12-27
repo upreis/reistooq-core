@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
 import InsumosPage from "./InsumosPage";
-import { Layers, PackageCheck, Store } from "lucide-react";
+import { Layers, PackageCheck, Store, Info } from "lucide-react";
 import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
 import { LocalVendaSelector } from "@/components/estoque/LocalVendaSelector";
 import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
@@ -159,6 +159,18 @@ export default function ComposicoesUnificadasPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Aviso informativo sobre como funciona */}
+      {!isMobile && (
+        <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-blue-800 dark:text-blue-200">
+            Na página <strong>Produtos</strong> você terá os produtos e suas composições que sairão do estoque. 
+            Porém, se tiver tipos de vendas em que sai mais insumos que outros, você precisa cadastrar na página{" "}
+            <strong>Insumos</strong> para que seja calculada a saída do estoque de acordo com o local de venda.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Renderiza diretamente o ComposicoesEstoque sem abas */}
