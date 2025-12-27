@@ -203,28 +203,65 @@ export function useProcessarBaixaEstoque() {
         
         for (const pedido of pedidos) {
           const localEstoqueId = (pedido as any).local_estoque_id;
+          const localVendaId = (pedido as any).local_venda_id;
           const localEstoqueNome = (pedido as any).local_estoque_nome || (pedido as any).local_estoque;
           const mapping = contextoDaUI?.mappingData?.get(pedido.id);
           const skuProduto = (mapping?.skuKit || mapping?.skuEstoque || pedido.sku_kit).toString().trim().toUpperCase();
           const quantidadePedido = Number(pedido.total_itens || 0);
           
-          console.log(`📦 Processando pedido ${pedido.numero}: SKU=${skuProduto}, Qtd=${quantidadePedido}, Local=${localEstoqueNome} (ID: ${localEstoqueId})`);
+          console.log(`📦 Processando pedido ${pedido.numero}: SKU=${skuProduto}, Qtd=${quantidadePedido}, Local=${localEstoqueNome} (ID: ${localEstoqueId}), LocalVenda=${localVendaId || 'N/A'}`);
           
-          // ✅ CRÍTICO: Buscar composições do produto FILTRADAS POR LOCAL
-          const { data: composicoes, error: compError } = await supabase
-            .from('produto_componentes')
-            .select('sku_componente, quantidade')
-            .eq('sku_produto', skuProduto)
-            .eq('local_id', localEstoqueId);
+          // ✅ CRÍTICO: Buscar composições - PRIORIZAR local_venda_id (composicoes_local_venda)
+          let composicoes: Array<{ sku_componente: string; quantidade: number }> = [];
+          let fonteComposicao = '';
           
-          if (compError) {
-            console.error(`❌ Erro ao buscar composições para ${skuProduto}:`, compError);
-            throw new Error(`Erro ao buscar composições: ${compError.message}`);
+          // Se temos local_venda_id, buscar em composicoes_local_venda primeiro
+          if (localVendaId) {
+            const { data: composicoesLV, error: erroLV } = await supabase
+              .from('composicoes_local_venda')
+              .select('sku_insumo, quantidade')
+              .eq('local_venda_id', localVendaId)
+              .eq('sku_produto', skuProduto)
+              .eq('ativo', true);
+            
+            if (!erroLV && composicoesLV && composicoesLV.length > 0) {
+              composicoes = composicoesLV.map(c => ({
+                sku_componente: c.sku_insumo,
+                quantidade: c.quantidade
+              }));
+              fonteComposicao = 'composicoes_local_venda';
+              console.log(`✅ Composição encontrada em LOCAL DE VENDA para ${skuProduto}:`, composicoes);
+            }
           }
           
-          if (!composicoes || composicoes.length === 0) {
-            throw new Error(`Produto ${skuProduto} não possui composição cadastrada no local "${localEstoqueNome}" em /estoque/composicoes`);
+          // Fallback: buscar em composicoes_insumos (por local de estoque)
+          if (composicoes.length === 0) {
+            const { data: composicoesInsumos, error: erroInsumos } = await supabase
+              .from('composicoes_insumos')
+              .select('sku_insumo, quantidade')
+              .eq('local_id', localEstoqueId)
+              .eq('sku_produto', skuProduto)
+              .eq('ativo', true);
+            
+            if (!erroInsumos && composicoesInsumos && composicoesInsumos.length > 0) {
+              composicoes = composicoesInsumos.map(c => ({
+                sku_componente: c.sku_insumo,
+                quantidade: c.quantidade
+              }));
+              fonteComposicao = 'composicoes_insumos';
+              console.log(`✅ Composição encontrada em LOCAL DE ESTOQUE para ${skuProduto}:`, composicoes);
+            }
           }
+          
+          if (composicoes.length === 0) {
+            throw new Error(
+              `Produto ${skuProduto} não possui composição cadastrada.\n` +
+              `Cadastre em /estoque/composicoes (local de venda) ou /estoque/insumos (local de estoque "${localEstoqueNome}")`
+            );
+          }
+          
+          console.log(`📋 Fonte da composição: ${fonteComposicao}`);
+          console.log(`✅ Composição encontrada para ${skuProduto}:`, composicoes);
           
           console.log(`✅ Composição encontrada para ${skuProduto}:`, composicoes);
           
