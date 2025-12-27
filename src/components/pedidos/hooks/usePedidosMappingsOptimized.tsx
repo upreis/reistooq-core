@@ -160,8 +160,9 @@ export function usePedidosMappingsOptimized({
 
             let mapping: MapeamentoVerificacao | undefined;
             if (skuParaVerificar && typeof skuParaVerificar === 'string') {
-              // 🛡️ CORREÇÃO: Extrair localEstoqueId e quantidade do pedido
+              // 🛡️ CORREÇÃO: Extrair localEstoqueId, localVendaId e quantidade do pedido
               const localEstoqueId = (order as any).local_estoque_id;
+              const localVendaId = (order as any).local_venda_id;
               const quantidadePedido = Number((order as any).total_itens || 1);
               const skuNormalizado = String(skuParaVerificar).trim().toUpperCase();
               
@@ -169,11 +170,12 @@ export function usePedidosMappingsOptimized({
               const quantidadeMap = new Map<string, number>();
               quantidadeMap.set(skuNormalizado, quantidadePedido);
               
-              // 🛡️ Verificar mapeamento COM local específico
+              // 🛡️ Verificar mapeamento COM local específico e local de venda
               const mappings = await MapeamentoService.verificarMapeamentos(
                 [skuNormalizado],
                 localEstoqueId,
-                quantidadeMap
+                quantidadeMap,
+                localVendaId
               );
               mapping = mappings[0];
               

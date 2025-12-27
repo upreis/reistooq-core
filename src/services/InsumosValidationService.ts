@@ -20,11 +20,12 @@ export interface ValidacaoInsumoResult {
 export class InsumosValidationService {
   
   /**
-   * Valida insumos para um SKU de produto
+   * Valida insumos para um SKU de produto COM local de venda
    * @param skuProduto - SKU do produto a validar
+   * @param localVendaId - ID do local de venda (obrigatório)
    * @returns ValidacaoInsumoResult com status e detalhes
    */
-  static async validarInsumosProduto(skuProduto: string): Promise<ValidacaoInsumoResult> {
+  static async validarInsumosProduto(skuProduto: string, localVendaId?: string): Promise<ValidacaoInsumoResult> {
     if (!skuProduto) {
       return {
         sku: skuProduto,
@@ -33,12 +34,21 @@ export class InsumosValidationService {
       };
     }
 
+    if (!localVendaId) {
+      return {
+        sku: skuProduto,
+        status: 'sem_mapeamento_insumo',
+        detalhes: 'Local de venda não configurado'
+      };
+    }
+
     try {
-      // 1. Buscar composição do produto (insumos necessários)
+      // 1. Buscar composição do produto em composicoes_local_venda (filtrado por local)
       const { data: composicao, error: composicaoError } = await supabase
-        .from('composicoes_insumos')
+        .from('composicoes_local_venda')
         .select('sku_insumo, quantidade')
         .eq('sku_produto', skuProduto)
+        .eq('local_venda_id', localVendaId)
         .eq('ativo', true);
 
       if (composicaoError) {
@@ -54,7 +64,7 @@ export class InsumosValidationService {
         return {
           sku: skuProduto,
           status: 'sem_mapeamento_insumo',
-          detalhes: 'Produto não possui insumos mapeados'
+          detalhes: 'Produto não possui insumos mapeados para este local de venda'
         };
       }
 
@@ -89,7 +99,7 @@ export class InsumosValidationService {
           sku: skuProduto,
           status: 'sem_cadastro_insumo',
           detalhes: `Insumos não cadastrados: ${insumosNaoCadastrados.join(', ')}`,
-          skusFaltando: insumosNaoCadastrados // 🆕 Retorna lista de SKUs faltando
+          skusFaltando: insumosNaoCadastrados
         };
       }
 
@@ -132,14 +142,15 @@ export class InsumosValidationService {
   /**
    * Valida insumos para múltiplos SKUs de produtos
    * @param skusProdutos - Array de SKUs de produtos
+   * @param localVendaId - ID do local de venda (obrigatório)
    * @returns Map com resultados de validação por SKU
    */
-  static async validarInsumosPedidos(skusProdutos: string[]): Promise<Map<string, ValidacaoInsumoResult>> {
+  static async validarInsumosPedidos(skusProdutos: string[], localVendaId?: string): Promise<Map<string, ValidacaoInsumoResult>> {
     const resultados = new Map<string, ValidacaoInsumoResult>();
 
     // Processar validações em paralelo para melhor performance
     const validacoes = await Promise.all(
-      skusProdutos.map(sku => this.validarInsumosProduto(sku))
+      skusProdutos.map(sku => this.validarInsumosProduto(sku, localVendaId))
     );
 
     validacoes.forEach(resultado => {
