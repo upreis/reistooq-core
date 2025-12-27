@@ -157,7 +157,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
                 Nova Composição
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => setImportModalOpen(true)}
                 className="gap-1.5 h-9 text-sm"
               >
@@ -165,7 +165,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
                 Importar do Estoque
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => toast.info('Importar Excel - Em breve')}
                 className="gap-1.5 h-9 text-sm"
               >
@@ -173,7 +173,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
                 Importar Excel
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => toast.info('Baixar Dados - Em breve')}
                 className="gap-1.5 h-9 text-sm"
               >
@@ -181,7 +181,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
                 Baixar Dados
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={toggleSelectMode}
                 className="gap-1.5 h-9 text-sm"
               >
@@ -195,7 +195,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
                 {selectedCount} selecionado(s)
               </Badge>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   const skus = visibleSkus.length
@@ -238,7 +238,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
                 </AlertDialogContent>
               </AlertDialog>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={toggleSelectMode}
                 className="gap-1.5 h-9"
