@@ -151,6 +151,7 @@ export default function ComposicoesUnificadasPage() {
                 <LocalVendaSelector 
                   localEstoqueId={localAtivo.id} 
                   localEstoqueNome={localAtivo.nome}
+                  readOnly={true}
                 />
               )}
             </div>
