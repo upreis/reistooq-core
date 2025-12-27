@@ -66,7 +66,7 @@ export default function ComposicoesUnificadasPage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
                 <span className="font-medium">📦 Estoque:</span>
               </div>
-              <LocalEstoqueSelector />
+              <LocalEstoqueSelector hidePrincipal />
               {localAtivo && (
                 <span className="text-xs text-muted-foreground">
                   Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
