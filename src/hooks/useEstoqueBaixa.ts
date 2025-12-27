@@ -211,56 +211,31 @@ export function useProcessarBaixaEstoque() {
           
           console.log(`📦 Processando pedido ${pedido.numero}: SKU=${skuProduto}, Qtd=${quantidadePedido}, Local=${localEstoqueNome} (ID: ${localEstoqueId}), LocalVenda=${localVendaId || 'N/A'}`);
           
-          // ✅ CRÍTICO: Buscar composições - PRIORIZAR local_venda_id (composicoes_local_venda)
-          let composicoes: Array<{ sku_componente: string; quantidade: number }> = [];
-          let fonteComposicao = '';
-          
-          // Se temos local_venda_id, buscar em composicoes_local_venda primeiro
-          if (localVendaId) {
-            const { data: composicoesLV, error: erroLV } = await supabase
-              .from('composicoes_local_venda')
-              .select('sku_insumo, quantidade')
-              .eq('local_venda_id', localVendaId)
-              .eq('sku_produto', skuProduto)
-              .eq('ativo', true);
-            
-            if (!erroLV && composicoesLV && composicoesLV.length > 0) {
-              composicoes = composicoesLV.map(c => ({
-                sku_componente: c.sku_insumo,
-                quantidade: c.quantidade
-              }));
-              fonteComposicao = 'composicoes_local_venda';
-              console.log(`✅ Composição encontrada em LOCAL DE VENDA para ${skuProduto}:`, composicoes);
-            }
+          // ✅ CRÍTICO: Buscar composições APENAS em composicoes_local_venda
+          if (!localVendaId) {
+            throw new Error(`Pedido ${pedido.numero} não possui local de venda configurado. Configure em /oms/configuracoes`);
           }
           
-          // Fallback: buscar em composicoes_insumos (por local de estoque)
-          if (composicoes.length === 0) {
-            const { data: composicoesInsumos, error: erroInsumos } = await supabase
-              .from('composicoes_insumos')
-              .select('sku_insumo, quantidade')
-              .eq('local_id', localEstoqueId)
-              .eq('sku_produto', skuProduto)
-              .eq('ativo', true);
-            
-            if (!erroInsumos && composicoesInsumos && composicoesInsumos.length > 0) {
-              composicoes = composicoesInsumos.map(c => ({
-                sku_componente: c.sku_insumo,
-                quantidade: c.quantidade
-              }));
-              fonteComposicao = 'composicoes_insumos';
-              console.log(`✅ Composição encontrada em LOCAL DE ESTOQUE para ${skuProduto}:`, composicoes);
-            }
+          const { data: composicoesLV, error: erroLV } = await supabase
+            .from('composicoes_local_venda')
+            .select('sku_insumo, quantidade')
+            .eq('local_venda_id', localVendaId)
+            .eq('sku_produto', skuProduto)
+            .eq('ativo', true);
+          
+          if (erroLV) {
+            throw new Error(`Erro ao buscar composição: ${erroLV.message}`);
           }
           
-          if (composicoes.length === 0) {
-            throw new Error(
-              `Produto ${skuProduto} não possui composição cadastrada.\n` +
-              `Cadastre em /estoque/composicoes (local de venda) ou /estoque/insumos (local de estoque "${localEstoqueNome}")`
-            );
+          if (!composicoesLV || composicoesLV.length === 0) {
+            throw new Error(`Produto ${skuProduto} não possui composição cadastrada para este local de venda. Cadastre em /estoque/composicoes`);
           }
           
-          console.log(`📋 Fonte da composição: ${fonteComposicao}`);
+          const composicoes = composicoesLV.map(c => ({
+            sku_componente: c.sku_insumo,
+            quantidade: c.quantidade
+          }));
+          
           console.log(`✅ Composição encontrada para ${skuProduto}:`, composicoes);
           
           console.log(`✅ Composição encontrada para ${skuProduto}:`, composicoes);
