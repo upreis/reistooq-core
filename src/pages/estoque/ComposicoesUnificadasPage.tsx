@@ -146,10 +146,7 @@ export default function ComposicoesUnificadasPage() {
 
             {/* Local de Venda */}
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Store className="h-3 w-3" />
-                <span>Venda:</span>
-              </div>
+              <span className="text-xs text-muted-foreground">Insumos de Locais de Venda</span>
               {localAtivo && (
                 <LocalVendaSelector 
                   localEstoqueId={localAtivo.id} 
