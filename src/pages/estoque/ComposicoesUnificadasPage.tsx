@@ -68,11 +68,6 @@ export default function ComposicoesUnificadasPage() {
                 <span className="font-medium">📦 Estoque:</span>
               </div>
               <LocalEstoqueSelector hidePrincipal />
-              {localAtivo && (
-                <span className="text-xs text-muted-foreground">
-                  Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
-                </span>
-              )}
             </div>
 
             <Separator />
@@ -88,11 +83,6 @@ export default function ComposicoesUnificadasPage() {
                   localEstoqueId={localAtivo.id} 
                   localEstoqueNome={localAtivo.nome} 
                 />
-              )}
-              {localVendaAtivo && (
-                <span className="text-xs text-muted-foreground">
-                  Composições de: <strong className="text-foreground">{localVendaAtivo.nome}</strong>
-                </span>
               )}
             </div>
           </div>
@@ -132,11 +122,6 @@ export default function ComposicoesUnificadasPage() {
               <span className="font-medium">📦 Estoque:</span>
             </div>
             <LocalEstoqueSelector hidePrincipal />
-            {localAtivo && (
-              <span className="text-xs text-muted-foreground">
-                Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
-              </span>
-            )}
           </div>
 
           <Separator />
@@ -152,11 +137,6 @@ export default function ComposicoesUnificadasPage() {
                 localEstoqueId={localAtivo.id} 
                 localEstoqueNome={localAtivo.nome}
               />
-            )}
-            {localVendaAtivo && (
-              <span className="text-xs text-muted-foreground">
-                Composições de: <strong className="text-foreground">{localVendaAtivo.nome}</strong>
-              </span>
             )}
           </div>
         </div>
