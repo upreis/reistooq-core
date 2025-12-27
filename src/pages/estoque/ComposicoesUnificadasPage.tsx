@@ -3,8 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
 import InsumosPage from "./InsumosPage";
-import { Layers, PackageCheck, Store, Info, ChevronDown, ChevronUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Store, ChevronDown, ChevronUp } from "lucide-react";
 import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
 import { LocalVendaSelector } from "@/components/estoque/LocalVendaSelector";
 import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
@@ -165,27 +164,22 @@ export default function ComposicoesUnificadasPage() {
 
       {/* Aviso informativo sobre como funciona */}
       {!isMobile && (
-        <div className="space-y-2">
-          <Button
-            variant="ghost"
-            size="sm"
+        <div className="border rounded-lg bg-blue-500/10 border-blue-500/20 overflow-hidden">
+          <button 
             onClick={() => setShowInfo(!showInfo)}
-            className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
+            className="w-full p-3 flex items-center justify-between text-sm font-medium hover:bg-blue-500/5 transition-colors"
           >
-            <Info className="h-4 w-4" />
-            <span className="text-xs">Como funciona?</span>
-            {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </Button>
-          
+            <span>💡 Como funciona a composição de produtos</span>
+            {showInfo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
           {showInfo && (
-            <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertDescription className="text-blue-800 dark:text-blue-200">
+            <div className="px-4 pb-4 text-sm text-muted-foreground">
+              <p>
                 Na página <strong>Produtos</strong> você terá os produtos e suas composições que sairão do estoque. 
                 Porém, se tiver tipos de vendas em que sai mais insumos que outros, você precisa cadastrar na página{" "}
                 <strong>Insumos</strong> para que seja calculada a saída do estoque de acordo com o local de venda.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
           )}
         </div>
       )}
