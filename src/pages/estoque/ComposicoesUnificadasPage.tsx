@@ -19,6 +19,7 @@ export default function ComposicoesUnificadasPage() {
   const [activeTab, setActiveTab] = useState("produtos");
   const [reloadKey, setReloadKey] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
+  const [showInsumosInfo, setShowInsumosInfo] = useState(false);
   const { localAtivo } = useLocalEstoqueAtivo();
   const { localVendaAtivo, clearLocalVenda } = useLocalVendaAtivo();
   const isMobile = useIsMobile();
@@ -62,12 +63,24 @@ export default function ComposicoesUnificadasPage() {
         {/* Seletor de Local de Estoque - Ocultar no mobile */}
         {!isMobile && (
           <div className="space-y-4 pb-4 border-b">
-            {/* Linha 1: Local de Estoque */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
-                <span className="font-medium">📦 Estoque:</span>
+            {/* Linha 1: Local de Estoque + Botão Como funciona? */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
+                  <span className="font-medium">📦 Estoque:</span>
+                </div>
+                <LocalEstoqueSelector hidePrincipal />
               </div>
-              <LocalEstoqueSelector hidePrincipal />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowInsumosInfo(!showInsumosInfo)}
+                className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
+              >
+                <Info className="h-4 w-4" />
+                <span className="text-xs">Como funciona?</span>
+                {showInsumosInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </Button>
             </div>
 
             <Separator />
@@ -103,6 +116,7 @@ export default function ComposicoesUnificadasPage() {
           localId={localAtivo?.id}
           localVendaId={localVendaIdDoEstoqueAtual}
           hideHeader
+          showInfoExternal={showInsumosInfo}
           key={`insumos-${reloadKey}`}
         />
       </div>
