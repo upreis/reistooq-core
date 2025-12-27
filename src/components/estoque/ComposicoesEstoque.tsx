@@ -463,15 +463,34 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
           </header>
 
           <section className="space-y-2.5">
-            {/* Resumo da composição com melhor layout */}
+            {/* Resumo da composição com indicador de modo */}
             <div className="flex items-center justify-between p-2 bg-muted/30 rounded-md">
               <div className="flex items-center gap-2">
-                <div className="p-1 rounded bg-primary/10">
-                  <Boxes className="h-3 w-3 text-primary" />
+                <div className={cn(
+                  "p-1 rounded",
+                  isLocalVendaMode ? "bg-primary/10" : "bg-muted-foreground/10"
+                )}>
+                  <Boxes className={cn(
+                    "h-3 w-3",
+                    isLocalVendaMode ? "text-primary" : "text-muted-foreground"
+                  )} />
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-foreground">Composição</span>
-                  <p className="text-[10px] text-muted-foreground">{(composicoes?.length || 0)} componentes</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-foreground">
+                      {isLocalVendaMode ? "Composição" : "Padrão"}
+                    </span>
+                    {!isLocalVendaMode && (
+                      <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 text-muted-foreground border-muted-foreground/30">
+                        Global
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {isLocalVendaMode 
+                      ? `${(composicoes?.length || 0)} insumos` 
+                      : "Selecione local de venda para ver insumos"}
+                  </p>
                 </div>
               </div>
               
@@ -705,15 +724,25 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
               </div>
             ) : (
               <div className="text-[10px] text-muted-foreground italic border border-dashed border-border rounded px-2 py-2 text-center">
-                Nenhuma composição cadastrada
-                <br />
-                <Button 
-                  variant="ghost" 
-                  className="mt-1 h-5 px-2 text-[10px]"
-                  onClick={() => abrirModalComposicoes(product)}
-                >
-                  + Adicionar composição
-                </Button>
+                {isLocalVendaMode ? (
+                  <>
+                    Nenhum insumo cadastrado para este local
+                    <br />
+                    <Button 
+                      variant="ghost" 
+                      className="mt-1 h-5 px-2 text-[10px]"
+                      onClick={() => abrirModalComposicoes(product)}
+                    >
+                      + Adicionar insumos
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-muted-foreground/70">Composição padrão (global)</span>
+                    <br />
+                    <span className="text-[9px]">Selecione um local de venda para adicionar insumos específicos</span>
+                  </>
+                )}
               </div>
             )}
 
