@@ -136,117 +136,131 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
   return (
     <div className="space-y-8">
       {/* Barra de busca + botões de ação na mesma linha */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {/* Campo de busca */}
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar insumos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-9"
-          />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Campo de busca */}
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar insumos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-9"
+            />
+          </div>
+
+          {/* Botões de ação */}
+          {!isSelectMode ? (
+            <>
+              <Button onClick={handleCreate} className="gap-1.5 h-9 text-sm">
+                <Plus className="w-3.5 h-3.5" />
+                Nova Composição
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setImportModalOpen(true)}
+                className="gap-1.5 h-9 text-sm"
+              >
+                <Import className="w-3.5 h-3.5" />
+                Importar do Estoque
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => toast.info('Importar Excel - Em breve')}
+                className="gap-1.5 h-9 text-sm"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Importar Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => toast.info('Baixar Dados - Em breve')}
+                className="gap-1.5 h-9 text-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Baixar Dados
+              </Button>
+              <Button
+                variant="outline"
+                onClick={toggleSelectMode}
+                className="gap-1.5 h-9 text-sm"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Selecionar
+              </Button>
+            </>
+          ) : (
+            <>
+              <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                {selectedCount} selecionado(s)
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const skus = visibleSkus.length
+                    ? visibleSkus
+                    : Array.from(new Set((insumosEnriquecidos || []).map(i => i.sku_produto)));
+
+                  selectAll(skus.map(sku => ({ id: sku })));
+                }}
+                className="gap-1.5 h-9"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Selecionar Todos
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={selectedCount === 0}
+                    className="gap-1.5 h-9"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Excluir ({selectedCount})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja excluir {selectedCount} insumo{selectedCount === 1 ? '' : 's'}? 
+                      Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleSelectMode}
+                className="gap-1.5 h-9"
+              >
+                <X className="w-3.5 h-3.5" />
+                Cancelar
+              </Button>
+            </>
+          )}
         </div>
 
-        {/* Botões de ação */}
-        {!isSelectMode ? (
-          <>
-            <Button onClick={handleCreate} className="gap-1.5 h-9 text-sm">
-              <Plus className="w-3.5 h-3.5" />
-              Nova Composição
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setImportModalOpen(true)}
-              className="gap-1.5 h-9 text-sm"
-            >
-              <Import className="w-3.5 h-3.5" />
-              Importar do Estoque
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => toast.info('Importar Excel - Em breve')}
-              className="gap-1.5 h-9 text-sm"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              Importar Excel
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => toast.info('Baixar Dados - Em breve')}
-              className="gap-1.5 h-9 text-sm"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Baixar Dados
-            </Button>
-            <Button
-              variant="outline"
-              onClick={toggleSelectMode}
-              className="gap-1.5 h-9 text-sm"
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              Selecionar
-            </Button>
-          </>
-        ) : (
-          <>
-            <Badge variant="secondary" className="text-sm px-3 py-1.5">
-              {selectedCount} selecionado(s)
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const skus = visibleSkus.length
-                  ? visibleSkus
-                  : Array.from(new Set((insumosEnriquecidos || []).map(i => i.sku_produto)));
-
-                selectAll(skus.map(sku => ({ id: sku })));
-              }}
-              className="gap-1.5 h-9"
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              Selecionar Todos
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={selectedCount === 0}
-                  className="gap-1.5 h-9"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Excluir ({selectedCount})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Tem certeza que deseja excluir {selectedCount} insumo{selectedCount === 1 ? '' : 's'}? 
-                    Esta ação não pode ser desfeita.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleSelectMode}
-              className="gap-1.5 h-9"
-            >
-              <X className="w-3.5 h-3.5" />
-              Cancelar
-            </Button>
-          </>
-        )}
+        {/* Botão Como funciona? no final da linha */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowInfo(!showInfo)}
+          className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
+        >
+          <Info className="h-4 w-4" />
+          <span className="text-xs">Como funciona?</span>
+          {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </Button>
       </div>
 
       {/* Header moderno melhorado - oculto no mobile ou quando hideHeader */}
@@ -275,73 +289,60 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
 
       {/* Layout principal */}
       <div className="flex-1 min-w-0 space-y-6">
-        {/* Info Box - Como funciona */}
-        <div className="space-y-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowInfo(!showInfo)}
-            className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
-          >
-            <Info className="h-4 w-4" />
-            <span className="text-xs">Como funciona?</span>
-            {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </Button>
-          
-          {showInfo && (
-            <div className="border rounded-lg bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 p-4 text-sm space-y-4">
-              <div className="text-muted-foreground">
-                <p className="mb-3">
-                  A composição de insumos é configurada <strong>por local de venda</strong>, não por tipo de estoque.
-                  Isso permite que cada canal tenha suas próprias regras de consumo de materiais.
+        {/* Info Box - Como funciona (exibido quando showInfo=true) */}
+        {showInfo && (
+          <div className="border rounded-lg bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 p-4 text-sm space-y-4">
+            <div className="text-muted-foreground">
+              <p className="mb-3">
+                A composição de insumos é configurada <strong>por local de venda</strong>, não por tipo de estoque.
+                Isso permite que cada canal tenha suas próprias regras de consumo de materiais.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Full/Fulfillment */}
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">📦</span>
+                  <h4 className="font-semibold text-emerald-600 dark:text-emerald-400">Estoque Full (Fulfillment)</h4>
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  Quando o estoque é transferido para o Full, os insumos já vão junto com os produtos.
+                  <strong className="block mt-1">Não há saída adicional do estoque físico na venda</strong> — apenas o que já foi enviado 
+                  (ex: etiqueta de identificação já colada no produto).
                 </p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Full/Fulfillment */}
-                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">📦</span>
-                    <h4 className="font-semibold text-emerald-600 dark:text-emerald-400">Estoque Full (Fulfillment)</h4>
-                  </div>
-                  <p className="text-muted-foreground text-xs">
-                    Quando o estoque é transferido para o Full, os insumos já vão junto com os produtos.
-                    <strong className="block mt-1">Não há saída adicional do estoque físico na venda</strong> — apenas o que já foi enviado 
-                    (ex: etiqueta de identificação já colada no produto).
-                  </p>
-                </div>
-
-                {/* In-house */}
-                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">🏠</span>
-                    <h4 className="font-semibold text-amber-600 dark:text-amber-400">Vendas In-house</h4>
-                  </div>
-                  <p className="text-muted-foreground text-xs">
-                    A composição de insumos deve ser cadastrada <strong>para cada local de venda</strong>, 
-                    pois cada canal pode ter exigências diferentes.
-                  </p>
-                </div>
-              </div>
-
-              {/* Exemplo prático */}
-              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+              {/* In-house */}
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">📋</span>
-                  <h4 className="font-semibold">Exemplo Prático</h4>
+                  <span className="text-lg">🏠</span>
+                  <h4 className="font-semibold text-amber-600 dark:text-amber-400">Vendas In-house</h4>
                 </div>
-                <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• <strong>Mercado Livre:</strong> 1 etiqueta 10x15 por venda</li>
-                  <li>• <strong>Shopee:</strong> 2 etiquetas 10x15 por venda</li>
-                  <li>• <strong>Loja própria:</strong> 1 etiqueta + 1 nota fiscal por venda</li>
-                </ul>
-                <p className="text-xs text-muted-foreground mt-2 italic">
-                  Cada local de venda consome insumos de forma diferente, por isso a configuração é individual.
+                <p className="text-muted-foreground text-xs">
+                  A composição de insumos deve ser cadastrada <strong>para cada local de venda</strong>, 
+                  pois cada canal pode ter exigências diferentes.
                 </p>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Exemplo prático */}
+            <div className="p-3 rounded-lg bg-muted/50 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">📋</span>
+                <h4 className="font-semibold">Exemplo Prático</h4>
+              </div>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• <strong>Mercado Livre:</strong> 1 etiqueta 10x15 por venda</li>
+                <li>• <strong>Shopee:</strong> 2 etiquetas 10x15 por venda</li>
+                <li>• <strong>Loja própria:</strong> 1 etiqueta + 1 nota fiscal por venda</li>
+              </ul>
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                Cada local de venda consome insumos de forma diferente, por isso a configuração é individual.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Tabela */}
         <InsumosComposicoesTable
