@@ -155,38 +155,42 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
           {/* Botões de ação */}
           {!isSelectMode ? (
             <>
-              <Button onClick={handleCreate} className="gap-1.5 h-9 text-sm">
+              <Button size="sm" onClick={handleCreate} className="gap-1.5">
                 <Plus className="w-3.5 h-3.5" />
                 Nova Composição
               </Button>
               <Button
                 variant="secondary"
+                size="sm"
                 onClick={() => setImportModalOpen(true)}
-                className="gap-1.5 h-9 text-sm"
+                className="gap-1.5"
               >
                 <Import className="w-3.5 h-3.5" />
                 Importar do Estoque
               </Button>
               <Button
                 variant="secondary"
+                size="sm"
                 onClick={() => toast.info('Importar Excel - Em breve')}
-                className="gap-1.5 h-9 text-sm"
+                className="gap-1.5"
               >
                 <Upload className="w-3.5 h-3.5" />
                 Importar Excel
               </Button>
               <Button
                 variant="secondary"
+                size="sm"
                 onClick={() => toast.info('Baixar Dados - Em breve')}
-                className="gap-1.5 h-9 text-sm"
+                className="gap-1.5"
               >
                 <Download className="w-3.5 h-3.5" />
                 Baixar Dados
               </Button>
               <Button
                 variant="secondary"
+                size="sm"
                 onClick={toggleSelectMode}
-                className="gap-1.5 h-9 text-sm"
+                className="gap-1.5"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
                 Selecionar
@@ -207,7 +211,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
 
                   selectAll(skus.map(sku => ({ id: sku })));
                 }}
-                className="gap-1.5 h-9"
+                className="gap-1.5"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
                 Selecionar Todos
@@ -218,7 +222,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
                     variant="destructive"
                     size="sm"
                     disabled={selectedCount === 0}
-                    className="gap-1.5 h-9"
+                    className="gap-1.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Excluir ({selectedCount})
@@ -244,7 +248,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
                 variant="secondary"
                 size="sm"
                 onClick={toggleSelectMode}
-                className="gap-1.5 h-9"
+                className="gap-1.5"
               >
                 <X className="w-3.5 h-3.5" />
                 Cancelar
