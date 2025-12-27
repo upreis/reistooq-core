@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
 import InsumosPage from "./InsumosPage";
-import { Store, ChevronDown, ChevronUp } from "lucide-react";
+import { Store, Info, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
 import { LocalVendaSelector } from "@/components/estoque/LocalVendaSelector";
 import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
 import { useLocalVendaAtivo } from "@/hooks/useLocalVendaAtivo";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "@/components/ui/separator";
 
@@ -164,22 +164,27 @@ export default function ComposicoesUnificadasPage() {
 
       {/* Aviso informativo sobre como funciona */}
       {!isMobile && (
-        <div className="border rounded-lg bg-blue-500/10 border-blue-500/20 overflow-hidden">
-          <button 
+        <div className="space-y-2">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowInfo(!showInfo)}
-            className="w-full p-3 flex items-center justify-between text-sm font-medium hover:bg-blue-500/5 transition-colors"
+            className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
           >
-            <span>💡 Como funciona a composição de produtos</span>
-            {showInfo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
+            <Info className="h-4 w-4" />
+            <span className="text-xs">Como funciona?</span>
+            {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
+          
           {showInfo && (
-            <div className="px-4 pb-4 text-sm text-muted-foreground">
-              <p>
+            <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-blue-800 dark:text-blue-200">
                 Na página <strong>Produtos</strong> você terá os produtos e suas composições que sairão do estoque. 
                 Porém, se tiver tipos de vendas em que sai mais insumos que outros, você precisa cadastrar na página{" "}
                 <strong>Insumos</strong> para que seja calculada a saída do estoque de acordo com o local de venda.
-              </p>
-            </div>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       )}

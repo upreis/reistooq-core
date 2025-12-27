@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Plus, Package, Upload, Download, Import, CheckCircle, X, Trash2, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Package, Upload, Download, Import, CheckCircle, X, Trash2, Search, Filter, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -276,16 +276,20 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
       {/* Layout principal */}
       <div className="flex-1 min-w-0 space-y-6">
         {/* Info Box - Como funciona */}
-        <div className="border rounded-lg bg-blue-500/10 border-blue-500/20 overflow-hidden">
-          <button 
+        <div className="space-y-2">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowInfo(!showInfo)}
-            className="w-full p-3 flex items-center justify-between text-sm font-medium hover:bg-blue-500/5 transition-colors"
+            className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
           >
-            <span>💡 Como funciona a composição de insumos</span>
-            {showInfo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
+            <Info className="h-4 w-4" />
+            <span className="text-xs">Como funciona?</span>
+            {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
+          
           {showInfo && (
-            <div className="px-4 pb-4 text-sm space-y-4">
+            <div className="border rounded-lg bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 p-4 text-sm space-y-4">
               <div className="text-muted-foreground">
                 <p className="mb-3">
                   A composição de insumos é configurada <strong>por local de venda</strong>, não por tipo de estoque.
