@@ -754,6 +754,21 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
 
   return (
     <div className="space-y-6">
+      {/* Indicador de Composição Padrão */}
+      <div className="flex items-start gap-6">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Kits e Unitários</span>
+          <Button
+            variant="outline"
+            className="gap-2 h-8 px-3 text-sm bg-background border-border"
+            disabled
+          >
+            <Boxes className="h-4 w-4" />
+            Composição Padrão
+          </Button>
+        </div>
+      </div>
+
       {/* Barra de busca + botões de ação na mesma linha */}
       <div className="flex items-center gap-1.5 flex-wrap">
         {/* Campo de busca */}
