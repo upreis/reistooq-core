@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 
 export default function InsumosPage({ hideHeader = false, localId, localVendaId }: { hideHeader?: boolean; localId?: string; localVendaId?: string }) {
   const { createInsumo, updateInsumo, deleteInsumo, deleteProduto, insumosEnriquecidos } = useInsumosComposicoes(localId, localVendaId);
-  const { importarDoEstoque, isImporting } = useImportarInsumosDoEstoque();
+  const { importarDoEstoque, isImporting } = useImportarInsumosDoEstoque(localVendaId);
   
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

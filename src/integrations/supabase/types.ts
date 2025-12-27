@@ -5862,6 +5862,7 @@ export type Database = {
           descricao: string | null
           estoque_minimo: number | null
           id: string
+          local_venda_id: string | null
           nome: string
           organization_id: string
           preco_custo: number | null
@@ -5883,6 +5884,7 @@ export type Database = {
           descricao?: string | null
           estoque_minimo?: number | null
           id?: string
+          local_venda_id?: string | null
           nome: string
           organization_id: string
           preco_custo?: number | null
@@ -5904,6 +5906,7 @@ export type Database = {
           descricao?: string | null
           estoque_minimo?: number | null
           id?: string
+          local_venda_id?: string | null
           nome?: string
           organization_id?: string
           preco_custo?: number | null
@@ -5915,7 +5918,15 @@ export type Database = {
           updated_at?: string | null
           url_imagem?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "produtos_composicoes_local_venda_id_fkey"
+            columns: ["local_venda_id"]
+            isOneToOne: false
+            referencedRelation: "locais_venda"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
