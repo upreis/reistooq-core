@@ -86,29 +86,28 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
     refetch: refetchProdutos
   } = useProdutosComposicoes();
 
-  // Hook para composições de estoque (local de estoque)
+  // Hook para composições de estoque (local de estoque) - usado no modo PADRÃO
   const composicoesEstoqueHook = useComposicoesEstoque(localId);
   
-  // Hook para composições de local de venda
+  // Hook para composições de local de venda - usado quando seleciona um local de venda
   const composicoesVendaHook = useComposicoesLocalVenda(localVendaId);
 
-  // Na página /estoque/composicoes, somente usar composicoes_local_venda
-  // NÃO usar fallback para composicoes_insumos (essas são da página /estoque/insumos)
+  // Modo: se tem local de venda selecionado, usa composições do local de venda
+  // Senão, usa composições padrão do estoque (produto_componentes)
   const isLocalVendaMode = !!localVendaId;
   
-  // Sempre usar composições do local de venda nesta página
-  // Se não há local de venda, composições ficam vazias (objeto vazio para manter tipo)
+  // Usar composições do local de venda OU do estoque (padrão)
   const composicoesAtuais = isLocalVendaMode 
     ? composicoesVendaHook.composicoes 
-    : ({} as typeof composicoesVendaHook.composicoes);
+    : composicoesEstoqueHook.composicoes;
   
   const getComposicoesForSku = isLocalVendaMode 
     ? composicoesVendaHook.getComposicoesForSku 
-    : () => [];
+    : composicoesEstoqueHook.getComposicoesForSku;
     
   const loadComposicoes = isLocalVendaMode 
     ? composicoesVendaHook.loadComposicoes 
-    : async () => {};
+    : composicoesEstoqueHook.loadComposicoes;
 
   // Hook para produtos do controle de estoque (para criar novos produtos)
   const { createProduct } = useProducts();
@@ -738,9 +737,15 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                   </>
                 ) : (
                   <>
-                    <span className="text-muted-foreground/70">Composição padrão (global)</span>
+                    Nenhuma composição cadastrada
                     <br />
-                    <span className="text-[9px]">Selecione um local de venda para adicionar insumos específicos</span>
+                    <Button 
+                      variant="ghost" 
+                      className="mt-1 h-5 px-2 text-[10px]"
+                      onClick={() => abrirModalComposicoes(product)}
+                    >
+                      + Adicionar composição
+                    </Button>
                   </>
                 )}
               </div>
