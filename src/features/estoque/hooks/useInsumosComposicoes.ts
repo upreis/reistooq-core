@@ -44,13 +44,13 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
     enabled: !!localVendaId
   });
 
-  // 📥 Buscar insumos enriquecidos (com nomes e estoque)
+  // 📥 Buscar insumos enriquecidos (com nomes e estoque DO LOCAL CORRETO)
   const { data: insumosEnriquecidos = [] } = useQuery({
-    queryKey: ['composicoes-insumos-enriquecidos', localVendaId],
+    queryKey: ['composicoes-insumos-enriquecidos', localVendaId, localId],
     queryFn: async () => {
       if (!localVendaId) return [];
 
-      console.log('🔍 [Enriquecidos] Carregando para local de venda:', localVendaId);
+      console.log('🔍 [Enriquecidos] Carregando para local de venda:', localVendaId, '| local estoque:', localId);
 
       // Buscar da tabela composicoes_local_venda
       const { data: composicoes, error } = await supabase
@@ -74,18 +74,51 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
       const [produtosRes, composicoesRes, insumosRes] = await Promise.all([
         supabase.from('produtos').select('sku_interno, nome').in('sku_interno', skusProdutos),
         supabase.from('produtos_composicoes').select('sku_interno, nome').in('sku_interno', skusProdutos),
-        supabase.from('produtos').select('sku_interno, nome, quantidade_atual').in('sku_interno', skusInsumos)
+        supabase.from('produtos').select('id, sku_interno, nome').in('sku_interno', skusInsumos)
       ]);
 
-      // Criar mapas de nomes e estoques
+      // Criar mapas de nomes
       const nomesProdutos = new Map<string, string>();
       produtosRes.data?.forEach(p => nomesProdutos.set(p.sku_interno, p.nome));
       composicoesRes.data?.forEach(p => nomesProdutos.set(p.sku_interno, p.nome));
 
+      // Criar mapa de produtos insumos (id -> info)
+      const produtosInsumosMap = new Map<string, { id: string; nome: string }>();
+      const skuToIdMap = new Map<string, string>();
+      insumosRes.data?.forEach(i => {
+        produtosInsumosMap.set(i.id, { id: i.id, nome: i.nome });
+        skuToIdMap.set(i.sku_interno, i.id);
+      });
+
+      // Buscar estoque DO LOCAL CORRETO (usando localId)
+      const produtoIds = [...new Set(insumosRes.data?.map(i => i.id) || [])].filter(Boolean);
+      const estoquePorProdutoId = new Map<string, number>();
+
+      if (produtoIds.length > 0 && localId) {
+        console.log('📦 [Enriquecidos] Buscando estoque do local:', localId, 'para', produtoIds.length, 'produtos');
+        
+        const { data: estoqueData, error: estoqueError } = await supabase
+          .from('estoque_por_local')
+          .select('produto_id, quantidade')
+          .eq('local_id', localId)
+          .in('produto_id', produtoIds);
+
+        if (estoqueError) {
+          console.error('❌ Erro ao buscar estoque por local:', estoqueError);
+        } else {
+          (estoqueData || []).forEach((row: any) => {
+            estoquePorProdutoId.set(row.produto_id, row.quantidade || 0);
+          });
+          console.log('✅ [Enriquecidos] Estoque carregado para', estoquePorProdutoId.size, 'produtos');
+        }
+      }
+
+      // Criar mapa de estoque por SKU
       const insumosMap = new Map<string, { nome: string; estoque: number }>();
-      insumosRes.data?.forEach(i => 
-        insumosMap.set(i.sku_interno, { nome: i.nome, estoque: i.quantidade_atual })
-      );
+      insumosRes.data?.forEach(i => {
+        const estoqueDoLocal = estoquePorProdutoId.get(i.id) ?? 0;
+        insumosMap.set(i.sku_interno, { nome: i.nome, estoque: estoqueDoLocal });
+      });
 
       // Enriquecer dados - adaptar campos da composicoes_local_venda
       const enriquecidos: ComposicaoInsumoEnriquecida[] = composicoes?.map(comp => ({
@@ -93,7 +126,7 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
         sku_produto: comp.sku_produto,
         sku_insumo: comp.sku_insumo,
         quantidade: comp.quantidade,
-        local_id: undefined, // Não usado para composicoes_local_venda
+        local_id: localId, // Agora usando o localId passado
         local_venda_id: localVendaId, // CRÍTICO: Usar local_venda_id para esta tabela
         organization_id: comp.organization_id,
         observacoes: comp.observacoes,
@@ -105,7 +138,7 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
         estoque_disponivel: insumosMap.get(comp.sku_insumo)?.estoque || 0
       })) || [];
 
-      console.log('✅ [Enriquecidos] Dados enriquecidos:', enriquecidos.length);
+      console.log('✅ [Enriquecidos] Dados enriquecidos:', enriquecidos.length, 'com estoque do local:', localId);
       return enriquecidos;
     },
     enabled: !!localVendaId
