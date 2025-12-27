@@ -47,9 +47,10 @@ const TIPO_ICONS: Record<string, string> = {
 
 interface LocalEstoqueSelectorProps {
   showActions?: boolean;
+  hidePrincipal?: boolean;
 }
 
-export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelectorProps) {
+export function LocalEstoqueSelector({ showActions = false, hidePrincipal = false }: LocalEstoqueSelectorProps) {
   const [locais, setLocais] = useState<LocalEstoque[]>([]);
   const [loading, setLoading] = useState(true);
   const [localParaDeletar, setLocalParaDeletar] = useState<LocalEstoque | null>(null);
@@ -346,7 +347,9 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
   return (
     <>
       <div className="flex items-center gap-1.5 flex-wrap">
-        {locais.map((local) => {
+        {locais
+          .filter((local) => !(hidePrincipal && local.tipo === 'principal'))
+          .map((local) => {
           const isActive = localAtivo?.id === local.id;
           const isPrincipal = local.tipo === 'principal';
           const isSynced = (local as any).sincronizar_com_principal;
