@@ -117,11 +117,23 @@ export default function ComposicoesUnificadasPage() {
       {!isMobile && (
         <div className="space-y-4 pb-4 border-b">
           {/* Linha 1: Local de Estoque (sem o Principal) */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
-              <span className="font-medium">📦 Estoque:</span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
+                <span className="font-medium">📦 Estoque:</span>
+              </div>
+              <LocalEstoqueSelector hidePrincipal />
             </div>
-            <LocalEstoqueSelector hidePrincipal />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowInfo(!showInfo)}
+              className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
+            >
+              <Info className="h-4 w-4" />
+              <span className="text-xs">Como funciona?</span>
+              {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </Button>
           </div>
 
           <Separator />
@@ -160,30 +172,15 @@ export default function ComposicoesUnificadasPage() {
       )}
 
       {/* Aviso informativo sobre como funciona */}
-      {!isMobile && (
-        <div className="space-y-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowInfo(!showInfo)}
-            className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
-          >
-            <Info className="h-4 w-4" />
-            <span className="text-xs">Como funciona?</span>
-            {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </Button>
-          
-          {showInfo && (
-            <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertDescription className="text-blue-800 dark:text-blue-200">
-                Na página <strong>Produtos</strong> você terá os produtos e suas composições que sairão do estoque. 
-                Porém, se tiver tipos de vendas em que sai mais insumos que outros, você precisa cadastrar na página{" "}
-                <strong>Insumos</strong> para que seja calculada a saída do estoque de acordo com o local de venda.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
+      {!isMobile && showInfo && (
+        <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-blue-800 dark:text-blue-200">
+            Na página <strong>Produtos</strong> você terá os produtos e suas composições que sairão do estoque. 
+            Porém, se tiver tipos de vendas em que sai mais insumos que outros, você precisa cadastrar na página{" "}
+            <strong>Insumos</strong> para que seja calculada a saída do estoque de acordo com o local de venda.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Renderiza diretamente o ComposicoesEstoque sem abas */}
