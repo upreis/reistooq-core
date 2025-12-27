@@ -666,14 +666,16 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                     )}
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    onClick={() => abrirModalComposicoes(product)}
-                    className="flex-1 h-6 text-[10px] px-2"
-                  >
-                    <Edit className="h-2.5 w-2.5 mr-1" />
-                    Editar
-                  </Button>
+                  {!isLocalVendaMode && (
+                    <Button
+                      variant="outline"
+                      onClick={() => abrirModalComposicoes(product)}
+                      className="flex-1 h-6 text-[10px] px-2"
+                    >
+                      <Edit className="h-2.5 w-2.5 mr-1" />
+                      Editar
+                    </Button>
+                  )}
                 </div>
 
                 {/* Detalhes expandíveis */}
@@ -765,13 +767,9 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                   <>
                     Nenhum insumo cadastrado para este local
                     <br />
-                    <Button 
-                      variant="ghost" 
-                      className="mt-1 h-5 px-2 text-[10px]"
-                      onClick={() => abrirModalComposicoes(product)}
-                    >
-                      + Adicionar insumos
-                    </Button>
+                    <span className="text-[9px] text-muted-foreground">
+                      Edite na página de Insumos
+                    </span>
                   </>
                 ) : (
                   <>
