@@ -119,27 +119,12 @@ export default function ComposicoesUnificadasPage() {
   }
 
   // Página de composições - renderiza diretamente sem abas
+  // Nesta página NÃO mostramos o seletor de estoque, apenas o seletor de local de venda
   return (
     <div className="space-y-6">
-      {/* Seletor de Local de Estoque - Ocultar no mobile */}
+      {/* Seletor SOMENTE de Local de Venda - Ocultar no mobile */}
       {!isMobile && (
-        <div className="space-y-4 pb-4 border-b">
-          {/* Linha 1: Local de Estoque */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
-              <span className="font-medium">📦 Estoque:</span>
-            </div>
-            <LocalEstoqueSelector />
-            {localAtivo && (
-              <span className="text-xs text-muted-foreground">
-                Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
-              </span>
-            )}
-          </div>
-
-          <Separator />
-
-          {/* Linha 2: Local de Venda */}
+        <div className="pb-4 border-b">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
               <Store className="h-4 w-4" />
@@ -158,16 +143,6 @@ export default function ComposicoesUnificadasPage() {
             )}
           </div>
         </div>
-      )}
-
-      {/* Alerta se nenhum local selecionado - Ocultar no mobile */}
-      {!isMobile && !localAtivo && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Selecione um local de estoque para visualizar e gerenciar as composições.
-          </AlertDescription>
-        </Alert>
       )}
 
       {/* Renderiza diretamente o ComposicoesEstoque sem abas */}
