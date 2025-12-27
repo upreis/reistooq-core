@@ -139,71 +139,66 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
   return (
     <div className="space-y-8">
       {/* Barra de busca + botões de ação na mesma linha */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {/* Campo de busca */}
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative min-w-[140px]">
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Buscar insumos..."
+              placeholder="Pesquisar"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-9"
+              className="pl-8 h-7 text-xs"
             />
           </div>
 
           {/* Botões de ação */}
           {!isSelectMode ? (
             <>
-              <Button size="sm" onClick={handleCreate} className="gap-1.5">
-                <Plus className="w-3.5 h-3.5" />
+              <Button onClick={handleCreate} className="gap-1.5 h-7 px-2.5 text-xs">
+                <Plus className="w-3 h-3" />
                 Nova Composição
               </Button>
               <Button
-                variant="secondary"
-                size="sm"
+                variant="outline"
                 onClick={() => setImportModalOpen(true)}
-                className="gap-1.5"
+                className="gap-1.5 h-7 px-2.5 text-xs"
               >
-                <Import className="w-3.5 h-3.5" />
+                <Import className="w-3 h-3" />
                 Importar do Estoque
               </Button>
               <Button
-                variant="secondary"
-                size="sm"
+                variant="outline"
                 onClick={() => toast.info('Importar Excel - Em breve')}
-                className="gap-1.5"
+                className="gap-1.5 h-7 px-2.5 text-xs"
               >
-                <Upload className="w-3.5 h-3.5" />
+                <Upload className="w-3 h-3" />
                 Importar Excel
               </Button>
               <Button
-                variant="secondary"
-                size="sm"
+                variant="outline"
                 onClick={() => toast.info('Baixar Dados - Em breve')}
-                className="gap-1.5"
+                className="gap-1.5 h-7 px-2.5 text-xs"
               >
-                <Download className="w-3.5 h-3.5" />
+                <Download className="w-3 h-3" />
                 Baixar Dados
               </Button>
               <Button
-                variant="secondary"
-                size="sm"
+                variant="outline"
                 onClick={toggleSelectMode}
-                className="gap-1.5"
+                className="gap-1.5 h-7 px-2.5 text-xs"
               >
-                <CheckCircle className="w-3.5 h-3.5" />
+                <CheckCircle className="w-3 h-3" />
                 Selecionar
               </Button>
             </>
           ) : (
             <>
-              <Badge variant="secondary" className="text-sm px-3 py-1.5">
+              <Badge variant="secondary" className="text-xs px-2 py-1">
                 {selectedCount} selecionado(s)
               </Badge>
               <Button
-                variant="secondary"
-                size="sm"
+                variant="outline"
                 onClick={() => {
                   const skus = visibleSkus.length
                     ? visibleSkus
@@ -211,20 +206,19 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
 
                   selectAll(skus.map(sku => ({ id: sku })));
                 }}
-                className="gap-1.5"
+                className="gap-1.5 h-7 px-2.5 text-xs"
               >
-                <CheckCircle className="w-3.5 h-3.5" />
+                <CheckCircle className="w-3 h-3" />
                 Selecionar Todos
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="destructive"
-                    size="sm"
                     disabled={selectedCount === 0}
-                    className="gap-1.5"
+                    className="gap-1.5 h-7 px-2.5 text-xs"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3 h-3" />
                     Excluir ({selectedCount})
                   </Button>
                 </AlertDialogTrigger>
@@ -245,12 +239,11 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
                 </AlertDialogContent>
               </AlertDialog>
               <Button
-                variant="secondary"
-                size="sm"
+                variant="outline"
                 onClick={toggleSelectMode}
-                className="gap-1.5"
+                className="gap-1.5 h-7 px-2.5 text-xs"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
                 Cancelar
               </Button>
             </>
