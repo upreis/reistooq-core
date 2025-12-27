@@ -21,7 +21,7 @@ import type { ComposicaoInsumoEnriquecida } from '@/features/estoque/types/insum
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export default function InsumosPage({ hideHeader = false, localId, localVendaId }: { hideHeader?: boolean; localId?: string; localVendaId?: string }) {
+export default function InsumosPage({ hideHeader = false, localId, localVendaId, showInfoExternal }: { hideHeader?: boolean; localId?: string; localVendaId?: string; showInfoExternal?: boolean }) {
   const { createInsumo, updateInsumo, deleteInsumo, deleteProduto, insumosEnriquecidos } = useInsumosComposicoes(localId, localVendaId);
   const { importarDoEstoque, isImporting } = useImportarInsumosDoEstoque(localVendaId);
   
@@ -30,9 +30,12 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
   const [insumoSelecionado, setInsumoSelecionado] = useState<ComposicaoInsumoEnriquecida | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
+  const [showInfoInternal, setShowInfoInternal] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [visibleSkus, setVisibleSkus] = useState<string[]>([]);
+
+  // Usa o estado externo se fornecido, senão usa o interno
+  const showInfo = showInfoExternal !== undefined ? showInfoExternal : showInfoInternal;
 
   // Hook para seleção de itens
   const {
@@ -250,17 +253,19 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId 
           )}
         </div>
 
-        {/* Botão Como funciona? no final da linha */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowInfo(!showInfo)}
-          className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
-        >
-          <Info className="h-4 w-4" />
-          <span className="text-xs">Como funciona?</span>
-          {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </Button>
+        {/* Botão Como funciona? no final da linha - só mostra se não tem controle externo */}
+        {showInfoExternal === undefined && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowInfoInternal(!showInfoInternal)}
+            className="text-muted-foreground hover:text-foreground gap-1 h-auto py-1 px-2"
+          >
+            <Info className="h-4 w-4" />
+            <span className="text-xs">Como funciona?</span>
+            {showInfo ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
+        )}
       </div>
 
       {/* Header moderno melhorado - oculto no mobile ou quando hideHeader */}
