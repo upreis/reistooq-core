@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
 import InsumosPage from "./InsumosPage";
-import { Store, Info, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { Store, Info, ChevronDown, ChevronUp, AlertCircle, Boxes } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
@@ -126,18 +126,37 @@ export default function ComposicoesUnificadasPage() {
 
           <Separator />
 
-          {/* Linha 2: Local de Venda */}
+          {/* Linha 2: Composição Padrão + Separador + Local de Venda */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-fit">
-              <Store className="h-4 w-4" />
-              <span className="font-medium">Venda:</span>
+            {/* Composição Padrão */}
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Kits e Unitários</span>
+              <Button
+                variant="outline"
+                className="gap-2 h-8 px-3 text-sm bg-background border-border"
+                disabled
+              >
+                <Boxes className="h-4 w-4" />
+                Composição Padrão
+              </Button>
             </div>
-            {localAtivo && (
-              <LocalVendaSelector 
-                localEstoqueId={localAtivo.id} 
-                localEstoqueNome={localAtivo.nome}
-              />
-            )}
+
+            {/* Separador vertical */}
+            <Separator orientation="vertical" className="h-12" />
+
+            {/* Local de Venda */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Store className="h-3 w-3" />
+                <span>Venda:</span>
+              </div>
+              {localAtivo && (
+                <LocalVendaSelector 
+                  localEstoqueId={localAtivo.id} 
+                  localEstoqueNome={localAtivo.nome}
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
