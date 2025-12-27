@@ -20,7 +20,7 @@ export default function ComposicoesUnificadasPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const { localAtivo } = useLocalEstoqueAtivo();
-  const { localVendaAtivo } = useLocalVendaAtivo();
+  const { localVendaAtivo, clearLocalVenda } = useLocalVendaAtivo();
   const isMobile = useIsMobile();
 
   const isInsumosPage = location.pathname === '/estoque/insumos';
@@ -132,9 +132,9 @@ export default function ComposicoesUnificadasPage() {
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted-foreground">Kits e Unitários</span>
               <Button
-                variant="outline"
-                className="gap-2 h-8 px-3 text-sm bg-background border-border"
-                disabled
+                variant={!localVendaIdDoEstoqueAtual ? "default" : "outline"}
+                className="gap-2 h-8 px-3 text-sm"
+                onClick={clearLocalVenda}
               >
                 <Boxes className="h-4 w-4" />
                 Composição Padrão
