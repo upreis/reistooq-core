@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -94,70 +94,67 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
 
   // Modo: se tem local de venda selecionado, enriquece com insumos do local
   const isLocalVendaMode = !!localVendaId;
-  
+
+  // Funções (evita depender do objeto inteiro do hook e causar loops de effect)
+  const getPadraoForSku = composicoesEstoqueHook.getComposicoesForSku;
+  const getLocalForSku = composicoesVendaHook.getComposicoesForSku;
+  const loadPadrao = composicoesEstoqueHook.loadComposicoes;
+  const loadLocal = composicoesVendaHook.loadComposicoes;
+
   // ENRIQUECIMENTO: Quando em modo local de venda, combinar composição padrão + insumos do local
-  // Função que retorna composições ENRIQUECIDAS (padrão + local de venda)
-  const getComposicoesEnriquecidas = useCallback((skuProduto: string) => {
-    const composicoesPadrao = composicoesEstoqueHook.getComposicoesForSku(skuProduto) || [];
-    
-    if (!isLocalVendaMode) {
-      // Sem local de venda selecionado: retorna apenas composição padrão
-      return composicoesPadrao;
-    }
-    
-    // Com local de venda: combina padrão + insumos do local
-    const insumosLocalVenda = composicoesVendaHook.getComposicoesForSku(skuProduto) || [];
-    
-    // Retorna array combinado (padrão primeiro, depois insumos do local)
+  const getComposicoesForSku = useCallback((skuProduto: string) => {
+    const composicoesPadrao = getPadraoForSku(skuProduto) || [];
+    if (!isLocalVendaMode) return composicoesPadrao;
+
+    const insumosLocalVenda = getLocalForSku(skuProduto) || [];
     return [...composicoesPadrao, ...insumosLocalVenda];
-  }, [composicoesEstoqueHook, composicoesVendaHook, isLocalVendaMode]);
-  
+  }, [getPadraoForSku, getLocalForSku, isLocalVendaMode]);
+
   // Composições atuais para filtros (combina ambas quando em modo local de venda)
   const composicoesAtuais = useMemo(() => {
     const combined: Record<string, any[]> = {};
-    
-    // Adiciona composições padrão
+
     Object.entries(composicoesEstoqueHook.composicoes || {}).forEach(([sku, items]) => {
       combined[sku] = [...(items || [])];
     });
-    
-    // Se em modo local de venda, adiciona insumos do local
+
     if (isLocalVendaMode) {
       Object.entries(composicoesVendaHook.composicoes || {}).forEach(([sku, items]) => {
-        if (combined[sku]) {
-          combined[sku] = [...combined[sku], ...(items || [])];
-        } else {
-          combined[sku] = [...(items || [])];
-        }
+        combined[sku] = combined[sku] ? [...combined[sku], ...(items || [])] : [...(items || [])];
       });
     }
-    
+
     return combined;
   }, [composicoesEstoqueHook.composicoes, composicoesVendaHook.composicoes, isLocalVendaMode]);
-  
-  // Usar a função enriquecida para buscar composições
-  const getComposicoesForSku = getComposicoesEnriquecidas;
-    
-  // Carregar ambas as composições
-  const loadComposicoes = useCallback(async () => {
-    await composicoesEstoqueHook.loadComposicoes();
-    if (isLocalVendaMode) {
-      await composicoesVendaHook.loadComposicoes();
-    }
-  }, [composicoesEstoqueHook, composicoesVendaHook, isLocalVendaMode]);
 
-  // Hook para produtos do controle de estoque (para criar novos produtos)
-  const { createProduct } = useProducts();
+  // Evitar loop/infinite fetch: só recarrega quando (localId/localVendaId) mudarem de fato
+  const lastLoadKeyRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!produtos || produtos.length === 0) return;
+
+    const key = `${localId || ""}:${localVendaId || ""}:${produtos.length}`;
+    if (lastLoadKeyRef.current === key) return;
+    lastLoadKeyRef.current = key;
+
+    (async () => {
+      await loadPadrao();
+      if (localVendaId) {
+        await loadLocal();
+      }
+    })();
+  }, [produtos?.length, localId, localVendaId, loadPadrao, loadLocal]);
+
+  // Função utilitária (usada por botões/ações) para recarregar as composições sem causar loop no useEffect
+  const loadComposicoes = useCallback(async () => {
+    await loadPadrao();
+    if (localVendaId) {
+      await loadLocal();
+    }
+  }, [loadPadrao, loadLocal, localVendaId]);
 
   // Hook para filtros inteligentes
-  const { filters, setFilters, filteredData, stats } = useComposicoesFilters(produtos, composicoesAtuais, custosProdutos);
-
-  // Sincronizar composições quando produtos carregarem ou mudar local de venda
-  useEffect(() => {
-    if (produtos && produtos.length > 0) {
-      loadComposicoes();
-    }
-  }, [produtos, loadComposicoes, localVendaId]);
+  const { filters, setFilters, filteredData, stats } = useComposicoesFilters(produtos, composicoesAtuais as any, custosProdutos);
 
   const abrirModalComposicoes = (produto: ProdutoComposicao) => {
     setProdutoSelecionado(produto);
