@@ -24,7 +24,7 @@ export interface ProdutoComposicao {
   updated_at: string;
 }
 
-export const useProdutosComposicoes = (localVendaId?: string) => {
+export const useProdutosComposicoes = () => {
   const queryClient = useQueryClient();
 
   const {
@@ -33,21 +33,17 @@ export const useProdutosComposicoes = (localVendaId?: string) => {
     error,
     refetch
   } = useQuery({
-    queryKey: ["produtos-composicoes", localVendaId],
+    queryKey: ["produtos-composicoes"],
     queryFn: async () => {
-      if (!localVendaId) return [];
-      
       const { data, error } = await supabase
         .from("produtos_composicoes")
         .select("*")
         .eq("ativo", true)
-        .eq("local_venda_id", localVendaId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as ProdutoComposicao[];
     },
-    enabled: !!localVendaId,
   });
 
   const createProduto = useMutation({
@@ -123,13 +119,9 @@ export const useProdutosComposicoes = (localVendaId?: string) => {
     },
   });
 
-  // Função para importar produtos do controle de estoque
+  // Função para importar produtos do controle de estoque (GLOBAL - sem local_venda_id)
   const importarDoEstoque = useMutation({
     mutationFn: async (produtoIds: string[]) => {
-      if (!localVendaId) {
-        throw new Error("Local de venda não selecionado");
-      }
-      
       // Buscar produtos do estoque (incluindo organization_id)
       const { data: produtosEstoque, error: fetchError } = await supabase
         .from("produtos")
@@ -141,7 +133,7 @@ export const useProdutosComposicoes = (localVendaId?: string) => {
         throw new Error("Nenhum produto encontrado para importar");
       }
 
-      // Converter para formato de produtos de composições com local_venda_id
+      // Converter para formato de produtos de composições (GLOBAL)
       const produtosParaImportar = produtosEstoque.map(produto => ({
         sku_interno: produto.sku_interno,
         nome: produto.nome,
@@ -155,15 +147,14 @@ export const useProdutosComposicoes = (localVendaId?: string) => {
         codigo_barras: produto.codigo_barras,
         status: "active",
         ativo: true,
-        organization_id: produto.organization_id,
-        local_venda_id: localVendaId
+        organization_id: produto.organization_id
       }));
 
-      // Inserir na tabela de composições (com upsert para evitar duplicatas por SKU + org + local)
+      // Inserir na tabela de composições (com upsert para evitar duplicatas por SKU + org)
       const { data, error } = await supabase
         .from("produtos_composicoes")
         .upsert(produtosParaImportar as any, {
-          onConflict: "sku_interno,organization_id,local_venda_id",
+          onConflict: "sku_interno,organization_id",
           ignoreDuplicates: false
         })
         .select();
