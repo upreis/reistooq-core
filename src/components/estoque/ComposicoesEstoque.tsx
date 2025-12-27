@@ -72,7 +72,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
     selectedCount
   } = useComposicoesSelection();
 
-  // Usar produtos de composições independentes
+  // Usar produtos de composições independentes - filtrado por local de venda
   const {
     produtos,
     isLoading,
@@ -84,7 +84,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
     sincronizarComponentes,
     isImporting,
     refetch: refetchProdutos
-  } = useProdutosComposicoes();
+  } = useProdutosComposicoes(localVendaId);
 
   // Hook para composições de estoque (local de estoque)
   const composicoesEstoqueHook = useComposicoesEstoque(localId);
