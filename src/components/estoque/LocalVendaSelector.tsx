@@ -275,7 +275,7 @@ export function LocalVendaSelector({ localEstoqueId, localEstoqueNome, readOnly 
         {locais.length === 0 ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Store className="h-4 w-4" />
-            Nenhum local de venda cadastrado
+            <span>Nenhum local de venda cadastrado, adicione na página <a href="/estoque/insumos" className="text-primary underline hover:text-primary/80">Insumos</a></span>
           </div>
         ) : (
           locais.map((local) => {
