@@ -29,7 +29,8 @@ export class MapeamentoService {
   static async verificarMapeamentos(
     skusPedido: string[], 
     localEstoqueId?: string,
-    quantidadePorSku?: Map<string, number>
+    quantidadePorSku?: Map<string, number>,
+    localVendaId?: string
   ): Promise<MapeamentoVerificacao[]> {
     if (skusPedido.length === 0) return [];
 
@@ -340,10 +341,10 @@ export class MapeamentoService {
         }
       }
 
-      // 🔧 VALIDAÇÃO DE INSUMOS
+      // 🔧 VALIDAÇÃO DE INSUMOS (usa local_venda_id para buscar em composicoes_local_venda)
       const skusEstoqueValidos = skusParaVerificar.filter(Boolean);
       const validacoesInsumos = skusEstoqueValidos.length > 0 
-        ? await InsumosValidationService.validarInsumosPedidos(skusEstoqueValidos)
+        ? await InsumosValidationService.validarInsumosPedidos(skusEstoqueValidos, localVendaId)
         : new Map();
 
       // 🔍 VERIFICAR COMPOSIÇÕES para SKUs que ainda não foram verificados
