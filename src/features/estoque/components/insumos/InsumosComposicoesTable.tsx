@@ -54,16 +54,19 @@ export function InsumosComposicoesTable({
 }: InsumosComposicoesTableProps) {
   const { insumosEnriquecidos, isLoading: isLoadingInsumos } = useInsumosComposicoes(localId, localVendaId); // ✅ Passar ambos
 
-  // Produtos base: apenas produtos que foram importados para produtos_composicoes
-  // Não mostrar produtos do estoque geral, apenas os que foram especificamente importados
+  // Produtos base: apenas produtos que foram importados para produtos_composicoes NESTE local de venda
+  // Não mostrar produtos do estoque geral, apenas os que foram especificamente importados para este local
   const { data: produtosBase = [], isLoading: isLoadingProdutos } = useQuery({
-    queryKey: ["insumos-produtos-base"],
+    queryKey: ["insumos-produtos-base", localVendaId],
     queryFn: async () => {
-      // Buscar APENAS de produtos_composicoes (importados para composição)
+      if (!localVendaId) return [];
+      
+      // Buscar APENAS de produtos_composicoes (importados para composição) FILTRADO por local_venda_id
       const { data, error } = await supabase
         .from('produtos_composicoes')
         .select('sku_interno, nome')
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .eq('local_venda_id', localVendaId);
       
       if (error) {
         console.error('Erro ao carregar produtos composições:', error);
@@ -76,6 +79,7 @@ export function InsumosComposicoesTable({
         origem: 'composicoes' as const 
       })).sort((a, b) => a.sku.localeCompare(b.sku));
     },
+    enabled: !!localVendaId,
   });
 
   const isLoading = isLoadingInsumos || isLoadingProdutos;

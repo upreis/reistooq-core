@@ -276,12 +276,17 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
 
 /**
  * Hook para importar produtos do estoque como insumos
+ * Agora recebe local_venda_id para associar os produtos ao local de venda específico
  */
-export function useImportarInsumosDoEstoque() {
+export function useImportarInsumosDoEstoque(localVendaId?: string) {
   const queryClient = useQueryClient();
 
   const importMutation = useMutation({
     mutationFn: async (produtoIds: string[]) => {
+      if (!localVendaId) {
+        throw new Error("Local de venda não selecionado");
+      }
+
       // Buscar produtos do estoque (incluindo organization_id)
       const { data: produtosEstoque, error: fetchError } = await supabase
         .from("produtos")
@@ -293,7 +298,7 @@ export function useImportarInsumosDoEstoque() {
         throw new Error("Nenhum produto encontrado para importar");
       }
 
-      // Converter para formato de produtos_composicoes (insumos ficam na tabela de composições)
+      // Converter para formato de produtos_composicoes com local_venda_id
       const produtosParaImportar = produtosEstoque.map(produto => ({
         sku_interno: produto.sku_interno,
         nome: produto.nome,
@@ -307,14 +312,15 @@ export function useImportarInsumosDoEstoque() {
         codigo_barras: produto.codigo_barras,
         status: "active",
         ativo: true,
-        organization_id: produto.organization_id
+        organization_id: produto.organization_id,
+        local_venda_id: localVendaId // ✅ Associar ao local de venda
       }));
 
-      // Inserir na tabela de composições (com upsert para evitar duplicatas)
+      // Inserir na tabela de composições (com upsert para evitar duplicatas por SKU + org + local)
       const { data, error } = await supabase
         .from("produtos_composicoes")
         .upsert(produtosParaImportar as any, {
-          onConflict: "sku_interno,organization_id",
+          onConflict: "sku_interno,organization_id,local_venda_id",
           ignoreDuplicates: false
         })
         .select();
@@ -326,6 +332,7 @@ export function useImportarInsumosDoEstoque() {
       queryClient.invalidateQueries({ queryKey: ["produtos-composicoes"] });
       queryClient.invalidateQueries({ queryKey: ["composicoes-insumos"] });
       queryClient.invalidateQueries({ queryKey: ["composicoes-insumos-enriquecidos"] });
+      queryClient.invalidateQueries({ queryKey: ["insumos-produtos-base"] });
       toast.success(`${data?.length || 0} produtos importados com sucesso!`);
     },
     onError: (error: any) => {
