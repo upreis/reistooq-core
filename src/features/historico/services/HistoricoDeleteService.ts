@@ -119,8 +119,11 @@ export class HistoricoDeleteService {
       const reversoesRealizadas: Array<{tipo: 'produto' | 'insumo', produtoId: string, localId: string, quantidadeRevertida: number}> = [];
 
       try {
-        if (vendaDataAny.sku_estoque) {
-          const skuMapeado = vendaDataAny.sku_estoque as string;
+        // ✅ Em registros antigos/variações, o SKU pode estar em colunas diferentes
+        const skuBase = (vendaDataAny.sku_estoque || vendaDataAny.sku_kit || vendaDataAny.sku_produto) as string | undefined;
+
+        if (skuBase) {
+          const skuMapeado = String(skuBase).trim().toUpperCase();
           const quantidadePedido = Number(vendaDataAny.quantidade_total || vendaDataAny.quantidade || 0);
 
           if (quantidadePedido <= 0) {
