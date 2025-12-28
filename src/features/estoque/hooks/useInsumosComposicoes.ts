@@ -165,7 +165,8 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
           sku_insumo: data.sku_insumo,
           quantidade: data.quantidade,
           observacoes: data.observacoes || null,
-          local_venda_id: data.local_venda_id
+          local_venda_id: data.local_venda_id,
+          por_venda: data.por_venda || false
         } as any)
         .select()
         .single();
