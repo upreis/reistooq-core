@@ -19,6 +19,7 @@ import {
   MapeamentoLocalEstoque
 } from '@/services/LocalEstoqueService';
 import { translateLogisticType } from '@/lib/translations';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ConfiguracaoLocaisModalProps {
   open: boolean;
@@ -36,6 +37,7 @@ export function ConfiguracaoLocaisModal({
   const [locais, setLocais] = useState<LocalEstoque[]>([]);
   const [locaisVenda, setLocaisVenda] = useState<LocalVenda[]>([]);
   const [mapeamentos, setMapeamentos] = useState<MapeamentoLocalEstoque[]>([]);
+  const [tiposLogisticosDinamicos, setTiposLogisticosDinamicos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
   const [empresaSelectorOpen, setEmpresaSelectorOpen] = useState(false);
@@ -76,14 +78,31 @@ export function ConfiguracaoLocaisModal({
   const carregarDados = async () => {
     try {
       setLoading(true);
-      const [locaisData, mapeamentosData, locaisVendaData] = await Promise.all([
+      const [locaisData, mapeamentosData, locaisVendaData, tiposLogisticosData] = await Promise.all([
         listarLocaisEstoque(),
         listarMapeamentosLocais(),
-        listarLocaisVenda()
+        listarLocaisVenda(),
+        // Buscar tipos logísticos únicos dos pedidos reais
+        supabase
+          .from('historico_vendas')
+          .select('tipo_logistico')
+          .not('tipo_logistico', 'is', null)
+          .not('tipo_logistico', 'eq', '')
+          .limit(1000)
       ]);
       setLocais(locaisData);
       setMapeamentos(mapeamentosData);
       setLocaisVenda(locaisVendaData);
+      
+      // Extrair tipos únicos dos pedidos
+      if (tiposLogisticosData.data) {
+        const tiposUnicos = [...new Set(
+          tiposLogisticosData.data
+            .map(row => row.tipo_logistico)
+            .filter((t): t is string => !!t && t.trim() !== '')
+        )].sort();
+        setTiposLogisticosDinamicos(tiposUnicos);
+      }
     } catch (error: any) {
       toast.error('Erro ao carregar dados: ' + error.message);
     } finally {
@@ -275,16 +294,21 @@ export function ConfiguracaoLocaisModal({
                       <SelectValue placeholder="Selecione o tipo..." />
                     </SelectTrigger>
                     <SelectContent className="bg-background border border-border z-[9999]">
-                      <SelectItem value="fulfillment">Fulfillment (Full)</SelectItem>
-                      <SelectItem value="self_service">Envios Flex</SelectItem>
-                      <SelectItem value="cross_docking">Cross Docking</SelectItem>
-                      <SelectItem value="drop_off">Drop Off</SelectItem>
-                      <SelectItem value="xd_drop_off">XD Drop Off</SelectItem>
-                      <SelectItem value="FBM">FBM (Full by Merchant)</SelectItem>
-                      <SelectItem value="FLEX">FLEX (Mercado Envios Flex)</SelectItem>
-                      <SelectItem value="Padrão">Padrão</SelectItem>
-                      <SelectItem value="Expresso">Expresso</SelectItem>
-                      <SelectItem value="Normal">Normal</SelectItem>
+                      {tiposLogisticosDinamicos.length > 0 ? (
+                        tiposLogisticosDinamicos.map(tipo => (
+                          <SelectItem key={tipo} value={tipo}>
+                            {translateLogisticType(tipo)}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="fulfillment">Fulfillment (Full)</SelectItem>
+                          <SelectItem value="self_service">Envios Flex</SelectItem>
+                          <SelectItem value="cross_docking">Cross Docking</SelectItem>
+                          <SelectItem value="drop_off">Drop Off</SelectItem>
+                          <SelectItem value="xd_drop_off">XD Drop Off</SelectItem>
+                        </>
+                      )}
                       <SelectItem value="__custom__">✏️ Digitar outro...</SelectItem>
                     </SelectContent>
                   </Select>
