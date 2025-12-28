@@ -44,9 +44,11 @@ interface InsumoFormProps {
   onClose: () => void;
   onSubmit: (data: any) => Promise<void>;
   insumo?: ComposicaoInsumoEnriquecida | null;
+  /** Quando informado, habilita o modo "por venda" também na criação (Nova Composição) */
+  localVendaId?: string;
 }
 
-export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps) {
+export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: InsumoFormProps) {
   const [produtos, setProdutos] = useState<Array<{ sku: string; nome: string }>>([]);
   const [insumos, setInsumos] = useState<Array<{ sku: string; nome: string; estoque: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -281,6 +283,8 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
 
       // Salvar cada componente válido
       console.log('💾 Salvando componentes...');
+      const effectiveLocalVendaId = insumo?.local_venda_id ?? localVendaId;
+
       const promises = composicoesValidas.map((comp, index) => {
         console.log(`📦 Salvando componente ${index + 1}:`, comp);
         return onSubmit({
@@ -289,7 +293,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
           quantidade: comp.quantidade,
           observacoes: comp.observacoes || null,
           por_venda: comp.por_venda || false,
-          ...(insumo?.local_venda_id ? { local_venda_id: insumo.local_venda_id } : {}),
+          ...(effectiveLocalVendaId ? { local_venda_id: effectiveLocalVendaId } : {}),
           ...(insumo?.local_id ? { local_id: insumo.local_id } : {})
         });
       });
@@ -537,7 +541,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                         </div>
 
                         {/* Checkbox Por Venda */}
-                        {insumo?.local_venda_id && (
+                        {(localVendaId || insumo?.local_venda_id) && (
                           <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                             <input
                               type="checkbox"

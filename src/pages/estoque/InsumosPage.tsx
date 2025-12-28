@@ -439,6 +439,7 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
         }}
         onSubmit={handleFormSubmit}
         insumo={insumoSelecionado}
+        localVendaId={localVendaId}
       />
 
       {/* Diálogo de exclusão */}
