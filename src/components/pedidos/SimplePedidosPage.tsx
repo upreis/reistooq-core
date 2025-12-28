@@ -1057,6 +1057,23 @@ function SimplePedidosPage({ className }: Props) {
         }}
       />
 
+      {/* 🔥 AÇÕES STICKY - Botão de Baixar Estoque quando há seleção */}
+      <PedidosStickyActions
+        orders={orders}
+        displayedOrders={displayedOrders}
+        selectedOrders={selectedOrders}
+        setSelectedOrders={setSelectedOrders}
+        mappingData={mappingData}
+        isPedidoProcessado={isPedidoProcessado}
+        quickFilter={'all'}
+        onBaixaConcluida={() => {
+          // Recarregar mapeamentos após baixa
+          if (orders && orders.length > 0) {
+            mappingActions.reprocessMappings(orders);
+          }
+        }}
+      />
+
       {!loading && total > 0 && (
         <div 
           className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
