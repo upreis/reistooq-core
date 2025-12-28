@@ -731,6 +731,7 @@ export type Database = {
           local_venda_id: string
           observacoes: string | null
           organization_id: string
+          por_venda: boolean
           quantidade: number
           sku_insumo: string
           sku_produto: string
@@ -743,6 +744,7 @@ export type Database = {
           local_venda_id: string
           observacoes?: string | null
           organization_id?: string
+          por_venda?: boolean
           quantidade?: number
           sku_insumo: string
           sku_produto: string
@@ -755,6 +757,7 @@ export type Database = {
           local_venda_id?: string
           observacoes?: string | null
           organization_id?: string
+          por_venda?: boolean
           quantidade?: number
           sku_insumo?: string
           sku_produto?: string

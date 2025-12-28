@@ -224,11 +224,11 @@ export function useProcessarBaixaEstoque() {
           }
           
           // 2. Buscar insumos do local de venda (embalagens, etiquetas, etc)
-          let composicoesLV: Array<{ sku_insumo: string; quantidade: number }> | null = null;
+          let composicoesLV: Array<{ sku_insumo: string; quantidade: number; por_venda: boolean }> | null = null;
           if (localVendaId) {
             const { data: lvData, error: erroLV } = await supabase
               .from('composicoes_local_venda')
-              .select('sku_insumo, quantidade')
+              .select('sku_insumo, quantidade, por_venda')
               .eq('local_venda_id', localVendaId)
               .eq('sku_produto', skuProduto)
               .eq('ativo', true);
@@ -241,25 +241,27 @@ export function useProcessarBaixaEstoque() {
           }
           
           // 3. Juntar as duas fontes (Composição Enriquecida)
-          const composicoes: Array<{ sku_componente: string; quantidade: number }> = [];
+          const composicoes: Array<{ sku_componente: string; quantidade: number; por_venda: boolean }> = [];
           
-          // Adicionar produtos da composição padrão
+          // Adicionar produtos da composição padrão (sempre multiplica por quantidade)
           if (composicoesPadrao && composicoesPadrao.length > 0) {
             composicoesPadrao.forEach(c => {
               composicoes.push({
                 sku_componente: c.sku_componente,
-                quantidade: c.quantidade || 1
+                quantidade: c.quantidade || 1,
+                por_venda: false // Composição padrão sempre multiplica
               });
             });
             console.log(`📦 Composição padrão encontrada para ${skuProduto}:`, composicoesPadrao.length, 'itens');
           }
           
-          // Adicionar insumos do local de venda
+          // Adicionar insumos do local de venda (pode ser por venda ou por quantidade)
           if (composicoesLV && composicoesLV.length > 0) {
             composicoesLV.forEach(c => {
               composicoes.push({
                 sku_componente: c.sku_insumo,
-                quantidade: c.quantidade || 1
+                quantidade: c.quantidade || 1,
+                por_venda: c.por_venda || false
               });
             });
             console.log(`📦 Insumos local de venda encontrados para ${skuProduto}:`, composicoesLV.length, 'itens');
@@ -280,7 +282,12 @@ export function useProcessarBaixaEstoque() {
           const componentesDoPedido: Array<{ sku: string; quantidade: number; produtoId: string }> = [];
           
           for (const comp of composicoes) {
-            const quantidadeNecessaria = comp.quantidade * quantidadePedido;
+            // ✅ CRÍTICO: Se por_venda=true, usa quantidade fixa; senão, multiplica pela qtd vendida
+            const quantidadeNecessaria = comp.por_venda 
+              ? comp.quantidade // Quantidade fixa por venda (ex: 1 etiqueta)
+              : comp.quantidade * quantidadePedido; // Multiplica (ex: 2 produtos = 2 unidades)
+            
+            console.log(`📦 ${comp.sku_componente}: ${comp.por_venda ? 'POR VENDA' : 'POR QTD'} → ${quantidadeNecessaria} unidades`);
             
             // Buscar produto_id do componente
             const { data: produtoComponente, error: prodError } = await supabase
