@@ -840,22 +840,27 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                 Nova Composição
               </Button>
             )}
-            <Button
-              variant="outline"
-              onClick={() => setImportProdutosModalOpen(true)}
-              className="gap-1.5 h-7 px-2.5 text-xs"
-            >
-              <Import className="w-3 h-3" />
-              Importar do Estoque
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setImportModalOpen(true)}
-              className="gap-1.5 h-7 px-2.5 text-xs"
-            >
-              <Upload className="w-3 h-3" />
-              Importar Excel
-            </Button>
+            {/* Só mostrar estes botões quando estiver em Composição Padrão (sem localVendaId) */}
+            {!localVendaId && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setImportProdutosModalOpen(true)}
+                  className="gap-1.5 h-7 px-2.5 text-xs"
+                >
+                  <Import className="w-3 h-3" />
+                  Importar do Estoque
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setImportModalOpen(true)}
+                  className="gap-1.5 h-7 px-2.5 text-xs"
+                >
+                  <Upload className="w-3 h-3" />
+                  Importar Excel
+                </Button>
+              </>
+            )}
             <Button
               variant="outline"
               onClick={handleDownloadComposicoes}
@@ -864,29 +869,33 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
               <Download className="w-3 h-3" />
               Baixar Dados
             </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
+            {!localVendaId && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={limparComposicoesOrfas}
+                      className="gap-1.5 h-7 px-2.5 text-xs border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Limpar Órfãs
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Remove composições de produtos que não existem mais</p>
+                  </TooltipContent>
+                </Tooltip>
                 <Button
                   variant="outline"
-                  onClick={limparComposicoesOrfas}
-                  className="gap-1.5 h-7 px-2.5 text-xs border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  onClick={toggleSelectMode}
+                  className="gap-1.5 h-7 px-2.5 text-xs"
                 >
-                  <Trash2 className="w-3 h-3" />
-                  Limpar Órfãs
+                  <CheckCircle className="w-3 h-3" />
+                  Selecionar
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Remove composições de produtos que não existem mais</p>
-              </TooltipContent>
-            </Tooltip>
-            <Button
-              variant="outline"
-              onClick={toggleSelectMode}
-              className="gap-1.5 h-7 px-2.5 text-xs"
-            >
-              <CheckCircle className="w-3 h-3" />
-              Selecionar
-            </Button>
+              </>
+            )}
           </>
         ) : (
           <>
