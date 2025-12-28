@@ -115,6 +115,41 @@ export class MapeamentoService {
       // 🎯 NOVO: Map para armazenar composições (usado para kits que não existem no estoque)
       let composicoesMap = new Map<string, { temComposicao: boolean; componentes?: any[] }>();
 
+      // ✅ Fonte da composição (página /estoque/composicoes):
+      // 1) composicoes_local_venda (local_venda_id) - "card enriquecido"
+      // 2) fallback: composicoes_insumos (local_id = localEstoqueId) - composição padrão
+      const buscarComposicao = async (skuProduto: string): Promise<Array<{ sku_componente: string; quantidade: number }>> => {
+        // 1) Local de venda (card enriquecido)
+        if (localVendaId) {
+          const { data: composicoesLV } = await supabase
+            .from('composicoes_local_venda')
+            .select('sku_insumo, quantidade')
+            .eq('sku_produto', skuProduto)
+            .eq('local_venda_id', localVendaId)
+            .eq('ativo', true);
+
+          if (composicoesLV && composicoesLV.length > 0) {
+            return composicoesLV.map(c => ({ sku_componente: c.sku_insumo, quantidade: c.quantidade || 1 }));
+          }
+        }
+
+        // 2) Fallback: composição padrão (por local de estoque)
+        if (localEstoqueId) {
+          const { data: composicoesPadrao } = await supabase
+            .from('composicoes_insumos')
+            .select('sku_insumo, quantidade')
+            .eq('sku_produto', skuProduto)
+            .eq('local_id', localEstoqueId)
+            .eq('ativo', true);
+
+          if (composicoesPadrao && composicoesPadrao.length > 0) {
+            return composicoesPadrao.map(c => ({ sku_componente: c.sku_insumo, quantidade: c.quantidade || 1 }));
+          }
+        }
+
+        return [];
+      };
+
       if (skusParaVerificar.length > 0) {
         // Primeiro: buscar informações básicas dos produtos
         const { data: produtosExistentes } = await supabase
@@ -123,50 +158,15 @@ export class MapeamentoService {
           .in('sku_interno', skusParaVerificar)
           .eq('ativo', true);
 
-        // 🎯 NOVO: Criar set de SKUs que existem no estoque
+        // 🎯 Criar set de SKUs que existem no estoque
         const skusExistentesSet = new Set(
           (produtosExistentes || []).map(p => p.sku_interno)
         );
 
-        // 🎯 NOVO: Identificar SKUs que NÃO existem no estoque (possíveis kits)
+        // 🎯 Identificar SKUs que NÃO existem no estoque (possíveis kits)
         const skusNaoExistentes = skusParaVerificar.filter(sku => !skusExistentesSet.has(sku));
 
-        // ✅ Fonte da composição (página /estoque/composicoes):
-        // 1) composicoes_local_venda (local_venda_id)
-        // 2) fallback: composicoes_insumos (local_id = localEstoqueId)
-        const buscarComposicao = async (skuProduto: string) => {
-          // 1) Local de venda
-          if (localVendaId) {
-            const { data: composicoesLV } = await supabase
-              .from('composicoes_local_venda')
-              .select('sku_insumo, quantidade')
-              .eq('sku_produto', skuProduto)
-              .eq('local_venda_id', localVendaId)
-              .eq('ativo', true);
-
-            if (composicoesLV && composicoesLV.length > 0) {
-              return composicoesLV.map(c => ({ sku_componente: c.sku_insumo, quantidade: c.quantidade || 1 }));
-            }
-          }
-
-          // 2) Fallback: composição padrão (por local de estoque)
-          if (localEstoqueId) {
-            const { data: composicoesPadrao } = await supabase
-              .from('composicoes_insumos')
-              .select('sku_insumo, quantidade')
-              .eq('sku_produto', skuProduto)
-              .eq('local_id', localEstoqueId)
-              .eq('ativo', true);
-
-            if (composicoesPadrao && composicoesPadrao.length > 0) {
-              return composicoesPadrao.map(c => ({ sku_componente: c.sku_insumo, quantidade: c.quantidade || 1 }));
-            }
-          }
-
-          return [] as Array<{ sku_componente: string; quantidade: number }>;
-        };
-
-        // 🎯 Para SKUs que não existem no estoque, validar via composição (kit) ao invés de produto_componentes
+        // 🎯 Para SKUs que não existem no estoque, validar via composição (kit)
         for (const skuKit of skusNaoExistentes) {
           const componentes = await buscarComposicao(skuKit);
 
