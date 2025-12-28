@@ -1,6 +1,7 @@
 // src/utils/snapshot.ts
 import { supabase } from '@/integrations/supabase/client';
 import { fotografarPedidoCompleto, fotografiaParaBanco, type FotografiaPedido } from './fotografiaCompleta';
+import { buildIdUnico } from '@/utils/idUnico';
 
 /**
  * 📸 NOVA VERSÃO: Salva um snapshot COMPLETO da baixa de estoque
@@ -17,7 +18,9 @@ export async function salvarSnapshotBaixa(
 ) {
   try {
     // Obter o usuário atual
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       console.error('Usuário não autenticado para salvar snapshot');
       return;
@@ -41,41 +44,45 @@ export async function salvarSnapshotBaixa(
       cliente: fotografia.nome_cliente,
       valor_total: fotografia.valor_total,
       skus: fotografia.skus_produtos,
-      enderecos_capturados: `${fotografia.rua}, ${fotografia.numero}, ${fotografia.cidade}/${fotografia.uf}`
+      enderecos_capturados: `${fotografia.rua}, ${fotografia.numero}, ${fotografia.cidade}/${fotografia.uf}`,
     });
 
     // Converter fotografia para formato do banco
     const dadosBaixa = fotografiaParaBanco(fotografia);
-    
+
     // 🔍 DEBUG CRÍTICO: Verificar se local_estoque_id está sendo capturado
     console.log('🔍 VERIFICAÇÃO COMPLETA - LOCAL DE ESTOQUE:', {
       pedido_numero: pedido.numero || pedido.id,
-      
+
       // Do pedido original
       pedido_local_estoque_id: pedido.local_estoque_id,
       pedido_local_estoque_nome: pedido.local_estoque_nome || pedido.local_estoque,
       pedido_unified_local_id: pedido.unified?.local_estoque_id,
-      
+
       // Da fotografia
       fotografia_local_estoque_id: fotografia.local_estoque_id,
       fotografia_local_estoque_nome: fotografia.local_estoque_nome,
-      
+
       // Dos dados para banco
       banco_local_estoque_id: dadosBaixa.local_estoque_id,
       banco_local_estoque_nome: dadosBaixa.local_estoque_nome,
       banco_local_estoque: dadosBaixa.local_estoque,
-      
+
       // Validação
       tem_local_id_no_pedido: !!pedido.local_estoque_id || !!pedido.unified?.local_estoque_id,
       tem_local_id_na_fotografia: !!fotografia.local_estoque_id,
-      tem_local_id_no_banco: !!dadosBaixa.local_estoque_id
+      tem_local_id_no_banco: !!dadosBaixa.local_estoque_id,
     });
-    
+
     // Adicionar usuário que fez a baixa
     dadosBaixa.created_by = user.id;
 
     // Sanitizar integration_account_id: evitar string vazia que quebra UUID
-    if (!dadosBaixa.integration_account_id || (typeof dadosBaixa.integration_account_id === 'string' && dadosBaixa.integration_account_id.trim() === '')) {
+    if (
+      !dadosBaixa.integration_account_id ||
+      (typeof dadosBaixa.integration_account_id === 'string' &&
+        dadosBaixa.integration_account_id.trim() === '')
+    ) {
       delete (dadosBaixa as any).integration_account_id;
     }
 
@@ -88,12 +95,12 @@ export async function salvarSnapshotBaixa(
       valor_total: dadosBaixa.valor_total,
       enderecos: `${dadosBaixa.rua}, ${dadosBaixa.numero}`,
       status_envio: dadosBaixa.status_envio,
-      fotografia_completa: true
+      fotografia_completa: true,
     });
 
     // 💾 Inserir fotografia completa no histórico de vendas via RPC segura (bypassa RLS)
     const { data, error } = await supabase.rpc('hv_insert', {
-      p_data: dadosBaixa as any
+      p_data: dadosBaixa as any,
     });
 
     if (error) {
@@ -104,13 +111,69 @@ export async function salvarSnapshotBaixa(
     console.log('✅ Fotografia completa salva no histórico (hv_insert):', {
       id: data,
       id_unico: dadosBaixa.id_unico,
-      todos_campos_capturados: '42+ campos preservados'
+      todos_campos_capturados: '42+ campos preservados',
     });
-    
-    return data;
 
+    return data;
   } catch (error) {
     console.error('❌ Erro no salvarSnapshotBaixa:', error);
     throw error;
   }
+}
+
+/**
+ * 🧯 Fallback: salva um histórico mínimo quando a fotografia completa falha.
+ * Objetivo: garantir que a venda baixada apareça em /historico.
+ */
+export async function salvarHistoricoBasico(
+  pedido: any,
+  contextoDaUI?: {
+    mappingData?: Map<string, any>;
+  }
+) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Usuário não autenticado para salvar histórico');
+
+  const mapping = contextoDaUI?.mappingData?.get(pedido.id);
+  const sku = (mapping?.skuKit || mapping?.skuEstoque || pedido.sku_kit || pedido.sku_produto || '')
+    .toString()
+    .trim()
+    .toUpperCase();
+
+  const quantidade = Number(pedido.total_itens || pedido.quantidade_total || pedido.quantidade || 0);
+  if (!sku || !quantidade || quantidade <= 0) {
+    throw new Error('Dados insuficientes para salvar histórico (SKU/quantidade)');
+  }
+
+  const id_unico = pedido.id_unico || buildIdUnico(pedido);
+  const numero_pedido = (pedido.numero || pedido.numero_pedido || pedido.id || '').toString();
+
+  const payload: any = {
+    id_unico,
+    numero_pedido,
+    numero_venda: pedido.numero_venda || numero_pedido,
+    sku_produto: sku,
+    sku_estoque: sku,
+    sku_kit: sku,
+    quantidade_total: quantidade,
+    total_itens: quantidade,
+    valor_total: Number(pedido.valor_total || 0),
+    cliente_nome: pedido.nome_cliente || pedido.cliente_nome || '-',
+    empresa: pedido.empresa || pedido.account_name || '-',
+    status: 'baixado',
+    status_baixa: 'concluida',
+    created_by: user.id,
+    local_estoque_id: pedido.local_estoque_id,
+    local_estoque_nome: pedido.local_estoque_nome || pedido.local_estoque,
+    local_venda_id: pedido.local_venda_id,
+    local_venda_nome: pedido.local_venda_nome,
+    data_pedido: pedido.data_pedido || new Date().toISOString().slice(0, 10),
+    raw: pedido.raw || pedido,
+  };
+
+  const { data, error } = await supabase.rpc('hv_insert', { p_data: payload });
+  if (error) throw new Error(`Falha ao salvar histórico (fallback): ${error.message}`);
+  return data;
 }
