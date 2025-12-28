@@ -28,6 +28,7 @@ export interface InsumoFormData {
   sku_insumo: string;
   quantidade: number;
   observacoes?: string;
+  por_venda?: boolean;
 }
 
 export interface ValidacaoInsumo {
