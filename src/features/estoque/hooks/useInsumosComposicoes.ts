@@ -197,7 +197,8 @@ export function useInsumosComposicoes(localId?: string, localVendaId?: string) {
         .from('composicoes_local_venda')
         .update({
           quantidade: data.quantidade,
-          observacoes: data.observacoes
+          observacoes: data.observacoes,
+          por_venda: data.por_venda ?? false
         })
         .eq('id', id)
         .select()
