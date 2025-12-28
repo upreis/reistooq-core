@@ -136,12 +136,32 @@ export class HistoricoDeleteService {
               .eq('sku_produto', skuMapeado)
               .eq('local_id', localEstoqueId);
 
-            // Buscar composição de insumos NO LOCAL ESPECÍFICO
+            // Buscar composição de insumos NO LOCAL ESPECÍFICO (tabela antiga)
             const { data: composicaoInsumos, error: insumosError } = await supabase
               .from('composicoes_insumos')
               .select('sku_insumo, quantidade')
               .eq('sku_produto', skuMapeado)
               .eq('local_id', localEstoqueId);
+
+            // 🆕 Buscar insumos do LOCAL DE VENDA (tabela nova - composicoes_local_venda)
+            const localVendaId = vendaDataAny.local_venda_id;
+            let composicaoLocalVenda: Array<{ sku_insumo: string; quantidade: number; por_venda: boolean }> | null = null;
+            
+            if (localVendaId) {
+              const { data: lvData, error: lvError } = await supabase
+                .from('composicoes_local_venda')
+                .select('sku_insumo, quantidade, por_venda')
+                .eq('sku_produto', skuMapeado)
+                .eq('local_venda_id', localVendaId)
+                .eq('ativo', true);
+              
+              if (lvError) {
+                console.error('⚠️ Erro ao buscar insumos local de venda:', lvError.message);
+              } else {
+                composicaoLocalVenda = lvData;
+                console.log(`📋 Insumos local de venda encontrados: ${lvData?.length || 0} itens`);
+              }
+            }
 
             if (composicaoError) {
               console.error('Erro ao buscar composição de produtos:', composicaoError);
@@ -192,7 +212,7 @@ export class HistoricoDeleteService {
               }
             }
             
-            // 🔧 REVERTER COMPOSIÇÃO DE INSUMOS
+            // 🔧 REVERTER COMPOSIÇÃO DE INSUMOS (tabela antiga - composicoes_insumos)
             if (composicaoInsumos && composicaoInsumos.length > 0) {
               console.log(`📋 Composição de insumos encontrada com ${composicaoInsumos.length} insumos no local ${localEstoqueNome}`);
 
@@ -229,6 +249,51 @@ export class HistoricoDeleteService {
                   });
                 } else {
                   console.error(`❌ Insumo ${insumo.sku_insumo} não encontrado no estoque`);
+                }
+              }
+            }
+            
+            // 🆕 REVERTER INSUMOS DO LOCAL DE VENDA (tabela nova - composicoes_local_venda)
+            if (composicaoLocalVenda && composicaoLocalVenda.length > 0) {
+              console.log(`📋 Insumos local de venda encontrados: ${composicaoLocalVenda.length} itens para reverter`);
+
+              for (const insumo of composicaoLocalVenda) {
+                // ✅ CRÍTICO: Respeitar a flag por_venda
+                // Se por_venda=true, quantidade fixa (1 por venda); senão, multiplica pela qtd vendida
+                const quantidadeReverter = insumo.por_venda 
+                  ? insumo.quantidade 
+                  : insumo.quantidade * quantidadePedido;
+                
+                console.log(`➕ Revertendo ${quantidadeReverter} unidades do insumo LV ${insumo.sku_insumo} (por_venda=${insumo.por_venda})`);
+
+                // Buscar produto_id do insumo
+                const { data: produto } = await supabase
+                  .from('produtos')
+                  .select('id, sku_interno')
+                  .eq('sku_interno', insumo.sku_insumo.toUpperCase())
+                  .eq('organization_id', organizationId)
+                  .maybeSingle();
+
+                if (produto) {
+                  await this.reverterEstoqueLocal(
+                    produto.id,
+                    localEstoqueId,
+                    organizationId,
+                    quantidadeReverter,
+                    insumo.sku_insumo,
+                    localEstoqueNome,
+                    vendaDataAny.numero_pedido || vendaDataAny.id_unico,
+                    'insumo'
+                  );
+                  
+                  reversoesRealizadas.push({
+                    tipo: 'insumo',
+                    produtoId: produto.id,
+                    localId: localEstoqueId,
+                    quantidadeRevertida: quantidadeReverter
+                  });
+                } else {
+                  console.error(`❌ Insumo LV ${insumo.sku_insumo} não encontrado no estoque`);
                 }
               }
             }
