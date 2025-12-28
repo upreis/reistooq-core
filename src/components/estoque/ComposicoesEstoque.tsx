@@ -811,32 +811,35 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
         {/* Botões de ação */}
         {!isSelectMode ? (
           <>
-            <Button
-              onClick={async () => {
-                try {
-                  const novoProduto = await createProdutoAsync({
-                    sku_interno: `COMP-${Date.now()}`,
-                    nome: "Nova Composição",
-                    preco_venda: 0,
-                    quantidade_atual: 0,
-                    estoque_minimo: 0,
-                    status: 'ativo',
-                    ativo: true
-                  });
-                  
-                  if (novoProduto) {
-                    setProdutoSelecionado(novoProduto);
-                    setModalOpen(true);
+            {/* Só mostrar Nova Composição quando estiver em Composição Padrão (sem localVendaId) */}
+            {!localVendaId && (
+              <Button
+                onClick={async () => {
+                  try {
+                    const novoProduto = await createProdutoAsync({
+                      sku_interno: `COMP-${Date.now()}`,
+                      nome: "Nova Composição",
+                      preco_venda: 0,
+                      quantidade_atual: 0,
+                      estoque_minimo: 0,
+                      status: 'ativo',
+                      ativo: true
+                    });
+                    
+                    if (novoProduto) {
+                      setProdutoSelecionado(novoProduto);
+                      setModalOpen(true);
+                    }
+                  } catch (error) {
+                    console.error('Erro ao criar composição:', error);
                   }
-                } catch (error) {
-                  console.error('Erro ao criar composição:', error);
-                }
-              }}
-              className="gap-1.5 h-7 px-2.5 text-xs"
-            >
-              <Plus className="w-3 h-3" />
-              Nova Composição
-            </Button>
+                }}
+                className="gap-1.5 h-7 px-2.5 text-xs"
+              >
+                <Plus className="w-3 h-3" />
+                Nova Composição
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setImportProdutosModalOpen(true)}
