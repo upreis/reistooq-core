@@ -66,12 +66,15 @@ export default function InsumosPage({ hideHeader = false, localId, localVendaId,
   };
 
   const handleFormSubmit = async (data: any) => {
-    if (!localVendaId) {
+    const effectiveLocalVendaId = localVendaId || data?.local_venda_id || insumoSelecionado?.local_venda_id;
+
+    if (!effectiveLocalVendaId) {
       toast.error('Selecione um local de venda primeiro');
       return;
     }
+
     // O InsumoForm sempre cria novos registros (ele deleta os antigos se estiver editando)
-    await createInsumo({ ...data, local_venda_id: localVendaId });
+    await createInsumo({ ...data, local_venda_id: effectiveLocalVendaId });
   };
 
   const handleConfirmDelete = async () => {
