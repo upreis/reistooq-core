@@ -870,31 +870,14 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
               Baixar Dados
             </Button>
             {!localVendaId && (
-              <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      onClick={limparComposicoesOrfas}
-                      className="gap-1.5 h-7 px-2.5 text-xs border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Limpar Órfãs
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Remove composições de produtos que não existem mais</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Button
-                  variant="outline"
-                  onClick={toggleSelectMode}
-                  className="gap-1.5 h-7 px-2.5 text-xs"
-                >
-                  <CheckCircle className="w-3 h-3" />
-                  Selecionar
-                </Button>
-              </>
+              <Button
+                variant="outline"
+                onClick={toggleSelectMode}
+                className="gap-1.5 h-7 px-2.5 text-xs"
+              >
+                <CheckCircle className="w-3 h-3" />
+                Selecionar
+              </Button>
             )}
           </>
         ) : (
