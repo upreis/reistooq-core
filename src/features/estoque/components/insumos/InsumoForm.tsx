@@ -36,6 +36,7 @@ interface ComposicaoForm {
   quantidade: number;
   estoque_disponivel?: number;
   observacoes?: string;
+  por_venda?: boolean;
 }
 
 interface InsumoFormProps {
@@ -117,7 +118,8 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                 nome_insumo: nomesInsumos.get(ins.sku_insumo)?.nome || ins.sku_insumo,
                 quantidade: ins.quantidade,
                 estoque_disponivel: nomesInsumos.get(ins.sku_insumo)?.estoque || 0,
-                observacoes: ins.observacoes || ''
+                observacoes: ins.observacoes || '',
+                por_venda: ins.por_venda || false
               }))
             );
           } else {
@@ -126,7 +128,8 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
               sku_insumo: '',
               nome_insumo: '',
               quantidade: 1,
-              observacoes: ''
+              observacoes: '',
+              por_venda: false
             }]);
           }
         } catch (error) {
@@ -135,7 +138,8 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
             sku_insumo: '',
             nome_insumo: '',
             quantidade: 1,
-            observacoes: ''
+            observacoes: '',
+            por_venda: false
           }]);
         }
       } else if (open && !insumo) {
@@ -146,7 +150,8 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
           sku_insumo: '',
           nome_insumo: '',
           quantidade: 1,
-          observacoes: ''
+          observacoes: '',
+          por_venda: false
         }]);
       }
     };
@@ -191,7 +196,8 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
         sku_insumo: '',
         nome_insumo: '',
         quantidade: 1,
-        observacoes: ''
+        observacoes: '',
+        por_venda: false
       }
     ]);
   };
@@ -282,6 +288,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
           sku_insumo: comp.sku_insumo.trim(),
           quantidade: comp.quantidade,
           observacoes: comp.observacoes || null,
+          por_venda: comp.por_venda || false,
           ...(insumo?.local_venda_id ? { local_venda_id: insumo.local_venda_id } : {}),
           ...(insumo?.local_id ? { local_id: insumo.local_id } : {})
         });
@@ -528,6 +535,27 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                             </div>
                           </div>
                         </div>
+
+                        {/* Checkbox Por Venda */}
+                        {insumo?.local_venda_id && (
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                            <input
+                              type="checkbox"
+                              id={`por-venda-${index}`}
+                              checked={composicao.por_venda || false}
+                              onChange={(e) => atualizarComposicao(index, 'por_venda', e.target.checked)}
+                              className="h-4 w-4 rounded border-amber-500 text-amber-600 focus:ring-amber-500"
+                            />
+                            <div>
+                              <Label htmlFor={`por-venda-${index}`} className="text-sm font-medium cursor-pointer">
+                                Dedução por venda
+                              </Label>
+                              <p className="text-xs text-muted-foreground">
+                                Retira quantidade fixa por pedido (ex: 1 etiqueta por venda, independente da quantidade vendida)
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Observações */}
                         <div className="space-y-2">
