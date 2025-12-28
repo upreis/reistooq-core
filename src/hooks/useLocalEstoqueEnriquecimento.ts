@@ -8,7 +8,6 @@ interface MapeamentoLocal {
   id: string;
   empresa: string;
   tipo_logistico: string;
-  marketplace: string;
   local_estoque_id: string;
   local_venda_id?: string | null;
   locais_estoque?: {
@@ -42,7 +41,6 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
             id,
             empresa,
             tipo_logistico,
-            marketplace,
             local_estoque_id,
             local_venda_id,
             locais_estoque (
@@ -96,7 +94,6 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
       // ✅ CORREÇÃO CRÍTICA: Campos estão no NÍVEL SUPERIOR do row, não dentro de unified
       const rowAny = row as any;
       const empresa = rowAny.empresa || row.unified?.empresa || '';
-      const marketplace = rowAny.marketplace_origem || row.unified?.marketplace_origem || 'Mercado Livre';
       const tipoLogistico = rowAny.tipo_logistico_raw || rowAny.tipo_logistico || row.unified?.tipo_logistico_raw || row.unified?.tipo_logistico || '';
 
       // Função para normalizar tipo logístico de forma consistente
@@ -117,17 +114,14 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
       if (isDev && index < 3) {
         console.log(`📦 [LocalEstoque] ========== Pedido #${index} ==========`);
         console.log(`📦 [LocalEstoque] Número: ${rowAny.numero || row.unified?.numero}`);
-        console.log(`📦 [LocalEstoque] ESPERADO: empresa, marketplace, tipo_logistico`);
         console.log(`📦 [LocalEstoque] RECEBIDO DO PEDIDO:`, {
           empresa,
-          marketplace,
           tipoLogistico,
           tipoLogisticoNormalizado
         });
-        console.log(`📦 [LocalEstoque] Row completo (keys):`, Object.keys(row));
       }
 
-      // Buscar mapeamento correspondente
+      // Buscar mapeamento correspondente (Empresa + Tipo Logístico)
       const mapeamento = mapeamentos.find(m => {
         // ✅ Normalizar AMBOS os lados para garantir match correto
         const tipoMapeamentoNormalizado = normalizarTipoLogistico(m.tipo_logistico);
@@ -135,25 +129,20 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
         // ✅ Empresa deve ser igual
         const empresaMatch = m.empresa === empresa;
         
-        // ✅ Marketplace: "default" é coringa (aceita qualquer marketplace)
-        const marketplaceMatch = m.marketplace === 'default' || m.marketplace === marketplace;
-        
         // ✅ Tipo logístico normalizado
         const tipoMatch = tipoMapeamentoNormalizado === tipoLogisticoNormalizado;
         
-        const match = empresaMatch && marketplaceMatch && tipoMatch;
+        const match = empresaMatch && tipoMatch;
         
         if (isDev && index < 3) {
           console.log(`📦 [LocalEstoque] --- Testando mapeamento ---`);
           console.log(`📦 [LocalEstoque] Mapeamento DB:`, {
             empresa: m.empresa,
-            marketplace: m.marketplace,
             tipo_logistico_original: m.tipo_logistico,
             tipo_logistico_normalizado: tipoMapeamentoNormalizado
           });
           console.log(`📦 [LocalEstoque] Comparação:`, {
             empresa_match: empresaMatch,
-            marketplace_match: marketplaceMatch,
             tipo_match: tipoMatch,
             tipo_pedido_norm: tipoLogisticoNormalizado,
             tipo_mapeamento_norm: tipoMapeamentoNormalizado,
