@@ -44,7 +44,7 @@ export function ConfiguracaoLocaisModal({
   const [novoMapeamento, setNovoMapeamento] = useState({
     empresa: '',
     tipo_logistico: '',
-    marketplace: '',
+    marketplace: 'default', // Valor fixo, campo removido da UI
     local_estoque_id: '',
     local_venda_id: '' as string | null,
     observacoes: ''
@@ -89,12 +89,10 @@ export function ConfiguracaoLocaisModal({
   const handleSalvar = async () => {
     console.log('🔍 Tentando salvar mapeamento:', novoMapeamento);
     
-    if (!novoMapeamento.empresa || !novoMapeamento.tipo_logistico || 
-        !novoMapeamento.marketplace || !novoMapeamento.local_estoque_id) {
+    if (!novoMapeamento.empresa || !novoMapeamento.tipo_logistico || !novoMapeamento.local_estoque_id) {
       console.error('❌ Campos faltando:', {
         empresa: !novoMapeamento.empresa,
         tipo_logistico: !novoMapeamento.tipo_logistico,
-        marketplace: !novoMapeamento.marketplace,
         local_estoque_id: !novoMapeamento.local_estoque_id
       });
       toast.error('Preencha todos os campos obrigatórios');
@@ -123,7 +121,7 @@ export function ConfiguracaoLocaisModal({
       setNovoMapeamento({
         empresa: '',
         tipo_logistico: '',
-        marketplace: '',
+        marketplace: 'default',
         local_estoque_id: '',
         local_venda_id: null,
         observacoes: ''
@@ -143,7 +141,7 @@ export function ConfiguracaoLocaisModal({
     setNovoMapeamento({
       empresa: mapeamento.empresa,
       tipo_logistico: mapeamento.tipo_logistico,
-      marketplace: mapeamento.marketplace,
+      marketplace: mapeamento.marketplace || 'default',
       local_estoque_id: mapeamento.local_estoque_id,
       local_venda_id: mapeamento.local_venda_id || null,
       observacoes: mapeamento.observacoes || ''
@@ -170,7 +168,7 @@ export function ConfiguracaoLocaisModal({
     setNovoMapeamento({
       empresa: '',
       tipo_logistico: '',
-      marketplace: '',
+      marketplace: 'default',
       local_estoque_id: '',
       local_venda_id: null,
       observacoes: ''
@@ -187,7 +185,7 @@ export function ConfiguracaoLocaisModal({
             Configuração de Locais de Estoque
           </DialogTitle>
           <DialogDescription>
-            Configure de qual local o estoque será retirado com base em: Empresa + Tipo Logístico + Marketplace
+            Configure de qual local o estoque será retirado com base em: Empresa + Tipo Logístico
           </DialogDescription>
         </DialogHeader>
 
@@ -285,23 +283,6 @@ export function ConfiguracaoLocaisModal({
                 )}
               </div>
 
-              <div>
-                <Label>Marketplace *</Label>
-                <Select
-                  value={novoMapeamento.marketplace}
-                  onValueChange={(value) => setNovoMapeamento({ ...novoMapeamento, marketplace: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mercado Livre">Mercado Livre</SelectItem>
-                    <SelectItem value="Shopee">Shopee</SelectItem>
-                    <SelectItem value="Tiny">Tiny</SelectItem>
-                    <SelectItem value="Interno">Interno / Manual</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div>
                 <Label>Local de Estoque *</Label>
@@ -406,7 +387,6 @@ export function ConfiguracaoLocaisModal({
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="secondary">{mapeamento.empresa}</Badge>
                         <Badge variant="outline">{translateLogisticType(mapeamento.tipo_logistico)}</Badge>
-                        <Badge>{mapeamento.marketplace}</Badge>
                       </div>
                       <div className="text-sm space-y-0.5">
                         <div>
