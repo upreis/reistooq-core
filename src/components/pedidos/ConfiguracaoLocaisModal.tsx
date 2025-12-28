@@ -53,20 +53,25 @@ export function ConfiguracaoLocaisModal({
   useEffect(() => {
     if (open) {
       carregarDados();
-      
+    }
+  }, [open]);
+
+  // Efeito separado para preencher empresa quando modal abre pela primeira vez (sem edição)
+  useEffect(() => {
+    if (open && !editando) {
       // Preencher automaticamente a empresa se houver apenas uma selecionada
-      if (empresasSelecionadas.length === 1 && !editando) {
+      if (empresasSelecionadas.length === 1) {
         const empresaNome = contasML.find(c => c.id === empresasSelecionadas[0])?.nickname || 
                            contasML.find(c => c.id === empresasSelecionadas[0])?.name || 
                            empresasSelecionadas[0];
         setNovoMapeamento(prev => ({ ...prev, empresa: empresaNome }));
       }
-      // Se for um novo mapeamento, abrir o seletor de empresa
-      if (!editando && !novoMapeamento.empresa) {
+      // Se for um novo mapeamento e empresa não preenchida, abrir seletor
+      if (!novoMapeamento.empresa) {
         setEmpresaSelectorOpen(true);
       }
     }
-  }, [open, empresasSelecionadas, contasML]);
+  }, [open, empresasSelecionadas, contasML, editando]);
 
   const carregarDados = async () => {
     try {
@@ -138,6 +143,7 @@ export function ConfiguracaoLocaisModal({
   };
 
   const handleEditar = (mapeamento: MapeamentoLocalEstoque) => {
+    console.log('🔍 [Editar] Mapeamento clicado:', mapeamento);
     setNovoMapeamento({
       empresa: mapeamento.empresa,
       tipo_logistico: mapeamento.tipo_logistico,
@@ -147,6 +153,8 @@ export function ConfiguracaoLocaisModal({
       observacoes: mapeamento.observacoes || ''
     });
     setEditando(mapeamento.id);
+    // Fechar seletor de empresa que pode abrir automaticamente
+    setEmpresaSelectorOpen(false);
   };
 
   const handleDeletar = async (id: string) => {
