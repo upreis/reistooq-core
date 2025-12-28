@@ -27,6 +27,19 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+// Tipos de insumo disponíveis
+const TIPOS_INSUMO = [
+  { value: 'caixa', label: 'Caixa' },
+  { value: 'etiqueta_produto', label: 'Etiqueta do produto' },
+  { value: 'etiqueta_frete', label: 'Etiqueta de frete' },
+  { value: 'fita_adesiva', label: 'Fita adesiva' },
+  { value: 'papel_bolha', label: 'Papel bolha' },
+  { value: 'lacre', label: 'Lacre' },
+  { value: 'manual', label: 'Manual' },
+  { value: 'luvas', label: 'Luvas' },
+  { value: 'outro', label: 'Outro...' },
+];
+
 interface VariationForm {
   suffix: string;
   nome: string;
@@ -63,6 +76,10 @@ interface VariationForm {
   imagem_fornecedor: string;
   package: string;
   unit: string;
+  // Tipo de item
+  tipo_item: 'produto' | 'insumo';
+  tipo_insumo: string;
+  tipo_insumo_outro: string;
 }
 
 interface CreateChildProductModalProps {
@@ -89,44 +106,47 @@ export function CreateChildProductModal({
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
   const [selectedParentSku, setSelectedParentSku] = useState<string>("");
   const [parentProducts, setParentProducts] = useState<Product[]>([]);
-  const [variations, setVariations] = useState<VariationForm[]>([
-    { 
-      suffix: '', 
-      nome: '',
-      quantity: 0, 
-      barcode: '',
-      preco_custo: 0,
-      preco_venda: 0,
-      localizacao: '',
-      estoque_minimo: 0,
-      estoque_maximo: 0,
-      unidade_medida_id: '',
-      sob_encomenda: false,
-      dias_preparacao: 0,
-      peso_liquido: 0,
-      peso_bruto: 0,
-      numero_volumes: 1,
-      tipo_embalagem: '',
-      largura: 0,
-      altura: 0,
-      comprimento: 0,
-      ncm: '',
-      codigo_cest: '',
-      origem: null,
-      descricao: '',
-      imagem: null,
-      url_imagem: '',
-      material: '',
-      cor: '',
-      observacoes: '',
-      pcs_ctn: 0,
-      peso_unitario_g: 0,
-      peso_cx_master_kg: 0,
-      imagem_fornecedor: '',
-      package: '',
-      unit: '',
-    }
-  ]);
+  const getEmptyVariation = (): VariationForm => ({
+    suffix: '', 
+    nome: '',
+    quantity: 0, 
+    barcode: '',
+    preco_custo: 0,
+    preco_venda: 0,
+    localizacao: '',
+    estoque_minimo: 0,
+    estoque_maximo: 0,
+    unidade_medida_id: '',
+    sob_encomenda: false,
+    dias_preparacao: 0,
+    peso_liquido: 0,
+    peso_bruto: 0,
+    numero_volumes: 1,
+    tipo_embalagem: '',
+    largura: 0,
+    altura: 0,
+    comprimento: 0,
+    ncm: '',
+    codigo_cest: '',
+    origem: null,
+    descricao: '',
+    imagem: null,
+    url_imagem: '',
+    material: '',
+    cor: '',
+    observacoes: '',
+    pcs_ctn: 0,
+    peso_unitario_g: 0,
+    peso_cx_master_kg: 0,
+    imagem_fornecedor: '',
+    package: '',
+    unit: '',
+    tipo_item: 'produto',
+    tipo_insumo: '',
+    tipo_insumo_outro: '',
+  });
+
+  const [variations, setVariations] = useState<VariationForm[]>([getEmptyVariation()]);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
   const { createProduct, getProducts } = useProducts();
@@ -167,42 +187,7 @@ export function CreateChildProductModal({
       setSelectedParentSku('');
       
       // Reset variations to initial state
-      setVariations([{ 
-        suffix: '', 
-        nome: '',
-        quantity: 0, 
-        barcode: '',
-        preco_custo: 0,
-        preco_venda: 0,
-        localizacao: '',
-        estoque_minimo: 0,
-        estoque_maximo: 0,
-        unidade_medida_id: '',
-        sob_encomenda: false,
-        dias_preparacao: 0,
-        peso_liquido: 0,
-        peso_bruto: 0,
-        numero_volumes: 1,
-        tipo_embalagem: '',
-        largura: 0,
-        altura: 0,
-        comprimento: 0,
-        ncm: '',
-        codigo_cest: '',
-        origem: null,
-        descricao: '',
-        imagem: null,
-        url_imagem: '',
-        material: '',
-        cor: '',
-        observacoes: '',
-        pcs_ctn: 0,
-        peso_unitario_g: 0,
-        peso_cx_master_kg: 0,
-        imagem_fornecedor: '',
-        package: '',
-        unit: '',
-      }]);
+      setVariations([getEmptyVariation()]);
     }
   }, [open]);
 
@@ -218,42 +203,7 @@ export function CreateChildProductModal({
   };
 
   const handleAddVariation = () => {
-    setVariations([...variations, { 
-      suffix: '', 
-      nome: '',
-      quantity: 0, 
-      barcode: '',
-      preco_custo: 0,
-      preco_venda: 0,
-      localizacao: '',
-      estoque_minimo: 0,
-      estoque_maximo: 0,
-      unidade_medida_id: '',
-      sob_encomenda: false,
-      dias_preparacao: 0,
-      peso_liquido: 0,
-      peso_bruto: 0,
-      numero_volumes: 1,
-      tipo_embalagem: '',
-      largura: 0,
-      altura: 0,
-      comprimento: 0,
-      ncm: '',
-      codigo_cest: '',
-      origem: null,
-      descricao: '',
-      imagem: null,
-      url_imagem: '',
-      material: '',
-      cor: '',
-      observacoes: '',
-      pcs_ctn: 0,
-      peso_unitario_g: 0,
-      peso_cx_master_kg: 0,
-      imagem_fornecedor: '',
-      package: '',
-      unit: '',
-    }]);
+    setVariations([...variations, getEmptyVariation()]);
   };
 
   const handleRemoveVariation = (index: number) => {
@@ -364,6 +314,11 @@ export function CreateChildProductModal({
           url_imagem_fornecedor: variation.imagem_fornecedor || null,
           package: variation.package || null,
           unidade: variation.unit || null,
+          // Tipo de item
+          tipo_item: variation.tipo_item || 'produto',
+          tipo_insumo: variation.tipo_item === 'insumo' 
+            ? (variation.tipo_insumo === 'outro' ? variation.tipo_insumo_outro : variation.tipo_insumo) 
+            : null,
         });
       }
 
@@ -391,42 +346,7 @@ export function CreateChildProductModal({
     setSelectedCategoriaPrincipal('');
     setSelectedCategoria('');
     setSelectedParentSku('');
-    setVariations([{ 
-      suffix: '', 
-      nome: '',
-      quantity: 0, 
-      barcode: '',
-      preco_custo: 0,
-      preco_venda: 0,
-      localizacao: '',
-      estoque_minimo: 0,
-      estoque_maximo: 0,
-      unidade_medida_id: '',
-      sob_encomenda: false,
-      dias_preparacao: 0,
-      peso_liquido: 0,
-      peso_bruto: 0,
-      numero_volumes: 1,
-      tipo_embalagem: '',
-      largura: 0,
-      altura: 0,
-      comprimento: 0,
-      ncm: '',
-      codigo_cest: '',
-      origem: null,
-      descricao: '',
-      imagem: null,
-      url_imagem: '',
-      material: '',
-      cor: '',
-      observacoes: '',
-      pcs_ctn: 0,
-      peso_unitario_g: 0,
-      peso_cx_master_kg: 0,
-      imagem_fornecedor: '',
-      package: '',
-      unit: '',
-    }]);
+    setVariations([getEmptyVariation()]);
     onOpenChange(false);
   };
 
@@ -583,6 +503,65 @@ export function CreateChildProductModal({
                       onChange={(e) => handleVariationChange(index, 'nome', e.target.value)}
                     />
                   </div>
+                </div>
+
+                {/* Tipo de Item */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tipo de Item *</Label>
+                    <Select 
+                      value={variation.tipo_item} 
+                      onValueChange={(value: 'produto' | 'insumo') => {
+                        handleVariationChange(index, 'tipo_item', value);
+                        if (value === 'produto') {
+                          handleVariationChange(index, 'tipo_insumo', '');
+                          handleVariationChange(index, 'tipo_insumo_outro', '');
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-[9999]">
+                        <SelectItem value="produto">Produto</SelectItem>
+                        <SelectItem value="insumo">Insumo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {variation.tipo_item === 'insumo' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Tipo de Insumo</Label>
+                        <Select 
+                          value={variation.tipo_insumo} 
+                          onValueChange={(value) => handleVariationChange(index, 'tipo_insumo', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background z-[9999]">
+                            {TIPOS_INSUMO.map((tipo) => (
+                              <SelectItem key={tipo.value} value={tipo.value}>
+                                {tipo.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {variation.tipo_insumo === 'outro' && (
+                        <div className="space-y-2">
+                          <Label>Especifique o tipo</Label>
+                          <Input
+                            placeholder="Digite o tipo de insumo..."
+                            value={variation.tipo_insumo_outro}
+                            onChange={(e) => handleVariationChange(index, 'tipo_insumo_outro', e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 {/* Código de Barras e Quantidade */}

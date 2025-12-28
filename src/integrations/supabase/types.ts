@@ -5712,6 +5712,8 @@ export type Database = {
           status: string
           subcategoria: string | null
           tipo_embalagem: string | null
+          tipo_insumo: string | null
+          tipo_item: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
           unit: string | null
@@ -5771,6 +5773,8 @@ export type Database = {
           status?: string
           subcategoria?: string | null
           tipo_embalagem?: string | null
+          tipo_insumo?: string | null
+          tipo_item?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id: string
           unit?: string | null
@@ -5830,6 +5834,8 @@ export type Database = {
           status?: string
           subcategoria?: string | null
           tipo_embalagem?: string | null
+          tipo_insumo?: string | null
+          tipo_item?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id?: string
           unit?: string | null
@@ -8252,6 +8258,8 @@ export type Database = {
           status: string
           subcategoria: string | null
           tipo_embalagem: string | null
+          tipo_insumo: string | null
+          tipo_item: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
           unit: string | null

@@ -74,4 +74,7 @@ export interface Product extends BaseProduct {
   largura?: number | null; // Alias para largura_cm
   altura?: number | null; // Alias para altura_cm
   comprimento?: number | null; // Alias para comprimento_cm
+  // Tipo de item (produto ou insumo)
+  tipo_item?: string | null;
+  tipo_insumo?: string | null;
 }
