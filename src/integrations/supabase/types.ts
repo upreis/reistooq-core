@@ -2250,8 +2250,6 @@ export type Database = {
           local_estoque: string | null
           local_estoque_id: string | null
           local_estoque_nome: string | null
-          local_venda_id: string | null
-          local_venda_nome: string | null
           logistic_mode_principal: string | null
           logistic_type: string | null
           marketplace: string | null
@@ -2353,8 +2351,6 @@ export type Database = {
           local_estoque?: string | null
           local_estoque_id?: string | null
           local_estoque_nome?: string | null
-          local_venda_id?: string | null
-          local_venda_nome?: string | null
           logistic_mode_principal?: string | null
           logistic_type?: string | null
           marketplace?: string | null
@@ -2456,8 +2452,6 @@ export type Database = {
           local_estoque?: string | null
           local_estoque_id?: string | null
           local_estoque_nome?: string | null
-          local_venda_id?: string | null
-          local_venda_nome?: string | null
           logistic_mode_principal?: string | null
           logistic_type?: string | null
           marketplace?: string | null
@@ -2542,13 +2536,6 @@ export type Database = {
             columns: ["integration_account_id"]
             isOneToOne: false
             referencedRelation: "integration_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "historico_vendas_local_venda_id_fkey"
-            columns: ["local_venda_id"]
-            isOneToOne: false
-            referencedRelation: "locais_venda"
             referencedColumns: ["id"]
           },
         ]
@@ -7749,8 +7736,6 @@ export type Database = {
           local_estoque: string | null
           local_estoque_id: string | null
           local_estoque_nome: string | null
-          local_venda_id: string | null
-          local_venda_nome: string | null
           logistic_mode_principal: string | null
           logistic_type: string | null
           marketplace: string | null
@@ -7979,8 +7964,6 @@ export type Database = {
           local_estoque: string | null
           local_estoque_id: string | null
           local_estoque_nome: string | null
-          local_venda_id: string | null
-          local_venda_nome: string | null
           logistic_mode_principal: string | null
           logistic_type: string | null
           marketplace: string | null

@@ -1,6 +1,6 @@
 // 🛡️ SISTEMA BLINDADO - HOOK DE BAIXA DE ESTOQUE PROTEGIDO
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { salvarHistoricoBasico, salvarSnapshotBaixa } from '@/utils/snapshot';
+import { salvarSnapshotBaixa } from '@/utils/snapshot';
 import { Pedido } from '@/types/pedido';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +8,6 @@ import { validarFluxoCompleto, type PedidoEnriquecido } from '@/core/integracao'
 import { MonitorIntegracao, medirTempoExecucao } from '@/core/integracao/MonitorIntegracao';
 import { buildIdUnico } from '@/utils/idUnico';
 import { processarBaixaInsumos } from '@/services/InsumosBaixaService';
-
 interface ProcessarBaixaParams {
   pedidos: Pedido[];  // Voltar para Pedido[] pois já vem enriquecido do SimplePedidosPage
   contextoDaUI?: {
@@ -457,18 +456,10 @@ export function useProcessarBaixaEstoque() {
                 await salvarSnapshotBaixa(pedido, contextoDaUI);
                 console.log('📸 Snapshot salvo para pedido:', pedido.id || pedido.numero);
               } catch (error) {
-                console.error('❌ Erro ao salvar snapshot (completo):', error);
-
-                // 🧯 Fallback: garantir ao menos um registro mínimo no /historico
-                try {
-                  await salvarHistoricoBasico(pedido, { mappingData: contextoDaUI?.mappingData });
-                  console.log('🧯 Histórico básico salvo (fallback) para pedido:', pedido.id || pedido.numero);
-                } catch (fallbackError) {
-                  console.error('❌ Falha também no fallback do histórico:', fallbackError);
-                }
+                console.error('❌ Erro ao salvar snapshot:', error);
+                // Não falha a operação principal se snapshot falhar
               }
             });
-
             
             await Promise.allSettled(snapshot_promises);
             console.log('📸 Processo de snapshots concluído');

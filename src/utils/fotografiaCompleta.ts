@@ -65,10 +65,6 @@ export interface FotografiaPedido {
   local_estoque_nome: string;
   local_estoque: string;
   
-  // ===== LOCAL DE VENDA (CRÍTICO PARA REVERSÃO DE INSUMOS) =====
-  local_venda_id: string;
-  local_venda_nome: string;
-  
   // ===== ENVIO/SHIPPING =====
   status_envio: string;
   shipping_substatus: string; // substatus detalhado (printed, picked_up, etc)
@@ -397,10 +393,6 @@ export function fotografarPedidoCompleto(
     local_estoque_nome: order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque || '-',
     local_estoque: order.local_estoque || order.unified?.local_estoque || '-',
     
-    // LOCAL DE VENDA (CRÍTICO PARA REVERSÃO DE INSUMOS)
-    local_venda_id: order.local_venda_id || order.unified?.local_venda_id || '',
-    local_venda_nome: order.local_venda_nome || order.unified?.local_venda_nome || '-',
-    
     // 🔍 LOG PARA DEBUG - Captura completa do local de estoque
     ...(() => {
       const localId = order.local_estoque_id || order.unified?.local_estoque_id;
@@ -711,10 +703,6 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     local_estoque_id: fotografia.local_estoque_id,
     local_estoque_nome: fotografia.local_estoque_nome,
     local_estoque: fotografia.local_estoque,
-    
-    // 🛡️ LOCAL DE VENDA (CRÍTICO PARA REVERSÃO DE INSUMOS)
-    local_venda_id: fotografia.local_venda_id,
-    local_venda_nome: fotografia.local_venda_nome,
     
     // Pagamento
     metodo_pagamento: fotografia.metodo_pagamento,

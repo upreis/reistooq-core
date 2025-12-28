@@ -232,6 +232,8 @@ export function HistoricoSimplePage() {
         </div>
       </section>
 
+      {/* Estatísticas */}
+      <HistoricoSimpleStats stats={stats} isLoading={isLoading} />
 
       {/* Filtros */}
       <HistoricoSimpleFilters
