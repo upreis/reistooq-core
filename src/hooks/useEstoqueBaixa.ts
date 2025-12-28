@@ -211,34 +211,70 @@ export function useProcessarBaixaEstoque() {
           
           console.log(`📦 Processando pedido ${pedido.numero}: SKU=${skuProduto}, Qtd=${quantidadePedido}, Local=${localEstoqueNome} (ID: ${localEstoqueId}), LocalVenda=${localVendaId || 'N/A'}`);
           
-          // ✅ CRÍTICO: Buscar composições APENAS em composicoes_local_venda
-          if (!localVendaId) {
-            throw new Error(`Pedido ${pedido.numero} não possui local de venda configurado. Configure em /oms/configuracoes`);
+          // ✅ CRÍTICO: Buscar COMPOSIÇÃO ENRIQUECIDA (juntar produto_componentes + composicoes_local_venda)
+          // 1. Buscar composição padrão (produtos) do local de estoque
+          const { data: composicoesPadrao, error: erroPadrao } = await supabase
+            .from('produto_componentes')
+            .select('sku_componente, quantidade')
+            .eq('local_id', localEstoqueId)
+            .eq('sku_produto', skuProduto);
+          
+          if (erroPadrao) {
+            console.error(`❌ Erro ao buscar composição padrão: ${erroPadrao.message}`);
           }
           
-          const { data: composicoesLV, error: erroLV } = await supabase
-            .from('composicoes_local_venda')
-            .select('sku_insumo, quantidade')
-            .eq('local_venda_id', localVendaId)
-            .eq('sku_produto', skuProduto)
-            .eq('ativo', true);
-          
-          if (erroLV) {
-            throw new Error(`Erro ao buscar composição: ${erroLV.message}`);
+          // 2. Buscar insumos do local de venda (embalagens, etiquetas, etc)
+          let composicoesLV: Array<{ sku_insumo: string; quantidade: number }> | null = null;
+          if (localVendaId) {
+            const { data: lvData, error: erroLV } = await supabase
+              .from('composicoes_local_venda')
+              .select('sku_insumo, quantidade')
+              .eq('local_venda_id', localVendaId)
+              .eq('sku_produto', skuProduto)
+              .eq('ativo', true);
+            
+            if (erroLV) {
+              console.error(`⚠️ Erro ao buscar insumos local de venda: ${erroLV.message}`);
+            } else {
+              composicoesLV = lvData;
+            }
           }
           
-          if (!composicoesLV || composicoesLV.length === 0) {
-            throw new Error(`Produto ${skuProduto} não possui composição cadastrada para este local de venda. Cadastre em /estoque/composicoes`);
+          // 3. Juntar as duas fontes (Composição Enriquecida)
+          const composicoes: Array<{ sku_componente: string; quantidade: number }> = [];
+          
+          // Adicionar produtos da composição padrão
+          if (composicoesPadrao && composicoesPadrao.length > 0) {
+            composicoesPadrao.forEach(c => {
+              composicoes.push({
+                sku_componente: c.sku_componente,
+                quantidade: c.quantidade || 1
+              });
+            });
+            console.log(`📦 Composição padrão encontrada para ${skuProduto}:`, composicoesPadrao.length, 'itens');
           }
           
-          const composicoes = composicoesLV.map(c => ({
-            sku_componente: c.sku_insumo,
-            quantidade: c.quantidade
-          }));
+          // Adicionar insumos do local de venda
+          if (composicoesLV && composicoesLV.length > 0) {
+            composicoesLV.forEach(c => {
+              composicoes.push({
+                sku_componente: c.sku_insumo,
+                quantidade: c.quantidade || 1
+              });
+            });
+            console.log(`📦 Insumos local de venda encontrados para ${skuProduto}:`, composicoesLV.length, 'itens');
+          }
           
-          console.log(`✅ Composição encontrada para ${skuProduto}:`, composicoes);
+          // Verificar se tem pelo menos uma composição (padrão OU insumo)
+          if (composicoes.length === 0) {
+            throw new Error(
+              `Produto ${skuProduto} não possui composição cadastrada.\n` +
+              `Cadastre a composição padrão em /estoque/composicoes (aba Composição Padrão) ` +
+              `ou os insumos em /estoque/insumos`
+            );
+          }
           
-          console.log(`✅ Composição encontrada para ${skuProduto}:`, composicoes);
+          console.log(`✅ Composição enriquecida para ${skuProduto}: ${composicoes.length} itens (${composicoesPadrao?.length || 0} padrão + ${composicoesLV?.length || 0} insumos)`);
           
           // Para cada componente, validar estoque no local específico
           const componentesDoPedido: Array<{ sku: string; quantidade: number; produtoId: string }> = [];
