@@ -1000,53 +1000,51 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        // Renderizar status dos insumos usando callback personalizado
                        return renderStatusInsumos ? renderStatusInsumos(order.id) : <span className="text-xs text-muted-foreground">—</span>;
                      
-                       case 'marketplace_origem':
-                         // 🔍 Detecção de marketplace usando campo marketplace da API
-                         const detectMarketplace = (order: any): string => {
-                           // 1. Verificar campo marketplace (prioridade - vem da API)
-                           const marketplace = (
-                             order.marketplace || 
-                             order.unified?.marketplace || 
-                             order.raw?.marketplace || 
-                             ''
-                           ).toLowerCase();
-                           
-                           if (marketplace === 'mercadolivre') return 'Mercado Livre';
-                           if (marketplace === 'shopee') return 'Shopee';
-                           if (marketplace === 'tiny') return 'Tiny';
-                           if (marketplace === 'shopify') return 'Shopify';
-                           if (marketplace === 'amazon') return 'Amazon';
-                           
-                           // 2. Fallback para compatibilidade com dados antigos
-                           if (order.integration_account_id) {
-                             const empresa = (order.empresa || order.unified?.empresa || order.raw?.empresa || '').toLowerCase();
+                       case 'local_venda':
+                         // 🏪 Local de Venda (Composições) - vem do mapeamento
+                         const localVenda = order.local_venda_nome || order.unified?.local_venda_nome;
+                         
+                         if (localVenda) {
+                           // 🎨 Cores vibrantes para locais de venda
+                           const getLocalVendaColor = (nome: string): string => {
+                             const nomeUpper = nome.toUpperCase();
                              
-                             if (empresa.includes('mercado') || empresa.includes('livre')) return 'Mercado Livre';
-                             if (empresa.includes('shopee')) return 'Shopee';
-                             if (empresa.includes('tiny')) return 'Tiny';
-                             if (empresa.includes('shopify')) return 'Shopify';
-                             if (empresa.includes('amazon')) return 'Amazon';
-                             
-                             return 'Marketplace';
-                           }
+                             if (nomeUpper.includes('MERCADO') || nomeUpper.includes('MELI')) {
+                               return 'bg-yellow-500 text-gray-900 dark:bg-yellow-600 dark:text-gray-900 border-yellow-600';
+                             } else if (nomeUpper.includes('SHOPEE')) {
+                               return 'bg-orange-500 text-white dark:bg-orange-600 dark:text-white border-orange-600';
+                             } else if (nomeUpper.includes('AMAZON')) {
+                               return 'bg-amber-500 text-gray-900 dark:bg-amber-600 dark:text-gray-900 border-amber-600';
+                             } else if (nomeUpper.includes('SHOPIFY')) {
+                               return 'bg-green-500 text-white dark:bg-green-600 dark:text-white border-green-600';
+                             } else if (nomeUpper.includes('MAGALU') || nomeUpper.includes('MAGAZINE')) {
+                               return 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white border-blue-600';
+                             } else {
+                               // Hash para cores consistentes
+                               const hash = nome.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                               const colors = [
+                                 'bg-indigo-500 text-white dark:bg-indigo-600 dark:text-white border-indigo-600',
+                                 'bg-violet-500 text-white dark:bg-violet-600 dark:text-white border-violet-600',
+                                 'bg-fuchsia-500 text-white dark:bg-fuchsia-600 dark:text-white border-fuchsia-600',
+                                 'bg-rose-500 text-white dark:bg-rose-600 dark:text-white border-rose-600',
+                               ];
+                               return colors[hash % colors.length];
+                             }
+                           };
                            
-                           return 'Interno';
-                         };
-                        
-                        const marketplace = detectMarketplace(order);
-                        const marketplaceColors: Record<string, string> = {
-                          'Mercado Livre': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-                          'Shopee': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-                          'Tiny': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-                          'Shopify': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-                          'Amazon': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-                          'Interno': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-                        };
-                        return (
-                          <Badge variant="outline" className={marketplaceColors[marketplace] || marketplaceColors['Interno']}>
-                            {marketplace}
-                          </Badge>
-                        );
+                           return (
+                             <Badge variant="outline" className={getLocalVendaColor(localVenda)}>
+                               🏪 {localVenda}
+                             </Badge>
+                           );
+                         }
+                         
+                         // Sem local de venda configurado - usa composição padrão do estoque
+                         return (
+                           <Badge variant="outline" className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-300">
+                             <span className="text-xs">Padrão Estoque</span>
+                           </Badge>
+                         );
                      
                       case 'local_estoque':
                         // Buscar nome do local de estoque enriquecido

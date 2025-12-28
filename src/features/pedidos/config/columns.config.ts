@@ -269,14 +269,14 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 130
   },
   {
-    key: 'marketplace_origem',
-    label: 'Marketplace',
+    key: 'local_venda',
+    label: 'Local de Venda',
     category: 'mapping',
     priority: 'important',
     visible: true,
     default: true,
-    description: 'Origem do pedido (Mercado Livre, Shopee, Tiny ou Interno)',
-    width: 150
+    description: 'Local de venda (composições) configurado no mapeamento',
+    width: 180
   },
   {
     key: 'local_estoque',
