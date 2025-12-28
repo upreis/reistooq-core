@@ -608,7 +608,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
               className="gap-2 bg-[var(--brand-yellow)] hover:bg-[var(--brand-yellow)]/90 text-[var(--brand-navy)]"
             >
               <Save className="h-4 w-4" />
-              {insumo ? 'Adicionar Insumos' : 'Salvar Composições'}
+              {insumo ? 'Salvar atualização' : 'Salvar Composições'}
             </Button>
           </div>
         </div>
