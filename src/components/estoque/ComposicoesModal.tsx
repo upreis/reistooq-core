@@ -30,6 +30,7 @@ interface ComposicaoForm {
   nome_componente: string;
   quantidade: number;
   unidade_medida_id: string;
+  por_venda?: boolean; // Se true, deduz quantidade fixa por venda (não multiplica pela qtd vendida)
 }
 
 export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave, localId, localVendaId }: ComposicoesModalProps) {
@@ -56,7 +57,8 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
             sku_componente: comp.sku_componente,
             nome_componente: comp.nome_componente,
             quantidade: comp.quantidade,
-            unidade_medida_id: comp.unidade_medida_id || ""
+            unidade_medida_id: comp.unidade_medida_id || "",
+            por_venda: (comp as any).por_venda || false
           }))
         );
       } else {
@@ -201,7 +203,8 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
             sku_produto: produtoSku.trim().toUpperCase(),
             sku_insumo: comp.sku_componente.trim().toUpperCase(),
             quantidade: Math.round(comp.quantidade),
-            ativo: true
+            ativo: true,
+            por_venda: comp.por_venda || false
           }));
 
           console.log('📦 Inserindo composições local venda:', composicoesParaInserir);
@@ -215,7 +218,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
             throw insertError;
           }
         }
-      } 
+      }
       // 🔀 MODO ESTOQUE: salvar em produto_componentes
       else {
         if (!localId) {
@@ -490,6 +493,27 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                         </Select>
                       </div>
                     </div>
+                    
+                    {/* Toggle Por Venda - Apenas para composições de Local de Venda */}
+                    {localVendaId && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        <input
+                          type="checkbox"
+                          id={`por-venda-${index}`}
+                          checked={composicao.por_venda || false}
+                          onChange={(e) => atualizarComposicao(index, 'por_venda', e.target.checked)}
+                          className="h-4 w-4 rounded border-amber-500 text-amber-600 focus:ring-amber-500"
+                        />
+                        <div>
+                          <Label htmlFor={`por-venda-${index}`} className="text-sm font-medium cursor-pointer">
+                            Dedução por venda
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Retira quantidade fixa por pedido (ex: 1 etiqueta por venda, independente da quantidade vendida)
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
