@@ -132,10 +132,16 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
         // ✅ Normalizar AMBOS os lados para garantir match correto
         const tipoMapeamentoNormalizado = normalizarTipoLogistico(m.tipo_logistico);
         
-        const match = 
-          m.empresa === empresa &&
-          m.marketplace === marketplace &&
-          tipoMapeamentoNormalizado === tipoLogisticoNormalizado;
+        // ✅ Empresa deve ser igual
+        const empresaMatch = m.empresa === empresa;
+        
+        // ✅ Marketplace: "default" é coringa (aceita qualquer marketplace)
+        const marketplaceMatch = m.marketplace === 'default' || m.marketplace === marketplace;
+        
+        // ✅ Tipo logístico normalizado
+        const tipoMatch = tipoMapeamentoNormalizado === tipoLogisticoNormalizado;
+        
+        const match = empresaMatch && marketplaceMatch && tipoMatch;
         
         if (isDev && index < 3) {
           console.log(`📦 [LocalEstoque] --- Testando mapeamento ---`);
@@ -146,9 +152,9 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
             tipo_logistico_normalizado: tipoMapeamentoNormalizado
           });
           console.log(`📦 [LocalEstoque] Comparação:`, {
-            empresa_match: m.empresa === empresa,
-            marketplace_match: m.marketplace === marketplace,
-            tipo_match: tipoMapeamentoNormalizado === tipoLogisticoNormalizado,
+            empresa_match: empresaMatch,
+            marketplace_match: marketplaceMatch,
+            tipo_match: tipoMatch,
             tipo_pedido_norm: tipoLogisticoNormalizado,
             tipo_mapeamento_norm: tipoMapeamentoNormalizado,
             MATCH_FINAL: match
