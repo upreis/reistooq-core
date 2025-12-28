@@ -295,18 +295,25 @@ export function ConfiguracaoLocaisModal({
                     </SelectTrigger>
                     <SelectContent className="bg-background border border-border z-[9999]">
                       {tiposLogisticosDinamicos.length > 0 ? (
-                        tiposLogisticosDinamicos.map(tipo => (
-                          <SelectItem key={tipo} value={tipo}>
-                            {translateLogisticType(tipo)}
-                          </SelectItem>
-                        ))
+                        tiposLogisticosDinamicos.map(tipo => {
+                          const traduzido = translateLogisticType(tipo);
+                          // Mostrar tradução + valor original se forem diferentes
+                          const label = traduzido !== tipo 
+                            ? `${traduzido} (${tipo})`
+                            : tipo;
+                          return (
+                            <SelectItem key={tipo} value={tipo}>
+                              {label}
+                            </SelectItem>
+                          );
+                        })
                       ) : (
                         <>
-                          <SelectItem value="fulfillment">Fulfillment (Full)</SelectItem>
-                          <SelectItem value="self_service">Envios Flex</SelectItem>
-                          <SelectItem value="cross_docking">Cross Docking</SelectItem>
-                          <SelectItem value="drop_off">Drop Off</SelectItem>
-                          <SelectItem value="xd_drop_off">XD Drop Off</SelectItem>
+                          <SelectItem value="fulfillment">Full (fulfillment)</SelectItem>
+                          <SelectItem value="self_service">Envios Flex (self_service)</SelectItem>
+                          <SelectItem value="cross_docking">Cross Docking (cross_docking)</SelectItem>
+                          <SelectItem value="drop_off">Drop Off (drop_off)</SelectItem>
+                          <SelectItem value="xd_drop_off">Ponto de Coleta (xd_drop_off)</SelectItem>
                         </>
                       )}
                       <SelectItem value="__custom__">✏️ Digitar outro...</SelectItem>
