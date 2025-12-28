@@ -261,17 +261,20 @@ export class MapeamentoService {
               }
             }
 
-            // Caso não tenha estoque direto suficiente, cai para a validação por componentes no local
-            let queryComponentes = supabase
-              .from('produto_componentes')
-              .select('sku_componente, quantidade')
-              .eq('sku_produto', produto.sku_interno);
-
-            if (localEstoqueId) {
-              queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
+            // 🔧 CRÍTICO: Buscar composições em composicoes_local_venda (usando local_venda_id)
+            let componentes: Array<{ sku_componente?: string; sku_insumo?: string; quantidade: number }> | null = null;
+            
+            if (localVendaId) {
+              // ✅ Usar composicoes_local_venda com local_venda_id
+              const { data: composicoesLV } = await supabase
+                .from('composicoes_local_venda')
+                .select('sku_insumo, quantidade')
+                .eq('sku_produto', produto.sku_interno)
+                .eq('local_venda_id', localVendaId)
+                .eq('ativo', true);
+              
+              componentes = composicoesLV?.map(c => ({ sku_componente: c.sku_insumo, quantidade: c.quantidade })) || null;
             }
-
-            const { data: componentes } = await queryComponentes;
 
             if (!componentes || componentes.length === 0) {
               produtosInfoMap.set(produto.sku_interno, {
@@ -348,24 +351,21 @@ export class MapeamentoService {
         : new Map();
 
       // 🔍 VERIFICAR COMPOSIÇÕES para SKUs que ainda não foram verificados
+      // ✅ CRÍTICO: Usar composicoes_local_venda com local_venda_id
       const skusParaVerificarComposicao = [...produtosInfoMap.keys()].filter(sku => !composicoesMap.has(sku));
 
-      if (skusParaVerificarComposicao.length > 0) {
+      if (skusParaVerificarComposicao.length > 0 && localVendaId) {
         for (const skuProduto of skusParaVerificarComposicao) {
-          let queryComponentes = supabase
-            .from('produto_componentes')
-            .select('*')
-            .eq('sku_produto', skuProduto);
-
-          if (localEstoqueId) {
-            queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
-          }
-
-          const { data: componentes } = await queryComponentes;
+          const { data: componentes } = await supabase
+            .from('composicoes_local_venda')
+            .select('sku_insumo, quantidade')
+            .eq('sku_produto', skuProduto)
+            .eq('local_venda_id', localVendaId)
+            .eq('ativo', true);
 
           composicoesMap.set(skuProduto, {
             temComposicao: componentes && componentes.length > 0,
-            componentes: componentes || []
+            componentes: componentes?.map(c => ({ sku_componente: c.sku_insumo, quantidade: c.quantidade })) || []
           });
         }
       }
