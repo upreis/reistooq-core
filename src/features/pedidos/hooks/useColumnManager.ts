@@ -71,7 +71,8 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
           rua: 'endereco_rua',
           bairro: 'endereco_bairro',
           cep: 'endereco_cep',
-          numero: 'endereco_numero'
+          numero: 'endereco_numero',
+          marketplace_origem: 'local_venda'
         };
         const remapped = new Set<string>();
         (visibleSet as Set<string>).forEach((k) => {
@@ -107,7 +108,8 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
       rua: 'endereco_rua',
       bairro: 'endereco_bairro',
       cep: 'endereco_cep',
-      numero: 'endereco_numero'
+      numero: 'endereco_numero',
+      marketplace_origem: 'local_venda'
     };
     const remapped = new Set<string>();
     (rawSet as Set<string>).forEach((k) => {
