@@ -301,8 +301,10 @@ export class HistoricoDeleteService {
               }
             }
             
-            // 🔄 Se NÃO tem composição (nem produtos nem insumos), reverter o produto principal
-            if ((!composicao || composicao.length === 0) && (!composicaoInsumos || composicaoInsumos.length === 0)) {
+            // 🔄 Se NÃO tem composição (nem produtos nem insumos nem local de venda), reverter o produto principal
+            if ((!composicao || composicao.length === 0) && 
+                (!composicaoInsumos || composicaoInsumos.length === 0) &&
+                (!composicaoLocalVenda || composicaoLocalVenda.length === 0)) {
               console.log(`⚠️ Nenhuma composição encontrada para ${skuMapeado} no local ${localEstoqueNome} - Revertendo produto principal`);
               
               const { data: produtoPrincipal } = await supabase
