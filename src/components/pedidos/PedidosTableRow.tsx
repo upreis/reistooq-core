@@ -55,7 +55,7 @@ const areEqual = (prevProps: PedidosTableRowProps, nextProps: PedidosTableRowPro
 };
 
 export const PedidosTableRow = memo<PedidosTableRowProps>(({
-  row,
+  row: rawRow,
   isSelected,
   onSelect,
   temMapeamento,
@@ -64,6 +64,15 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
   renderStatusBaixa,
   renderStatusInsumos
 }) => {
+  // 🛍️ Normalizar row para funcionar com Shopee (que pode vir só unified) e ML (que vem {raw, unified})
+  const row = React.useMemo(() => {
+    // Se já tem a estrutura correta {raw, unified}, usar direto
+    if (rawRow && typeof rawRow === 'object' && 'unified' in rawRow && rawRow.unified) {
+      return rawRow;
+    }
+    // Se é apenas o objeto unified (Shopee), criar estrutura compatível
+    return { raw: rawRow, unified: rawRow } as unknown as Row;
+  }, [rawRow]);
   return (
     <TableRow
       className={

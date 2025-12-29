@@ -366,10 +366,10 @@ function SimplePedidosPage({ className }: Props) {
   // 🔧 FASE 4.1.2: Função movida para usePedidosHelpers (linha removida)
   
   // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
-  // 🛍️ SHOPEE: A tabela espera Row = { raw, unified }
+  // 🛍️ SHOPEE: Usar dados do banco quando marketplace = shopee
   const orders = useMemo(() => {
     return isShopeeMarketplace
-      ? shopeeOrdersDB.orders
+      ? shopeeOrdersDB.orders.map((o) => o.unified)
       : rowsEnriquecidos;
   }, [isShopeeMarketplace, shopeeOrdersDB.orders, rowsEnriquecidos]);
 
