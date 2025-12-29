@@ -320,6 +320,8 @@ export const useProducts = () => {
   const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
     const orgId = await getCurrentOrgId();
 
+    console.log('🛠️ [updateProduct] updates recebidos:', { id, orgId, updates });
+
     // Filtrar apenas colunas que existem na tabela produtos
     const allowedColumns = [
       'sku_interno', 'nome', 'categoria', 'categoria_principal', 'descricao', 'codigo_barras',
@@ -340,6 +342,8 @@ export const useProducts = () => {
       }
       return acc;
     }, {} as any);
+
+    console.log('🧹 [updateProduct] filteredUpdates:', { id, orgId, filteredUpdates });
 
     // Se estiver atualizando o SKU, verificar se não está duplicado
     if (filteredUpdates.sku_interno) {
@@ -365,6 +369,8 @@ export const useProducts = () => {
       .eq('organization_id', orgId)
       .select()
       .single();
+
+    console.log('📦 [updateProduct] resultado update:', { id, orgId, data, error });
 
     // Se falhou (provavelmente produto órfão), tentar fallback
     if (error && error.code === 'PGRST116') {
