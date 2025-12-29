@@ -308,8 +308,11 @@ function SimplePedidosPage({ className }: Props) {
 
   // 🛍️ Hook para buscar pedidos Shopee do banco (Excel importado)
   const isShopeeMarketplace = filtersManager.filters.marketplace === 'shopee';
+  const isAllMarketplaces = filtersManager.filters.marketplace === 'all' || !filtersManager.filters.marketplace;
+  const shouldLoadShopee = isShopeeMarketplace || isAllMarketplaces;
+  
   const shopeeOrdersDB = useShopeeOrdersFromDB({
-    enabled: isShopeeMarketplace,
+    enabled: shouldLoadShopee,
     search: filtersManager.appliedFilters.search,
     dataInicio: filtersManager.appliedFilters.dataInicio,
     dataFim: filtersManager.appliedFilters.dataFim,
@@ -319,11 +322,11 @@ function SimplePedidosPage({ className }: Props) {
 
   // 🔄 Refetch Shopee quando filtros mudam
   useEffect(() => {
-    if (isShopeeMarketplace) {
+    if (shouldLoadShopee) {
       console.log('🛍️ [Shopee] Buscando pedidos do banco...');
       shopeeOrdersDB.refetch();
     }
-  }, [isShopeeMarketplace, filtersManager.appliedFilters, state.currentPage]);
+  }, [shouldLoadShopee, filtersManager.appliedFilters, state.currentPage]);
 
   // 🧠 P3.2: Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE (debounce aumentado)
   const {
@@ -367,17 +370,32 @@ function SimplePedidosPage({ className }: Props) {
   // 🔧 FASE 4.1.2: Função movida para usePedidosHelpers (linha removida)
   
   // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
-  // 🛍️ SHOPEE: Usar dados do banco quando marketplace = shopee
+  // 🛍️ SHOPEE + ML: Combinar dados quando marketplace = 'all'
   const orders = useMemo(() => {
-    return isShopeeMarketplace
-      ? shopeeOrdersDB.orders.map((o) => o.unified)
-      : rowsEnriquecidos;
-  }, [isShopeeMarketplace, shopeeOrdersDB.orders, rowsEnriquecidos]);
+    const shopeeUnified = shopeeOrdersDB.orders.map((o) => o.unified);
+    
+    if (isShopeeMarketplace) {
+      // Apenas Shopee
+      return shopeeUnified;
+    } else if (isAllMarketplaces) {
+      // Combinar ML + Shopee
+      return [...rowsEnriquecidos, ...shopeeUnified];
+    } else {
+      // Apenas Mercado Livre
+      return rowsEnriquecidos;
+    }
+  }, [isShopeeMarketplace, isAllMarketplaces, shopeeOrdersDB.orders, rowsEnriquecidos]);
 
-  const total = isShopeeMarketplace ? shopeeOrdersDB.total : state.total;
+  const total = isShopeeMarketplace 
+    ? shopeeOrdersDB.total 
+    : isAllMarketplaces 
+      ? state.total + shopeeOrdersDB.total 
+      : state.total;
   const loading = isShopeeMarketplace
     ? shopeeOrdersDB.loading
-    : (state.loading || loadingLocais);
+    : isAllMarketplaces
+      ? (state.loading || loadingLocais || shopeeOrdersDB.loading)
+      : (state.loading || loadingLocais);
   const error = isShopeeMarketplace ? shopeeOrdersDB.error : state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
