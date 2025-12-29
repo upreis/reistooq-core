@@ -62,6 +62,10 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
   const [saving, setSaving] = useState(false);
   const [formComposicoes, setFormComposicoes] = useState<ComposicaoForm[]>([]);
   
+  // Estados para controle dos Popovers (um para cada composição)
+  const [openSkuPopovers, setOpenSkuPopovers] = useState<Record<number, boolean>>({});
+  const [openNomePopovers, setOpenNomePopovers] = useState<Record<number, boolean>>({});
+  
   // Estados para o produto principal
   const [produtoSku, setProdutoSku] = useState("");
   const [produtoNome, setProdutoNome] = useState("");
@@ -461,11 +465,15 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                           {/* SKU do Componente - Combobox */}
                           <div className="space-y-2">
                             <Label className="text-sm font-medium">SKU do Componente</Label>
-                            <Popover>
+                            <Popover 
+                              open={openSkuPopovers[index] || false} 
+                              onOpenChange={(isOpen) => setOpenSkuPopovers(prev => ({ ...prev, [index]: isOpen }))}
+                            >
                               <PopoverTrigger asChild>
                                 <Button
                                   variant="outline"
                                   role="combobox"
+                                  aria-expanded={openSkuPopovers[index] || false}
                                   className={cn(
                                     "w-full justify-between font-normal",
                                     !composicao.sku_insumo && "text-muted-foreground"
@@ -475,7 +483,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[300px] p-0" align="start">
+                              <PopoverContent className="w-[300px] p-0 z-[9999] bg-popover" align="start">
                                 <Command>
                                   <CommandInput placeholder="Buscar SKU..." />
                                   <CommandList>
@@ -489,7 +497,9 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                                             atualizarComposicao(index, 'sku_insumo', insumo.sku);
                                             atualizarComposicao(index, 'nome_insumo', insumo.nome);
                                             atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
+                                            setOpenSkuPopovers(prev => ({ ...prev, [index]: false }));
                                           }}
+                                          className="cursor-pointer"
                                         >
                                           <Check
                                             className={cn(
@@ -511,11 +521,15 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                           {/* Nome do Componente - Combobox */}
                           <div className="space-y-2">
                             <Label className="text-sm font-medium">Nome do Componente</Label>
-                            <Popover>
+                            <Popover
+                              open={openNomePopovers[index] || false}
+                              onOpenChange={(isOpen) => setOpenNomePopovers(prev => ({ ...prev, [index]: isOpen }))}
+                            >
                               <PopoverTrigger asChild>
                                 <Button
                                   variant="outline"
                                   role="combobox"
+                                  aria-expanded={openNomePopovers[index] || false}
                                   className={cn(
                                     "w-full justify-between font-normal",
                                     !composicao.nome_insumo && "text-muted-foreground"
@@ -525,7 +539,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[300px] p-0" align="start">
+                              <PopoverContent className="w-[300px] p-0 z-[9999] bg-popover" align="start">
                                 <Command>
                                   <CommandInput placeholder="Buscar nome..." />
                                   <CommandList>
@@ -539,7 +553,9 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                                             atualizarComposicao(index, 'sku_insumo', insumo.sku);
                                             atualizarComposicao(index, 'nome_insumo', insumo.nome);
                                             atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
+                                            setOpenNomePopovers(prev => ({ ...prev, [index]: false }));
                                           }}
+                                          className="cursor-pointer"
                                         >
                                           <Check
                                             className={cn(
