@@ -326,6 +326,8 @@ export const useProducts = () => {
       'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo',
       'preco_venda', 'localizacao', 'unidade_medida_id', 'status', 'ativo',
       'url_imagem', 'sku_pai', 'eh_produto_pai',
+      // Tipo de item / insumo
+      'tipo_item', 'tipo_insumo',
       // Campos adicionais do template
       'sob_encomenda', 'dias_preparacao', 'peso_liquido_kg', 'peso_bruto_kg',
       'numero_volumes', 'tipo_embalagem', 'largura_cm', 'altura_cm', 'comprimento_cm',
