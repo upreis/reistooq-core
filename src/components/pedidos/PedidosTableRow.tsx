@@ -311,7 +311,7 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 return <span className="font-mono text-xs">{cep || '—'}</span>;
               
               case 'titulo_anuncio':
-                const titulo = get(row.unified, 'obs') ?? get(row.unified, 'produto_nome') ?? get(row.raw, 'produto_nome');
+                const titulo = get(row.unified, 'titulo_anuncio') ?? get(row.unified, 'produto_nome') ?? get(row.raw, 'produto_nome') ?? get(row.unified, 'obs');
                 return <TruncatedCell content={titulo} maxLength={50} />;
               
               // Taxa Marketplace - compatibilidade com Shopee
