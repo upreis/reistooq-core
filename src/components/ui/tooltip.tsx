@@ -1,47 +1,36 @@
 import * as React from "react"
+import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
-// Safe no-op tooltip implementations to avoid Radix runtime issues
-// These components preserve structure without relying on @radix-ui/react-tooltip
+import { cn } from "@/lib/utils"
 
-type ProviderProps = React.PropsWithChildren<{
-  delayDuration?: number
-  disableHoverableContent?: boolean
-}>
+const TooltipProvider = TooltipPrimitive.Provider
 
-export function TooltipProvider({ children }: React.PropsWithChildren<any>) {
-  return <>{children}</>
-}
+const Tooltip = TooltipPrimitive.Root
 
-export function Tooltip({ children, ..._rest }: React.PropsWithChildren<any>) {
-  return <>{children}</>
-}
+const TooltipTrigger = TooltipPrimitive.Trigger
 
-export const TooltipTrigger = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentPropsWithoutRef<"button"> & { asChild?: boolean }
->(({ asChild, className, children, ...props }, ref) => {
-  if (asChild && React.isValidElement(children)) {
-    // If used with `asChild`, just render the child directly
-    return children as any
-  }
-  return (
-    <button ref={ref} className={className} {...props}>
-      {children}
-    </button>
-  )
-})
-TooltipTrigger.displayName = "TooltipTrigger"
+const TooltipContent = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-[1100] overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md",
+        "data-[state=delayed-open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:fade-out-0 data-[state=delayed-open]:fade-in-0",
+        "data-[state=closed]:zoom-out-95 data-[state=delayed-open]:zoom-in-95",
+        "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
+        "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        className
+      )}
+      {...props}
+    />
+  </TooltipPrimitive.Portal>
+))
+TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-export type TooltipContentProps = React.ComponentPropsWithoutRef<"div"> & {
-  side?: "top" | "bottom" | "left" | "right"
-  sideOffset?: number
-  align?: "start" | "end" | "center"
-}
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
 
-export const TooltipContent = React.forwardRef<HTMLDivElement, TooltipContentProps>(
-  ({ className, children, ...props }, ref) => {
-    // No-op content: render nothing to avoid popover logic
-    return null
-  }
-)
-TooltipContent.displayName = "TooltipContent"
