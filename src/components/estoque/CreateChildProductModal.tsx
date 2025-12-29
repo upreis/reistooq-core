@@ -520,9 +520,10 @@ export function CreateChildProductModal({
                   <div className="space-y-2">
                     <Label>Tipo de Item *</Label>
                     <Select 
-                      value={variation.tipo_item || undefined}
-                      onValueChange={(value: 'produto' | 'insumo') => {
-                        handleVariationChange(index, 'tipo_item', value);
+                      value={variation.tipo_item || "__placeholder__"}
+                      onValueChange={(value: string) => {
+                        if (value === "__placeholder__") return;
+                        handleVariationChange(index, 'tipo_item', value as 'produto' | 'insumo');
                         if (value === 'produto') {
                           handleVariationChange(index, 'tipo_insumo', '');
                           handleVariationChange(index, 'tipo_insumo_outro', '');
@@ -533,6 +534,7 @@ export function CreateChildProductModal({
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent className="bg-background z-[9999]">
+                        <SelectItem value="__placeholder__" disabled className="hidden">Selecione...</SelectItem>
                         <SelectItem value="produto">Produto</SelectItem>
                         <SelectItem value="insumo">Insumo</SelectItem>
                       </SelectContent>
