@@ -1155,6 +1155,14 @@ function SimplePedidosPage({ className }: Props) {
         mappingData={mappingData}
         isPedidoProcessado={isPedidoProcessado}
         quickFilter={'all'}
+        enableBulkDelete={isShopeeMarketplace}
+        deleteTableName="pedidos_shopee"
+        onDeleteConcluida={() => {
+          // 🛍️ Recarregar pedidos Shopee após exclusão
+          if (isShopeeMarketplace) {
+            shopeeOrdersDB.refetch();
+          }
+        }}
         onBaixaConcluida={() => {
           // Recarregar mapeamentos após baixa
           if (orders && orders.length > 0) {
