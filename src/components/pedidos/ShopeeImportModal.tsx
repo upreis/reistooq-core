@@ -170,26 +170,37 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
       };
 
       // Mapeamento de colunas
+      // ⚠️ Importante: headers da Shopee variam bastante entre exportações/idiomas.
+      // Usamos findColumnWithData para escolher a coluna "correta" quando há duplicatas.
       const colMap = {
-        order_id: headers.findIndex(h => /^id\s*do\s*pedido$|order.*id|número.*pedido|order_sn/i.test(h)),
-        order_status: headers.findIndex(h => /^status\s*do\s*pedido$|^situa[çc][aã]o\s*do\s*pedido$|status|situação|estado/i.test(h)),
+        order_id: headers.findIndex(h => /^id\s*do\s*pedido$|order.*id|n[uú]mero.*pedido|order_sn/i.test(h)),
+        order_status: headers.findIndex(h => /^status\s*do\s*pedido$|^situa[çc][aã]o\s*do\s*pedido$|status|situa[çc][aã]o|estado/i.test(h)),
         data_pedido: headers.findIndex(h => /^data\s*de\s*cria[çc][aã]o\s*do\s*pedido$|data.*pedido|data.*compra|created|criado/i.test(h)),
         comprador_nome: headers.findIndex(h => /^nome\s*de\s*usu[aá]rio\s*\(comprador\)$|^nome\s*do\s*destinat[aá]rio$|^nome\s*completo$|buyer.*name/i.test(h)),
-        sku: headers.findIndex(h => /^n[uú]mero\s*de\s*refer[eê]ncia\s*sku$|^sku$|código.*produto|product.*id/i.test(h)),
-        produto_nome: headers.findIndex(h => /^nome\s*do\s*produto$|produto|item|product.*name|titulo.*produto/i.test(h)),
+
+        // Produtos
+        sku: findColumnWithData(/sku|refer[êe]ncia\s*sku|n[uú]mero\s*de\s*refer[êe]ncia\s*sku|c[oó]digo.*produto|product.*id/i),
+        produto_nome: findColumnWithData(/nome\s*do\s*produto|t[ií]tulo\s*do\s*produto|t[ií]tulo\s*do\s*item|produto|item|product.*name|item.*name|descri[cç][aã]o.*produto/i),
         quantidade: headers.findIndex(h => /^quantidade$|qty|qtd|quantity/i.test(h)),
-        preco_total: headers.findIndex(h => /^subtotal\s*do\s*produto$|total|valor|price|preço/i.test(h)),
+        preco_total: findColumnWithData(/subtotal\s*do\s*produto|total|valor|price|pre[çc]o|amount|total_amount/i),
+
+        // Endereço
         endereco_rua: headers.findIndex(h => /^endere[çc]o\s*de\s*entrega$|^rua$|endereco|address|logradouro/i.test(h)),
         endereco_bairro: findColumnWithData(/^bairro$/i),
         endereco_cidade: findColumnWithData(/^cidade$/i),
-        endereco_estado: findColumnWithData(/^uf$/i),
-        endereco_cep: findColumnWithData(/^cep$/i),
-        codigo_rastreamento: headers.findIndex(h => /^n[uú]mero\s*de\s*rastreamento$|rastreamento|tracking|rastreio/i.test(h)),
-        opcao_envio: headers.findIndex(h => /^op[çc][aã]o\s*de\s*envio$|tipo.*log[ií]stico|logistic|envio/i.test(h)),
-        valor_estimado_frete: headers.findIndex(h => /^valor\s*estimado\s*do\s*frete$|receita.*flex|frete.*estimado/i.test(h)),
-        custo_envio: headers.findIndex(h => /^taxa\s*de\s*envio\s*reversa$/i.test(h)),
-        custo_fixo: headers.findIndex(h => /^taxa\s*de\s*servi[çc]o$|custo.*fixo|service.*fee/i.test(h)),
-        taxa_marketplace: headers.findIndex(h => /^taxa\s*de\s*comiss[aã]o$|taxa.*marketplace|comiss[aã]o|commission/i.test(h)),
+        endereco_estado: findColumnWithData(/^uf$|estado/i),
+        endereco_cep: findColumnWithData(/^cep$|zip/i),
+
+        // Rastreamento e logística
+        codigo_rastreamento: findColumnWithData(/n[uú]mero\s*de\s*rastreamento|rastreamento|tracking|rastreio/i),
+        opcao_envio: findColumnWithData(/op[çc][aã]o\s*de\s*envio|tipo.*log[ií]stico|logistic|envio/i),
+
+        // Custos e taxas
+        valor_estimado_frete: findColumnWithData(/valor\s*estimado\s*do\s*frete|receita.*flex|frete.*estimado|shipping.*fee/i),
+        custo_envio: findColumnWithData(/taxa\s*de\s*envio\s*reversa|custo\s*envio/i),
+        custo_fixo: findColumnWithData(/taxa\s*de\s*servi[çc]o|custo.*fixo|service.*fee/i),
+        taxa_marketplace: findColumnWithData(/taxa.*(comiss|marketplace)|comiss[aã]o|commission|sale\s*fee|sale_fee|tarifa/i),
+
         motivo_cancelamento: headers.findIndex(h => /^cancelar\s*motivo$|motivo.*cancel|cancel.*reason/i.test(h)),
       };
 
@@ -269,7 +280,7 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
       const orderIds = pedidosValidos.map(p => p.order_id);
       const { data: existingOrders } = await supabase
         .from("pedidos_shopee")
-        .select("id, order_id, sku, data_pedido, order_status, preco_total, codigo_rastreamento")
+        .select("id, order_id, sku, produto_nome, taxa_marketplace, data_pedido, order_status, preco_total, codigo_rastreamento")
         .eq("organization_id", organizationId)
         .in("order_id", orderIds);
 
@@ -287,14 +298,17 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
         const existing = existingMap.get(key);
         
         if (existing) {
-          // Verificar se houve mudança em campos importantes
+          // Verificar se houve mudança em campos importantes (incluindo SKU/Título/Taxas)
           const mudou = (
             existing.data_pedido !== pedido.data_pedido ||
             existing.order_status !== pedido.order_status ||
             existing.preco_total !== pedido.preco_total ||
-            existing.codigo_rastreamento !== pedido.codigo_rastreamento
+            existing.codigo_rastreamento !== pedido.codigo_rastreamento ||
+            existing.sku !== pedido.sku ||
+            existing.produto_nome !== pedido.produto_nome ||
+            existing.taxa_marketplace !== pedido.taxa_marketplace
           );
-          
+
           if (mudou) {
             atualizarPayload.push({ id: existing.id, data: pedido });
           }
