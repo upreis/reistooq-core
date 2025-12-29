@@ -104,9 +104,15 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           },
           {
             id: 'composicoes',
-            label: 'Composições',
+            label: 'Produtos',
             path: '/estoque/composicoes',
             icon: 'Layers'
+          },
+          {
+            id: 'insumos',
+            label: 'Insumos',
+            path: '/estoque/insumos',
+            icon: 'Box'
           },
           {
             id: 'historico-estoque',
