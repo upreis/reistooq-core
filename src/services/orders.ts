@@ -56,6 +56,15 @@ export type Unified = {
   local_estoque_nome?: string | null;
   tipo_logistico?: string | null;
   tipo_logistico_raw?: string | null;
+  // 🛍️ Campos Shopee
+  sku?: string | null;
+  produto_nome?: string | null;
+  titulo_anuncio?: string | null;
+  taxa_marketplace?: number | null;
+  marketplace_fee?: number | null;
+  receita_flex?: number | null;
+  custo_envio?: number | null;
+  custo_fixo?: number | null;
 };
 
 export type Row = { raw: RawML; unified: Unified | null };

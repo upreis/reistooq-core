@@ -350,6 +350,11 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               case 'sku':
               case 'skus_produtos': {
                 const skuValue = get(row.unified, 'sku') ?? null;
+                // 🔍 Debug temporário para diagnosticar
+                if (!skuValue && row.unified) {
+                  console.log('🔍 [SKU DEBUG] unified object keys:', Object.keys(row.unified));
+                  console.log('🔍 [SKU DEBUG] unified.sku value:', (row.unified as any)?.sku);
+                }
                 return <TruncatedCell content={skuValue} maxLength={40} />;
               }
               
