@@ -294,8 +294,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span>{formatDate(order.data_pedido || order.unified?.data_pedido || order.date_created)}</span>;
                     case 'last_updated':
                       return <span>{formatDate(order.last_updated || order.updated_at || order.date_last_updated || order.unified?.updated_at) || '-'}</span>;
-                     case 'skus_produtos':
-                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{skus.length ? skus.join(', ') : '-'}</div>;
+                     case 'skus_produtos': {
+                       // Shopee (Excel/DB): SEM fallback — usa apenas o campo `sku` salvo do upload
+                       const isShopee =
+                         order.marketplace === 'shopee' ||
+                         order.provider === 'shopee' ||
+                         order.unified?.marketplace === 'shopee' ||
+                         order.unified?.provider === 'shopee';
+
+                       const content = isShopee ? (order.sku ?? order.unified?.sku ?? null) : (skus.length ? skus.join(', ') : null);
+
+                       return (
+                         <div
+                           className="break-words whitespace-normal text-sm leading-snug line-clamp-2"
+                           style={{ minWidth: '200px' }}
+                         >
+                           {content || '-'}
+                         </div>
+                       );
+                     }
                      case 'quantidade_itens':
                        return <span>{quantidadeItens}</span>;
                      case 'titulo_anuncio':
