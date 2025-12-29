@@ -18,7 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Plus, Trash2, Link, Scale, FileText, Upload, AlertCircle } from "lucide-react";
+import { Package, Plus, Trash2, Link, Scale, FileText, Upload, AlertCircle, HelpCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
@@ -516,9 +521,22 @@ export function CreateChildProductModal({
                 </div>
 
                 {/* Tipo de Item */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Tipo de Item *</Label>
+                    <div className="flex items-center gap-2">
+                      <Label>Tipo de Item *</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs bg-background border">
+                          <p className="font-medium mb-1">O que é Insumo?</p>
+                          <p className="text-sm text-muted-foreground">
+                            Insumos são materiais usados na embalagem e envio, como: Caixa, Etiqueta, Fita adesiva, Papel bolha, Lacre, Manual, Luvas, etc.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Select 
                       value={variation.tipo_item || "__placeholder__"}
                       onValueChange={(value: string) => {
@@ -540,40 +558,6 @@ export function CreateChildProductModal({
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {variation.tipo_item === 'insumo' && (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Tipo de Insumo</Label>
-                        <Select 
-                          value={variation.tipo_insumo} 
-                          onValueChange={(value) => handleVariationChange(index, 'tipo_insumo', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo..." />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background z-[9999]">
-                            {TIPOS_INSUMO.map((tipo) => (
-                              <SelectItem key={tipo.value} value={tipo.value}>
-                                {tipo.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {variation.tipo_insumo === 'outro' && (
-                        <div className="space-y-2">
-                          <Label>Especifique o tipo</Label>
-                          <Input
-                            placeholder="Digite o tipo de insumo..."
-                            value={variation.tipo_insumo_outro}
-                            onChange={(e) => handleVariationChange(index, 'tipo_insumo_outro', e.target.value)}
-                          />
-                        </div>
-                      )}
-                    </>
-                  )}
                 </div>
 
                 {/* Código de Barras e Quantidade */}
