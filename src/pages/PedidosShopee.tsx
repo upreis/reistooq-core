@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw, Trash2, CheckSquare, Square, Search, Calendar, Columns, MapPin, Building2, Plus, X, Edit2, Save } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { Package, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw, Trash2, CheckSquare, Square, Search, Calendar, Columns, MapPin, Building2, Plus, X, Edit2, Save, CheckCircle2 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
@@ -24,6 +24,10 @@ import { cn } from "@/lib/utils";
 import { ConfiguracaoLocaisModal } from "@/components/pedidos/ConfiguracaoLocaisModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { usePedidosMappingsOptimized } from "@/components/pedidos/hooks/usePedidosMappingsOptimized";
+import { useLocalEstoqueEnriquecimento } from "@/hooks/useLocalEstoqueEnriquecimento";
+import { StatusInsumoWithTooltip } from "@/components/pedidos/StatusInsumoWithTooltip";
+import { CadastroInsumoRapidoModal } from "@/components/pedidos/CadastroInsumoRapidoModal";
 
 interface ImportResult {
   total: number;
@@ -281,6 +285,45 @@ export default function PedidosShopee() {
     }
   }, [showEmpresasModal, activeTab, loadEmpresas]);
 
+  // 🧠 Transformar pedidos Shopee para formato compatível com hook de mapeamento
+  const pedidosParaMapeamento = useMemo(() => {
+    return pedidos.map(p => ({
+      id: p.id,
+      numero: p.order_id,
+      sku: p.sku,
+      seller_sku: p.sku,
+      total_itens: p.quantidade,
+      empresa: (p as any).empresa || 'Shopee',
+      tipo_logistico: p.tipo_logistico || 'flex',
+      tipo_logistico_raw: p.tipo_logistico || 'flex',
+    }));
+  }, [pedidos]);
+
+  // 📍 Hook para enriquecer pedidos com local de estoque
+  const { rowsEnriquecidos, loading: loadingLocais } = useLocalEstoqueEnriquecimento(pedidosParaMapeamento as any);
+
+  // 🧠 Hook de mapeamentos otimizado
+  const {
+    mappingData,
+    isProcessingMappings,
+    actions: mappingActions
+  } = usePedidosMappingsOptimized({
+    enabled: true,
+    autoProcess: true,
+    debounceMs: 1000
+  });
+
+  // 🔄 Processar mapeamentos quando os pedidos enriquecidos mudarem
+  useEffect(() => {
+    if (rowsEnriquecidos && rowsEnriquecidos.length > 0 && !loadingLocais) {
+      mappingActions.processOrdersMappings(rowsEnriquecidos);
+    }
+  }, [rowsEnriquecidos, loadingLocais]);
+
+  // 🔧 Estado para modal de cadastro rápido de insumo
+  const [cadastroRapidoOpen, setCadastroRapidoOpen] = useState(false);
+  const [skuParaCadastro, setSkuParaCadastro] = useState('');
+
   // Pedidos filtrados
   const filteredPedidos = pedidos.filter((pedido) => {
     // Filtro por aba (pendentes/histórico)
@@ -311,6 +354,11 @@ export default function PedidosShopee() {
     
     return true;
   });
+
+  // 🏪 Obter dados enriquecidos para um pedido
+  const getEnrichedData = useCallback((pedidoId: string) => {
+    return rowsEnriquecidos.find((r: any) => r.id === pedidoId) as any;
+  }, [rowsEnriquecidos]);
 
   // Seleção
   const toggleSelectMode = useCallback(() => {
@@ -1169,42 +1217,127 @@ export default function PedidosShopee() {
                               )}
                               {/* SKU Estoque */}
                               {isColumnVisible("skuEstoque") && (
-                                <TableCell className="font-mono text-xs">{pedido.sku ?? "-"}</TableCell>
+                                <TableCell className="font-mono text-xs">
+                                  {(() => {
+                                    const mapping = mappingData.get(pedido.id);
+                                    return mapping?.skuEstoque || pedido.sku || "-";
+                                  })()}
+                                </TableCell>
                               )}
                               {/* SKU KIT */}
                               {isColumnVisible("skuKit") && (
-                                <TableCell className="text-muted-foreground">-</TableCell>
+                                <TableCell className="font-mono text-xs">
+                                  {(() => {
+                                    const mapping = mappingData.get(pedido.id);
+                                    return mapping?.skuKit || "-";
+                                  })()}
+                                </TableCell>
                               )}
                               {/* Quantidade KIT */}
                               {isColumnVisible("quantidadeKit") && (
-                                <TableCell className="text-muted-foreground">-</TableCell>
+                                <TableCell className="text-center">
+                                  {(() => {
+                                    const mapping = mappingData.get(pedido.id);
+                                    return mapping?.quantidadeKit || "-";
+                                  })()}
+                                </TableCell>
                               )}
                               {/* Total de Itens */}
                               {isColumnVisible("totalItens") && (
-                                <TableCell className="text-center">{pedido.quantidade}</TableCell>
+                                <TableCell className="text-center">
+                                  {(() => {
+                                    const mapping = mappingData.get(pedido.id);
+                                    const qtdKit = mapping?.quantidadeKit || 1;
+                                    return pedido.quantidade * qtdKit;
+                                  })()}
+                                </TableCell>
                               )}
                               {/* Status da Baixa */}
                               {isColumnVisible("statusBaixa") && (
                                 <TableCell className="text-center">
-                                  {pedido.baixa_estoque_realizada ? (
-                                    <Badge variant="default" className="bg-green-600 text-xs">
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Baixado
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="secondary" className="text-xs">Pendente</Badge>
-                                  )}
+                                  {(() => {
+                                    const mapping = mappingData.get(pedido.id);
+                                    const statusBaixa = mapping?.statusBaixa;
+                                    
+                                    // Já baixado
+                                    if (pedido.baixa_estoque_realizada) {
+                                      return (
+                                        <div className="flex items-center gap-1 text-green-600">
+                                          <CheckCircle2 className="h-4 w-4" />
+                                          <span className="text-xs font-medium">Baixado</span>
+                                        </div>
+                                      );
+                                    }
+
+                                    // SKU não cadastrado
+                                    if (statusBaixa === 'sku_nao_cadastrado') {
+                                      return (
+                                        <div className="flex items-center gap-1 text-destructive">
+                                          <AlertCircle className="h-4 w-4" />
+                                          <span className="text-xs font-medium">SKU não cadastrado</span>
+                                        </div>
+                                      );
+                                    }
+
+                                    // Sem estoque
+                                    if (statusBaixa === 'sem_estoque') {
+                                      return (
+                                        <div className="flex items-center gap-1 text-orange-600">
+                                          <AlertCircle className="h-4 w-4" />
+                                          <span className="text-xs font-medium">Sem Estoque</span>
+                                        </div>
+                                      );
+                                    }
+
+                                    // Pronto para baixar
+                                    if (statusBaixa === 'pronto_baixar') {
+                                      return (
+                                        <div className="flex items-center gap-1 text-green-600">
+                                          <CheckCircle2 className="h-4 w-4" />
+                                          <span className="text-xs font-medium">Pronto p/ Baixar</span>
+                                        </div>
+                                      );
+                                    }
+
+                                    // Sem mapear ou outro
+                                    return (
+                                      <div className="flex items-center gap-1 text-yellow-600">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <span className="text-xs font-medium">Sem mapear</span>
+                                      </div>
+                                    );
+                                  })()}
                                 </TableCell>
                               )}
                               {/* Status Insumos */}
                               {isColumnVisible("statusInsumos") && (
-                                <TableCell className="text-muted-foreground">-</TableCell>
+                                <TableCell>
+                                  {(() => {
+                                    const mapping = mappingData.get(pedido.id);
+                                    
+                                    if (!mapping || !mapping.statusInsumo) {
+                                      return <span className="text-xs text-muted-foreground">—</span>;
+                                    }
+
+                                    return (
+                                      <StatusInsumoWithTooltip
+                                        statusInsumo={mapping.statusInsumo}
+                                        detalhesInsumo={mapping.detalhesInsumo}
+                                        onCadastrarClick={(sku) => {
+                                          setSkuParaCadastro(sku);
+                                          setCadastroRapidoOpen(true);
+                                        }}
+                                      />
+                                    );
+                                  })()}
+                                </TableCell>
                               )}
                               {/* Local de Venda (Composições) */}
                               {isColumnVisible("localVenda") && (
                                 <TableCell>
                                   {(() => {
-                                    const localVenda = (pedido as any).local_venda_nome;
+                                    const enriched = getEnrichedData(pedido.id);
+                                    const localVenda = enriched?.local_venda_nome;
                                     
                                     if (localVenda) {
                                       // Cores vibrantes para locais de venda
@@ -1260,7 +1393,22 @@ export default function PedidosShopee() {
                               )}
                               {/* Local de Estoque */}
                               {isColumnVisible("localEstoque") && (
-                                <TableCell className="text-muted-foreground">-</TableCell>
+                                <TableCell>
+                                  {(() => {
+                                    const enriched = getEnrichedData(pedido.id);
+                                    const localEstoque = enriched?.local_estoque_nome;
+                                    
+                                    if (localEstoque) {
+                                      return (
+                                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-xs">
+                                          📦 {localEstoque}
+                                        </Badge>
+                                      );
+                                    }
+                                    
+                                    return <span className="text-muted-foreground text-xs">—</span>;
+                                  })()}
+                                </TableCell>
                               )}
                               {/* Situação do Pedido */}
                               {isColumnVisible("situacaoPedido") && (
@@ -1471,6 +1619,24 @@ export default function PedidosShopee() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Cadastro Rápido de Insumo */}
+      <CadastroInsumoRapidoModal
+        isOpen={cadastroRapidoOpen}
+        onClose={() => {
+          setCadastroRapidoOpen(false);
+          setSkuParaCadastro('');
+        }}
+        skuInsumo={skuParaCadastro}
+        onSuccess={() => {
+          setCadastroRapidoOpen(false);
+          setSkuParaCadastro('');
+          // Reprocessar mapeamentos após cadastro
+          if (rowsEnriquecidos.length > 0) {
+            mappingActions.reprocessMappings(rowsEnriquecidos);
+          }
+        }}
+      />
     </MobileAppShell>
   );
 }
