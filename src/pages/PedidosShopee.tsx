@@ -131,6 +131,7 @@ export default function PedidosShopee() {
     { key: "totalItens", label: "Total de Itens", defaultVisible: true },
     { key: "statusBaixa", label: "Status da Baixa", defaultVisible: true },
     { key: "statusInsumos", label: "Status Insumos", defaultVisible: true },
+    { key: "localVenda", label: "Local de Venda", defaultVisible: true },
     { key: "marketplace", label: "Marketplace", defaultVisible: true },
     { key: "localEstoque", label: "Local de Estoque", defaultVisible: true },
     { key: "situacaoPedido", label: "Situação do Pedido", defaultVisible: true },
@@ -1022,6 +1023,7 @@ export default function PedidosShopee() {
                           {isColumnVisible("totalItens") && <TableHead>Total de Itens</TableHead>}
                           {isColumnVisible("statusBaixa") && <TableHead>Status da Baixa</TableHead>}
                           {isColumnVisible("statusInsumos") && <TableHead>Status Insumos</TableHead>}
+                          {isColumnVisible("localVenda") && <TableHead>Local de Venda</TableHead>}
                           {isColumnVisible("marketplace") && <TableHead>Marketplace</TableHead>}
                           {isColumnVisible("localEstoque") && <TableHead>Local de Estoque</TableHead>}
                           {isColumnVisible("situacaoPedido") && <TableHead>Situação do Pedido</TableHead>}
@@ -1197,6 +1199,56 @@ export default function PedidosShopee() {
                               {/* Status Insumos */}
                               {isColumnVisible("statusInsumos") && (
                                 <TableCell className="text-muted-foreground">-</TableCell>
+                              )}
+                              {/* Local de Venda (Composições) */}
+                              {isColumnVisible("localVenda") && (
+                                <TableCell>
+                                  {(() => {
+                                    const localVenda = (pedido as any).local_venda_nome;
+                                    
+                                    if (localVenda) {
+                                      // Cores vibrantes para locais de venda
+                                      const getLocalVendaColor = (nome: string): string => {
+                                        const nomeUpper = nome.toUpperCase();
+                                        
+                                        if (nomeUpper.includes('MERCADO') || nomeUpper.includes('MELI')) {
+                                          return 'bg-yellow-500 text-gray-900 dark:bg-yellow-600 dark:text-gray-900 border-yellow-600';
+                                        } else if (nomeUpper.includes('SHOPEE')) {
+                                          return 'bg-orange-500 text-white dark:bg-orange-600 dark:text-white border-orange-600';
+                                        } else if (nomeUpper.includes('AMAZON')) {
+                                          return 'bg-amber-500 text-gray-900 dark:bg-amber-600 dark:text-gray-900 border-amber-600';
+                                        } else if (nomeUpper.includes('SHOPIFY')) {
+                                          return 'bg-green-500 text-white dark:bg-green-600 dark:text-white border-green-600';
+                                        } else if (nomeUpper.includes('MAGALU') || nomeUpper.includes('MAGAZINE')) {
+                                          return 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white border-blue-600';
+                                        } else {
+                                          // Hash para cores consistentes
+                                          const hash = nome.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                                          const colors = [
+                                            'bg-indigo-500 text-white dark:bg-indigo-600 dark:text-white border-indigo-600',
+                                            'bg-violet-500 text-white dark:bg-violet-600 dark:text-white border-violet-600',
+                                            'bg-fuchsia-500 text-white dark:bg-fuchsia-600 dark:text-white border-fuchsia-600',
+                                            'bg-rose-500 text-white dark:bg-rose-600 dark:text-white border-rose-600',
+                                          ];
+                                          return colors[hash % colors.length];
+                                        }
+                                      };
+                                      
+                                      return (
+                                        <Badge variant="outline" className={getLocalVendaColor(localVenda)}>
+                                          🏪 {localVenda}
+                                        </Badge>
+                                      );
+                                    }
+                                    
+                                    // Sem local de venda configurado - usa composição padrão do estoque
+                                    return (
+                                      <Badge variant="outline" className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-300">
+                                        <span className="text-xs">Padrão Estoque</span>
+                                      </Badge>
+                                    );
+                                  })()}
+                                </TableCell>
                               )}
                               {/* Marketplace */}
                               {isColumnVisible("marketplace") && (
