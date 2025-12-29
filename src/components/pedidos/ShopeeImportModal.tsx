@@ -411,15 +411,25 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
                     <SelectValue placeholder="Selecione a empresa" />
                   </SelectTrigger>
                   <SelectContent 
-                    className="z-[9999] bg-popover"
+                    className="z-[9999] bg-popover border border-border shadow-lg"
                     position="popper"
                     sideOffset={4}
                   >
-                    {empresasShopee.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.nome} {emp.nickname && `(${emp.nickname})`}
-                      </SelectItem>
-                    ))}
+                    {loadingEmpresas ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        Carregando empresas...
+                      </div>
+                    ) : empresasShopee.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        Nenhuma empresa cadastrada. Clique em "+ Nova" para criar.
+                      </div>
+                    ) : (
+                      empresasShopee.map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.nome} {emp.nickname && `(${emp.nickname})`}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <Button
@@ -514,7 +524,7 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
 
       {/* Modal para criar nova empresa */}
       <Dialog open={showEmpresasModal} onOpenChange={setShowEmpresasModal}>
-        <DialogContent>
+        <DialogContent className="z-[10000]">
           <DialogHeader>
             <DialogTitle>Nova Empresa Shopee</DialogTitle>
             <DialogDescription>
