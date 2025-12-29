@@ -22,6 +22,8 @@ export interface PedidosFiltersState {
   dataInicio?: Date;
   dataFim?: Date;
   contasML?: string[];
+  // 🛍️ NOVO: Filtro de Marketplace (ML vs Shopee)
+  marketplace?: 'all' | 'ml' | 'shopee';
   // Status Avançado
   useAdvancedStatus?: boolean;
   advancedStatusFilters?: StatusFilters;
@@ -40,6 +42,7 @@ const FILTER_CONFIG = {
   contasML: { strategy: FilterStrategy.MANUAL },
   dataInicio: { strategy: FilterStrategy.MANUAL },
   dataFim: { strategy: FilterStrategy.MANUAL },
+  marketplace: { strategy: FilterStrategy.MANUAL },
 } as const;
 
 const STORAGE_KEY = 'pedidos_unified_filters';
@@ -309,6 +312,11 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
 
     if (appliedFilters.contasML && appliedFilters.contasML.length > 0) {
       params.contasML = appliedFilters.contasML;
+    }
+
+    // 🛍️ NOVO: Filtro de Marketplace
+    if (appliedFilters.marketplace && appliedFilters.marketplace !== 'all') {
+      params.marketplace = appliedFilters.marketplace;
     }
 
     return params;
