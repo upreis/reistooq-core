@@ -186,7 +186,10 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
           codigo_rastreamento: order.codigo_rastreamento,
           produto_nome: order.produto_nome,
           // Nome do destinatário
-          nome_destinatario: order.comprador_nome
+          nome_destinatario: order.comprador_nome,
+          // 🔄 Campo para indicar atualização recente
+          foi_atualizado: order.foi_atualizado || false,
+          updated_at: order.updated_at
         }
       }));
       

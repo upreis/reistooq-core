@@ -487,8 +487,18 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Tags do ML',
     width: 350
   },
-
-
+  
+  // ====== STATUS ATUALIZAÇÃO (Shopee) ======
+  {
+    key: 'status_atualizacao',
+    label: 'Atualizado',
+    category: 'meta',
+    priority: 'optional',
+    visible: true,
+    default: true,
+    description: 'Indica se o pedido foi atualizado recentemente',
+    width: 100
+  },
 
 ];
 

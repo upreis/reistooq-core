@@ -5398,10 +5398,12 @@ export type Database = {
           codigo_rastreamento: string | null
           comprador_nome: string | null
           comprador_telefone: string | null
+          contador_atualizacoes: number | null
           created_at: string
           custo_envio: number | null
           custo_fixo: number | null
           dados_originais: Json | null
+          dados_versao_anterior: Json | null
           data_baixa_estoque: string | null
           data_entrega: string | null
           data_envio: string | null
@@ -5413,6 +5415,7 @@ export type Database = {
           endereco_cidade: string | null
           endereco_estado: string | null
           endereco_rua: string | null
+          foi_atualizado: boolean | null
           frete: number | null
           id: string
           importacao_id: string | null
@@ -5435,10 +5438,12 @@ export type Database = {
           codigo_rastreamento?: string | null
           comprador_nome?: string | null
           comprador_telefone?: string | null
+          contador_atualizacoes?: number | null
           created_at?: string
           custo_envio?: number | null
           custo_fixo?: number | null
           dados_originais?: Json | null
+          dados_versao_anterior?: Json | null
           data_baixa_estoque?: string | null
           data_entrega?: string | null
           data_envio?: string | null
@@ -5450,6 +5455,7 @@ export type Database = {
           endereco_cidade?: string | null
           endereco_estado?: string | null
           endereco_rua?: string | null
+          foi_atualizado?: boolean | null
           frete?: number | null
           id?: string
           importacao_id?: string | null
@@ -5472,10 +5478,12 @@ export type Database = {
           codigo_rastreamento?: string | null
           comprador_nome?: string | null
           comprador_telefone?: string | null
+          contador_atualizacoes?: number | null
           created_at?: string
           custo_envio?: number | null
           custo_fixo?: number | null
           dados_originais?: Json | null
+          dados_versao_anterior?: Json | null
           data_baixa_estoque?: string | null
           data_entrega?: string | null
           data_envio?: string | null
@@ -5487,6 +5495,7 @@ export type Database = {
           endereco_cidade?: string | null
           endereco_estado?: string | null
           endereco_rua?: string | null
+          foi_atualizado?: boolean | null
           frete?: number | null
           id?: string
           importacao_id?: string | null

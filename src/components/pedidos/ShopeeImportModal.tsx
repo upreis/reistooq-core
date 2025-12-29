@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 interface ImportResult {
   total: number;
   novos: number;
-  duplicados: number;
+  atualizados: number;
   erros: number;
   detalhesErros: Array<{ linha: number; erro: string }>;
 }
@@ -208,7 +208,7 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
       if (impError) throw impError;
 
       let novos = 0;
-      let duplicados = 0;
+      let atualizados = 0;
       let erros = 0;
       const detalhesErros: Array<{ linha: number; erro: string }> = [];
 
@@ -265,32 +265,81 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
 
       const pedidosValidos = pedidosPayload.filter(Boolean) as Array<NonNullable<(typeof pedidosPayload)[number]>>;
 
-      // Upsert em lotes
-      const CHUNK_SIZE = 250;
-      const chunks: typeof pedidosValidos[] = [];
-      for (let i = 0; i < pedidosValidos.length; i += CHUNK_SIZE) {
-        chunks.push(pedidosValidos.slice(i, i + CHUNK_SIZE));
-      }
+      // 1️⃣ Buscar pedidos existentes para comparar
+      const orderIds = pedidosValidos.map(p => p.order_id);
+      const { data: existingOrders } = await supabase
+        .from("pedidos_shopee")
+        .select("id, order_id, sku, data_pedido, order_status, preco_total, codigo_rastreamento")
+        .eq("organization_id", organizationId)
+        .in("order_id", orderIds);
 
-      for (let c = 0; c < chunks.length; c++) {
-        const chunk = chunks[c];
+      const existingMap = new Map<string, (typeof existingOrders extends (infer T)[] | null ? T : never)>();
+      (existingOrders || []).forEach(o => {
+        existingMap.set(`${o.order_id}|${o.sku || ''}`, o);
+      });
 
-        const { error: upsertError } = await supabase
-          .from("pedidos_shopee")
-          .upsert(chunk, {
-            onConflict: "organization_id,order_id,sku",
-            ignoreDuplicates: true,
-          });
+      // 2️⃣ Separar novos de atualizações
+      const novosPayload: typeof pedidosValidos = [];
+      const atualizarPayload: Array<{ id: string; data: typeof pedidosValidos[0] }> = [];
 
-        if (upsertError) {
-          detalhesErros.push({ linha: 0, erro: `Erro no lote ${c + 1}: ${upsertError.message}` });
-          erros += chunk.length;
+      for (const pedido of pedidosValidos) {
+        const key = `${pedido.order_id}|${pedido.sku || ''}`;
+        const existing = existingMap.get(key);
+        
+        if (existing) {
+          // Verificar se houve mudança em campos importantes
+          const mudou = (
+            existing.data_pedido !== pedido.data_pedido ||
+            existing.order_status !== pedido.order_status ||
+            existing.preco_total !== pedido.preco_total ||
+            existing.codigo_rastreamento !== pedido.codigo_rastreamento
+          );
+          
+          if (mudou) {
+            atualizarPayload.push({ id: existing.id, data: pedido });
+          }
         } else {
-          novos += chunk.length;
+          novosPayload.push(pedido);
         }
-
-        setProgress(Math.round(((c + 1) / chunks.length) * 100));
       }
+
+      // 3️⃣ Inserir novos pedidos
+      if (novosPayload.length > 0) {
+        const CHUNK_SIZE = 250;
+        for (let i = 0; i < novosPayload.length; i += CHUNK_SIZE) {
+          const chunk = novosPayload.slice(i, i + CHUNK_SIZE);
+          const { error: insertError } = await supabase
+            .from("pedidos_shopee")
+            .insert(chunk);
+
+          if (insertError) {
+            detalhesErros.push({ linha: 0, erro: `Erro ao inserir novos: ${insertError.message}` });
+            erros += chunk.length;
+          } else {
+            novos += chunk.length;
+          }
+        }
+      }
+
+      // 4️⃣ Atualizar pedidos existentes
+      for (const { id, data } of atualizarPayload) {
+        const { error: updateError } = await supabase
+          .from("pedidos_shopee")
+          .update({
+            ...data,
+            foi_atualizado: true,
+          })
+          .eq("id", id);
+
+        if (updateError) {
+          detalhesErros.push({ linha: 0, erro: `Erro ao atualizar ${data.order_id}: ${updateError.message}` });
+          erros++;
+        } else {
+          atualizados++;
+        }
+      }
+
+      setProgress(100);
 
       // Atualizar registro de importação
       await supabase
@@ -300,7 +349,7 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
           linhas_processadas: dataRows.length,
           linhas_erro: erros,
           pedidos_novos: novos,
-          pedidos_duplicados: duplicados,
+          pedidos_duplicados: atualizados,
           detalhes_erros: detalhesErros.length > 0 ? detalhesErros : null,
         })
         .eq("id", importacao.id);
@@ -308,14 +357,14 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
       setResult({
         total: dataRows.length,
         novos,
-        duplicados,
+        atualizados,
         erros,
         detalhesErros,
       });
 
       toast({
         title: "Importação concluída",
-        description: `${novos} pedidos importados.`,
+        description: `${novos} novos, ${atualizados} atualizados.`,
       });
 
       onImportComplete?.();
@@ -494,11 +543,16 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-4 text-sm">
+                  <div className="flex flex-wrap gap-2 text-sm">
                     <Badge variant="secondary">{result.total} total</Badge>
                     <Badge variant="default" className="bg-green-500">
                       {result.novos} novos
                     </Badge>
+                    {result.atualizados > 0 && (
+                      <Badge variant="default" className="bg-blue-500">
+                        {result.atualizados} atualizados
+                      </Badge>
+                    )}
                     {result.erros > 0 && (
                       <Badge variant="destructive">{result.erros} erros</Badge>
                     )}
