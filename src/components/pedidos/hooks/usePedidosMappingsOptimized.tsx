@@ -144,14 +144,29 @@ export function usePedidosMappingsOptimized({
                 skuParaVerificar = order.order_items[0]?.item?.seller_sku;
               }
               
-              // Segundo: tentar unified.order_items
+              // Segundo: tentar unified.order_items (Mercado Livre via unified)
               if (!skuParaVerificar && order?.unified?.order_items && Array.isArray(order.unified.order_items)) {
                 skuParaVerificar = order.unified.order_items[0]?.item?.seller_sku;
               }
               
-              // Terceiro: tentar campos diretos
+              // 🛍️ Terceiro: tentar unified.items (Shopee via banco de dados)
+              if (!skuParaVerificar && order?.unified?.items && Array.isArray(order.unified.items)) {
+                skuParaVerificar = order.unified.items[0]?.sku;
+              }
+              
+              // Quarto: tentar campos diretos do unified (Shopee)
+              if (!skuParaVerificar && order?.unified?.sku) {
+                skuParaVerificar = order.unified.sku;
+              }
+              
+              // Quinto: tentar raw.sku (Shopee direto do banco)
+              if (!skuParaVerificar && order?.raw?.sku) {
+                skuParaVerificar = order.raw.sku;
+              }
+              
+              // Sexto: tentar campos diretos do pedido
               if (!skuParaVerificar) {
-                skuParaVerificar = order?.sku_kit || order?.sku || order?.seller_sku || order?.unified?.sku;
+                skuParaVerificar = order?.sku_kit || order?.sku || order?.seller_sku;
               }
             } catch (extractError) {
               console.warn(`⚠️ [Mapping] Erro ao extrair SKU do pedido ${idUnico}:`, extractError);
