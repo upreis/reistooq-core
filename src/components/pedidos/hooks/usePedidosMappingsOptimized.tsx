@@ -291,14 +291,20 @@ export function usePedidosMappingsOptimized({
   }, []);
 
   // ✅ AÇÃO: Disparar processamento manual (processamento direto)
-  const triggerProcessing = useCallback((orders: any[]) => {
-    if (orders && orders.length > 0) {
-      if (isDev) console.log('🚀 [MappingsOptimized] Iniciando processamento para', orders.length, 'pedidos');
-      processOrdersMappings(orders);
-    }
-  }, [processOrdersMappings]);
+  // Evita spam no console: só loga quando o hash muda.
+  const lastLoggedHash = useRef<string>('');
 
-  // ✅ GETTER: Obter mapeamento específico
+  const triggerProcessing = useCallback((orders: any[]) => {
+    if (!orders || orders.length === 0) return;
+
+    const nextHash = generateOrdersHash(orders);
+    if (isDev && nextHash && nextHash !== lastLoggedHash.current) {
+      lastLoggedHash.current = nextHash;
+      console.log('🚀 [MappingsOptimized] Iniciando processamento para', orders.length, 'pedidos');
+    }
+
+    processOrdersMappings(orders);
+  }, [processOrdersMappings, generateOrdersHash]);
   const getMappingForOrder = useCallback((orderId: string): MapeamentoVerificacao | undefined => {
     return mappingData.get(orderId);
   }, [mappingData]);
