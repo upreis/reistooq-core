@@ -86,6 +86,7 @@ import { ConfiguracaoLocaisModal } from './ConfiguracaoLocaisModal';
 import { useLocalEstoqueEnriquecimento } from '@/hooks/useLocalEstoqueEnriquecimento';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ShopeeImportModal } from './ShopeeImportModal';
+import { ShopeeUploadManager } from './ShopeeUploadManager';
 import { useShopeeOrdersFromDB } from '@/hooks/useShopeeOrdersFromDB';
 
 import { FEATURES } from '@/config/features';
@@ -840,15 +841,18 @@ function SimplePedidosPage({ className }: Props) {
             
             {/* Botão Importar Excel - Aparece quando Shopee selecionado */}
             {filtersManager.filters.marketplace === 'shopee' && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setShowShopeeImportModal(true)}
-                className="h-7 px-3 text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white ml-2"
-              >
-                <Upload className="h-3 w-3" />
-                Importar Excel
-              </Button>
+              <div className="flex items-center gap-1.5 ml-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowShopeeImportModal(true)}
+                  className="h-7 px-3 text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  <Upload className="h-3 w-3" />
+                  Importar Excel
+                </Button>
+                <ShopeeUploadManager onDeleteComplete={() => shopeeOrdersDB.refetch()} />
+              </div>
             )}
           </div>
 
