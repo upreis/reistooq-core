@@ -38,6 +38,7 @@ export function ConfiguracaoLocaisModal({
   const [locaisVenda, setLocaisVenda] = useState<LocalVenda[]>([]);
   const [mapeamentos, setMapeamentos] = useState<MapeamentoLocalEstoque[]>([]);
   const [tiposLogisticosDinamicos, setTiposLogisticosDinamicos] = useState<string[]>([]);
+  const [empresasShopee, setEmpresasShopee] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
   const [empresaSelectorOpen, setEmpresaSelectorOpen] = useState(false);
@@ -78,23 +79,30 @@ export function ConfiguracaoLocaisModal({
   const carregarDados = async () => {
     try {
       setLoading(true);
-      const [locaisData, mapeamentosData, locaisVendaData, tiposLogisticosData] = await Promise.all([
+      const [locaisData, mapeamentosData, locaisVendaData, tiposLogisticosData, empresasShopeeData] = await Promise.all([
         listarLocaisEstoque(),
         listarMapeamentosLocais(),
         listarLocaisVenda(),
-        // Buscar tipos logísticos únicos dos pedidos reais
+        // Buscar tipos logísticos únicos dos pedidos Shopee
         supabase
-          .from('historico_vendas')
+          .from('pedidos_shopee')
           .select('tipo_logistico')
           .not('tipo_logistico', 'is', null)
           .not('tipo_logistico', 'eq', '')
+          .limit(1000),
+        // Buscar empresas únicas dos pedidos Shopee
+        supabase
+          .from('pedidos_shopee')
+          .select('empresa')
+          .not('empresa', 'is', null)
+          .not('empresa', 'eq', '')
           .limit(1000)
       ]);
       setLocais(locaisData);
       setMapeamentos(mapeamentosData);
       setLocaisVenda(locaisVendaData);
       
-      // Extrair tipos únicos dos pedidos
+      // Extrair tipos únicos dos pedidos Shopee
       if (tiposLogisticosData.data) {
         const tiposUnicos = [...new Set(
           tiposLogisticosData.data
@@ -102,6 +110,16 @@ export function ConfiguracaoLocaisModal({
             .filter((t): t is string => !!t && t.trim() !== '')
         )].sort();
         setTiposLogisticosDinamicos(tiposUnicos);
+      }
+      
+      // Extrair empresas únicas dos pedidos Shopee
+      if (empresasShopeeData.data) {
+        const empresasUnicas = [...new Set(
+          empresasShopeeData.data
+            .map(row => row.empresa)
+            .filter((e): e is string => !!e && e.trim() !== '')
+        )].sort();
+        setEmpresasShopee(empresasUnicas);
       }
     } catch (error: any) {
       toast.error('Erro ao carregar dados: ' + error.message);
@@ -237,21 +255,44 @@ export function ConfiguracaoLocaisModal({
                     <SelectValue placeholder="Selecione a empresa..." />
                   </SelectTrigger>
                   <SelectContent className="bg-background border border-border z-[9999]">
-                    {contasML.length === 0 ? (
+                    {contasML.length === 0 && empresasShopee.length === 0 ? (
                       <div className="p-2 text-sm text-muted-foreground">
                         Nenhuma conta disponível
                       </div>
                     ) : (
-                      contasML.map((conta) => (
-                        <SelectItem key={conta.id} value={conta.nickname || conta.name}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{conta.nickname || conta.name}</span>
-                            {conta.nickname && conta.name && conta.nickname !== conta.name && (
-                              <span className="text-xs text-muted-foreground">{conta.name}</span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))
+                      <>
+                        {/* Contas Mercado Livre */}
+                        {contasML.length > 0 && (
+                          <>
+                            <div className="px-2 py-1 text-xs text-muted-foreground font-semibold bg-muted/50">
+                              🟡 Mercado Livre
+                            </div>
+                            {contasML.map((conta) => (
+                              <SelectItem key={`ml-${conta.id}`} value={conta.nickname || conta.name}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{conta.nickname || conta.name}</span>
+                                  {conta.nickname && conta.name && conta.nickname !== conta.name && (
+                                    <span className="text-xs text-muted-foreground">{conta.name}</span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {/* Empresas Shopee */}
+                        {empresasShopee.length > 0 && (
+                          <>
+                            <div className="px-2 py-1 text-xs text-muted-foreground font-semibold bg-muted/50 mt-1">
+                              🟠 Shopee
+                            </div>
+                            {empresasShopee.map((empresa) => (
+                              <SelectItem key={`shopee-${empresa}`} value={empresa}>
+                                <span className="font-medium">{empresa}</span>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </>
                     )}
                   </SelectContent>
                 </Select>
