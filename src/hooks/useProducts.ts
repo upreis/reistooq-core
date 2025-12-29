@@ -182,9 +182,9 @@ export const useProducts = () => {
   }, []);
 
   const createProduct = useCallback(async (product: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'> & Partial<Product>) => {
-    
     const orgId = await getCurrentOrgId();
-    
+
+    console.log('🆕 [createProduct] product recebido:', { orgId, product });
 
     // Verificar se já existe um produto com o mesmo SKU na organização (ativo ou inativo)
     const { data: existingProduct } = await supabase
@@ -243,6 +243,8 @@ export const useProducts = () => {
       organization_id: orgId,
       unidade_medida_id: filteredProduct.unidade_medida_id || unidadePadrao?.id || null,
     };
+
+    console.log('📤 [createProduct] payload insert:', payload);
 
     
     const { data, error } = await supabase
