@@ -81,7 +81,12 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
             remapped.add(mappedKey);
           }
         });
-        
+
+        // ✅ GARANTIA: colunas essenciais da Shopee devem existir (mesmo com cache antigo)
+        ['skus_produtos', 'titulo_anuncio', 'marketplace_fee'].forEach((k) => {
+          if (validColumnKeys.has(k) && !removedColumns.has(k)) remapped.add(k);
+        });
+
         return {
           visibleColumns: remapped,
           columnOrder: COLUMN_DEFINITIONS.map(col => col.key),
@@ -117,6 +122,11 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
       if (validColumnKeys.has(mappedKey) && !removedColumns.has(mappedKey)) {
         remapped.add(mappedKey);
       }
+    });
+
+    // ✅ GARANTIA: colunas essenciais da Shopee devem existir (mesmo com cache antigo)
+    ['skus_produtos', 'titulo_anuncio', 'marketplace_fee'].forEach((k) => {
+      if (validColumnKeys.has(k) && !removedColumns.has(k)) remapped.add(k);
     });
     
     // Filtrar ordem das colunas também
