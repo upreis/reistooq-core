@@ -3,7 +3,7 @@
  * Diferente de fetchShopeeOrders que usa Edge Function para API tempo real
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 
@@ -76,7 +76,7 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
         pageSize
       });
       
-      // Query base
+      // Query base - buscar TODOS os pedidos sem filtro de data inicialmente para debug
       let query = supabase
         .from('pedidos_shopee')
         .select('*', { count: 'exact' })
@@ -88,7 +88,7 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
         query = query.or(`order_id.ilike.%${search}%,comprador_nome.ilike.%${search}%,sku.ilike.%${search}%,produto_nome.ilike.%${search}%`);
       }
       
-      // Filtro de data
+      // Filtro de data - usar filtro mais flexível
       if (dataInicio) {
         const dataInicioStr = dataInicio.toISOString().split('T')[0];
         query = query.gte('data_pedido', dataInicioStr);
@@ -168,6 +168,13 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
       setLoading(false);
     }
   }, [enabled, organizationId, search, dataInicio, dataFim, page, pageSize]);
+
+  // Buscar automaticamente quando habilitado e com organization_id
+  useEffect(() => {
+    if (enabled && organizationId) {
+      fetchOrders();
+    }
+  }, [enabled, organizationId, fetchOrders]);
 
   return {
     orders,
