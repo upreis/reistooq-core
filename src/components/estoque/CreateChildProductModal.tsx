@@ -77,7 +77,7 @@ interface VariationForm {
   package: string;
   unit: string;
   // Tipo de item
-  tipo_item: 'produto' | 'insumo';
+  tipo_item: 'produto' | 'insumo' | '';
   tipo_insumo: string;
   tipo_insumo_outro: string;
 }
@@ -141,7 +141,7 @@ export function CreateChildProductModal({
     imagem_fornecedor: '',
     package: '',
     unit: '',
-    tipo_item: 'produto',
+    tipo_item: '',
     tipo_insumo: '',
     tipo_insumo_outro: '',
   });
@@ -251,6 +251,16 @@ export function CreateChildProductModal({
       toast({
         title: "Campos incompletos",
         description: "Preencha o SKU e Nome de todos os produtos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const missingTipoItem = variations.filter(v => !v.tipo_item);
+    if (missingTipoItem.length > 0) {
+      toast({
+        title: "Tipo de Item obrigatório",
+        description: "Selecione o Tipo de Item (Produto ou Insumo) para todos os produtos.",
         variant: "destructive",
       });
       return;
@@ -510,7 +520,7 @@ export function CreateChildProductModal({
                   <div className="space-y-2">
                     <Label>Tipo de Item *</Label>
                     <Select 
-                      value={variation.tipo_item} 
+                      value={variation.tipo_item || undefined}
                       onValueChange={(value: 'produto' | 'insumo') => {
                         handleVariationChange(index, 'tipo_item', value);
                         if (value === 'produto') {
@@ -519,7 +529,7 @@ export function CreateChildProductModal({
                         }
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={!variation.tipo_item ? 'border-destructive' : ''}>
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent className="bg-background z-[9999]">
