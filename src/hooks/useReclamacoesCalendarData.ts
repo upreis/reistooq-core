@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, subDays } from 'date-fns';
 import { calculateAnalysisDeadline } from '@/features/devolucao2025/utils/businessDays';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import debounce from 'lodash.debounce';
 
 interface ReclamacaoCalendarDay {
   date: string;
@@ -18,17 +19,31 @@ interface ReclamacaoCalendarDay {
   }>;
 }
 
+// Cache compartilhado entre instâncias do hook
+let cachedData: ReclamacaoCalendarDay[] | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos
+
 /**
  * Hook para buscar dados de reclamações do calendário
  * ✅ COMBO 2.1: Lê de ml_claims (mesma fonte que /reclamacoes)
+ * ✅ OTIMIZADO: Cache local + debounce de realtime
  */
 export const useReclamacoesCalendarData = () => {
-  const [data, setData] = useState<ReclamacaoCalendarDay[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<ReclamacaoCalendarDay[]>(cachedData || []);
+  const [loading, setLoading] = useState(!cachedData);
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const isMountedRef = useRef(true);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (skipCache = false) => {
+    // Verificar cache válido
+    if (!skipCache && cachedData && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
+      setData(cachedData);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
@@ -41,23 +56,22 @@ export const useReclamacoesCalendarData = () => {
         .from('ml_claims')
         .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed, buyer_nickname')
         .gte('date_created', sixtyDaysAgo)
-        .order('date_created', { ascending: false });
+        .order('date_created', { ascending: false })
+        .limit(500); // Limitar para performance
 
       if (fetchError) {
         throw fetchError;
       }
 
+      if (!isMountedRef.current) return;
+
       if (!claims || claims.length === 0) {
-        console.log('📊 Sem reclamações encontradas em ml_claims (últimos 60 dias)');
+        cachedData = [];
+        cacheTimestamp = Date.now();
         setData([]);
         setLoading(false);
         return;
       }
-
-      console.log('📊 🔄 Carregando dados de reclamações do ml_claims para calendário (COMBO 2.1):', {
-        totalClaims: claims.length,
-        periodo: '60 dias'
-      });
 
       // Agrupar reclamações por data (criação e prazo de análise)
       const groupedByDate = claims.reduce((acc: Record<string, ReclamacaoCalendarDay>, claim: any) => {
@@ -125,61 +139,69 @@ export const useReclamacoesCalendarData = () => {
       }, {});
 
       const finalData = Object.values(groupedByDate) as ReclamacaoCalendarDay[];
-      console.log('✅ Dados do calendário de reclamações processados (ml_claims):', {
-        total: finalData.length,
-        criadas: finalData.filter((d: ReclamacaoCalendarDay) => d.claims?.some(r => r.dateType === 'created')).length,
-        prazos: finalData.filter((d: ReclamacaoCalendarDay) => d.claims?.some(r => r.dateType === 'deadline')).length
-      });
-      setData(finalData);
+      
+      // Atualizar cache
+      cachedData = finalData;
+      cacheTimestamp = Date.now();
+      
+      if (isMountedRef.current) {
+        setData(finalData);
+      }
     } catch (err: any) {
       console.error('❌ Erro ao processar dados do calendário de reclamações:', err);
-      setError(err.message || 'Erro ao carregar dados');
-      setData([]);
+      if (isMountedRef.current) {
+        setError(err.message || 'Erro ao carregar dados');
+        setData([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
+  // Debounce para realtime - evita múltiplas requisições
+  const debouncedFetch = useCallback(
+    debounce(() => fetchData(true), 5000), // 5s debounce para realtime
+    [fetchData]
+  );
+
   useEffect(() => {
+    isMountedRef.current = true;
+    
     // Buscar dados iniciais
     fetchData();
 
-    // Configurar Supabase Realtime para atualizações automáticas
-    console.log('🔄 Ativando Realtime para calendário de reclamações (ml_claims)...');
-    
+    // Configurar Supabase Realtime para atualizações automáticas (com debounce)
     const channel = supabase
-      .channel('ml-claims-reclamacoes-calendar-realtime')
+      .channel('ml-claims-calendar-reclamacoes')
       .on(
         'postgres_changes',
         {
-          event: '*', // INSERT, UPDATE, DELETE
+          event: '*',
           schema: 'public',
           table: 'ml_claims'
         },
-        (payload) => {
-          console.log('🔄 Mudança detectada em ml_claims (reclamações):', payload.eventType);
-          fetchData(); // Recarregar dados automaticamente
+        () => {
+          debouncedFetch(); // Usar debounce para evitar floods
         }
       )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Realtime conectado para calendário de reclamações (ml_claims)');
-        }
-      });
+      .subscribe();
 
     channelRef.current = channel;
 
     // Cleanup
     return () => {
+      isMountedRef.current = false;
+      debouncedFetch.cancel();
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
-        console.log('🔴 Realtime desconectado para calendário de reclamações');
       }
     };
-  }, [fetchData]);
+  }, [fetchData, debouncedFetch]);
 
   const refresh = useCallback(() => {
-    fetchData();
+    fetchData(true); // Force skip cache
   }, [fetchData]);
 
   return { data, loading, error, refresh };
