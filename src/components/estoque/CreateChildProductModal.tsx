@@ -147,7 +147,8 @@ export function CreateChildProductModal({
     imagem_fornecedor: '',
     package: '',
     unit: '',
-    tipo_item: '',
+    // Tipo de item (default para evitar Select travado em placeholder)
+    tipo_item: 'produto',
     tipo_insumo: '',
     tipo_insumo_outro: '',
   });
@@ -262,7 +263,9 @@ export function CreateChildProductModal({
       return;
     }
 
-    const missingTipoItem = variations.filter(v => !v.tipo_item);
+    // Tipo de item agora inicia como "Produto" por padrão, então este bloqueio raramente dispara.
+    // Mantido por segurança caso alguma variação antiga venha sem valor.
+    const missingTipoItem = variations.filter((v) => !v.tipo_item);
     if (missingTipoItem.length > 0) {
       toast({
         title: "Tipo de Item obrigatório",
@@ -540,22 +543,20 @@ export function CreateChildProductModal({
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    <Select 
-                      value={variation.tipo_item || "__placeholder__"}
-                      onValueChange={(value: string) => {
-                        if (value === "__placeholder__") return;
-                        handleVariationChange(index, 'tipo_item', value as 'produto' | 'insumo');
+                    <Select
+                      value={variation.tipo_item}
+                      onValueChange={(value: 'produto' | 'insumo') => {
+                        handleVariationChange(index, 'tipo_item', value);
                         if (value === 'produto') {
                           handleVariationChange(index, 'tipo_insumo', '');
                           handleVariationChange(index, 'tipo_insumo_outro', '');
                         }
                       }}
                     >
-                      <SelectTrigger className={!variation.tipo_item ? 'border-destructive' : ''}>
-                        <SelectValue placeholder="Selecione..." />
+                      <SelectTrigger>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-background z-[9999]">
-                        <SelectItem value="__placeholder__" disabled className="hidden">Selecione...</SelectItem>
                         <SelectItem value="produto">Produto</SelectItem>
                         <SelectItem value="insumo">Insumo</SelectItem>
                       </SelectContent>
