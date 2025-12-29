@@ -454,63 +454,58 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                           {/* SKU do Componente */}
                           <div className="space-y-2">
                             <Label className="text-sm font-medium">SKU do Componente</Label>
-                            <div className="relative">
-                              <Input
-                                list={`sku-list-${index}`}
-                                value={composicao.sku_insumo}
-                                onChange={(e) => {
-                                  atualizarComposicao(index, 'sku_insumo', e.target.value);
-                                  // Auto-completar nome se encontrar insumo
-                                  const insumo = insumos.find(i => 
-                                    i.sku.toLowerCase() === e.target.value.toLowerCase()
-                                  );
-                                  if (insumo) {
-                                    atualizarComposicao(index, 'nome_insumo', insumo.nome);
-                                    atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
-                                  }
-                                }}
-                                placeholder="Digite ou selecione um SKU..."
-                                className="w-full"
-                              />
-                              <datalist id={`sku-list-${index}`}>
+                            <Select
+                              value={composicao.sku_insumo}
+                              onValueChange={(value) => {
+                                atualizarComposicao(index, 'sku_insumo', value);
+                                // Auto-completar nome se encontrar insumo
+                                const insumo = insumos.find(i => i.sku === value);
+                                if (insumo) {
+                                  atualizarComposicao(index, 'nome_insumo', insumo.nome);
+                                  atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione um SKU..." />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
                                 {insumos.map((insumo) => (
-                                  <option key={insumo.sku} value={insumo.sku}>
-                                    {insumo.nome}
-                                  </option>
+                                  <SelectItem key={insumo.sku} value={insumo.sku}>
+                                    <span className="font-mono">{insumo.sku}</span>
+                                    <span className="text-muted-foreground ml-2">- {insumo.nome}</span>
+                                  </SelectItem>
                                 ))}
-                              </datalist>
-                            </div>
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           {/* Nome do Componente */}
                           <div className="space-y-2">
                             <Label className="text-sm font-medium">Nome do Componente</Label>
-                            <div className="relative">
-                              <Input
-                                list={`nome-list-${index}`}
-                                value={composicao.nome_insumo}
-                                onChange={(e) => {
-                                  atualizarComposicao(index, 'nome_insumo', e.target.value);
-                                  // Auto-completar SKU se encontrar insumo
-                                  const insumo = insumos.find(i => 
-                                    i.nome.toLowerCase() === e.target.value.toLowerCase()
-                                  );
-                                  if (insumo) {
-                                    atualizarComposicao(index, 'sku_insumo', insumo.sku);
-                                    atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
-                                  }
-                                }}
-                                placeholder="Digite ou selecione um nome..."
-                                className="w-full"
-                              />
-                              <datalist id={`nome-list-${index}`}>
+                            <Select
+                              value={composicao.sku_insumo}
+                              onValueChange={(value) => {
+                                const insumo = insumos.find(i => i.sku === value);
+                                if (insumo) {
+                                  atualizarComposicao(index, 'sku_insumo', insumo.sku);
+                                  atualizarComposicao(index, 'nome_insumo', insumo.nome);
+                                  atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione um nome..." />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
                                 {insumos.map((insumo) => (
-                                  <option key={insumo.sku} value={insumo.nome}>
-                                    {insumo.sku}
-                                  </option>
+                                  <SelectItem key={insumo.sku} value={insumo.sku}>
+                                    {insumo.nome}
+                                    <span className="text-muted-foreground ml-2">({insumo.sku})</span>
+                                  </SelectItem>
                                 ))}
-                              </datalist>
-                            </div>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
 
