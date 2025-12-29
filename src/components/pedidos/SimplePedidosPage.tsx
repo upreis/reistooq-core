@@ -86,6 +86,7 @@ import { ConfiguracaoLocaisModal } from './ConfiguracaoLocaisModal';
 import { useLocalEstoqueEnriquecimento } from '@/hooks/useLocalEstoqueEnriquecimento';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ShopeeImportModal } from './ShopeeImportModal';
+import { useShopeeOrdersFromDB } from '@/hooks/useShopeeOrdersFromDB';
 
 import { FEATURES } from '@/config/features';
 
@@ -304,6 +305,25 @@ function SimplePedidosPage({ className }: Props) {
   // 🛍️ Estado do modal de importação Shopee
   const [showShopeeImportModal, setShowShopeeImportModal] = useState(false);
 
+  // 🛍️ Hook para buscar pedidos Shopee do banco (Excel importado)
+  const isShopeeMarketplace = filtersManager.filters.marketplace === 'shopee';
+  const shopeeOrdersDB = useShopeeOrdersFromDB({
+    enabled: isShopeeMarketplace,
+    search: filtersManager.appliedFilters.search,
+    dataInicio: filtersManager.appliedFilters.dataInicio,
+    dataFim: filtersManager.appliedFilters.dataFim,
+    page: state.currentPage,
+    pageSize: state.pageSize
+  });
+
+  // 🔄 Refetch Shopee quando filtros mudam
+  useEffect(() => {
+    if (isShopeeMarketplace) {
+      console.log('🛍️ [Shopee] Buscando pedidos do banco...');
+      shopeeOrdersDB.refetch();
+    }
+  }, [isShopeeMarketplace, filtersManager.appliedFilters, state.currentPage]);
+
   // 🧠 P3.2: Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE (debounce aumentado)
   const {
     mappingData,
@@ -346,10 +366,15 @@ function SimplePedidosPage({ className }: Props) {
   // 🔧 FASE 4.1.2: Função movida para usePedidosHelpers (linha removida)
   
   // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
-  const orders = rowsEnriquecidos;
-  const total = state.total;
-  const loading = state.loading || loadingLocais;
-  const error = state.error;
+  // 🛍️ SHOPEE: Usar dados do banco quando marketplace = shopee
+  const orders = isShopeeMarketplace 
+    ? shopeeOrdersDB.orders.map(o => o.unified) 
+    : rowsEnriquecidos;
+  const total = isShopeeMarketplace ? shopeeOrdersDB.total : state.total;
+  const loading = isShopeeMarketplace 
+    ? shopeeOrdersDB.loading 
+    : (state.loading || loadingLocais);
+  const error = isShopeeMarketplace ? shopeeOrdersDB.error : state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
   
@@ -1113,8 +1138,11 @@ function SimplePedidosPage({ className }: Props) {
         open={showShopeeImportModal}
         onOpenChange={setShowShopeeImportModal}
         onImportComplete={() => {
-          // Recarregar pedidos após importação
-          actions.refetch();
+          // 🛍️ Recarregar pedidos Shopee após importação
+          console.log('🛍️ [Import] Importação concluída, recarregando pedidos Shopee...');
+          shopeeOrdersDB.refetch();
+          // Fechar modal após sucesso
+          setShowShopeeImportModal(false);
         }}
       />
 
