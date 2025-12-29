@@ -346,10 +346,13 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                   return <span>{formatMoney(get(row.unified, 'valor_liquido_vendedor') || valorLiquido || 0)}</span>;
                 }
               
-              // SKU do produto - Shopee: campo sku direto do banco
-              case 'skus_produtos':
-                const skuValue = get(row.unified, 'sku') ?? get(row.raw, 'sku') ?? null;
+              // SKU do produto (Shopee/Excel): SEM fallback, vem de unified.sku
+              case 'sku':
+              case 'skus_produtos': {
+                const skuValue = get(row.unified, 'sku') ?? null;
                 return <TruncatedCell content={skuValue} maxLength={40} />;
+              }
+              
               
               case 'local_estoque':
                 const localEstoque = get(row.unified, 'local_estoque') || get(row.unified, 'local_estoque_nome');
