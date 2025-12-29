@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { format, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay, parse, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 interface SimplifiedPeriodFilterProps {
   startDate?: Date;
@@ -42,6 +43,54 @@ export function SimplifiedPeriodFilter({
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const [intervalStart, setIntervalStart] = useState<Date>(new Date());
   const [intervalEnd, setIntervalEnd] = useState<Date>(new Date());
+  
+  // Estados para inputs de texto editáveis
+  const [intervalStartText, setIntervalStartText] = useState<string>(format(new Date(), 'dd/MM/yyyy'));
+  const [intervalEndText, setIntervalEndText] = useState<string>(format(new Date(), 'dd/MM/yyyy'));
+  
+  // Sincronizar texto quando as datas mudam
+  useEffect(() => {
+    setIntervalStartText(format(intervalStart, 'dd/MM/yyyy'));
+  }, [intervalStart]);
+  
+  useEffect(() => {
+    setIntervalEndText(format(intervalEnd, 'dd/MM/yyyy'));
+  }, [intervalEnd]);
+  
+  // Parser para data digitada no formato dd/MM/yyyy
+  const parseDateInput = (value: string): Date | null => {
+    const cleanValue = value.replace(/\D/g, '');
+    if (cleanValue.length === 8) {
+      const day = cleanValue.substring(0, 2);
+      const month = cleanValue.substring(2, 4);
+      const year = cleanValue.substring(4, 8);
+      const parsed = parse(`${day}/${month}/${year}`, 'dd/MM/yyyy', new Date());
+      if (isValid(parsed)) {
+        return parsed;
+      }
+    }
+    return null;
+  };
+  
+  // Handler para blur do input de data início
+  const handleIntervalStartBlur = () => {
+    const parsed = parseDateInput(intervalStartText);
+    if (parsed) {
+      setIntervalStart(parsed);
+    } else {
+      setIntervalStartText(format(intervalStart, 'dd/MM/yyyy'));
+    }
+  };
+  
+  // Handler para blur do input de data fim
+  const handleIntervalEndBlur = () => {
+    const parsed = parseDateInput(intervalEndText);
+    if (parsed && parsed >= intervalStart) {
+      setIntervalEnd(parsed);
+    } else {
+      setIntervalEndText(format(intervalEnd, 'dd/MM/yyyy'));
+    }
+  };
 
   // Formatar display do período
   const formatPeriodDisplay = useCallback(() => {
@@ -285,11 +334,14 @@ export function SimplifiedPeriodFilter({
                   <label className="text-xs text-muted-foreground mb-2 block">De</label>
                   <Popover>
                     <div className="flex gap-2">
-                      <input
+                      <Input
                         type="text"
-                        value={format(intervalStart, 'dd/MM/yyyy')}
-                        readOnly
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                        value={intervalStartText}
+                        onChange={(e) => setIntervalStartText(e.target.value)}
+                        onBlur={handleIntervalStartBlur}
+                        onKeyDown={(e) => e.key === 'Enter' && handleIntervalStartBlur()}
+                        placeholder="dd/mm/aaaa"
+                        className="h-10"
                       />
                       <PopoverTrigger asChild>
                         <Button variant="outline" size="icon" className="shrink-0">
@@ -312,11 +364,14 @@ export function SimplifiedPeriodFilter({
                   <label className="text-xs text-muted-foreground mb-2 block">Até</label>
                   <Popover>
                     <div className="flex gap-2">
-                      <input
+                      <Input
                         type="text"
-                        value={format(intervalEnd, 'dd/MM/yyyy')}
-                        readOnly
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                        value={intervalEndText}
+                        onChange={(e) => setIntervalEndText(e.target.value)}
+                        onBlur={handleIntervalEndBlur}
+                        onKeyDown={(e) => e.key === 'Enter' && handleIntervalEndBlur()}
+                        placeholder="dd/mm/aaaa"
+                        className="h-10"
                       />
                       <PopoverTrigger asChild>
                         <Button variant="outline" size="icon" className="shrink-0">
