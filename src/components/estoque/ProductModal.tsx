@@ -29,7 +29,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Upload, X, Package as PackageIcon, Ruler, Weight, FileText, Info } from "lucide-react";
+import { Upload, X, Package as PackageIcon, Ruler, Weight, FileText, Info, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
@@ -68,6 +69,8 @@ const productSchema = z.object({
   ncm: z.string().optional(),
   codigo_cest: z.string().optional(),
   origem: z.coerce.number().min(0).max(8).optional(),
+  // Tipo de item
+  tipo_item: z.enum(['produto', 'insumo']).default('produto'),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -167,6 +170,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       ncm: "",
       codigo_cest: "",
       origem: "" as any,
+      tipo_item: 'produto',
     },
   });
 
@@ -199,6 +203,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         ncm: product.ncm || "",
         codigo_cest: product.codigo_cest || "",
         origem: product.origem !== null ? product.origem : "" as any,
+        tipo_item: (product.tipo_item as 'produto' | 'insumo') || 'produto',
       });
       setImagePreview(product.url_imagem || null);
     } else if (!product && open) {
@@ -232,6 +237,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         ncm: "",
         codigo_cest: "",
         origem: "" as any,
+        tipo_item: 'produto',
       });
       setImageFile(null);
       setImagePreview(null);
@@ -397,6 +403,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           altura_cm: data.altura || null,
           comprimento_cm: data.comprimento || null,
           url_imagem: imageUrl,
+          tipo_item: data.tipo_item,
         });
 
         // Se houve ajuste de estoque, registrar na movimentação
@@ -471,6 +478,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           codigo_cest: data.codigo_cest || null,
           origem: data.origem || null,
           sku_pai: null,
+          tipo_item: data.tipo_item,
         });
         
         if (imageFile && newProduct) {
@@ -658,7 +666,46 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                  </div>
                </div>
 
-              {/* Código de Barras */}
+              {/* Tipo de Item */}
+              <FormField
+                control={form.control}
+                name="tipo_item"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Tipo de Item *</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={200}>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex cursor-help">
+                              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs z-[10000]">
+                            <p className="font-medium mb-1">O que é Insumo?</p>
+                            <p className="text-sm text-muted-foreground">
+                              Insumos são materiais usados na embalagem e envio, como: Caixa, Etiqueta, Fita adesiva, Papel bolha, Lacre, Manual, Luvas, etc.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-background z-[9999]">
+                        <SelectItem value="produto">Produto</SelectItem>
+                        <SelectItem value="insumo">Insumo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="codigo_barras"
