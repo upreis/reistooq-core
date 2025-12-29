@@ -85,6 +85,7 @@ import { CadastroComposicaoRapidoModal } from './CadastroComposicaoRapidoModal';
 import { ConfiguracaoLocaisModal } from './ConfiguracaoLocaisModal';
 import { useLocalEstoqueEnriquecimento } from '@/hooks/useLocalEstoqueEnriquecimento';
 import { LoadingIndicator } from './LoadingIndicator';
+import { ShopeeImportModal } from './ShopeeImportModal';
 
 import { FEATURES } from '@/config/features';
 
@@ -299,6 +300,9 @@ function SimplePedidosPage({ className }: Props) {
   
   // 🗺️ Estado do modal de configuração de locais
   const [showLocaisModal, setShowLocaisModal] = useState(false);
+  
+  // 🛍️ Estado do modal de importação Shopee
+  const [showShopeeImportModal, setShowShopeeImportModal] = useState(false);
 
   // 🧠 P3.2: Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE (debounce aumentado)
   const {
@@ -1054,6 +1058,16 @@ function SimplePedidosPage({ className }: Props) {
             // Usar reprocessMappings para limpar cache e forçar atualização
             mappingActions.reprocessMappings(orders);
           }
+        }}
+      />
+
+      {/* 🛍️ Modal de Importação Shopee */}
+      <ShopeeImportModal
+        open={showShopeeImportModal}
+        onOpenChange={setShowShopeeImportModal}
+        onImportComplete={() => {
+          // Recarregar pedidos após importação
+          actions.refetch();
         }}
       />
 
