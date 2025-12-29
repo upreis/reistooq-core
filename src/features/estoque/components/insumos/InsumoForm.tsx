@@ -483,7 +483,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[300px] p-0 z-[9999] bg-popover" align="start">
+                              <PopoverContent className="w-[300px] p-0 z-[9999] bg-popover pointer-events-auto" align="start">
                                 <Command>
                                   <CommandInput placeholder="Buscar SKU..." />
                                   <CommandList>
@@ -493,6 +493,10 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                                         <CommandItem
                                           key={insumo.sku}
                                           value={insumo.sku}
+                                          onMouseDown={(e) => {
+                                            // Mantém foco dentro do popover (evita perder o clique dentro do Dialog)
+                                            e.preventDefault();
+                                          }}
                                           onSelect={() => {
                                             atualizarComposicao(index, 'sku_insumo', insumo.sku);
                                             atualizarComposicao(index, 'nome_insumo', insumo.nome);
@@ -539,7 +543,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[300px] p-0 z-[9999] bg-popover" align="start">
+                              <PopoverContent className="w-[300px] p-0 z-[9999] bg-popover pointer-events-auto" align="start">
                                 <Command>
                                   <CommandInput placeholder="Buscar nome..." />
                                   <CommandList>
@@ -549,6 +553,10 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                                         <CommandItem
                                           key={insumo.sku}
                                           value={insumo.nome}
+                                          onMouseDown={(e) => {
+                                            // Mantém foco dentro do popover (evita perder o clique dentro do Dialog)
+                                            e.preventDefault();
+                                          }}
                                           onSelect={() => {
                                             atualizarComposicao(index, 'sku_insumo', insumo.sku);
                                             atualizarComposicao(index, 'nome_insumo', insumo.nome);
