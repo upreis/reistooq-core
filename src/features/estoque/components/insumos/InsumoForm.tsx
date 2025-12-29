@@ -168,7 +168,8 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
       const [produtosRes, composicoesRes, insumosRes] = await Promise.all([
         supabase.from('produtos').select('sku_interno, nome').eq('ativo', true),
         supabase.from('produtos_composicoes').select('sku_interno, nome').eq('ativo', true),
-        supabase.from('produtos').select('sku_interno, nome, quantidade_atual').eq('ativo', true)
+        // Buscar apenas produtos cadastrados como insumo
+        supabase.from('produtos').select('sku_interno, nome, quantidade_atual').eq('ativo', true).eq('tipo_item', 'insumo')
       ]);
 
       // Combinar produtos
@@ -177,7 +178,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
         ...(composicoesRes.data || []).map(p => ({ sku: p.sku_interno, nome: p.nome }))
       ].sort((a, b) => a.sku.localeCompare(b.sku));
 
-      // Insumos disponíveis
+      // Insumos disponíveis (apenas produtos com tipo_item = 'insumo')
       const todosInsumos = (insumosRes.data || [])
         .map(i => ({ sku: i.sku_interno, nome: i.nome, estoque: i.quantidade_atual }))
         .sort((a, b) => a.sku.localeCompare(b.sku));
