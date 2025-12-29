@@ -121,18 +121,21 @@ export function PedidosFiltersUnified({
   return (
     <div className="flex items-center gap-1.5 flex-nowrap">
       {/* 🛍️ NOVO: Marketplace Filter */}
-      <div className="min-w-[110px] flex-shrink-0">
+      <div className="min-w-[130px] flex-shrink-0">
         <Select
           value={filters.marketplace || 'all'}
           onValueChange={(value) => onFilterChange('marketplace', value as 'all' | 'ml' | 'shopee')}
         >
           <SelectTrigger className="h-7 text-xs">
-            <SelectValue placeholder="Marketplace" />
+            <span className="flex items-center gap-1">
+              <span className="text-muted-foreground text-[10px]">Fonte:</span>
+              <SelectValue placeholder="Marketplace" />
+            </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="ml">Mercado Livre</SelectItem>
-            <SelectItem value="shopee">Shopee</SelectItem>
+            <SelectItem value="all">Todos os Marketplaces</SelectItem>
+            <SelectItem value="ml">🟡 Mercado Livre</SelectItem>
+            <SelectItem value="shopee">🟠 Shopee</SelectItem>
           </SelectContent>
         </Select>
       </div>
