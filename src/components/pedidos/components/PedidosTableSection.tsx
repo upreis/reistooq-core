@@ -222,7 +222,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         </>
                       );
                      case 'numero':
-                       return <span className="font-mono text-sm">{order.numero || order.order_number || order.id?.toString() || '-'}</span>;
+                       return <span className="font-mono">{order.numero || order.order_number || order.id?.toString() || '-'}</span>;
                     case 'empresa':
                       return <span>{order.empresa || order.integration_account_id || order.account_name || order.seller?.nickname || order.seller?.name || '-'}</span>;
                     case 'nome_completo': {
