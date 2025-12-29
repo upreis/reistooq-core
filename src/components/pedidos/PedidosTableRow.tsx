@@ -348,7 +348,28 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               
               // SKU do produto - compatibilidade com Shopee
               case 'skus_produtos':
-                const skuValue = get(row.unified, 'obs') ?? get(row.unified, 'sku') ?? get(row.raw, 'sku') ?? get(row.unified, 'items[0].sku');
+                // 🛍️ Tentar SKU direto, senão extrair do id_unico (formato: SKU-NUMERO_PEDIDO)
+                let skuValue = get(row.unified, 'sku') ?? get(row.raw, 'sku') ?? get(row.unified, 'items[0].sku');
+                
+                // Se não encontrou SKU, extrair do id_unico
+                if (!skuValue) {
+                  const idUnico = get(row.unified, 'id_unico') ?? get(row.raw, 'id_unico');
+                  if (idUnico && typeof idUnico === 'string') {
+                    // id_unico formato: "FL-12-TRAN-1-251230N2XAI55A"
+                    // O número do pedido está no final após o último hífen seguido de números
+                    // Precisamos encontrar onde termina o SKU e começa o número do pedido
+                    const numeroPedido = get(row.unified, 'numero') ?? get(row.raw, 'order_sn') ?? get(row.raw, 'id');
+                    if (numeroPedido) {
+                      const numStr = String(numeroPedido);
+                      // SKU é tudo antes do "-NUMERO_PEDIDO"
+                      const sufixo = `-${numStr}`;
+                      if (idUnico.endsWith(sufixo)) {
+                        skuValue = idUnico.slice(0, -sufixo.length);
+                      }
+                    }
+                  }
+                }
+                
                 return <TruncatedCell content={skuValue} maxLength={40} />;
               
               case 'local_estoque':
