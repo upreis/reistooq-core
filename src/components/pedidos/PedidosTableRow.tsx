@@ -297,17 +297,50 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               case 'status_insumos':
                 return renderStatusInsumos ? renderStatusInsumos(rowId) : <span className="text-xs text-muted-foreground">—</span>;
               
+              // Colunas de endereço - compatibilidade com Shopee
+              case 'endereco_rua':
+                const rua = get(row.unified, 'endereco_rua') ?? get(row.raw, 'endereco_rua') ?? get(row.raw, 'shipping.receiver_address.street_name');
+                return <TruncatedCell content={rua} maxLength={40} />;
+              
+              case 'endereco_bairro':
+                const bairro = get(row.unified, 'endereco_bairro') ?? get(row.raw, 'endereco_bairro') ?? get(row.raw, 'shipping.receiver_address.neighborhood');
+                return <TruncatedCell content={bairro} maxLength={30} />;
+              
+              case 'endereco_cep':
+                const cep = get(row.unified, 'endereco_cep') ?? get(row.raw, 'endereco_cep') ?? get(row.raw, 'shipping.receiver_address.zip_code');
+                return <span className="font-mono text-xs">{cep || '—'}</span>;
+              
+              case 'titulo_anuncio':
+                const titulo = get(row.unified, 'obs') ?? get(row.unified, 'produto_nome') ?? get(row.raw, 'produto_nome');
+                return <TruncatedCell content={titulo} maxLength={50} />;
+              
+              // Taxa Marketplace - compatibilidade com Shopee
+              case 'marketplace_fee':
+                const taxaMkp = get(row.unified, 'taxa_marketplace') ?? get(row.unified, 'marketplace_fee') ?? get(row.raw, 'taxa_marketplace') ?? get(row.raw, 'order_items[0].sale_fee');
+                return <span>{formatMoney(taxaMkp || 0)}</span>;
+              
+              case 'receita_flex':
+                const receitaFlexVal = get(row.unified, 'receita_flex') ?? get(row.raw, 'receita_flex') ?? 0;
+                return <span>{formatMoney(receitaFlexVal || 0)}</span>;
+              
               case 'valor_liquido_vendedor':
                 {
                   // Calcular valor líquido: Valor total - (Frete Pago Cliente + custo envio seller) + Receita Flex (Bônus) - Taxa Marketplace
-                  const valorTotal = get(row.unified, 'valor_total') || get(row.raw, 'total_amount') || 0;
+                  const valorTotal = get(row.unified, 'valor_total') || get(row.unified, 'total_amount') || get(row.raw, 'total_amount') || get(row.raw, 'preco_total') || 0;
                   const fretePagoCliente = get(row.unified, 'frete_pago_cliente') || get(row.raw, 'shipping.shipping_items[0].list_cost') || 0;
-                  const custoEnvioSeller = get(row.unified, 'custo_envio_seller') || get(row.raw, 'shipping.costs.senders[0].cost') || 0;
-                  const receitaFlex = get(row.unified, 'receita_flex') || get(row.raw, 'shipping_cost_components.shipping_method_cost') || 0;
-                  const taxaMarketplace = get(row.raw, 'order_items[0].sale_fee') || get(row.unified, 'marketplace_fee') || get(row.raw, 'fees[0].value') || 0;
-                  const valorLiquido = valorTotal - (fretePagoCliente + custoEnvioSeller) + receitaFlex - taxaMarketplace;
+                  const custoEnvioSeller = get(row.unified, 'custo_envio') || get(row.unified, 'custo_envio_seller') || get(row.raw, 'shipping.costs.senders[0].cost') || get(row.raw, 'custo_envio') || 0;
+                  const receitaFlex = get(row.unified, 'receita_flex') || get(row.raw, 'receita_flex') || get(row.raw, 'shipping_cost_components.shipping_method_cost') || 0;
+                  // Taxa marketplace: Shopee usa taxa_marketplace, ML usa order_items[0].sale_fee
+                  const taxaMarketplace = get(row.unified, 'taxa_marketplace') || get(row.raw, 'taxa_marketplace') || get(row.raw, 'order_items[0].sale_fee') || get(row.unified, 'marketplace_fee') || get(row.raw, 'fees[0].value') || 0;
+                  const custoFixo = get(row.unified, 'custo_fixo') || get(row.raw, 'custo_fixo') || 0;
+                  const valorLiquido = valorTotal - (fretePagoCliente + custoEnvioSeller) + receitaFlex - taxaMarketplace - custoFixo;
                   return <span>{formatMoney(get(row.unified, 'valor_liquido_vendedor') || valorLiquido || 0)}</span>;
                 }
+              
+              // SKU do produto - compatibilidade com Shopee
+              case 'skus_produtos':
+                const skuValue = get(row.unified, 'obs') ?? get(row.unified, 'sku') ?? get(row.raw, 'sku') ?? get(row.unified, 'items[0].sku');
+                return <TruncatedCell content={skuValue} maxLength={40} />;
               
               case 'local_estoque':
                 const localEstoque = get(row.unified, 'local_estoque') || get(row.unified, 'local_estoque_nome');
