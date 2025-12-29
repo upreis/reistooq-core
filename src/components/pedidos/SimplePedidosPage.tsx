@@ -367,12 +367,15 @@ function SimplePedidosPage({ className }: Props) {
   
   // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
   // 🛍️ SHOPEE: Usar dados do banco quando marketplace = shopee
-  const orders = isShopeeMarketplace 
-    ? shopeeOrdersDB.orders.map(o => o.unified) 
-    : rowsEnriquecidos;
+  const orders = useMemo(() => {
+    return isShopeeMarketplace
+      ? shopeeOrdersDB.orders.map((o) => o.unified)
+      : rowsEnriquecidos;
+  }, [isShopeeMarketplace, shopeeOrdersDB.orders, rowsEnriquecidos]);
+
   const total = isShopeeMarketplace ? shopeeOrdersDB.total : state.total;
-  const loading = isShopeeMarketplace 
-    ? shopeeOrdersDB.loading 
+  const loading = isShopeeMarketplace
+    ? shopeeOrdersDB.loading
     : (state.loading || loadingLocais);
   const error = isShopeeMarketplace ? shopeeOrdersDB.error : state.error;
   const currentPage = state.currentPage;
