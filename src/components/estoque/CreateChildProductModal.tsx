@@ -529,12 +529,14 @@ export function CreateChildProductModal({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Label>Tipo de Item *</Label>
-                      <TooltipProvider delayDuration={300}>
-                        <Tooltip>
-                          <TooltipTrigger type="button" onClick={(e) => e.preventDefault()}>
-                            <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      <TooltipProvider>
+                        <Tooltip delayDuration={200}>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex cursor-help">
+                              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                            </span>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs bg-background border z-[10000]">
+                          <TooltipContent side="top" className="max-w-xs z-[10000]">
                             <p className="font-medium mb-1">O que é Insumo?</p>
                             <p className="text-sm text-muted-foreground">
                               Insumos são materiais usados na embalagem e envio, como: Caixa, Etiqueta, Fita adesiva, Papel bolha, Lacre, Manual, Luvas, etc.
