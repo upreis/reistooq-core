@@ -807,6 +807,7 @@ function SimplePedidosPage({ className }: Props) {
                       isApplying={filtersManager.isApplying}
                       columnManager={columnManager}
                       onOpenConfigLocais={() => setConfigLocaisOpen(true)}
+                      onOpenShopeeImport={() => setShowShopeeImportModal(true)}
                       activeFiltersCount={filtersManager.activeFiltersCount}
                       contasML={accounts}
                       useAdvancedStatus={useAdvancedStatus}

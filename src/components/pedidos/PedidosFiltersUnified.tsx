@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Columns3, Settings } from 'lucide-react';
+import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Columns3, Settings, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -37,6 +37,7 @@ interface PedidosFiltersUnifiedProps {
   contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>;
   columnManager?: any;
   onOpenConfigLocais?: () => void;
+  onOpenShopeeImport?: () => void;
   // Status Avançado
   useAdvancedStatus?: boolean;
   onToggleAdvancedStatus?: (enabled: boolean) => void;
@@ -82,6 +83,7 @@ export function PedidosFiltersUnified({
   contasML = [],
   columnManager,
   onOpenConfigLocais,
+  onOpenShopeeImport,
   useAdvancedStatus = false,
   onToggleAdvancedStatus,
   advancedStatusFilters,
@@ -265,6 +267,21 @@ export function PedidosFiltersUnified({
           >
             <Settings className="h-3 w-3" />
             Locais
+          </Button>
+        </div>
+      )}
+
+      {/* 🛍️ Importar Shopee - Aparece quando marketplace = shopee */}
+      {filters.marketplace === 'shopee' && onOpenShopeeImport && (
+        <div className="flex-shrink-0">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onOpenShopeeImport}
+            className="h-7 px-2.5 text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            <Upload className="h-3 w-3" />
+            Importar Excel
           </Button>
         </div>
       )}
