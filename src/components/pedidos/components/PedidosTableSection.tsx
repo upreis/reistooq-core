@@ -167,7 +167,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
         <Table disableOverflow className="min-w-max">
           <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
             <TableRow className="hover:bg-transparent border-b-2">
-              <TableHead className="bg-background whitespace-nowrap">
+              <TableHead className="bg-background whitespace-nowrap sticky left-0 z-30">
                 <Checkbox
                   checked={selectedOrders.size === orders.length && orders.length > 0}
                   onCheckedChange={handleSelectAll}
@@ -1247,8 +1247,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       isProcessed && "opacity-75 bg-success/10"
                     )}
                   >
-                    {/* Checkbox de seleção */}
-                    <TableCell className="text-center">
+                    {/* Checkbox de seleção - Sticky */}
+                    <TableCell className="text-center sticky left-0 z-10 bg-background">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => handleSelectOrder(order.id)}
