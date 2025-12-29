@@ -8,7 +8,20 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Download, Package, CheckSquare, Square, AlertCircle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { supabase } from '@/integrations/supabase/client';
+import toast from 'react-hot-toast';
+import { Download, Package, CheckSquare, Square, AlertCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BaixaEstoqueModal } from '../BaixaEstoqueModal';
 
@@ -21,6 +34,19 @@ interface PedidosStickyActionsProps {
   isPedidoProcessado: (order: any) => boolean;
   quickFilter: string;
   onBaixaConcluida?: () => void;
+  /**
+   * Habilita exclusão em lote (ex.: pedidos importados da Shopee).
+   * Por segurança, mantenha desligado para outras fontes.
+   */
+  enableBulkDelete?: boolean;
+  /**
+   * Nome da tabela do Supabase a ser apagada (ex.: 'pedidos_shopee').
+   */
+  deleteTableName?: 'pedidos_shopee';
+  /**
+   * Callback após excluir (refetch).
+   */
+  onDeleteConcluida?: () => void;
   className?: string;
 }
 
@@ -33,10 +59,39 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
   isPedidoProcessado,
   quickFilter,
   onBaixaConcluida,
+  enableBulkDelete = false,
+  deleteTableName = 'pedidos_shopee',
+  onDeleteConcluida,
   className
 }) => {
   const [showBaixaModal, setShowBaixaModal] = useState(false);
   const [showFilterConfirm, setShowFilterConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (!enableBulkDelete) return;
+    if (selectedOrders.size === 0) return;
+
+    setIsDeleting(true);
+    try {
+      const ids = Array.from(selectedOrders);
+      const { error } = await supabase
+        .from(deleteTableName)
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+
+      toast.success(`${ids.length} pedido(s) excluído(s) com sucesso.`);
+      setSelectedOrders(new Set());
+      onDeleteConcluida?.();
+    } catch (err: any) {
+      console.error('Erro ao excluir pedidos:', err);
+      toast.error(err?.message || 'Não foi possível excluir os pedidos.');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [enableBulkDelete, selectedOrders, deleteTableName, setSelectedOrders, onDeleteConcluida]);
 
   // Contadores baseados no filtro atual
   const stats = useMemo(() => {
@@ -216,7 +271,7 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
             )}
           </div>
 
-          {/* Ação principal: Baixar estoque */}
+          {/* Ações */}
           <div className="flex items-center gap-2">
             {stats.selected > 0 && (
               <Button
@@ -228,7 +283,46 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
                 Limpar seleção
               </Button>
             )}
-            
+
+            {enableBulkDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isDeleting || stats.selected === 0}
+                    className="gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Excluir ({stats.selected})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir pedidos selecionados?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação remove permanentemente {stats.selected} pedido(s) importado(s).
+                      Você pode importar novamente depois, se precisar.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button
+                        variant="destructive"
+                        onClick={handleBulkDelete}
+                        disabled={isDeleting}
+                        className="gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {isDeleting ? 'Excluindo...' : 'Excluir'}
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
             <Button
               onClick={() => {
                 setShowBaixaModal(false);
@@ -239,7 +333,7 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
               size="lg"
             >
               <Download className="h-4 w-4" />
-              {stats.selectedReadyCount > 0 
+              {stats.selectedReadyCount > 0
                 ? `Baixar estoque de ${stats.selectedReadyCount} pedidos`
                 : 'Selecione pedidos prontos para baixa'
               }
