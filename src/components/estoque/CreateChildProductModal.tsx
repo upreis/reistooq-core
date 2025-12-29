@@ -22,6 +22,7 @@ import { Package, Plus, Trash2, Link, Scale, FileText, Upload, AlertCircle, Help
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
@@ -525,17 +526,19 @@ export function CreateChildProductModal({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Label>Tipo de Item *</Label>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-background border">
-                          <p className="font-medium mb-1">O que é Insumo?</p>
-                          <p className="text-sm text-muted-foreground">
-                            Insumos são materiais usados na embalagem e envio, como: Caixa, Etiqueta, Fita adesiva, Papel bolha, Lacre, Manual, Luvas, etc.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger type="button" onClick={(e) => e.preventDefault()}>
+                            <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs bg-background border z-[10000]">
+                            <p className="font-medium mb-1">O que é Insumo?</p>
+                            <p className="text-sm text-muted-foreground">
+                              Insumos são materiais usados na embalagem e envio, como: Caixa, Etiqueta, Fita adesiva, Papel bolha, Lacre, Manual, Luvas, etc.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     <Select 
                       value={variation.tipo_item || "__placeholder__"}
