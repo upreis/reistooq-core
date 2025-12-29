@@ -253,21 +253,6 @@ export function PedidosFiltersUnified({
           </Button>
         </div>
       )}
-
-      {/* 🛍️ Importar Shopee - Aparece quando marketplace = shopee */}
-      {filters.marketplace === 'shopee' && onOpenShopeeImport && (
-        <div className="flex-shrink-0">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onOpenShopeeImport}
-            className="h-7 px-2.5 text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white"
-          >
-            <Upload className="h-3 w-3" />
-            Importar Excel
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
