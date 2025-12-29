@@ -601,6 +601,20 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span className="text-xs">{translatePaymentStatus(order.payment_status || order.payments?.[0]?.status || order.raw?.payments?.[0]?.status || order.status_pagamento || '-')}</span>;
                      case 'payment_type':
                        return <span className="text-xs">{translatePaymentType(order.payment_type || order.payments?.[0]?.payment_type || order.raw?.payments?.[0]?.payment_type_id || order.tipo_pagamento || '-')}</span>;
+                     // 🔄 Coluna de status de atualização (Shopee)
+                     case 'status_atualizacao':
+                       {
+                         const foiAtualizado = order.foi_atualizado || order.unified?.foi_atualizado || order.raw?.foi_atualizado;
+                         if (!foiAtualizado) return <span className="text-xs text-muted-foreground">—</span>;
+                         return (
+                           <Badge 
+                             variant="outline" 
+                             className="bg-blue-500/20 text-blue-600 border-blue-300 animate-pulse"
+                           >
+                             Atualizado
+                           </Badge>
+                         );
+                       }
                      case 'conditions':
                        return <span className="text-xs">{translateCondition(order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || '-')}</span>;
                      case 'order_status':
