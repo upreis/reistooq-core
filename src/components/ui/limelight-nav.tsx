@@ -1,4 +1,4 @@
-import React, { useState, useRef, useLayoutEffect, cloneElement } from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect, cloneElement } from 'react';
 
 // --- Internal Types and Defaults ---
 
@@ -45,6 +45,11 @@ export const LimelightNav = ({
   const [isReady, setIsReady] = useState(false);
   const navItemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const limelightRef = useRef<HTMLDivElement | null>(null);
+
+  // Sincronizar activeIndex quando defaultActiveIndex mudar (navegação externa)
+  useEffect(() => {
+    setActiveIndex(defaultActiveIndex);
+  }, [defaultActiveIndex]);
 
   useLayoutEffect(() => {
     if (items.length === 0) return;
