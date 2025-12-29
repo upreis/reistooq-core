@@ -17,10 +17,17 @@ export interface ShopeeOrderFromDB {
   produto_nome: string | null;
   quantidade: number | null;
   preco_total: number | null;
+  endereco_rua: string | null;
+  endereco_bairro: string | null;
   endereco_cidade: string | null;
   endereco_estado: string | null;
+  endereco_cep: string | null;
   codigo_rastreamento: string | null;
   tipo_logistico: string | null;
+  taxa_marketplace: number | null;
+  receita_flex: number | null;
+  custo_envio: number | null;
+  custo_fixo: number | null;
   empresa: string | null;
   baixa_estoque_realizada: boolean;
   created_at: string;
@@ -142,8 +149,11 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
                    order.order_status?.includes('Enviado') ? 'shipped' : 'pending',
             tracking_number: order.codigo_rastreamento,
             receiver_address: {
+              street_name: order.endereco_rua,
+              neighborhood: order.endereco_bairro,
               city: { name: order.endereco_cidade },
-              state: { name: order.endereco_estado }
+              state: { name: order.endereco_estado },
+              zip_code: order.endereco_cep
             }
           },
           empresa: order.empresa,
@@ -154,7 +164,20 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
           // Campos extras para mapeamento
           sku: order.sku,
           sku_vendedor: order.sku,
-          tipo_logistico: order.tipo_logistico
+          tipo_logistico: order.tipo_logistico,
+          // Taxas e custos
+          taxa_marketplace: order.taxa_marketplace,
+          receita_flex: order.receita_flex,
+          custo_envio: order.custo_envio,
+          custo_fixo: order.custo_fixo,
+          // Endereço direto para compatibilidade
+          endereco_rua: order.endereco_rua,
+          endereco_bairro: order.endereco_bairro,
+          endereco_cidade: order.endereco_cidade,
+          endereco_estado: order.endereco_estado,
+          endereco_cep: order.endereco_cep,
+          codigo_rastreamento: order.codigo_rastreamento,
+          produto_nome: order.produto_nome
         }
       }));
       
