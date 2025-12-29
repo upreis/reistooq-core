@@ -410,7 +410,11 @@ export function ShopeeImportModal({ open, onOpenChange, onImportComplete }: Shop
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Selecione a empresa" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent 
+                    className="z-[9999] bg-popover"
+                    position="popper"
+                    sideOffset={4}
+                  >
                     {empresasShopee.map((emp) => (
                       <SelectItem key={emp.id} value={emp.id}>
                         {emp.nome} {emp.nickname && `(${emp.nickname})`}
