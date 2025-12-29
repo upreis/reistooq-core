@@ -545,12 +545,16 @@ export function CreateChildProductModal({
                     </div>
                     <Select
                       value={variation.tipo_item}
-                      onValueChange={(value: 'produto' | 'insumo') => {
-                        handleVariationChange(index, 'tipo_item', value);
-                        if (value === 'produto') {
-                          handleVariationChange(index, 'tipo_insumo', '');
-                          handleVariationChange(index, 'tipo_insumo_outro', '');
-                        }
+                      onValueChange={(value: string) => {
+                        // Atualiza em uma única operação para evitar race conditions
+                        const updated = [...variations];
+                        updated[index] = {
+                          ...updated[index],
+                          tipo_item: value as 'produto' | 'insumo',
+                          // Limpa campos de insumo ao voltar para produto
+                          ...(value === 'produto' ? { tipo_insumo: '', tipo_insumo_outro: '' } : {})
+                        };
+                        setVariations(updated);
                       }}
                     >
                       <SelectTrigger>
