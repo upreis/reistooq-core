@@ -618,23 +618,33 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'conditions':
                        return <span className="text-xs">{translateCondition(order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || '-')}</span>;
                      case 'order_status':
-                       return (
-                         <StatusBadge 
-                           status={order.order_status || order.status || order.raw?.status || 'unknown'} 
-                           substatus={order.order_status_detail || order.status_detail || order.raw?.status_detail}
-                           type="order"
-                         />
-                       );
+                       {
+                         const foiAtualizado = order.foi_atualizado || order.unified?.foi_atualizado || order.raw?.foi_atualizado;
+                         return (
+                           <div className={foiAtualizado ? 'animate-pulse' : ''}>
+                             <StatusBadge 
+                               status={order.order_status || order.status || order.raw?.status || 'unknown'} 
+                               substatus={order.order_status_detail || order.status_detail || order.raw?.status_detail}
+                               type="order"
+                             />
+                           </div>
+                         );
+                       }
                      case 'order_status_detail':
                        return <span className="text-xs">{order.order_status_detail || order.status_detail || order.raw?.status_detail || '-'}</span>;
                      case 'shipping_status':
-                       return (
-                         <StatusBadge 
-                           status={order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.raw?.shipping_details?.status || 'unknown'} 
-                           substatus={order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus}
-                           type="shipping"
-                         />
-                       );
+                       {
+                         const foiAtualizado = order.foi_atualizado || order.unified?.foi_atualizado || order.raw?.foi_atualizado;
+                         return (
+                           <div className={foiAtualizado ? 'animate-pulse' : ''}>
+                             <StatusBadge 
+                               status={order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.raw?.shipping_details?.status || 'unknown'} 
+                               substatus={order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus}
+                               type="shipping"
+                             />
+                           </div>
+                         );
+                       }
                       case 'shipping_substatus':
                         const rawSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus;
                         return (
