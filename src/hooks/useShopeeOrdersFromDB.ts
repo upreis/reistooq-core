@@ -144,6 +144,7 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
           }],
           total: order.preco_total,
           total_amount: order.preco_total,
+          valor_total: order.preco_total,
           shipping: {
             status: order.order_status?.includes('Concluído') ? 'delivered' : 
                    order.order_status?.includes('Enviado') ? 'shipped' : 'pending',
@@ -161,6 +162,12 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
           provider: 'shopee',
           marketplace: 'shopee',
           baixa_estoque_realizada: order.baixa_estoque_realizada,
+          // 🔑 Campo obs - usado pela tabela para exibir SKU
+          obs: order.sku,
+          // 🔑 Campo titulo_anuncio - usado pela tabela para exibir título
+          titulo_anuncio: order.produto_nome,
+          // 🔑 Campo marketplace_fee - usado pela tabela para taxa
+          marketplace_fee: order.taxa_marketplace,
           // Campos extras para mapeamento
           sku: order.sku,
           sku_vendedor: order.sku,
@@ -177,7 +184,9 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
           endereco_estado: order.endereco_estado,
           endereco_cep: order.endereco_cep,
           codigo_rastreamento: order.codigo_rastreamento,
-          produto_nome: order.produto_nome
+          produto_nome: order.produto_nome,
+          // Nome do destinatário
+          nome_destinatario: order.comprador_nome
         }
       }));
       
