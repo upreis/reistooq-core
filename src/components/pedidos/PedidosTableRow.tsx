@@ -356,6 +356,19 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                   <span className="text-sm">{marketplace}</span>
                 ) : <span className="text-xs text-muted-foreground">—</span>;
               
+              // 🔄 Coluna de status de atualização (Shopee)
+              case 'status_atualizacao':
+                const foiAtualizado = get(row.unified, 'foi_atualizado') || get(row.raw, 'foi_atualizado');
+                if (!foiAtualizado) return <span className="text-xs text-muted-foreground">—</span>;
+                return (
+                  <Badge 
+                    variant="outline" 
+                    className="bg-blue-500/20 text-blue-600 border-blue-300 animate-pulse"
+                  >
+                    Atualizado
+                  </Badge>
+                );
+              
               default:
                 return show(get(row.unified, col.key) ?? get(row.raw, col.key));
             }
