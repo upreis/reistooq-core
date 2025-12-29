@@ -337,6 +337,21 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span>{formatMoney(fretePagoCliente)}</span>;
                         case 'receita_flex':
                            {
+                              // 🛍️ SHOPEE: Usar receita_flex já calculada no upload
+                              const isShopeeOrder =
+                                order.marketplace === 'shopee' ||
+                                order.provider === 'shopee' ||
+                                order.unified?.marketplace === 'shopee' ||
+                                order.unified?.provider === 'shopee';
+
+                              if (isShopeeOrder) {
+                                // Para Shopee, o valor já foi calculado no upload:
+                                // receita_flex = valor_estimado_frete quando opção_envio = "shopee entrega direta"
+                                const receitaFlexShopee = order.receita_flex ?? order.unified?.receita_flex ?? 0;
+                                const colorClass = receitaFlexShopee > 0 ? 'font-mono font-semibold text-blue-600 dark:text-blue-400' : '';
+                                return <span className={colorClass}>{formatMoney(receitaFlexShopee)}</span>;
+                              }
+
                               // 🔧 HELPER: Processar flex_order_cost - TEMPORARIAMENTE DESABILITADO
                               const getFlexOrderCostProcessed = (order: any): number => {
                                 const flexCostOriginal = order.flex_order_cost || order.unified?.flex_order_cost || 0;
@@ -396,7 +411,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                               
                                // Se Valor Médio por Item < 79.00 → usar cálculo normal (100%)
                                if (valorMedioPorItem < 79.00) {
-                                 const colorClass = flexOrderCostBase > 0 ? 'font-mono text-sm font-semibold text-blue-600 dark:text-blue-400' : '';
+                                 const colorClass = flexOrderCostBase > 0 ? 'font-mono font-semibold text-blue-600 dark:text-blue-400' : '';
                                  return <span className={colorClass}>{formatMoney(flexOrderCostBase)}</span>;
                                }
                              
@@ -428,7 +443,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                 // Se NÃO tiver qualificações → R$ 0,00 (sem bônus)
                                 if (condition === 'new' && reputation.includes('green')) {
                                   const bonusValue = flexOrderCostBase * 0.1;
-                                  const colorClass = bonusValue > 0 ? 'font-mono text-sm font-semibold text-blue-600 dark:text-blue-400' : '';
+                                  const colorClass = bonusValue > 0 ? 'font-mono font-semibold text-blue-600 dark:text-blue-400' : '';
                                   return <span className={colorClass}>{formatMoney(bonusValue)}</span>;
                                 }
                                 
