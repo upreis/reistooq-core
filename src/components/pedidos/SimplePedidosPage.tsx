@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { formatPt, formatSubstatus, formatLogisticType, formatShippingStatus } from '@/utils/orderFormatters';
 import { translateMLTags } from '@/lib/translations';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, CheckCircle2, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search, Database } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, CheckCircle2, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search, Database, Upload } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
@@ -778,8 +778,54 @@ function SimplePedidosPage({ className }: Props) {
             <MLOrdersNav />
           </div>
           
+          {/* 🛍️ FILTRO FONTE (MARKETPLACE) - Acima das abas */}
+          <div className="px-4 md:px-6 mt-4 flex items-center gap-3">
+            <span className="text-xs text-muted-foreground font-medium">Fonte:</span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant={filtersManager.filters.marketplace === 'all' || !filtersManager.filters.marketplace ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => filtersManager.updateFilter('marketplace', 'all')}
+                className="h-7 px-3 text-xs"
+              >
+                Todos
+              </Button>
+              <Button
+                variant={filtersManager.filters.marketplace === 'ml' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => filtersManager.updateFilter('marketplace', 'ml')}
+                className="h-7 px-3 text-xs gap-1.5"
+              >
+                <span className="text-yellow-500">●</span>
+                Mercado Livre
+              </Button>
+              <Button
+                variant={filtersManager.filters.marketplace === 'shopee' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => filtersManager.updateFilter('marketplace', 'shopee')}
+                className="h-7 px-3 text-xs gap-1.5"
+              >
+                <span className="text-orange-500">●</span>
+                Shopee
+              </Button>
+            </div>
+            
+            {/* Botão Importar Excel - Aparece quando Shopee selecionado */}
+            {filtersManager.filters.marketplace === 'shopee' && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setShowShopeeImportModal(true)}
+                className="h-7 px-3 text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white ml-2"
+              >
+                <Upload className="h-3 w-3" />
+                Importar Excel
+              </Button>
+            )}
+          </div>
+
           {/* 🆕 ABAS + FILTROS: Layout unificado igual /reclamacoes */}
-          <div className="px-4 md:px-6 mt-6">
+          <div className="px-4 md:px-6 mt-4">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'pendentes' | 'historico')}>
               <div className="flex items-center gap-1.5 flex-nowrap">
                 {/* Abas pill-style - Padrão Compacto */}
