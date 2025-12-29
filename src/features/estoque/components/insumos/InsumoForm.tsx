@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, Plus, Trash2, Save, X } from 'lucide-react';
+import { Package, Plus, Trash2, Save, X, Check, ChevronsUpDown } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,12 +20,19 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { ComposicaoInsumoEnriquecida } from '../../types/insumos.types';
 
@@ -451,61 +458,104 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
                       {/* Campos de edição */}
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {/* SKU do Componente */}
+                          {/* SKU do Componente - Combobox */}
                           <div className="space-y-2">
                             <Label className="text-sm font-medium">SKU do Componente</Label>
-                            <Select
-                              value={composicao.sku_insumo}
-                              onValueChange={(value) => {
-                                atualizarComposicao(index, 'sku_insumo', value);
-                                // Auto-completar nome se encontrar insumo
-                                const insumo = insumos.find(i => i.sku === value);
-                                if (insumo) {
-                                  atualizarComposicao(index, 'nome_insumo', insumo.nome);
-                                  atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecione um SKU..." />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-60">
-                                {insumos.map((insumo) => (
-                                  <SelectItem key={insumo.sku} value={insumo.sku}>
-                                    <span className="font-mono">{insumo.sku}</span>
-                                    <span className="text-muted-foreground ml-2">- {insumo.nome}</span>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className={cn(
+                                    "w-full justify-between font-normal",
+                                    !composicao.sku_insumo && "text-muted-foreground"
+                                  )}
+                                >
+                                  {composicao.sku_insumo || "Selecione um SKU..."}
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[300px] p-0" align="start">
+                                <Command>
+                                  <CommandInput placeholder="Buscar SKU..." />
+                                  <CommandList>
+                                    <CommandEmpty>Nenhum insumo encontrado.</CommandEmpty>
+                                    <CommandGroup>
+                                      {insumos.map((insumo) => (
+                                        <CommandItem
+                                          key={insumo.sku}
+                                          value={insumo.sku}
+                                          onSelect={() => {
+                                            atualizarComposicao(index, 'sku_insumo', insumo.sku);
+                                            atualizarComposicao(index, 'nome_insumo', insumo.nome);
+                                            atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              composicao.sku_insumo === insumo.sku ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          <span className="font-mono">{insumo.sku}</span>
+                                          <span className="text-muted-foreground ml-2">- {insumo.nome}</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                           </div>
 
-                          {/* Nome do Componente */}
+                          {/* Nome do Componente - Combobox */}
                           <div className="space-y-2">
                             <Label className="text-sm font-medium">Nome do Componente</Label>
-                            <Select
-                              value={composicao.sku_insumo}
-                              onValueChange={(value) => {
-                                const insumo = insumos.find(i => i.sku === value);
-                                if (insumo) {
-                                  atualizarComposicao(index, 'sku_insumo', insumo.sku);
-                                  atualizarComposicao(index, 'nome_insumo', insumo.nome);
-                                  atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecione um nome..." />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-60">
-                                {insumos.map((insumo) => (
-                                  <SelectItem key={insumo.sku} value={insumo.sku}>
-                                    {insumo.nome}
-                                    <span className="text-muted-foreground ml-2">({insumo.sku})</span>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className={cn(
+                                    "w-full justify-between font-normal",
+                                    !composicao.nome_insumo && "text-muted-foreground"
+                                  )}
+                                >
+                                  {composicao.nome_insumo || "Selecione um nome..."}
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[300px] p-0" align="start">
+                                <Command>
+                                  <CommandInput placeholder="Buscar nome..." />
+                                  <CommandList>
+                                    <CommandEmpty>Nenhum insumo encontrado.</CommandEmpty>
+                                    <CommandGroup>
+                                      {insumos.map((insumo) => (
+                                        <CommandItem
+                                          key={insumo.sku}
+                                          value={insumo.nome}
+                                          onSelect={() => {
+                                            atualizarComposicao(index, 'sku_insumo', insumo.sku);
+                                            atualizarComposicao(index, 'nome_insumo', insumo.nome);
+                                            atualizarComposicao(index, 'estoque_disponivel', insumo.estoque);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              composicao.sku_insumo === insumo.sku ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          {insumo.nome}
+                                          <span className="text-muted-foreground ml-2">({insumo.sku})</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                         </div>
 
