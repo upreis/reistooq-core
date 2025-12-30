@@ -263,6 +263,10 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
             quantity: order.quantidade || 1,
             unit_price: order.preco_total
           }],
+          // 🔑 CRÍTICO: Campos de quantidade para baixa de estoque
+          quantidade: order.quantidade || 1,
+          total_itens: order.quantidade || 1,
+          quantidade_itens: order.quantidade || 1,
           total: order.preco_total,
           total_amount: order.preco_total,
           valor_total: order.preco_total,
