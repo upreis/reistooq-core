@@ -216,9 +216,46 @@ export function fotografarPedidoCompleto(
     skuEstoque_display: mapping?.skuEstoque
   });
   
-  // SKUs e quantidades (exatamente como na UI)
-  const skus = order.skus || order.order_items?.map((item: any) => item.item?.seller_sku) || [];
-  const quantidadeItens = order.quantidade_itens || order.order_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
+  // SKUs e quantidades (exatamente como na UI - suporta ML e Shopee)
+  const skus = (() => {
+    // 1. ML: order_items
+    if (order.order_items?.length > 0) {
+      return order.order_items.map((item: any) => item.item?.seller_sku).filter(Boolean);
+    }
+    // 2. Shopee/Unificado: items ou sku direto
+    if (order.items?.length > 0) {
+      return order.items.map((item: any) => item.sku || item.seller_sku).filter(Boolean);
+    }
+    if (order.unified?.items?.length > 0) {
+      return order.unified.items.map((item: any) => item.sku || item.seller_sku).filter(Boolean);
+    }
+    // 3. SKU direto (Shopee)
+    if (order.sku) return [order.sku];
+    if (order.unified?.sku) return [order.unified.sku];
+    if (order.obs) return [order.obs];
+    if (order.unified?.obs) return [order.unified.obs];
+    if (order.skus) return order.skus;
+    return [];
+  })();
+  
+  const quantidadeItens = (() => {
+    // 1. ML: order_items
+    if (order.order_items?.length > 0) {
+      return order.order_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    }
+    // 2. Shopee/Unificado: campos diretos
+    if (order.quantidade_itens) return order.quantidade_itens;
+    if (order.quantidade) return order.quantidade;
+    if (order.total_itens) return order.total_itens;
+    if (order.unified?.quantidade_itens) return order.unified.quantidade_itens;
+    if (order.unified?.quantidade) return order.unified.quantidade;
+    if (order.unified?.total_itens) return order.unified.total_itens;
+    // 3. items array
+    if (order.items?.length > 0) {
+      return order.items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    }
+    return 0;
+  })();
   
   // Empresa (lógica EXATA da UI)
   const getEmpresaName = () => {
@@ -257,14 +294,16 @@ export function fotografarPedidoCompleto(
   const fotografia: FotografiaPedido = {
     // CAMPOS BÁSICOS
     id_unico: order.id_unico || buildIdUnico(order),
-    numero_pedido: order.numero || order.id,
+    numero_pedido: order.numero || order.order_id || order.unified?.order_id || order.unified?.numero || order.id,
     empresa: getEmpresaName(),
     nome_cliente: order.nome_cliente || 
+                 order.comprador?.nome || order.unified?.comprador?.nome ||
                  [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ') || 
-                 order.buyer?.nickname || '-',
+                 order.buyer?.nickname || order.unified?.buyer?.nickname || '-',
     nome_completo: order.nome_destinatario || 
+                  order.unified?.nome_destinatario ||
                   order.shipping?.destination?.receiver_name || 
-                  '—',
+                  order.comprador?.nome || order.unified?.comprador?.nome || '—',
     cpf_cnpj: order.cpf_cnpj || '-',
     data_pedido: formatDate(order.data_pedido || order.date_created),
     ultima_atualizacao: order.last_updated ? formatDate(order.last_updated) : '-',
@@ -274,9 +313,9 @@ export function fotografarPedidoCompleto(
     skus_produtos: skus.length > 0 ? skus.join(', ') : '-',
     quantidade_total: quantidadeItens,
     quantidade_itens: quantidadeItens,
-    titulo_produto: order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-',
-    titulo_anuncio: order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-',
-    descricao: order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-',
+    titulo_produto: order.order_items?.[0]?.item?.title || order.titulo_anuncio || order.produto_nome || order.unified?.produto_nome || order.unified?.titulo_anuncio || '-',
+    titulo_anuncio: order.order_items?.[0]?.item?.title || order.titulo_anuncio || order.produto_nome || order.unified?.produto_nome || order.unified?.titulo_anuncio || '-',
+    descricao: order.order_items?.[0]?.item?.title || order.titulo_anuncio || order.produto_nome || order.unified?.produto_nome || '-',
     conditions: order.order_items?.[0]?.item?.condition || 
                order.condition || '-',
     
