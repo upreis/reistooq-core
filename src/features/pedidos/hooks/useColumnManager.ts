@@ -65,13 +65,14 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
           : new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []);
         
         // 🔁 Remapear chaves legadas e filtrar colunas removidas
+        // ⚠️ CUIDADO: 'numero' é a coluna "Número do Pedido", NÃO deve ser mapeada para endereco_numero
         const aliasMap: Record<string, string> = {
           cidade: 'endereco_cidade',
           uf: 'endereco_uf',
           rua: 'endereco_rua',
           bairro: 'endereco_bairro',
           cep: 'endereco_cep',
-          numero: 'endereco_numero',
+          endereco_numero_legado: 'endereco_numero', // Apenas se existir um campo legado específico
           marketplace_origem: 'local_venda'
         };
         const remapped = new Set<string>();
@@ -82,8 +83,8 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
           }
         });
 
-        // ✅ GARANTIA: colunas essenciais da Shopee devem existir (mesmo com cache antigo)
-        ['skus_produtos', 'titulo_anuncio', 'marketplace_fee'].forEach((k) => {
+        // ✅ GARANTIA: colunas essenciais devem existir (mesmo com cache antigo)
+        ['numero', 'skus_produtos', 'titulo_anuncio', 'marketplace_fee'].forEach((k) => {
           if (validColumnKeys.has(k) && !removedColumns.has(k)) remapped.add(k);
         });
 
@@ -107,13 +108,14 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
     
     const rawSet = new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []);
     // 🔁 Remapear chaves legadas e filtrar colunas removidas
+    // ⚠️ CUIDADO: 'numero' é a coluna "Número do Pedido", NÃO deve ser mapeada para endereco_numero
     const aliasMap: Record<string, string> = {
       cidade: 'endereco_cidade',
       uf: 'endereco_uf',
       rua: 'endereco_rua',
       bairro: 'endereco_bairro',
       cep: 'endereco_cep',
-      numero: 'endereco_numero',
+      endereco_numero_legado: 'endereco_numero', // Apenas se existir um campo legado específico
       marketplace_origem: 'local_venda'
     };
     const remapped = new Set<string>();
@@ -124,8 +126,8 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
       }
     });
 
-    // ✅ GARANTIA: colunas essenciais da Shopee devem existir (mesmo com cache antigo)
-    ['skus_produtos', 'titulo_anuncio', 'marketplace_fee'].forEach((k) => {
+    // ✅ GARANTIA: colunas essenciais devem existir (mesmo com cache antigo)
+    ['numero', 'skus_produtos', 'titulo_anuncio', 'marketplace_fee'].forEach((k) => {
       if (validColumnKeys.has(k) && !removedColumns.has(k)) remapped.add(k);
     });
     
