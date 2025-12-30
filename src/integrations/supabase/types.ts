@@ -8518,6 +8518,13 @@ export type Database = {
       hv_fix_orphans: { Args: { default_account_id?: string }; Returns: number }
       hv_insert: { Args: { p_data: Json }; Returns: Json }
       hv_orphaned_stats: { Args: never; Returns: Json }
+      limpar_historico_orfao: {
+        Args: { p_numero_pedido: string }
+        Returns: {
+          deleted_id: string
+          deleted_numero_pedido: string
+        }[]
+      }
       limpar_notificacoes_expiradas: { Args: never; Returns: Json }
       log_audit_enhanced: {
         Args: {
