@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { History, Mail, AlertTriangle } from 'lucide-react';
 import { useInvitations, useSystemAlerts } from '@/features/admin/hooks/useAdmin';
+import { AdminStats } from '@/features/admin/components/AdminStats';
 
 export const AdminVisaoGeral: React.FC = () => {
   const { invitations } = useInvitations();
@@ -63,6 +64,9 @@ export const AdminVisaoGeral: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Stats cards - apenas na visão geral */}
+      <AdminStats />
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentActivity />
         <Card>
