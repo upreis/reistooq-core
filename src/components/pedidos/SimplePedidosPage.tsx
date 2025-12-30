@@ -372,7 +372,12 @@ function SimplePedidosPage({ className }: Props) {
   // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
   // 🛍️ SHOPEE + ML: Combinar dados quando marketplace = 'all'
   const orders = useMemo(() => {
-    const shopeeUnified = shopeeOrdersDB.orders.map((o) => o.unified);
+    // ✅ CORREÇÃO: Preservar raw + unified para que foi_atualizado seja acessível
+    const shopeeUnified = shopeeOrdersDB.orders.map((o) => ({
+      ...o.unified,
+      raw: o.raw, // Manter raw para acesso ao foi_atualizado do banco
+      foi_atualizado: o.unified?.foi_atualizado || o.raw?.foi_atualizado || false
+    }));
     
     if (isShopeeMarketplace) {
       // Apenas Shopee
