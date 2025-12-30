@@ -118,7 +118,7 @@ export default function Header() {
     // Configurações
     if (path.startsWith('/configuracoes/integracoes')) return { icon: configuracoesIntegracoesIcon, label: 'Configurações / Integrações', isImage: true };
     if (path.startsWith('/configuracoes/anuncios')) return { icon: configuracoesAnunciosIcon, label: 'Configurações / Avisos', isImage: true };
-    if (path.startsWith('/configuracoes/alertas')) return { icon: alertasIcon, label: 'Configurações / Alertas', isImage: true };
+    
     
     
     // Admin
@@ -152,7 +152,7 @@ export default function Header() {
     // Configurações
     if (path.startsWith('/configuracoes/integracoes')) return { icon: '🔌', label: 'Configurações / Integrações' };
     if (path.startsWith('/configuracoes/anuncios')) return { icon: '📢', label: 'Configurações / Avisos' };
-    if (path.startsWith('/configuracoes/alertas')) return { icon: '🔔', label: 'Configurações / Alertas' };
+    
     if (path.startsWith('/configuracoes')) return { icon: '⚙️', label: 'Configurações' };
     if (path.startsWith('/historico')) return { icon: '📜', label: 'Histórico' };
     

@@ -32,7 +32,7 @@ import Scanner from "./pages/Scanner";
 
 import Reclamacoes from "./pages/Reclamacoes";
 import DePara from "./pages/DePara";
-import Alertas from "./pages/Alertas";
+
 import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
 import Historico from "./pages/Historico";
 import Calendar from "./pages/Calendar";
@@ -187,13 +187,8 @@ function App() {
                       </PermissionRoute>
                     } />
                     
-                    {/* De-Para redirect e Alertas */}
+                    {/* De-Para redirect */}
                     <Route path="de-para" element={<Navigate to="/estoque/de-para" replace />} />
-                    <Route path="alertas" element={
-                      <PermissionRoute requiredAny={["alertas:view", "estoque:view"]}>
-                        <Alertas />
-                      </PermissionRoute>
-                    } />
                     
                     {/* Compras */}
                     <Route path="compras/*" element={

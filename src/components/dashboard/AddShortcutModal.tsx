@@ -352,15 +352,6 @@ const ALL_PAGES: PageOption[] = [
     gradient: 'bg-gradient-to-br from-green-600 to-green-800'
   },
   {
-    id: 'alertas',
-    label: 'Alertas',
-    route: '/configuracoes/alertas',
-    icon: <img src={alertasIcon} alt="Alertas" className="w-16 h-16 object-contain" />,
-    imageUrl: alertasIcon,
-    category: 'Ferramentas',
-    gradient: 'bg-gradient-to-br from-orange-500 to-orange-700'
-  },
-  {
     id: 'historico',
     label: 'Histórico',
     route: '/historico',

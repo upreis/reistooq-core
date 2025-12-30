@@ -82,7 +82,7 @@ const ROUTE_TO_ICON: Record<string, string> = {
   // Configurações
   '/configuracoes/integracoes': integracoesIcon,
   '/configuracoes/anuncios': anunciosIcon,
-  '/configuracoes/alertas': alertasIcon,
+  
   // Admin
   '/admin': adminIcon,
   '/admin/usuarios': usuariosIcon,

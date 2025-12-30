@@ -4,7 +4,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import ConfiguracoesIntegracoes from "./ConfiguracoesIntegracoes";
 import AnunciosPage from "./AnunciosPage";
-import Alertas from "@/pages/Alertas";
 
 const ConfiguracoesContent = () => {
   return (
@@ -15,7 +14,6 @@ const ConfiguracoesContent = () => {
           <Route index element={<Navigate to="integracoes" replace />} />
           <Route path="integracoes" element={<ConfiguracoesIntegracoes />} />
           <Route path="anuncios" element={<AnunciosPage />} />
-          <Route path="alertas" element={<Alertas />} />
           <Route path="*" element={<Navigate to="integracoes" replace />} />
         </Routes>
       </div>
