@@ -61,6 +61,23 @@ export function ConfiguracaoLocaisModal({
     }
   }, [open]);
 
+  // 🔄 Se algum local for criado/editado em outra tela, este modal se atualiza automaticamente
+  useEffect(() => {
+    if (!open) return;
+
+    const handleReload = () => {
+      carregarDados();
+    };
+
+    window.addEventListener('reload-locais-estoque', handleReload);
+    window.addEventListener('reload-locais-venda', handleReload);
+
+    return () => {
+      window.removeEventListener('reload-locais-estoque', handleReload);
+      window.removeEventListener('reload-locais-venda', handleReload);
+    };
+  }, [open]);
+
   // Efeito separado para preencher empresa quando modal abre pela primeira vez (sem edição)
   useEffect(() => {
     if (open && !editando) {
@@ -78,7 +95,7 @@ export function ConfiguracaoLocaisModal({
     }
   }, [open, empresasSelecionadas, contasML, editando]);
 
-  const carregarDados = async () => {
+  async function carregarDados() {
     try {
       setLoading(true);
       const [locaisData, mapeamentosData, locaisVendaData, tiposLogisticosData, empresasShopeeData] = await Promise.all([
@@ -103,7 +120,7 @@ export function ConfiguracaoLocaisModal({
       setLocais(locaisData);
       setMapeamentos(mapeamentosData);
       setLocaisVenda(locaisVendaData);
-      
+
       // Extrair tipos únicos dos pedidos Shopee
       if (tiposLogisticosData.data) {
         const tiposUnicos = [...new Set(
@@ -113,7 +130,7 @@ export function ConfiguracaoLocaisModal({
         )].sort();
         setTiposLogisticosDinamicos(tiposUnicos);
       }
-      
+
       // Extrair empresas únicas dos pedidos Shopee
       if (empresasShopeeData.data) {
         const empresasUnicas = [...new Set(
@@ -128,7 +145,7 @@ export function ConfiguracaoLocaisModal({
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleSalvar = async () => {
     console.log('🔍 Tentando salvar mapeamento:', novoMapeamento);
