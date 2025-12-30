@@ -323,15 +323,6 @@ const ALL_PAGES: PageOption[] = [
     gradient: 'bg-gradient-to-br from-green-500 to-green-700'
   },
   {
-    id: 'admin-auditoria',
-    label: 'Auditoria',
-    route: '/admin/auditoria',
-    icon: <img src={auditoriaIcon} alt="Auditoria" className="w-16 h-16 object-contain" />,
-    imageUrl: auditoriaIcon,
-    category: 'Administração',
-    gradient: 'bg-gradient-to-br from-teal-500 to-teal-700'
-  },
-  {
     id: 'admin-perfil',
     label: 'Administração Perfil',
     route: '/admin/perfil',

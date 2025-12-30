@@ -224,12 +224,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Lock'
           },
           {
-            id: 'admin-auditoria',
-            label: 'Auditoria',
-            path: '/admin/auditoria',
-            icon: 'FileSearch'
-          },
-          {
             id: 'admin-perfil',
             label: 'Perfil',
             path: '/admin/perfil',

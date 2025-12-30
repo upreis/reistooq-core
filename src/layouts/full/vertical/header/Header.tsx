@@ -123,7 +123,7 @@ export default function Header() {
     
     // Admin
     if (path.startsWith('/admin/perfil')) return { icon: adminPerfilIcon, label: 'Admin / Perfil', isImage: true };
-    if (path.startsWith('/admin/auditoria')) return { icon: adminAuditoriaIcon, label: 'Admin / Auditoria', isImage: true };
+    
     if (path.startsWith('/admin/seguranca')) return { icon: adminSegurancaIcon, label: 'Admin / Segurança', isImage: true };
     if (path.startsWith('/admin/alertas')) return { icon: adminAlertasIcon, label: 'Admin / Alertas', isImage: true };
     if (path.startsWith('/admin/convites')) return { icon: adminConvitesIcon, label: 'Admin / Convites', isImage: true };
@@ -167,7 +167,7 @@ export default function Header() {
     if (path.startsWith('/admin/convites')) return { icon: '✉️', label: 'Admin / Convites' };
     if (path.startsWith('/admin/alertas')) return { icon: '🚨', label: 'Admin / Alertas' };
     if (path.startsWith('/admin/seguranca')) return { icon: '🔒', label: 'Admin / Segurança' };
-    if (path.startsWith('/admin/auditoria')) return { icon: '📋', label: 'Admin / Auditoria' };
+    
     if (path.startsWith('/admin/perfil')) return { icon: '👤', label: 'Admin / Perfil' };
     if (path.startsWith('/admin')) return { icon: '🛡️', label: 'Administração' };
     
