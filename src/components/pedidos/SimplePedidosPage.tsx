@@ -275,9 +275,6 @@ function SimplePedidosPage({ className }: Props) {
   
   // 🔧 P3.1: Sistema de colunas unificado com persistência automatica (memoizado)
   const columnManager = useColumnManager();
-  const visibleColumns = useMemo(() => {
-    return columnManager.state.visibleColumns;
-  }, [columnManager.state.visibleColumns]);
   
   
   
@@ -310,6 +307,59 @@ function SimplePedidosPage({ className }: Props) {
   const isShopeeMarketplace = filtersManager.filters.marketplace === 'shopee';
   const isAllMarketplaces = filtersManager.filters.marketplace === 'all' || !filtersManager.filters.marketplace;
   const shouldLoadShopee = isShopeeMarketplace || isAllMarketplaces;
+  
+  // 🛍️ SHOPEE: Colunas que não tem dados na Shopee (ocultar na aba Shopee)
+  const SHOPEE_HIDDEN_COLUMNS = useMemo(() => new Set([
+    'payment_method',      // Método Pagamento
+    'payment_status',      // Status Pagamento
+    'cpf_cnpj',            // CPF/CNPJ
+    'power_seller_status', // Medalha
+    'level_id',            // Reputação
+    'conditions',          // Condição
+    'substatus_detail',    // Substatus do Envio
+    'tracking_number',     // Rastreamento
+    'pack_id',             // Pack ID
+    'pickup_id',           // Pickup ID
+    'tags',                // Tags do Pedido
+  ]), []);
+  
+  // Filtrar colunas baseado no marketplace selecionado
+  const visibleColumns = useMemo(() => {
+    const baseVisible = columnManager.state.visibleColumns;
+    
+    // Se for Shopee, remover colunas sem dados
+    if (isShopeeMarketplace) {
+      const filtered = new Set<string>();
+      baseVisible.forEach(col => {
+        if (!SHOPEE_HIDDEN_COLUMNS.has(col)) {
+          filtered.add(col);
+        }
+      });
+      return filtered;
+    }
+    
+    return baseVisible;
+  }, [columnManager.state.visibleColumns, isShopeeMarketplace, SHOPEE_HIDDEN_COLUMNS]);
+  
+  // Filtrar definições de colunas para Shopee
+  const filteredVisibleDefinitions = useMemo(() => {
+    if (isShopeeMarketplace) {
+      return columnManager.visibleDefinitions.filter(
+        def => !SHOPEE_HIDDEN_COLUMNS.has(def.key)
+      );
+    }
+    return columnManager.visibleDefinitions;
+  }, [columnManager.visibleDefinitions, isShopeeMarketplace, SHOPEE_HIDDEN_COLUMNS]);
+  
+  // Definições filtradas para o seletor de colunas (Shopee oculta algumas)
+  const filteredDefinitions = useMemo(() => {
+    if (isShopeeMarketplace) {
+      return columnManager.definitions.filter(
+        def => !SHOPEE_HIDDEN_COLUMNS.has(def.key)
+      );
+    }
+    return columnManager.definitions;
+  }, [columnManager.definitions, isShopeeMarketplace, SHOPEE_HIDDEN_COLUMNS]);
   
   const shopeeOrdersDB = useShopeeOrdersFromDB({
     enabled: shouldLoadShopee,
@@ -907,6 +957,7 @@ function SimplePedidosPage({ className }: Props) {
                       needsManualApplication={filtersManager.needsManualApplication}
                       isApplying={filtersManager.isApplying}
                       columnManager={columnManager}
+                      filteredDefinitions={filteredDefinitions}
                       onOpenConfigLocais={() => setConfigLocaisOpen(true)}
                       onOpenShopeeImport={() => setShowShopeeImportModal(true)}
                       activeFiltersCount={filtersManager.activeFiltersCount}
@@ -1088,7 +1139,7 @@ function SimplePedidosPage({ className }: Props) {
             setSelectedOrders={setSelectedOrders}
             mappingData={mappingData}
             visibleColumns={visibleColumns}
-            visibleDefinitions={columnManager.visibleDefinitions}
+            visibleDefinitions={filteredVisibleDefinitions}
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={(page) => {

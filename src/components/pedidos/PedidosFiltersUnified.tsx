@@ -36,6 +36,7 @@ interface PedidosFiltersUnifiedProps {
   activeFiltersCount: number;
   contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>;
   columnManager?: any;
+  filteredDefinitions?: any[]; // 🛍️ Definições de colunas filtradas (ex: para Shopee)
   onOpenConfigLocais?: () => void;
   onOpenShopeeImport?: () => void;
   // Status Avançado
@@ -82,6 +83,7 @@ export function PedidosFiltersUnified({
   activeFiltersCount,
   contasML = [],
   columnManager,
+  filteredDefinitions,
   onOpenConfigLocais,
   onOpenShopeeImport,
   useAdvancedStatus = false,
@@ -229,6 +231,7 @@ export function PedidosFiltersUnified({
         <div className="flex-shrink-0">
           <ColumnManager 
             manager={columnManager}
+            definitions={filteredDefinitions}
             trigger={
               <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs gap-1.5">
                 <Columns3 className="h-3 w-3" />
