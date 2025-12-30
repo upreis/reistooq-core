@@ -386,8 +386,11 @@ export function fotografarPedidoCompleto(
     status_insumos: mapping?.status_insumos || '-',
     marketplace_origem: (() => {
       if (order.marketplace_origem) return order.marketplace_origem;
-      if (order.integration_account_id) return 'Mercado Livre';
+      // ✅ Shopee: detectar via provider/marketplace do objeto unificado
+      if (order.marketplace === 'shopee' || order.provider === 'shopee') return 'Shopee';
+      if (order.unified?.marketplace === 'shopee' || order.unified?.provider === 'shopee') return 'Shopee';
       if (order.origin === 'shopee') return 'Shopee';
+      if (order.integration_account_id) return 'Mercado Livre';
       if (order.origin === 'tiny') return 'Tiny';
       return 'Interno';
     })(),
