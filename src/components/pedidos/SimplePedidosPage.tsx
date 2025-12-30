@@ -310,8 +310,17 @@ function SimplePedidosPage({ className }: Props) {
   
   // 🛍️ SHOPEE: Colunas que não tem dados na Shopee (ocultar na aba Shopee)
   const SHOPEE_HIDDEN_COLUMNS = useMemo(() => new Set([
+    'payment_method',      // Método Pagamento
+    'payment_status',      // Status Pagamento
+    'cpf_cnpj',            // CPF/CNPJ
+    'power_seller_status', // Medalha
+    'level_id',            // Reputação
+    'conditions',          // Condição
     'substatus_detail',    // Substatus do Envio
     'tracking_number',     // Rastreamento
+    'pack_id',             // Pack ID
+    'pickup_id',           // Pickup ID
+    'tags',                // Tags do Pedido
   ]), []);
   
   // Filtrar colunas baseado no marketplace selecionado
