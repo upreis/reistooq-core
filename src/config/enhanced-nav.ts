@@ -156,20 +156,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'History' 
       },
       
-      // CONFIGURAÇÕES E ADMINISTRAÇÃO
-      {
-        id: 'configuracoes',
-        label: 'Configurações',
-        icon: 'Settings',
-        children: [
-          { 
-            id: 'anuncios', 
-            label: 'Avisos', 
-            path: '/configuracoes/anuncios', 
-            icon: 'Megaphone' 
-          },
-        ]
-      },
+      // ADMINISTRAÇÃO
       { 
         id: 'admin', 
         label: 'Administração', 
