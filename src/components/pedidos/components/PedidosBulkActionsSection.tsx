@@ -92,21 +92,38 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
       if (!order) return null;
       
       const mapping = mappingData.get(order.id);
-      const quantidadeItens = order.order_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
+
+      const quantidadeOrderItems =
+        order.order_items?.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 0), 0) || 0;
+      const quantidadeItems =
+        Array.isArray(order.items)
+          ? order.items.reduce((sum: number, item: any) => sum + (Number(item?.quantity) || 0), 0)
+          : 0;
+
+      // ✅ Fallbacks (Shopee normalmente não tem order_items)
+      const quantidadeBase =
+        quantidadeOrderItems ||
+        quantidadeItems ||
+        (Number(order.total_itens) || 0) ||
+        (Number(order.quantidade) || 0) ||
+        (Number(order.quantidade_itens) || 0);
+
       const qtdKit = mapping?.quantidade || 1;
-      
+
       // 🔍 DEBUG: Verificar se local_estoque_id está presente
       console.log('📦 Pedido preparado para baixa:', {
         numero: order.numero || order.id,
         local_estoque_id: order.local_estoque_id,
         local_estoque_nome: order.local_estoque_nome || order.local_estoque,
-        sku_kit: mapping?.skuKit
+        sku_kit: mapping?.skuKit,
+        quantidadeBase,
+        qtdKit
       });
-      
+
       return {
         ...order,
         sku_kit: mapping?.skuKit || null,
-        total_itens: quantidadeItens * qtdKit
+        total_itens: quantidadeBase * qtdKit
       };
     }).filter(Boolean);
   }, [selectedOrders, displayedOrders, mappingData]);

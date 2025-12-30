@@ -58,23 +58,39 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       contextoDaUI_disponivel: !!contextoDaUI,
       mappingData_disponivel: !!contextoDaUI?.mappingData
     });
-    
-    return pedidos.map(pedido => {
+
+    const getQuantidadePedido = (pedido: any): number => {
+      // Preferência: campo usado historicamente pelo modal
+      const totalItens = Number(pedido?.total_itens);
+      if (Number.isFinite(totalItens) && totalItens > 0) return totalItens;
+
+      // Fallbacks (ex.: Shopee pode vir com quantidade em outros campos)
+      const qtdDireta = Number(pedido?.quantidade ?? pedido?.quantidade_itens);
+      if (Number.isFinite(qtdDireta) && qtdDireta > 0) return qtdDireta;
+
+      const items = Array.isArray(pedido?.items) ? pedido.items : [];
+      const qtdItems = items.reduce((sum: number, it: any) => sum + (Number(it?.quantity) || 0), 0);
+      if (qtdItems > 0) return qtdItems;
+
+      return 0;
+    };
+
+    return pedidos.map((pedido) => {
       const mapping = contextoDaUI?.mappingData?.get(pedido.id);
       const skuKit = mapping?.skuKit || (pedido as any).sku_kit;
       const temMapeamento = !!skuKit;
-      const quantidade = Number((pedido as any).total_itens) || 0;
+      const quantidade = getQuantidadePedido(pedido);
       const localEstoqueId = (pedido as any).local_estoque_id;
       const temLocalEstoque = !!localEstoqueId;
       let statusBaixaCalc = mapping?.statusBaixa as StatusBaixa | undefined;
-      
+
       // 🛡️ VALIDAÇÃO: Verificar local de estoque PRIMEIRO
       if (!temLocalEstoque) {
         statusBaixaCalc = 'sem_local_estoque';
       } else if (!statusBaixaCalc) {
         statusBaixaCalc = temMapeamento ? 'pronto_baixar' : 'sem_mapear';
       }
-      
+
       const temEstoque = (statusBaixaCalc === 'pronto_baixar' && quantidade > 0) || (temMapeamento && quantidade > 0 && !mapping?.statusBaixa);
       
       // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado E se tem estoque E se tem composição E se tem local
