@@ -1090,6 +1090,7 @@ function SimplePedidosPage({ className }: Props) {
               actions.setPage(page);
             }}
             isPedidoProcessado={isPedidoProcessado}
+            activeTab={activeTab}
             renderStatusBaixa={renderStatusBaixa}
             renderStatusInsumos={renderStatusInsumos}
           />
