@@ -17,8 +17,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Megaphone, Plus, Edit, Trash2, Users, Shield, Route, Calendar, ExternalLink, Eye, EyeOff } from 'lucide-react';
+import { Megaphone, Plus, Edit, Trash2, Users, Shield, Route, Calendar, ExternalLink, Eye, EyeOff, FileText } from 'lucide-react';
 import type { Announcement, AnnouncementCreate, AnnouncementKind, AnnouncementTargeting } from '../types/announcements.types';
+import { PageTreeSelector } from './PageTreeSelector';
 
 const ANNOUNCEMENT_KINDS: Array<{value: AnnouncementKind, label: string, color: string}> = [
   { value: 'info', label: 'Informativo', color: 'bg-blue-500' },
@@ -273,27 +274,16 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({ announcement, onSav
           </TabsContent>
 
           <TabsContent value="routes" className="space-y-2">
-            <Label>Selecionar Páginas</Label>
-            <ScrollArea className="h-32 border rounded p-2">
-              {ROUTE_OPTIONS.map(route => (
-                <div key={route.value} className="flex items-center space-x-2 py-1">
-                  <input
-                    type="checkbox"
-                    checked={formData.targeting.routes.includes(route.value)}
-                    onChange={(e) => {
-                      const routes = e.target.checked
-                        ? [...formData.targeting.routes, route.value]
-                        : formData.targeting.routes.filter(r => r !== route.value);
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        targeting: { ...prev.targeting, routes } 
-                      }));
-                    }}
-                  />
-                  <span className="text-sm">{route.label}</span>
-                </div>
-              ))}
-            </ScrollArea>
+            <Label>Páginas onde o anúncio será exibido</Label>
+            <PageTreeSelector
+              selectedRoutes={formData.targeting.routes}
+              onChange={(routes) => {
+                setFormData(prev => ({ 
+                  ...prev, 
+                  targeting: { ...prev.targeting, routes } 
+                }));
+              }}
+            />
           </TabsContent>
         </Tabs>
       </div>
