@@ -132,48 +132,110 @@ function App() {
                   }>
                     <Route index element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
                     
-                    {/* Dashboard */}
-                    <Route path="dashboardinicial/*" element={<DashboardInicialPage />} />
+                    {/* Dashboard - todos autenticados podem ver */}
+                    <Route path="dashboardinicial/*" element={
+                      <PermissionRoute requiredAny={["dashboard:view"]}>
+                        <DashboardInicialPage />
+                      </PermissionRoute>
+                    } />
                     
-                    {/* Páginas principais */}
-                    <Route path="estoque/*" element={<Estoque />} />
-                    <Route path="pedidos" element={<Pedidos />} />
-                    <Route path="pedidos-v2" element={<PedidosV2 />} />
+                    {/* Estoque */}
+                    <Route path="estoque/*" element={
+                      <PermissionRoute requiredAny={["estoque:view", "estoque:read"]}>
+                        <Estoque />
+                      </PermissionRoute>
+                    } />
+                    
+                    {/* Vendas/Pedidos */}
+                    <Route path="pedidos" element={
+                      <PermissionRoute requiredAny={["vendas:read", "orders:read", "pedidos:view"]}>
+                        <Pedidos />
+                      </PermissionRoute>
+                    } />
+                    <Route path="pedidos-v2" element={
+                      <PermissionRoute requiredAny={["vendas:read", "orders:read", "pedidos:view"]}>
+                        <PedidosV2 />
+                      </PermissionRoute>
+                    } />
                     <Route path="scanner" element={<Navigate to="/aplicativos/scanner" replace />} />
-                    <Route path="historico" element={<Historico />} />
+                    
+                    {/* Histórico */}
+                    <Route path="historico" element={
+                      <PermissionRoute requiredAny={["historico:view", "vendas:read"]}>
+                        <Historico />
+                      </PermissionRoute>
+                    } />
                     
                     {/* Vendas com Envio */}
-                    <Route path="vendas-com-envio" element={<VendasComEnvio />} />
+                    <Route path="vendas-com-envio" element={
+                      <PermissionRoute requiredAny={["vendas:read", "orders:read"]}>
+                        <VendasComEnvio />
+                      </PermissionRoute>
+                    } />
                     
                     {/* Devoluções */}
-                    <Route path="devolucoesdevenda" element={<DevolucoesDeVenda />} />
+                    <Route path="devolucoesdevenda" element={
+                      <PermissionRoute requiredAny={["vendas:read", "devolucoes:view"]}>
+                        <DevolucoesDeVenda />
+                      </PermissionRoute>
+                    } />
                     
                     {/* Reclamações */}
-                    <Route path="reclamacoes" element={<Reclamacoes />} />
+                    <Route path="reclamacoes" element={
+                      <PermissionRoute requiredAny={["vendas:read", "reclamacoes:view"]}>
+                        <Reclamacoes />
+                      </PermissionRoute>
+                    } />
                     
                     {/* De-Para redirect e Alertas */}
                     <Route path="de-para" element={<Navigate to="/estoque/de-para" replace />} />
-                    <Route path="alertas" element={<Alertas />} />
+                    <Route path="alertas" element={
+                      <PermissionRoute requiredAny={["alertas:view", "estoque:view"]}>
+                        <Alertas />
+                      </PermissionRoute>
+                    } />
                     
                     {/* Compras */}
-                    <Route path="compras/*" element={<Compras />} />
+                    <Route path="compras/*" element={
+                      <PermissionRoute requiredAny={["compras:view", "compras:read"]}>
+                        <Compras />
+                      </PermissionRoute>
+                    } />
                     
                     {/* Configurações */}
-                    <Route path="configuracoes/*" element={<IntegracoesPage />} />
-                    <Route path="aplicativos/*" element={<AplicativosPage />} />
+                    <Route path="configuracoes/*" element={
+                      <PermissionRoute requiredAny={["configuracoes:view", "configuracoes:manage"]}>
+                        <IntegracoesPage />
+                      </PermissionRoute>
+                    } />
+                    
+                    {/* Aplicativos */}
+                    <Route path="aplicativos/*" element={
+                      <PermissionRoute requiredAny={["aplicativos:view", "dashboard:view"]}>
+                        <AplicativosPage />
+                      </PermissionRoute>
+                    } />
                     
                     {/* Admin */}
                     <Route path="admin/*" element={
-                      <PermissionRoute requiredPermissions={["admin.access"]}>
+                      <PermissionRoute requiredAny={["admin:access", "admin.access"]}>
                         <AdminPage />
                       </PermissionRoute>
                     } />
                     
                     {/* AI Insights */}
-                    <Route path="ai-insights" element={<AIInsights />} />
+                    <Route path="ai-insights" element={
+                      <PermissionRoute requiredAny={["admin:access", "ai:insights"]}>
+                        <AIInsights />
+                      </PermissionRoute>
+                    } />
                     
-                    {/* Debug - Vendas Hoje */}
-                    <Route path="debug-vendas-hoje" element={<DebugVendasHoje />} />
+                    {/* Debug - Vendas Hoje (apenas admin) */}
+                    <Route path="debug-vendas-hoje" element={
+                      <PermissionRoute requiredAny={["admin:access"]}>
+                        <DebugVendasHoje />
+                      </PermissionRoute>
+                    } />
                     
                     
                     {/* Outros */}
