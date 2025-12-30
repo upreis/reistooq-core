@@ -22,11 +22,7 @@ import type { Announcement, AnnouncementCreate, AnnouncementKind, AnnouncementTa
 import { PageTreeSelector } from './PageTreeSelector';
 
 const ANNOUNCEMENT_KINDS: Array<{value: AnnouncementKind, label: string, color: string}> = [
-  { value: 'info', label: 'Informativo', color: 'bg-blue-500' },
-  { value: 'warning', label: 'Aviso', color: 'bg-yellow-500' },
-  { value: 'success', label: 'Sucesso', color: 'bg-green-500' },
-  { value: 'error', label: 'Erro', color: 'bg-red-500' },
-  { value: 'promotion', label: 'Promoção', color: 'bg-purple-500' }
+  { value: 'info', label: 'Informativo', color: 'bg-blue-500' }
 ];
 
 const ROUTE_OPTIONS = [
