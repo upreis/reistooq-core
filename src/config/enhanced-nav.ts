@@ -175,12 +175,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Users'
           },
           {
-            id: 'admin-cargos',
-            label: 'Cargos',
-            path: '/admin/cargos',
-            icon: 'UserCheck'
-          },
-          {
             id: 'admin-convites',
             label: 'Convites',
             path: '/admin/convites',

@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AdminVisaoGeral } from "./admin/AdminVisaoGeral";
 import AdminUsuarios from "./admin/AdminUsuarios";
-import AdminCargos from "./admin/AdminCargos";
 import AdminConvites from "./admin/AdminConvites";
 import AdminAlertas from "./admin/AdminAlertas";
 import AdminSeguranca from "./admin/AdminSeguranca";
@@ -15,7 +14,7 @@ const AdminContent = () => {
       <Routes>
         <Route index element={<AdminVisaoGeral />} />
         <Route path="usuarios" element={<AdminUsuarios />} />
-        <Route path="cargos" element={<AdminCargos />} />
+        <Route path="cargos" element={<Navigate to="/admin/usuarios" replace />} />
         <Route path="convites" element={<AdminConvites />} />
         <Route path="alertas" element={<AdminAlertas />} />
         <Route path="seguranca" element={<AdminSeguranca />} />
