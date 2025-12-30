@@ -151,16 +151,10 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
           numero_raw: numeroPedidoRaw,
         });
 
-        // 🔍 Buscar registro no histórico por número do pedido (mais confiável) e fallback no id_unico
-        const { data: historicoData, error: searchError } = await supabase.rpc(
-          'get_historico_vendas_browse',
-          {
-            _limit: 10,
-            _offset: 0,
-            _search: numeroPedido || idUnicoNorm,
-            _start: null,
-            _end: null,
-          }
+        // 🔍 Buscar registro no histórico usando RPC segura que inclui registros sem integration_account_id
+        const { data: historicoRows, error: searchError } = await supabase.rpc(
+          'hv_lookup_estorno',
+          { p_search: numeroPedido || idUnicoNorm }
         );
 
         if (searchError) {
@@ -170,34 +164,13 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
         }
 
         // 🔍 Encontrar registro correspondente (comparação normalizada)
-        let registroHistorico = historicoData?.find((h: any) => {
-          const hIdUnico = normalizar(h.id_unico);
-          const hNumero = normalizar(h.numero_pedido);
-          return hIdUnico === idUnicoNorm || hNumero === numeroPedido;
-        });
-
-        if (!registroHistorico) {
-          // Fallback: registros Shopee podem não ter integration_account_id e não aparecem no RPC get_historico_vendas_browse
-          const { data: hvRows, error: hvErr } = await supabase
-            .from('historico_vendas')
-            .select('id, id_unico, numero_pedido')
-            .or(`numero_pedido.eq.${numeroPedido},id_unico.eq.${idUnicoNorm}`)
-            .limit(5);
-
-          if (hvErr) {
-            console.error('❌ Fallback direto no historico_vendas falhou:', hvErr);
-          }
-
-          if (!hvErr && hvRows?.length) {
-            registroHistorico = hvRows
-              .map((r: any) => ({
-                ...r,
-                id_unico: normalizar(r.id_unico),
-                numero_pedido: normalizar(r.numero_pedido),
-              }))
-              .find((r: any) => r.numero_pedido === numeroPedido || r.id_unico === idUnicoNorm);
-          }
-        }
+        let registroHistorico = historicoRows
+          ?.map((h: any) => ({
+            ...h,
+            id_unico: normalizar(h.id_unico),
+            numero_pedido: normalizar(h.numero_pedido),
+          }))
+          .find((h: any) => h.id_unico === idUnicoNorm || h.numero_pedido === numeroPedido);
 
         if (!registroHistorico) {
           console.warn('⚠️ Registro não encontrado no histórico para:', { orderId, idUnico: idUnicoNorm, numero: numeroPedido });
