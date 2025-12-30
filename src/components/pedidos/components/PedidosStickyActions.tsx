@@ -121,18 +121,25 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
         const order = displayedOrders.find(o => o.id === orderId);
         if (!order) continue;
 
-        // 🔍 Gerar id_unico do pedido para buscar no histórico
-        const idUnico = buildIdUnico(order);
-        const numeroPedido = order.numero || order.id || '';
+        // 🔍 Gerar id_unico/número do pedido para buscar no histórico
+        const idUnico = (order as any).id_unico || buildIdUnico(order);
+        const numeroPedido = String(
+          (order as any).numero ||
+            (order as any).order_id ||
+            (order as any).unified?.numero ||
+            (order as any).unified?.order_id ||
+            (order as any).id ||
+            ''
+        ).trim();
 
         console.log('🔄 Buscando histórico para estorno:', { orderId, idUnico, numero: numeroPedido });
 
-        // 🔍 Buscar registro no histórico por id_unico ou numero_pedido
+        // 🔍 Buscar registro no histórico por número do pedido (mais confiável) e fallback no id_unico
         const { data: historicoData, error: searchError } = await supabase
           .rpc('get_historico_vendas_browse', {
             _limit: 10,
             _offset: 0,
-            _search: order.numero || idUnico,
+            _search: numeroPedido || idUnico,
             _start: null,
             _end: null
           });
@@ -144,10 +151,9 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
         }
 
         // 🔍 Encontrar registro correspondente
-        const registroHistorico = historicoData?.find((h: any) => 
-          h.id_unico === idUnico || 
-          h.numero_pedido === order.numero ||
-          h.pedido_id === orderId
+        const registroHistorico = historicoData?.find((h: any) =>
+          h.id_unico === idUnico ||
+          h.numero_pedido === numeroPedido
         );
 
         if (!registroHistorico) {

@@ -59,6 +59,8 @@ interface PedidosTableSectionProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   isPedidoProcessado: (order: any) => boolean;
+  /** Aba ativa: habilita seleção no histórico para permitir estorno */
+  activeTab?: 'pendentes' | 'historico';
   className?: string;
   renderStatusBaixa?: (pedidoId: string) => React.ReactNode;
   renderStatusInsumos?: (pedidoId: string) => React.ReactNode;
@@ -81,6 +83,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   totalPages,
   onPageChange,
   isPedidoProcessado,
+  activeTab = 'pendentes',
   className,
   renderStatusBaixa,
   renderStatusInsumos
@@ -1254,7 +1257,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => handleSelectOrder(order.id)}
-                            disabled={isProcessed}
+                            disabled={activeTab !== 'historico' && isProcessed}
                             className="w-3.5 h-3.5 rounded-full border-0"
                           />
                         </div>
