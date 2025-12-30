@@ -1184,6 +1184,7 @@ function SimplePedidosPage({ className }: Props) {
         mappingData={mappingData}
         isPedidoProcessado={isPedidoProcessado}
         quickFilter={'all'}
+        activeTab={activeTab}
         enableBulkDelete={isShopeeMarketplace}
         deleteTableName="pedidos_shopee"
         onDeleteConcluida={() => {
@@ -1197,6 +1198,14 @@ function SimplePedidosPage({ className }: Props) {
           if (orders && orders.length > 0) {
             mappingActions.reprocessMappings(orders);
           }
+        }}
+        onEstornoConcluido={() => {
+          // 🔄 Recarregar após estorno
+          if (orders && orders.length > 0) {
+            mappingActions.reprocessMappings(orders);
+          }
+          // Recarregar pedidos
+          actions.refetch();
         }}
       />
 

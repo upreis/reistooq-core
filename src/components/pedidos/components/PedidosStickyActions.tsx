@@ -1,6 +1,7 @@
 /**
  * 🔥 AÇÕES STICKY UNIFICADAS
  * Botão único baseado no filtro de "Prontos p/ baixar" + seleção global
+ * + Estorno de vendas na aba histórico
  */
 
 import { memo, useMemo, useCallback, useState } from 'react';
@@ -21,9 +22,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import toast from 'react-hot-toast';
-import { Download, Package, CheckSquare, Square, AlertCircle, Trash2 } from 'lucide-react';
+import { Download, Package, CheckSquare, Square, AlertCircle, Trash2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BaixaEstoqueModal } from '../BaixaEstoqueModal';
+import { HistoricoDeleteService } from '@/features/historico/services/HistoricoDeleteService';
+import { buildIdUnico } from '@/utils/idUnico';
 
 interface PedidosStickyActionsProps {
   orders: any[];
@@ -34,6 +37,14 @@ interface PedidosStickyActionsProps {
   isPedidoProcessado: (order: any) => boolean;
   quickFilter: string;
   onBaixaConcluida?: () => void;
+  /**
+   * Aba ativa: 'pendentes' ou 'historico'
+   */
+  activeTab?: 'pendentes' | 'historico';
+  /**
+   * Callback após estornar (refetch).
+   */
+  onEstornoConcluido?: () => void;
   /**
    * Habilita exclusão em lote (ex.: pedidos importados da Shopee).
    * Por segurança, mantenha desligado para outras fontes.
@@ -59,6 +70,8 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
   isPedidoProcessado,
   quickFilter,
   onBaixaConcluida,
+  activeTab = 'pendentes',
+  onEstornoConcluido,
   enableBulkDelete = false,
   deleteTableName = 'pedidos_shopee',
   onDeleteConcluida,
@@ -67,6 +80,7 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
   const [showBaixaModal, setShowBaixaModal] = useState(false);
   const [showFilterConfirm, setShowFilterConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEstornando, setIsEstornando] = useState(false);
 
   const handleBulkDelete = useCallback(async () => {
     if (!enableBulkDelete) return;
@@ -92,6 +106,84 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
       setIsDeleting(false);
     }
   }, [enableBulkDelete, selectedOrders, deleteTableName, setSelectedOrders, onDeleteConcluida]);
+
+  // 🔄 ESTORNO: Reverter baixa de estoque para pedidos na aba histórico
+  const handleEstorno = useCallback(async () => {
+    if (activeTab !== 'historico') return;
+    if (selectedOrders.size === 0) return;
+
+    setIsEstornando(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (const orderId of selectedOrders) {
+        const order = displayedOrders.find(o => o.id === orderId);
+        if (!order) continue;
+
+        // 🔍 Gerar id_unico do pedido para buscar no histórico
+        const idUnico = buildIdUnico(order);
+        const numeroPedido = order.numero || order.id || '';
+
+        console.log('🔄 Buscando histórico para estorno:', { orderId, idUnico, numero: numeroPedido });
+
+        // 🔍 Buscar registro no histórico por id_unico ou numero_pedido
+        const { data: historicoData, error: searchError } = await supabase
+          .rpc('get_historico_vendas_browse', {
+            _limit: 10,
+            _offset: 0,
+            _search: order.numero || idUnico,
+            _start: null,
+            _end: null
+          });
+
+        if (searchError) {
+          console.error('❌ Erro ao buscar histórico:', searchError);
+          errorCount++;
+          continue;
+        }
+
+        // 🔍 Encontrar registro correspondente
+        const registroHistorico = historicoData?.find((h: any) => 
+          h.id_unico === idUnico || 
+          h.numero_pedido === order.numero ||
+          h.pedido_id === orderId
+        );
+
+        if (!registroHistorico) {
+          console.warn('⚠️ Registro não encontrado no histórico para:', { orderId, idUnico });
+          errorCount++;
+          continue;
+        }
+
+        console.log('✅ Registro encontrado, estornando:', registroHistorico.id);
+
+        // 🔄 Chamar service de exclusão que reverte o estoque
+        const success = await HistoricoDeleteService.deleteItem(registroHistorico.id);
+        
+        if (success) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} pedido(s) estornado(s) com sucesso. Estoque revertido.`);
+        setSelectedOrders(new Set());
+        onEstornoConcluido?.();
+      }
+      
+      if (errorCount > 0) {
+        toast.error(`${errorCount} pedido(s) não puderam ser estornados.`);
+      }
+    } catch (err: any) {
+      console.error('Erro ao estornar pedidos:', err);
+      toast.error(err?.message || 'Não foi possível estornar os pedidos.');
+    } finally {
+      setIsEstornando(false);
+    }
+  }, [activeTab, selectedOrders, displayedOrders, setSelectedOrders, onEstornoConcluido]);
 
   // Contadores baseados no filtro atual
   const stats = useMemo(() => {
@@ -340,21 +432,64 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
               </AlertDialog>
             )}
 
-            <Button
-              onClick={() => {
-                setShowBaixaModal(false);
-                setTimeout(() => setShowBaixaModal(true), 0);
-              }}
-              disabled={stats.selectedReadyCount === 0}
-              className="gap-2 min-w-[200px]"
-              size="lg"
-            >
-              <Download className="h-4 w-4" />
-              {stats.selectedReadyCount > 0
-                ? `Baixar estoque de ${stats.selectedReadyCount} pedidos`
-                : 'Selecione pedidos prontos para baixa'
-              }
-            </Button>
+            {/* 🔄 ESTORNO: Apenas na aba histórico */}
+            {activeTab === 'historico' && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    disabled={isEstornando || stats.selected === 0}
+                    className="gap-2 min-w-[200px] border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {isEstornando ? 'Estornando...' : `Estornar ${stats.selected} pedido(s)`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Estornar vendas selecionadas?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação irá reverter a baixa de estoque de {stats.selected} pedido(s).
+                      Os produtos voltarão ao estoque e os pedidos ficarão disponíveis para nova baixa.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isEstornando}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button
+                        variant="default"
+                        onClick={handleEstorno}
+                        disabled={isEstornando}
+                        className="gap-2 bg-orange-500 hover:bg-orange-600"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        {isEstornando ? 'Estornando...' : 'Confirmar Estorno'}
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
+            {/* 📦 BAIXAR ESTOQUE: Apenas na aba pendentes */}
+            {activeTab === 'pendentes' && (
+              <Button
+                onClick={() => {
+                  setShowBaixaModal(false);
+                  setTimeout(() => setShowBaixaModal(true), 0);
+                }}
+                disabled={stats.selectedReadyCount === 0}
+                className="gap-2 min-w-[200px]"
+                size="lg"
+              >
+                <Download className="h-4 w-4" />
+                {stats.selectedReadyCount > 0
+                  ? `Baixar estoque de ${stats.selectedReadyCount} pedidos`
+                  : 'Selecione pedidos prontos para baixa'
+                }
+              </Button>
+            )}
           </div>
         </div>
       </Card>
