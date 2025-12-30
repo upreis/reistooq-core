@@ -272,17 +272,24 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
           total: order.preco_total,
           total_amount: order.preco_total,
           valor_total: order.preco_total,
+          // Envio (status de entrega)
+          // A planilha Shopee traz textos como: "A enviar", "A Caminho", "Entregue".
+          // Normalizamos para o padrão do StatusBadge: pending | shipped | delivered.
           shipping: {
-            status: order.order_status?.includes('Concluído') ? 'delivered' : 
-                   order.order_status?.includes('Enviado') ? 'shipped' : 'pending',
+            status: (() => {
+              const s = String(order.order_status || '').toLowerCase();
+              if (s.includes('entreg') || s.includes('conclu') || s.includes('delivered')) return 'delivered';
+              if (s.includes('a caminho') || s.includes('caminho') || s.includes('envi') || s.includes('shipp')) return 'shipped';
+              return 'pending';
+            })(),
             tracking_number: order.codigo_rastreamento,
             receiver_address: {
               street_name: order.endereco_rua,
               neighborhood: order.endereco_bairro,
               city: { name: order.endereco_cidade },
               state: { name: order.endereco_estado },
-              zip_code: order.endereco_cep
-            }
+              zip_code: order.endereco_cep,
+            },
           },
           empresa: order.empresa,
           account_name: order.empresa,

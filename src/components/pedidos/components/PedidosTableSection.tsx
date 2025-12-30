@@ -644,38 +644,79 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        }
                      case 'order_status_detail':
                        return <span className="text-xs">{order.order_status_detail || order.status_detail || order.raw?.status_detail || '-'}</span>;
-                     // ✅ SITUAÇÃO DO PEDIDO - Coluna que mostra A enviar / A caminho / Entregue
-                     case 'situacao':
-                       {
-                         const foiAtualizado = order.unified?.foi_atualizado || order.foi_atualizado || order.raw?.foi_atualizado;
-                         // Usar shipping_status que contém pending/shipped/delivered
-                         const situacao = order.shipping_status || order.unified?.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.raw?.shipping_details?.status || 'pending';
-                         return (
-                           <div className="flex items-center gap-2">
-                             <StatusBadge 
-                               status={situacao} 
-                               substatus={order.shipping_substatus || order.shipping?.substatus}
-                               type="shipping"
-                             />
-                             {foiAtualizado && (
-                               <Badge 
-                                 variant="default" 
-                                 className="gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white border-none shadow-sm animate-pulse text-[10px] px-1.5 py-0.5"
-                               >
-                                 Nova
-                               </Badge>
-                             )}
-                           </div>
-                         );
-                       }
-                     case 'shipping_status':
-                       return (
-                         <StatusBadge 
-                           status={order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.raw?.shipping_details?.status || 'unknown'} 
-                           substatus={order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus}
-                           type="shipping"
-                         />
-                       );
+                      // ✅ SITUAÇÃO DO PEDIDO - Coluna que mostra A enviar / A caminho / Entregue
+                      case 'situacao':
+                        {
+                          const foiAtualizado = order.unified?.foi_atualizado || order.foi_atualizado || order.raw?.foi_atualizado;
+
+                          const situacaoStatus =
+                            order.shipping_status ||
+                            order.unified?.shipping_status ||
+                            order.unified?.shipping?.status ||
+                            order.shipping?.status ||
+                            order.raw?.shipping?.status ||
+                            order.raw?.shipping_details?.status ||
+                            'pending';
+
+                          const situacaoSubstatus =
+                            order.shipping_substatus ||
+                            order.unified?.shipping_substatus ||
+                            order.unified?.shipping?.substatus ||
+                            order.shipping?.substatus ||
+                            order.raw?.shipping?.substatus ||
+                            order.raw?.shipping_details?.substatus;
+
+                          return (
+                            <div className="flex items-center gap-2">
+                              <StatusBadge status={situacaoStatus} substatus={situacaoSubstatus} type="shipping" />
+                              {foiAtualizado && (
+                                <Badge
+                                  variant="default"
+                                  className="animate-pulse text-[10px] px-1.5 py-0.5"
+                                >
+                                  Novo
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        }
+
+                      // ✅ STATUS DO ENVIO - campo técnico (shipping_status)
+                      case 'shipping_status':
+                        {
+                          const foiAtualizado = order.unified?.foi_atualizado || order.foi_atualizado || order.raw?.foi_atualizado;
+
+                          const shippingStatus =
+                            order.shipping_status ||
+                            order.unified?.shipping_status ||
+                            order.unified?.shipping?.status ||
+                            order.shipping?.status ||
+                            order.raw?.shipping?.status ||
+                            order.raw?.shipping_details?.status ||
+                            'unknown';
+
+                          const shippingSubstatus =
+                            order.shipping_substatus ||
+                            order.unified?.shipping_substatus ||
+                            order.unified?.shipping?.substatus ||
+                            order.shipping?.substatus ||
+                            order.raw?.shipping?.substatus ||
+                            order.raw?.shipping_details?.substatus;
+
+                          return (
+                            <div className="flex items-center gap-2">
+                              <StatusBadge status={shippingStatus} substatus={shippingSubstatus} type="shipping" />
+                              {foiAtualizado && (
+                                <Badge
+                                  variant="default"
+                                  className="animate-pulse text-[10px] px-1.5 py-0.5"
+                                >
+                                  Novo
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        }
                      case 'shipping_substatus':
                         const rawSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus;
                         return (
