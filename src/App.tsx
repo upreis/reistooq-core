@@ -211,7 +211,7 @@ function App() {
                     
                     {/* Aplicativos */}
                     <Route path="aplicativos/*" element={
-                      <PermissionRoute requiredAny={["aplicativos:view", "dashboard:view"]}>
+                      <PermissionRoute requiredAny={["aplicativos:view", "calendar:view", "notes:view", "scanner:use"]}>
                         <AplicativosPage />
                       </PermissionRoute>
                     } />
@@ -236,12 +236,22 @@ function App() {
                         <DebugVendasHoje />
                       </PermissionRoute>
                     } />
-                    
-                    
                     {/* Outros */}
-                    <Route path="calendar" element={<Calendar />} />
-                    <Route path="notes" element={<Notes />} />
-                    <Route path="oms/*" element={<OMS />} />
+                    <Route path="calendar" element={
+                      <PermissionRoute requiredAny={["calendar:view"]}>
+                        <Calendar />
+                      </PermissionRoute>
+                    } />
+                    <Route path="notes" element={
+                      <PermissionRoute requiredAny={["notes:view"]}>
+                        <Notes />
+                      </PermissionRoute>
+                    } />
+                    <Route path="oms/*" element={
+                      <PermissionRoute requiredAny={["oms:view", "oms:pedidos", "oms:clientes", "oms:configuracoes"]}>
+                        <OMS />
+                      </PermissionRoute>
+                    } />
                     <Route path="cards" element={<Cards />} />
                     <Route path="banners" element={<Banners />} />
                     <Route path="charts" element={<Charts />} />
