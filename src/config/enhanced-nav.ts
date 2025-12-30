@@ -177,7 +177,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         children: [
           {
             id: 'admin-visao-geral',
-            label: 'Visão Geral',
+            label: 'Geral',
             path: '/admin',
             icon: 'LayoutDashboard'
           },
