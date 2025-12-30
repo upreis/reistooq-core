@@ -1,11 +1,32 @@
 /**
  * 🛍️ Hook para buscar pedidos Shopee importados do banco de dados
  * Diferente de fetchShopeeOrders que usa Edge Function para API tempo real
+ * ✅ ATUALIZADO: Agora enriquece com local_estoque e local_venda via mapeamentos
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentProfile } from '@/hooks/useCurrentProfile';
+
+const isDev = process.env.NODE_ENV === 'development';
+
+interface MapeamentoLocal {
+  id: string;
+  empresa: string;
+  tipo_logistico: string;
+  local_estoque_id: string;
+  local_venda_id?: string | null;
+  locais_estoque?: {
+    id: string;
+    nome: string;
+  };
+  locais_venda?: {
+    id: string;
+    nome: string;
+    icone: string;
+    local_estoque_id: string;
+  };
+}
 
 export interface ShopeeOrderFromDB {
   id: string;
@@ -56,13 +77,113 @@ interface UseShopeeOrdersParams {
 export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseShopeeOrdersResult {
   const { enabled = true, search, dataInicio, dataFim, page = 1, pageSize = 50 } = params;
   
-  const [orders, setOrders] = useState<any[]>([]);
+  const [rawOrders, setRawOrders] = useState<any[]>([]);
+  const [mapeamentos, setMapeamentos] = useState<MapeamentoLocal[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const { profile } = useCurrentProfile();
   const organizationId = profile?.organizacao_id;
+
+  // 🔄 Buscar mapeamentos de locais
+  useEffect(() => {
+    async function carregarMapeamentos() {
+      const { data, error: mapError } = await supabase
+        .from('mapeamento_locais_estoque')
+        .select(`
+          id,
+          empresa,
+          tipo_logistico,
+          local_estoque_id,
+          local_venda_id,
+          locais_estoque (
+            id,
+            nome
+          ),
+          locais_venda (
+            id,
+            nome,
+            icone,
+            local_estoque_id
+          )
+        `)
+        .eq('ativo', true);
+
+      if (!mapError && data) {
+        if (isDev) console.log('🛍️ [ShopeeDB] Mapeamentos carregados:', data.length);
+        setMapeamentos(data as MapeamentoLocal[]);
+      }
+    }
+    carregarMapeamentos();
+
+    // Realtime para atualizar mapeamentos automaticamente
+    const channel = supabase
+      .channel('realtime:mapeamento_shopee')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'mapeamento_locais_estoque' },
+        () => {
+          if (isDev) console.log('🔄 [ShopeeDB] Mudança em mapeamentos, recarregando...');
+          carregarMapeamentos();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // 📦 Função para enriquecer pedido com local de estoque/venda
+  const enriquecerPedido = useCallback((order: any) => {
+    const empresa = order.empresa || '';
+    const tipoLogistico = order.tipo_logistico || '';
+
+    // Função para normalizar tipo logístico
+    const normalizarTipoLogistico = (tipo: string): string => {
+      const tipoLower = tipo.toLowerCase().trim();
+      if (tipoLower.includes('fulfillment') || tipoLower.includes('full')) {
+        return 'fulfillment';
+      } else if (tipoLower.includes('flex') || tipoLower.includes('self') || tipoLower.includes('envios')) {
+        return 'flex';
+      } else if (tipoLower.includes('cross')) {
+        return 'crossdocking';
+      }
+      return tipoLower;
+    };
+
+    const tipoLogisticoNormalizado = normalizarTipoLogistico(tipoLogistico);
+
+    // Buscar mapeamento correspondente
+    const mapeamento = mapeamentos.find(m => {
+      const tipoMapeamentoNormalizado = normalizarTipoLogistico(m.tipo_logistico);
+      return m.empresa === empresa && tipoMapeamentoNormalizado === tipoLogisticoNormalizado;
+    });
+
+    if (mapeamento && mapeamento.locais_estoque) {
+      return {
+        ...order,
+        local_estoque_id: mapeamento.local_estoque_id,
+        local_estoque_nome: mapeamento.locais_estoque.nome,
+        local_venda_id: mapeamento.local_venda_id || null,
+        local_venda_nome: mapeamento.locais_venda?.nome || null
+      };
+    }
+
+    return order;
+  }, [mapeamentos]);
+
+  // 🎯 Pedidos enriquecidos (memoizado)
+  const orders = useMemo(() => {
+    return rawOrders.map(orderWrapper => {
+      const enrichedUnified = enriquecerPedido(orderWrapper.unified);
+      return {
+        ...orderWrapper,
+        unified: enrichedUnified
+      };
+    });
+  }, [rawOrders, enriquecerPedido]);
 
   const fetchOrders = useCallback(async () => {
     if (!enabled || !organizationId) {
@@ -193,7 +314,7 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
         }
       }));
       
-      setOrders(unifiedOrders);
+      setRawOrders(unifiedOrders);
       setTotal(count || 0);
       
     } catch (err: any) {
