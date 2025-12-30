@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Row } from '@/services/orders';
 
@@ -30,6 +30,14 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
   const [mapeamentos, setMapeamentos] = useState<MapeamentoLocal[]>([]);
   const [loading, setLoading] = useState(true);
   const [rowsEnriquecidos, setRowsEnriquecidos] = useState<Row[]>(rows);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Função para forçar recarga dos mapeamentos
+  const refreshMapeamentos = useCallback(async () => {
+    if (isDev) console.log('🔄 [LocalEstoque] Forçando recarga de mapeamentos...');
+    setLoading(true);
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   // Buscar mapeamentos ativos
   useEffect(() => {
@@ -67,7 +75,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
     }
 
     carregarMapeamentos();
-  }, []);
+  }, [refreshKey]);
 
   // Enriquecer rows com local de estoque
   useEffect(() => {
@@ -195,6 +203,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
   return {
     rowsEnriquecidos,
     loading,
-    mapeamentos
+    mapeamentos,
+    refreshMapeamentos
   };
 }
