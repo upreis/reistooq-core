@@ -204,12 +204,14 @@ export function useShopeeOrdersFromDB(params: UseShopeeOrdersParams = {}): UseSh
         pageSize
       });
       
-      // Query base - buscar TODOS os pedidos sem filtro de data inicialmente para debug
+      // Query base
+      // ✅ IMPORTANTE: ordenar por created_at garante que pedidos recém-importados apareçam
+      // mesmo quando data_pedido vier nula/ausente.
       let query = supabase
         .from('pedidos_shopee')
         .select('*', { count: 'exact' })
         .eq('organization_id', organizationId)
-        .order('data_pedido', { ascending: false });
+        .order('created_at', { ascending: false });
       
       // Filtro de busca
       if (search) {
