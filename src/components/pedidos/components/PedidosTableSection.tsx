@@ -622,14 +622,23 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span className="text-xs">{translateCondition(order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || '-')}</span>;
                      case 'order_status':
                        {
-                         const foiAtualizado = order.foi_atualizado || order.unified?.foi_atualizado || order.raw?.foi_atualizado;
+                         // ✅ Verificar foi_atualizado: campo está em unified para pedidos Shopee
+                         const foiAtualizado = order.unified?.foi_atualizado || order.foi_atualizado || order.raw?.foi_atualizado;
                          return (
-                           <div className={foiAtualizado ? 'animate-pulse' : ''}>
+                           <div className="flex items-center gap-2">
                              <StatusBadge 
                                status={order.order_status || order.status || order.raw?.status || 'unknown'} 
                                substatus={order.order_status_detail || order.status_detail || order.raw?.status_detail}
                                type="order"
                              />
+                             {foiAtualizado && (
+                               <Badge 
+                                 variant="default" 
+                                 className="gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white border-none shadow-sm animate-pulse text-[10px] px-1.5 py-0.5"
+                               >
+                                 Nova
+                               </Badge>
+                             )}
                            </div>
                          );
                        }
@@ -637,14 +646,23 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span className="text-xs">{order.order_status_detail || order.status_detail || order.raw?.status_detail || '-'}</span>;
                      case 'shipping_status':
                        {
-                         const foiAtualizado = order.foi_atualizado || order.unified?.foi_atualizado || order.raw?.foi_atualizado;
+                         // ✅ Verificar foi_atualizado: campo está em unified para pedidos Shopee
+                         const foiAtualizado = order.unified?.foi_atualizado || order.foi_atualizado || order.raw?.foi_atualizado;
                          return (
-                           <div className={foiAtualizado ? 'animate-pulse' : ''}>
+                           <div className="flex items-center gap-2">
                              <StatusBadge 
                                status={order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.raw?.shipping_details?.status || 'unknown'} 
                                substatus={order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus}
                                type="shipping"
                              />
+                             {foiAtualizado && (
+                               <Badge 
+                                 variant="default" 
+                                 className="gap-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white border-none shadow-sm animate-pulse text-[10px] px-1.5 py-0.5"
+                               >
+                                 Nova
+                               </Badge>
+                             )}
                            </div>
                          );
                        }
