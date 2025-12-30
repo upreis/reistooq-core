@@ -163,12 +163,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'Settings',
         children: [
           { 
-            id: 'integracoes', 
-            label: 'Integrações', 
-            path: '/configuracoes/integracoes', 
-            icon: 'Zap' 
-          },
-          { 
             id: 'anuncios', 
             label: 'Avisos', 
             path: '/configuracoes/anuncios', 
@@ -216,6 +210,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Segurança',
             path: '/admin/seguranca',
             icon: 'Lock'
+          },
+          {
+            id: 'admin-integracoes',
+            label: 'Integrações',
+            path: '/admin/integracoes',
+            icon: 'Zap'
           },
           {
             id: 'admin-perfil',

@@ -2,7 +2,6 @@
 // Substitui a versão monolítica antiga com melhorias de performance e UX
 
 import { Routes, Route, Navigate } from "react-router-dom";
-import ConfiguracoesIntegracoes from "./ConfiguracoesIntegracoes";
 import AnunciosPage from "./AnunciosPage";
 
 const ConfiguracoesContent = () => {
@@ -11,10 +10,11 @@ const ConfiguracoesContent = () => {
       {/* Conteúdo das rotas */}
       <div>
         <Routes>
-          <Route index element={<Navigate to="integracoes" replace />} />
-          <Route path="integracoes" element={<ConfiguracoesIntegracoes />} />
+          {/* Redirect integrações para admin */}
+          <Route index element={<Navigate to="/admin/integracoes" replace />} />
+          <Route path="integracoes" element={<Navigate to="/admin/integracoes" replace />} />
           <Route path="anuncios" element={<AnunciosPage />} />
-          <Route path="*" element={<Navigate to="integracoes" replace />} />
+          <Route path="*" element={<Navigate to="anuncios" replace />} />
         </Routes>
       </div>
     </div>
