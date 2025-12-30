@@ -173,8 +173,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              {/* Coluna do Marketplace */}
-              <TableHead className="bg-background whitespace-nowrap sticky left-[40px] z-30 w-8"></TableHead>
               {/* Coluna fixa: ID-Único sempre primeiro */}
               <TableHead className="bg-background whitespace-nowrap">ID-Único</TableHead>
               {/* Demais cabeçalhos conforme ordem/seleção */}
@@ -1249,38 +1247,28 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       isProcessed && "opacity-75 bg-success/10"
                     )}
                   >
-                    {/* Checkbox de seleção - Sticky */}
-                    <TableCell className="text-center sticky left-0 z-10 bg-background">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => handleSelectOrder(order.id)}
-                        disabled={isProcessed}
-                      />
-                    </TableCell>
-
-                    {/* Ícone do Marketplace - Sticky */}
-                    <TableCell className="text-center sticky left-[40px] z-10 bg-background px-1">
-                      {(order.marketplace === 'shopee' || order.provider === 'shopee' || order.unified?.marketplace === 'shopee' || order.unified?.provider === 'shopee') ? (
-                        <img 
-                          src="/shopee-icon.png" 
-                          alt="Shopee" 
-                          className="w-5 h-5 object-contain inline-block"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                          }}
+                    {/* Checkbox de seleção + Ícone Marketplace - Sticky */}
+                    <TableCell className="sticky left-0 z-10 bg-background">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleSelectOrder(order.id)}
+                          disabled={isProcessed}
                         />
-                      ) : (
-                        <img 
-                          src="/mercadolivre-icon.png" 
-                          alt="Mercado Livre" 
-                          className="w-5 h-5 object-contain inline-block"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      )}
+                        {(order.marketplace === 'shopee' || order.provider === 'shopee' || order.unified?.marketplace === 'shopee' || order.unified?.provider === 'shopee') ? (
+                          <img 
+                            src="/shopee-icon.png" 
+                            alt="Shopee" 
+                            className="w-5 h-5 object-contain"
+                          />
+                        ) : (
+                          <svg viewBox="0 0 40 40" className="w-5 h-5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="20" fill="#FFE600"/>
+                            <path d="M10.5 27.5V13.5C10.5 12.4 11.4 11.5 12.5 11.5H14.5L16 15.5H24L25.5 11.5H27.5C28.6 11.5 29.5 12.4 29.5 13.5V27.5C29.5 28.6 28.6 29.5 27.5 29.5H12.5C11.4 29.5 10.5 28.6 10.5 27.5Z" fill="#2D3277"/>
+                            <path d="M16 20.5C16 19.1 17.1 18 18.5 18H21.5C22.9 18 24 19.1 24 20.5V24.5H16V20.5Z" fill="#FFE600"/>
+                          </svg>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Coluna fixa ID-Único */}
