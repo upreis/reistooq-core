@@ -90,7 +90,7 @@ const ROUTE_TO_ICON: Record<string, string> = {
   '/admin/convites': convitesIcon,
   '/admin/alertas': alertasIcon,
   '/admin/seguranca': segurancaIcon,
-  '/admin/auditoria': auditoriaIcon,
+  
   '/admin/perfil': perfilAdminIcon,
   // Ferramentas
   '/historico': historicoIcon,
