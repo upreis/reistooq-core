@@ -173,6 +173,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
+              {/* Coluna do Marketplace */}
+              <TableHead className="bg-background whitespace-nowrap sticky left-[40px] z-30 w-8"></TableHead>
               {/* Coluna fixa: ID-Único sempre primeiro */}
               <TableHead className="bg-background whitespace-nowrap">ID-Único</TableHead>
               {/* Demais cabeçalhos conforme ordem/seleção */}
@@ -1254,6 +1256,31 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         onCheckedChange={() => handleSelectOrder(order.id)}
                         disabled={isProcessed}
                       />
+                    </TableCell>
+
+                    {/* Ícone do Marketplace - Sticky */}
+                    <TableCell className="text-center sticky left-[40px] z-10 bg-background px-1">
+                      {(order.marketplace === 'shopee' || order.provider === 'shopee' || order.unified?.marketplace === 'shopee' || order.unified?.provider === 'shopee') ? (
+                        <img 
+                          src="/shopee-icon.png" 
+                          alt="Shopee" 
+                          className="w-5 h-5 object-contain inline-block"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : (
+                        <img 
+                          src="/mercadolivre-icon.png" 
+                          alt="Mercado Livre" 
+                          className="w-5 h-5 object-contain inline-block"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      )}
                     </TableCell>
 
                     {/* Coluna fixa ID-Único */}
