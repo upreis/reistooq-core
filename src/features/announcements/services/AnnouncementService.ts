@@ -131,10 +131,20 @@ export class AnnouncementService {
   }
 
   async getUsers(): Promise<Array<{id: string, name: string, email: string}>> {
-    const { data, error } = await supabase
+    // Primeiro obter a organização atual
+    const { data: orgData } = await supabase.rpc('get_current_org_id');
+    
+    let query = supabase
       .from('profiles')
       .select('id, nome_completo, nome_exibicao')
       .order('nome_completo');
+    
+    // Filtrar por organização se disponível
+    if (orgData) {
+      query = query.eq('organizacao_id', orgData);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching users:', error);
@@ -149,10 +159,20 @@ export class AnnouncementService {
   }
 
   async getRoles(): Promise<Array<{id: string, name: string, slug: string}>> {
-    const { data, error } = await supabase
+    // Primeiro obter a organização atual
+    const { data: orgData } = await supabase.rpc('get_current_org_id');
+    
+    let query = supabase
       .from('roles')
       .select('id, name, slug')
       .order('name');
+    
+    // Filtrar por organização se disponível
+    if (orgData) {
+      query = query.eq('organization_id', orgData);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching roles:', error);
