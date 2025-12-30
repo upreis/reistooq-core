@@ -14,11 +14,6 @@ const navItems = [
     icon: Users,
   },
   {
-    path: "/admin/cargos",
-    label: "Cargos",
-    icon: Shield,
-  },
-  {
     path: "/admin/convites",
     label: "Convites",
     icon: Mail,
