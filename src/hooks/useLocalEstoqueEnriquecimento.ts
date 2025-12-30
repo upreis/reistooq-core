@@ -77,6 +77,26 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
     carregarMapeamentos();
   }, [refreshKey]);
 
+  // 🔄 Revalidar automaticamente quando houver mudanças no banco (como no fluxo do Mercado Livre)
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime:mapeamento_locais_estoque')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'mapeamento_locais_estoque' },
+        () => {
+          if (isDev) console.log('🔄 [LocalEstoque] Mudança detectada em mapeamento_locais_estoque, recarregando...');
+          setLoading(true);
+          setRefreshKey((prev) => prev + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Enriquecer rows com local de estoque
   useEffect(() => {
     // ✅ Se não há pedidos, retorna array vazio
