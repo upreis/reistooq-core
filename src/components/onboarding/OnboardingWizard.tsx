@@ -88,18 +88,6 @@ const STEP_CONFIG: Record<OnboardingStep, StepConfig> = {
       'Veja alertas de estoque baixo em tempo real'
     ]
   },
-  'configure-alerts': {
-    icon: <Bell className="h-12 w-12 text-primary" />,
-    title: 'Configurar Alertas',
-    description: 'Configure alertas para ser notificado sobre estoque baixo, novas reclamações e outras situações importantes.',
-    actionLabel: 'Configurar Alertas',
-    actionRoute: '/configuracoes/alertas',
-    tips: [
-      'Receba alertas de estoque baixo',
-      'Seja notificado sobre novas reclamações',
-      'Personalize quais alertas deseja receber'
-    ]
-  },
   'complete': {
     icon: <CheckCircle2 className="h-12 w-12 text-green-500" />,
     title: 'Configuração Concluída!',

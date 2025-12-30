@@ -23,7 +23,7 @@ import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
 
 import DePara from "./pages/DePara";
-import Alertas from "./pages/Alertas";
+
 import ComprasPage from "./pages/Compras";
 import CotacoesPage from "./pages/compras/CotacoesPage";
 import Dashboard from "./pages/Dashboard";
@@ -103,7 +103,7 @@ function SafeApp() {
                     <Route path="pedidos" element={<Pedidos />} />
                     <Route path="scanner" element={<Scanner />} />
                     <Route path="de-para" element={<DePara />} />
-                    <Route path="alertas" element={<Alertas />} />
+                    
                     
                     {/* Rotas de compras */}
                     <Route path="compras/*" element={<ComprasPage />} />

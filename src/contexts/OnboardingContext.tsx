@@ -7,7 +7,6 @@ export type OnboardingStep =
   | 'register-products'
   | 'configure-stock'
   | 'understand-dashboard'
-  | 'configure-alerts'
   | 'complete';
 
 interface OnboardingProgress {
@@ -23,7 +22,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   'register-products',
   'configure-stock',
   'understand-dashboard',
-  'configure-alerts',
   'complete'
 ];
 
@@ -33,7 +31,6 @@ const STEP_LABELS: Record<OnboardingStep, string> = {
   'register-products': 'Cadastrar Produtos',
   'configure-stock': 'Configurar Estoque',
   'understand-dashboard': 'Entender o Dashboard',
-  'configure-alerts': 'Configurar Alertas',
   'complete': 'Concluído'
 };
 
