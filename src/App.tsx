@@ -57,7 +57,6 @@ import ShopeeCallbackPage from "./pages/ShopeeCallbackPage";
 import Compras from "./pages/Compras";
 import AIInsights from "./pages/AIInsights";
 import DebugVendasHoje from "./pages/DebugVendasHoje";
-import PedidosShopee from "./pages/PedidosShopee";
 
 // Create QueryClient instance outside component to avoid recreation
 const queryClient = new QueryClient({
@@ -140,7 +139,6 @@ function App() {
                     <Route path="estoque/*" element={<Estoque />} />
                     <Route path="pedidos" element={<Pedidos />} />
                     <Route path="pedidos-v2" element={<PedidosV2 />} />
-                    <Route path="pedidos-shopee" element={<PedidosShopee />} />
                     <Route path="scanner" element={<Navigate to="/aplicativos/scanner" replace />} />
                     <Route path="historico" element={<Historico />} />
                     

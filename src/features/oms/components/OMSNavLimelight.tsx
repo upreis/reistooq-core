@@ -2,7 +2,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ShoppingCart, Users, Settings, UserCheck, PackageX, FileText, Store } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 import mercadoLivreLogo from "@/assets/mercado-livre-logo.png";
-import shopeeLogo from "@/assets/shopee-logo.png";
 
 const navItems = [
   {
@@ -11,12 +10,6 @@ const navItems = [
     icon: null,
     customIcon: mercadoLivreLogo,
     preserveSearch: true,
-  },
-  {
-    path: "/pedidos-shopee",
-    label: "Shopee",
-    icon: null,
-    customIcon: shopeeLogo,
   },
   {
     path: "/oms/pedidos",
