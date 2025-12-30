@@ -123,7 +123,7 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
 
         // 🔍 Gerar id_unico/número do pedido para buscar no histórico
         const idUnico = (order as any).id_unico || buildIdUnico(order);
-        const numeroPedido = String(
+        const numeroPedidoRaw = String(
           (order as any).numero ||
             (order as any).order_id ||
             (order as any).unified?.numero ||
@@ -132,17 +132,36 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
             ''
         ).trim();
 
-        console.log('🔄 Buscando histórico para estorno:', { orderId, idUnico, numero: numeroPedido });
+        // Sanitizar: alguns imports podem trazer aspas/caracteres invisíveis e quebrar a busca
+        const normalizar = (v: string) =>
+          (v || '')
+            .toString()
+            .trim()
+            .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width
+            .replace(/['"`]/g, '')
+            .trim();
+
+        const numeroPedido = normalizar(numeroPedidoRaw);
+        const idUnicoNorm = normalizar(idUnico);
+
+        console.log('🔄 Buscando histórico para estorno:', {
+          orderId,
+          idUnico: idUnicoNorm,
+          numero: numeroPedido,
+          numero_raw: numeroPedidoRaw,
+        });
 
         // 🔍 Buscar registro no histórico por número do pedido (mais confiável) e fallback no id_unico
-        const { data: historicoData, error: searchError } = await supabase
-          .rpc('get_historico_vendas_browse', {
+        const { data: historicoData, error: searchError } = await supabase.rpc(
+          'get_historico_vendas_browse',
+          {
             _limit: 10,
             _offset: 0,
-            _search: numeroPedido || idUnico,
+            _search: numeroPedido || idUnicoNorm,
             _start: null,
-            _end: null
-          });
+            _end: null,
+          }
+        );
 
         if (searchError) {
           console.error('❌ Erro ao buscar histórico:', searchError);
@@ -150,11 +169,12 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
           continue;
         }
 
-        // 🔍 Encontrar registro correspondente
-        const registroHistorico = historicoData?.find((h: any) =>
-          h.id_unico === idUnico ||
-          h.numero_pedido === numeroPedido
-        );
+        // 🔍 Encontrar registro correspondente (comparação normalizada)
+        const registroHistorico = historicoData?.find((h: any) => {
+          const hIdUnico = normalizar(h.id_unico);
+          const hNumero = normalizar(h.numero_pedido);
+          return hIdUnico === idUnicoNorm || hNumero === numeroPedido;
+        });
 
         if (!registroHistorico) {
           console.warn('⚠️ Registro não encontrado no histórico para:', { orderId, idUnico });
