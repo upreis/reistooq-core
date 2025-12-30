@@ -316,8 +316,8 @@ function SimplePedidosPage({ className }: Props) {
     'power_seller_status', // Medalha
     'level_id',            // Reputação
     'conditions',          // Condição
-    'substatus_detail',    // Substatus do Envio
-    'tracking_number',     // Rastreamento
+    'shipping_substatus',  // Substatus do Envio
+    'url_rastreamento',    // Rastreamento
     'pack_id',             // Pack ID
     'pickup_id',           // Pickup ID
     'tags',                // Tags do Pedido
