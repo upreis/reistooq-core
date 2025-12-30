@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Settings, Users, Shield, Mail, Bell, User, Zap } from "lucide-react";
+import { Settings, Users, Shield, Mail, Bell, User, Link2 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -37,7 +37,7 @@ const navItems = [
   {
     path: "/admin/integracoes",
     label: "Integrações",
-    icon: Zap,
+    icon: Link2,
   },
   {
     path: "/admin/perfil",
