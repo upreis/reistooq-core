@@ -1248,13 +1248,16 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     )}
                   >
                     {/* Checkbox de seleção + Ícone Marketplace - Sticky */}
-                    <TableCell className="sticky left-0 z-10 bg-background">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => handleSelectOrder(order.id)}
-                          disabled={isProcessed}
-                        />
+                    <TableCell className="sticky left-0 z-10 bg-background py-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-border rounded-full bg-background">
+                        <div className="flex items-center justify-center w-5 h-5 border border-muted-foreground/40 rounded-full">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleSelectOrder(order.id)}
+                            disabled={isProcessed}
+                            className="w-3.5 h-3.5 rounded-full border-0"
+                          />
+                        </div>
                         {(order.marketplace === 'shopee' || order.provider === 'shopee' || order.unified?.marketplace === 'shopee' || order.unified?.provider === 'shopee') ? (
                           <img 
                             src="/shopee-icon.png" 
