@@ -1262,11 +1262,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             className="w-5 h-5 object-contain"
                           />
                         ) : (
-                          <svg viewBox="0 0 40 40" className="w-5 h-5" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="20" cy="20" r="20" fill="#FFE600"/>
-                            <path d="M10.5 27.5V13.5C10.5 12.4 11.4 11.5 12.5 11.5H14.5L16 15.5H24L25.5 11.5H27.5C28.6 11.5 29.5 12.4 29.5 13.5V27.5C29.5 28.6 28.6 29.5 27.5 29.5H12.5C11.4 29.5 10.5 28.6 10.5 27.5Z" fill="#2D3277"/>
-                            <path d="M16 20.5C16 19.1 17.1 18 18.5 18H21.5C22.9 18 24 19.1 24 20.5V24.5H16V20.5Z" fill="#FFE600"/>
-                          </svg>
+                          <img 
+                            src="/mercadolivre-icon.png" 
+                            alt="Mercado Livre" 
+                            className="w-5 h-5 object-contain"
+                          />
                         )}
                       </div>
                     </TableCell>
