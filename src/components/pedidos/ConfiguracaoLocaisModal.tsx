@@ -26,13 +26,15 @@ interface ConfiguracaoLocaisModalProps {
   onOpenChange: (open: boolean) => void;
   empresasSelecionadas?: string[]; // Empresas vindas do filtro
   contasML?: Array<{ id: string; name: string; nickname?: string; }>;
+  onSuccess?: () => void; // Callback para notificar mudanças
 }
 
 export function ConfiguracaoLocaisModal({ 
   open, 
   onOpenChange, 
   empresasSelecionadas = [],
-  contasML = []
+  contasML = [],
+  onSuccess
 }: ConfiguracaoLocaisModalProps) {
   const [locais, setLocais] = useState<LocalEstoque[]>([]);
   const [locaisVenda, setLocaisVenda] = useState<LocalVenda[]>([]);
@@ -171,6 +173,8 @@ export function ConfiguracaoLocaisModal({
       setEditando(null);
       setMostrarCustomTipoLogistico(false);
       await carregarDados();
+      // Notificar componente pai sobre a mudança
+      onSuccess?.();
     } catch (error: any) {
       console.error('❌ Erro ao salvar mapeamento:', error);
       toast.error('Erro ao salvar: ' + error.message);
@@ -202,6 +206,8 @@ export function ConfiguracaoLocaisModal({
       await deletarMapeamentoLocal(id);
       toast.success('Mapeamento excluído!');
       await carregarDados();
+      // Notificar componente pai sobre a mudança
+      onSuccess?.();
     } catch (error: any) {
       toast.error('Erro ao excluir: ' + error.message);
     } finally {

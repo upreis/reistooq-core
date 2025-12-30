@@ -348,7 +348,7 @@ function SimplePedidosPage({ className }: Props) {
   const { pedidosProcessados, verificarPedidos, isLoading: loadingProcessados, isPedidoProcessado } = usePedidosProcessados();
   
   // 📍 Hook para enriquecer pedidos com local de estoque
-  const { rowsEnriquecidos, loading: loadingLocais } = useLocalEstoqueEnriquecimento(state.orders);
+  const { rowsEnriquecidos, loading: loadingLocais, refreshMapeamentos } = useLocalEstoqueEnriquecimento(state.orders);
 
   // 🔧 FASE 4.1.2: Hooks de gerenciamento de contas
   const { accounts, testAccount, loadAccounts } = usePedidosAccountsManager({
@@ -1137,6 +1137,10 @@ function SimplePedidosPage({ className }: Props) {
         onOpenChange={setConfigLocaisOpen}
         empresasSelecionadas={filtersManager.appliedFilters?.contasML || []}
         contasML={accounts}
+        onSuccess={() => {
+          // Recarregar mapeamentos quando criar/editar/deletar
+          refreshMapeamentos();
+        }}
       />
 
       {/* 📦 MODAL: Cadastro Rápido de Composição */}
