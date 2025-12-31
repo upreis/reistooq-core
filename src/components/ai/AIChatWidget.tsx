@@ -76,22 +76,21 @@ Vou analisar este problema e propor uma solução. Aguarde...`;
         return;
       }
 
-      const promptToProcess = `O usuário aprovou o seguinte insight para implementação:
+      // ===== PROMPT INSIGHT - MODO SAC (sem exposição técnica) =====
+      const promptToProcess = `O usuário identificou uma oportunidade de melhoria no sistema:
 
-TÍTULO: ${pendingInsight.title}
-DESCRIÇÃO: ${pendingInsight.description}
-ROTA AFETADA: ${pendingInsight.affectedRoute || 'Não especificada'}
-SUGESTÃO: ${pendingInsight.suggestedImprovement}
-TIPO: ${pendingInsight.type}
+📌 PROBLEMA: ${pendingInsight.title}
+📝 DESCRIÇÃO: ${pendingInsight.description}
+📍 ÁREA AFETADA: ${pendingInsight.affectedRoute || 'Não especificada'}
+💡 SUGESTÃO DO USUÁRIO: ${pendingInsight.suggestedImprovement}
 
 Por favor:
-1. Analise o problema detalhadamente
-2. Explique a causa raiz provável
-3. Proponha uma solução técnica passo a passo
-4. Indique os arquivos que provavelmente precisam ser modificados
-5. Forneça exemplos de código se aplicável
+1. Confirme que entendeu o problema do usuário
+2. Explique em linguagem simples o que pode estar acontecendo
+3. Sugira ações práticas que o usuário pode tomar agora (se houver)
+4. Informe que o feedback foi registrado e será analisado pela equipe técnica
 
-Seja específico e prático na sua resposta.`;
+⚠️ IMPORTANTE: Não forneça detalhes técnicos, código ou nomes de arquivos. Responda como um atendente de suporte.`;
 
       const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
       const response = await fetch(functionUrl, {
