@@ -91,50 +91,27 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate temporary password for the user
     const tempPassword = generatePassword(12);
 
-    // Helper: ensure profile exists and is linked to the invitation organization
-    const ensureProfileLinkedToOrg = async (userId: string) => {
-      // 1) Try update first (more explicit than upsert, avoids "kept old org" edge cases)
-      const { data: updated, error: updErr } = await client
+    // Helper: ensure profile exists (but DO NOT link to org before the user accepts)
+    const ensureProfileExists = async (userId: string) => {
+      // Try insert; if already exists, do nothing.
+      const { error: insErr } = await client
         .from('profiles')
-        .update({
+        .insert({
+          id: userId,
           nome_completo: invitation.email.split('@')[0],
           nome_exibicao: invitation.email.split('@')[0],
-          organizacao_id: invitation.organization_id,
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', userId)
-        .select('id, organizacao_id')
+        .select('id')
         .maybeSingle();
 
-      if (updErr) {
-        console.error('Failed to update profile:', updErr);
+      // Ignore duplicate errors, but log everything else.
+      if (insErr && insErr.code !== '23505') {
+        console.error('Failed to ensure profile exists:', insErr);
       }
 
-      // 2) If profile doesn't exist, insert
-      if (!updated?.id) {
-        const { data: inserted, error: insErr } = await client
-          .from('profiles')
-          .insert({
-            id: userId,
-            nome_completo: invitation.email.split('@')[0],
-            nome_exibicao: invitation.email.split('@')[0],
-            organizacao_id: invitation.organization_id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select('id, organizacao_id')
-          .maybeSingle();
-
-        if (insErr) {
-          console.error('Failed to insert profile:', insErr);
-        } else {
-          console.log('Profile inserted with organization:', inserted?.organizacao_id);
-        }
-      } else {
-        console.log('Profile updated with organization:', updated.organizacao_id);
-      }
-
-      // 3) Log what is stored now (audit)
+      // Audit current profile org linkage (should be null until acceptance)
       const { data: finalProfile, error: readErr } = await client
         .from('profiles')
         .select('id, organizacao_id, updated_at')
@@ -142,9 +119,9 @@ const handler = async (req: Request): Promise<Response> => {
         .maybeSingle();
 
       if (readErr) {
-        console.error('Failed to read profile after update:', readErr);
+        console.error('Failed to read profile after ensure:', readErr);
       } else {
-        console.log('Profile after link:', finalProfile);
+        console.log('Profile state after ensure (pre-accept):', finalProfile);
       }
     };
 
@@ -173,8 +150,7 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Ensure profile is linked to the invitation organization
-      await ensureProfileLinkedToOrg(userId);
+      await ensureProfileExists(userId);
     } else {
       // Create new user with the generated password
       isNewUser = true;
@@ -183,9 +159,7 @@ const handler = async (req: Request): Promise<Response> => {
         password: tempPassword,
         email_confirm: true, // Auto-confirm email
         user_metadata: {
-          invited_by: 'system',
-          organization_id: invitation.organization_id,
-          role_id: invitation.role_id
+          invited_by: 'system'
         }
       });
 
@@ -200,61 +174,51 @@ const handler = async (req: Request): Promise<Response> => {
       userId = newUser.user.id;
       console.log('Created new user:', userId);
 
-      // Ensure profile exists and is linked
-      await ensureProfileLinkedToOrg(userId);
+      await ensureProfileExists(userId);
     }
 
-    // Assign role to user
-    const { error: roleError } = await client
-      .from('user_role_assignments')
-      .upsert({
-        user_id: userId,
-        role_id: invitation.role_id,
-        organization_id: invitation.organization_id
-      }, { onConflict: 'user_id,role_id' });
+    // IMPORTANT:
+    // - Do NOT assign roles here
+    // - Do NOT change invitation status here
+    // The user must accept the invitation link so the DB function can atomically link org + role.
 
-    if (roleError) {
-      console.error('Failed to assign role:', roleError);
-      // Don't fail here, role can be assigned later
-    }
 
-    // Update invitation status to accepted
-    const { error: updateInvError } = await client
-      .from('invitations')
-      .update({ 
-        status: 'accepted', 
-        accepted_at: new Date().toISOString() 
-      })
-      .eq('id', invitation_id);
-
-    if (updateInvError) {
-      console.error('Failed to update invitation:', updateInvError);
-    }
-
-    // Generate login URL
+    // Generate URLs
     const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://www.reistoq.com.br';
+    const acceptUrl = `${baseUrl}/convite/${invitation.token}`;
     const loginUrl = `${baseUrl}/auth`;
 
     console.log('Sending email to:', invitation.email);
 
-    // Send email with credentials
+    // Send email with credentials + acceptance link
     const emailResult = await resend.emails.send({
       from: FROM_EMAIL,
       to: [invitation.email],
-      subject: `Suas credenciais de acesso - ${orgName || 'REISTOQ'}`,
+      subject: `Convite para ${orgName || 'REISTOQ'} - aceite para entrar`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; padding: 20px;">
           <div style="background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2 style="color: #1f2937; margin-bottom: 20px;">🎉 Bem-vindo ao REISTOQ!</h2>
+            <h2 style="color: #1f2937; margin-bottom: 20px;">Convite para o REISTOQ</h2>
             
             <p style="color: #4b5563;">Olá,</p>
             
             <p style="color: #4b5563;">
-              Você foi adicionado à organização <strong>${orgName || 'organização'}</strong> como <strong>${roleName || 'usuário'}</strong>.
+              Você foi convidado(a) para entrar na organização <strong>${orgName || 'organização'}</strong> como <strong>${roleName || 'usuário'}</strong>.
+            </p>
+
+            <div style="text-align: center; margin: 26px 0;">
+              <a href="${acceptUrl}"
+                 style="background-color: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
+                Aceitar convite
+              </a>
+            </div>
+
+            <p style="color: #6b7280; font-size: 14px; margin-top: 0;">
+              Ao aceitar, sua conta será vinculada automaticamente à organização.
             </p>
             
-            <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; margin: 25px 0;">
-              <h3 style="color: #374151; margin-top: 0; margin-bottom: 15px;">📋 Suas Credenciais de Acesso</h3>
+            <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="color: #374151; margin-top: 0; margin-bottom: 15px;">Suas credenciais de acesso</h3>
               
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
@@ -267,26 +231,17 @@ const handler = async (req: Request): Promise<Response> => {
                 </tr>
               </table>
             </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${loginUrl}" 
-                 style="background-color: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
-                Acessar o Sistema
-              </a>
-            </div>
-            
+
             <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 20px 0; border-radius: 0 4px 4px 0;">
               <p style="color: #92400e; margin: 0; font-size: 14px;">
-                <strong>⚠️ Importante:</strong> Recomendamos que você altere sua senha após o primeiro acesso nas configurações da sua conta.
+                <strong>Importante:</strong> após o primeiro acesso, altere sua senha nas configurações da conta.
               </p>
             </div>
-            
-            <p style="color: #6b7280; font-size: 14px;">
-              Ou copie e cole este link no seu navegador:
-            </p>
-            <p style="word-break: break-all; background-color: #f3f4f6; padding: 12px; border-radius: 4px; font-size: 13px; color: #3b82f6;">
-              ${loginUrl}
-            </p>
+
+            <p style="color: #6b7280; font-size: 14px;">Link do convite:</p>
+            <p style="word-break: break-all; background-color: #f3f4f6; padding: 12px; border-radius: 4px; font-size: 13px; color: #1f2937;">${acceptUrl}</p>
+
+            <p style="color: #6b7280; font-size: 14px;">Se precisar abrir o sistema diretamente: ${loginUrl}</p>
             
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
             
