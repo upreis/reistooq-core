@@ -105,15 +105,15 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const isCallbackActiveRef = useRef<boolean>(false);
   const isInitializingRef = useRef<boolean>(false);
 
-  // Cleanup function - ENHANCED to properly stop camera
+  // Cleanup function - NUCLEAR: Stop ALL camera streams
   const cleanup = useCallback(() => {
-    console.log('🧹 [Scanner] Cleaning up...');
+    console.log('🛑🛑🛑 [Scanner] STOPPING CAMERA - CLEANUP INITIATED');
     
-    // Stop callback first
+    // 1. Stop callback and scanning refs IMMEDIATELY
     isCallbackActiveRef.current = false;
     isScanningRef.current = false;
     
-    // Stop scanner
+    // 2. Stop the ZXing decoder
     if (readerRef.current) {
       try {
         readerRef.current.reset();
@@ -124,16 +124,23 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       readerRef.current = null;
     }
 
-    // ⚠️ CRITICAL FIX: Capture stream BEFORE clearing video element
-    let streamToStop: MediaStream | null = streamRef.current;
+    // 3. Collect ALL possible stream references
+    const streamsToStop: MediaStream[] = [];
     
-    // Also check video element's srcObject if streamRef is null
-    if (!streamToStop && videoRef.current && videoRef.current.srcObject) {
-      console.log('🔍 [Scanner] Stream found in video element srcObject');
-      streamToStop = videoRef.current.srcObject as MediaStream;
+    // From our ref
+    if (streamRef.current) {
+      streamsToStop.push(streamRef.current);
     }
-
-    // Clear video element FIRST
+    
+    // From video element
+    if (videoRef.current?.srcObject) {
+      const videoStream = videoRef.current.srcObject as MediaStream;
+      if (!streamsToStop.includes(videoStream)) {
+        streamsToStop.push(videoStream);
+      }
+    }
+    
+    // 4. Clear video element BEFORE stopping tracks (important for Safari)
     if (videoRef.current) {
       const video = videoRef.current;
       
@@ -145,77 +152,46 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       
       try {
         video.pause();
-        console.log('✅ [Scanner] Video paused');
-      } catch (e) {
-        console.log('[Scanner] Video already paused');
-      }
+      } catch (e) {}
       
       // Clear srcObject
-      if (video.srcObject) {
-        video.srcObject = null;
-        console.log('✅ [Scanner] srcObject cleared');
-      }
-      
+      video.srcObject = null;
       video.src = '';
       video.removeAttribute('src');
       
       try {
         video.load();
-        console.log('✅ [Scanner] Video element reset');
-      } catch (e) {
-        console.log('[Scanner] Error resetting video:', e);
-      }
+      } catch (e) {}
+      
+      console.log('✅ [Scanner] Video element cleared');
     }
 
-    // NOW stop all media tracks from the captured stream
-    if (streamToStop) {
-      const tracks = streamToStop.getTracks();
-      console.log(`🛑 [Scanner] Found ${tracks.length} track(s) to stop`);
+    // 5. NUCLEAR: Stop ALL tracks from ALL collected streams
+    let totalTracksStopped = 0;
+    
+    streamsToStop.forEach((stream, streamIndex) => {
+      const tracks = stream.getTracks();
+      console.log(`🛑 [Scanner] Stream ${streamIndex + 1}: ${tracks.length} track(s)`);
       
-      tracks.forEach((track, index) => {
-        console.log(`   Track ${index + 1}: ${track.kind} - ${track.label} - ReadyState: ${track.readyState}`);
-        
+      tracks.forEach((track) => {
         if (track.readyState !== 'ended') {
           try {
             track.stop();
-            console.log(`   ✅ Stopped ${track.kind} track`);
+            totalTracksStopped++;
+            console.log(`   ✅ Stopped: ${track.kind} - ${track.label}`);
           } catch (e) {
-            console.error(`   ❌ Error stopping ${track.kind} track:`, e);
+            console.error(`   ❌ Error stopping track:`, e);
           }
-        } else {
-          console.log(`   ⚠️ Track already ended`);
         }
       });
-      
-      // Verify all tracks are stopped
-      setTimeout(() => {
-        const allStopped = tracks.every(track => track.readyState === 'ended');
-        if (allStopped) {
-          console.log('✅ [Scanner] All tracks successfully stopped');
-        } else {
-          console.error('❌ [Scanner] WARNING: Some tracks still active!');
-          tracks.forEach((track, index) => {
-            if (track.readyState !== 'ended') {
-              console.error(`   Track ${index + 1}: ${track.kind} - ReadyState: ${track.readyState}`);
-              try {
-                track.stop(); // Force stop again
-                console.log(`   ⚠️ Force stopped track ${index + 1}`);
-              } catch (e) {
-                console.error('Failed to force stop:', e);
-              }
-            }
-          });
-        }
-      }, 100);
-    } else {
-      console.warn('⚠️ [Scanner] No stream to stop (already released)');
-    }
+    });
     
-    // Clear stream reference
+    console.log(`🛑 [Scanner] Total tracks stopped: ${totalTracksStopped}`);
+    
+    // 6. Clear stream reference
     streamRef.current = null;
-    console.log('✅ [Scanner] Stream reference cleared');
 
-    // Clear timeouts
+    // 7. Clear all timeouts
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
       scanTimeoutRef.current = undefined;
@@ -226,20 +202,42 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       scanSafetyTimeoutRef.current = undefined;
     }
 
-    // Reset states
+    // 8. Update state (if still mounted)
     if (isMountedRef.current) {
       setState(prev => ({
         ...prev,
         isActive: false,
         isScanning: false,
         isLoading: false,
-        currentDevice: null,
         torchEnabled: false,
         torchSupported: false
       }));
     }
 
-    console.log('✅ [Scanner] Cleanup complete - All resources released');
+    // 9. Final verification after a delay
+    setTimeout(() => {
+      let stillActive = false;
+      
+      streamsToStop.forEach((stream) => {
+        stream.getTracks().forEach((track) => {
+          if (track.readyState !== 'ended') {
+            stillActive = true;
+            console.error(`❌ [Scanner] TRACK STILL ACTIVE: ${track.kind} - ${track.label}`);
+            // Force stop again
+            try {
+              track.stop();
+              console.log(`   ⚠️ Force stopped`);
+            } catch (e) {}
+          }
+        });
+      });
+      
+      if (!stillActive) {
+        console.log('✅✅✅ [Scanner] ALL TRACKS CONFIRMED STOPPED - Camera released');
+      }
+    }, 150);
+
+    console.log('✅ [Scanner] Cleanup complete');
   }, []);
 
   // Load devices
@@ -637,8 +635,19 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   }, [state.isActive, startCamera]);
 
   // Initialize on mount
+  // Initialize only once on mount - NO re-runs from dependency changes
+  const hasInitializedRef = useRef(false);
+  
   useEffect(() => {
+    // Prevent multiple initializations
+    if (hasInitializedRef.current) {
+      console.log('⚠️ [Scanner] Already initialized, skipping');
+      return;
+    }
+    hasInitializedRef.current = true;
+    
     const init = async () => {
+      console.log('🎬 [Scanner] Initial setup...');
       await loadDevices();
       await checkPermissions();
       
@@ -648,7 +657,8 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
     };
     
     init();
-  }, [autoStart, loadDevices, checkPermissions, startCamera]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - run ONLY on mount
 
   // Cleanup on unmount
   useEffect(() => {
