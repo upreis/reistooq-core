@@ -36,6 +36,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
 
+// ✅ THROTTLING: Limitar requests paralelas para evitar rate limit ML
+import pLimit from "https://esm.sh/p-limit@5.0.0";
+const apiThrottle = pLimit(10); // Máximo 10 requests simultâneas à API ML
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -202,7 +206,8 @@ Deno.serve(async (req) => {
           console.log(`[sync-vendas-hoje:${correlationId}] ⚡ Modo rápido: pulando thumbnails para backfill de ${daysBack} dias`);
         }
 
-        const vendas = await Promise.all(ordersData.results.map(async (order: any) => {
+        // ✅ THROTTLING: Limitar requests paralelas (max 10 simultâneas)
+        const vendas = await Promise.all(ordersData.results.map((order: any) => apiThrottle(async () => {
           const firstItem = order.order_items?.[0]?.item || {};
           
           // Buscar thumbnail via API /items/{item_id} - APENAS para syncs curtos
@@ -252,7 +257,7 @@ Deno.serve(async (req) => {
             synced_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
-        }));
+        })));
 
         // UPSERT - atualiza se já existe
         const { data: upsertData, error: upsertError } = await supabase
