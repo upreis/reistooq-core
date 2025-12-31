@@ -113,6 +113,7 @@ function App() {
                   <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/convite/:token" element={<AcceptInvite />} />
                   <Route path="/accept-invite" element={<AcceptInvite />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   
