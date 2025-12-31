@@ -102,31 +102,6 @@ export const IntegrationsHub: React.FC = () => {
     <div className="space-y-6">
       {/* Mercado Livre Integration - Layout completo para contas conectadas */}
       {FEATURES.MERCADO_LIVRE && <MercadoLivreConnection />}
-      
-      {/* Grid compacto apenas para integrações não conectadas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Shopee Integration - Card compacto */}
-        {FEATURES.SHOPEE && <ShopeeConnection />}
-      </div>
-      
-      {/* Outras integrações dinâmicas */}
-      {integrations.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {integrations
-            .filter(integration => integration.provider !== 'shopee') 
-            .map((integration) => (
-            <IntegrationCard
-              key={integration.id}
-              integration={integration}
-              onConnect={handleConnect}
-              onDisconnect={handleDisconnect}
-              onTest={handleTest}
-              onConfigure={handleConfigure}
-              onOAuth={handleOAuth}
-            />
-          ))}
-        </div>
-      )}
 
       {/* Configuration Panel - Skip for Shopee since it has custom modal */}
       {configProvider && configProvider !== 'shopee' && (
