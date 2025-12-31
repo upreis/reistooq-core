@@ -115,6 +115,23 @@ const handler = async (req: Request): Promise<Response> => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // IMPORTANT: Also update/create the profile for existing users to link them to the new organization
+      const { error: profileError } = await client
+        .from('profiles')
+        .upsert({
+          id: userId,
+          nome_completo: invitation.email.split('@')[0],
+          nome_exibicao: invitation.email.split('@')[0],
+          organizacao_id: invitation.organization_id,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+
+      if (profileError) {
+        console.error('Failed to update profile for existing user:', profileError);
+      } else {
+        console.log('Profile updated for existing user with organization:', invitation.organization_id);
+      }
     } else {
       // Create new user with the generated password
       isNewUser = true;
