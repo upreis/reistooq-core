@@ -3,6 +3,10 @@ import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
+// ============= THROTTLING: Limitar requests paralelas para evitar rate limit ML =============
+import pLimit from "https://esm.sh/p-limit@5.0.0";
+const apiThrottle = pLimit(10); // Máximo 10 requests simultâneas à API ML
+
 // ============= FASE 3.1: Imports de funções de enriquecimento =============
 import { mapShipmentCostsData } from "./mapper-shipment-costs.ts";
 import { enrichOrderWithSellerReputation } from "./enrichment-reputation.ts";
@@ -61,8 +65,9 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
   // Cache para reputação por seller_id
   const sellerReputationCache = new Map<string, any>();
   
+  // ✅ THROTTLING: Limitar requests paralelas (máximo 10 simultâneas)
   const enrichedOrders = await Promise.all(
-    orders.map(async (order) => {
+    orders.map((order) => apiThrottle(async () => {
       try {
         let enrichedOrder = { ...order };
 
@@ -174,10 +179,10 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
         console.warn(`[unified-orders:${cid}] Erro geral no enriquecimento da order ${order.id}:`, error);
         return order;
       }
-    })
+    }))
   );
 
-  console.log(`[unified-orders:${cid}] Enriquecimento completo concluído`);
+  console.log(`[unified-orders:${cid}] ✅ Enriquecimento throttled concluído (max 10 paralelas)`);
   return enrichedOrders;
 }
 

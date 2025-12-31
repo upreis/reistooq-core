@@ -6,6 +6,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { fetchWithRetry } from '../_shared/retryUtils.ts';
 
+// ✅ THROTTLING: Limitar requests paralelas para evitar rate limit ML
+import pLimit from "https://esm.sh/p-limit@5.0.0";
+const apiThrottle = pLimit(10); // Máximo 10 requests simultâneas à API ML
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -149,7 +153,8 @@ Deno.serve(async (req) => {
     // 2️⃣ Buscar todos os reasons de uma vez (batch)
     const reasonsMap = new Map<string, any>();
     
-    await Promise.all(uniqueReasonIds.map(async (reasonId) => {
+    // ✅ THROTTLING: Limitar requests paralelas (max 10 simultâneas)
+    await Promise.all(uniqueReasonIds.map((reasonId) => apiThrottle(async () => {
       try {
         const reasonUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${reasonId}`;
         const reasonRes = await fetch(reasonUrl, {
@@ -171,7 +176,7 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error(`❌ Erro ao buscar reason ${reasonId}:`, error);
       }
-    }));
+    })));
 
     console.log('✅ Reasons buscados:', {
       total: reasonsMap.size,
