@@ -80,11 +80,16 @@ export function MobileScannerLayout({
     scanDelay: 300
   });
 
+  // Store stopCamera in a ref to avoid stale closures
+  const stopCameraRef = useRef(scanner.stopCamera);
+  stopCameraRef.current = scanner.stopCamera;
+  
   // Auto-start scanner on mount
   useEffect(() => {
     let mounted = true;
     
     const initScanner = async () => {
+      console.log('🎬 [MobileScannerLayout] Initializing scanner...');
       const started = await scanner.startCamera();
       if (started && mounted) {
         setIsScanning(true);
@@ -101,12 +106,14 @@ export function MobileScannerLayout({
     return () => {
       mounted = false;
       console.log('🧹 [MobileScannerLayout] Unmounting - stopping camera');
-      scanner.stopCamera();
+      // Use ref to get latest stopCamera function
+      stopCameraRef.current();
       setIsScanning(false);
       if (feedbackTimeoutRef.current) {
         clearTimeout(feedbackTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - run only on mount/unmount
 
   // Show feedback toast when scan result changes
@@ -134,9 +141,16 @@ export function MobileScannerLayout({
 
   const handleToggleScanning = useCallback(async () => {
     if (isScanning) {
-      console.log('🛑 [MobileScannerLayout] User paused scanning');
-      scanner.stopCamera();
+      console.log('🛑 [MobileScannerLayout] User paused scanning - STOPPING CAMERA');
+      // Immediately update UI state
       setIsScanning(false);
+      // Stop camera - this MUST release the hardware
+      scanner.stopCamera();
+      // Double-check after a small delay
+      setTimeout(() => {
+        console.log('🔄 [MobileScannerLayout] Verifying camera is stopped...');
+        scanner.stopCamera();
+      }, 100);
     } else {
       console.log('▶️ [MobileScannerLayout] User resumed scanning');
       const started = await scanner.startCamera();
