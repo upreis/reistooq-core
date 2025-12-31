@@ -145,7 +145,8 @@ const handler = async (req: Request): Promise<Response> => {
         .from('profiles')
         .upsert({
           id: userId,
-          email: invitation.email,
+          nome_completo: invitation.email.split('@')[0],
+          nome_exibicao: invitation.email.split('@')[0],
           organizacao_id: invitation.organization_id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -185,7 +186,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate login URL
-    const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://app.reistoq.com.br';
+    const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://www.reistoq.com.br';
     const loginUrl = `${baseUrl}/auth`;
 
     console.log('Sending email to:', invitation.email);
