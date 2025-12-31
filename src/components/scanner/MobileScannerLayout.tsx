@@ -63,9 +63,11 @@ export function MobileScannerLayout({
 
   // Auto-start scanner on mount
   useEffect(() => {
+    let mounted = true;
+    
     const initScanner = async () => {
       const started = await scanner.startCamera();
-      if (started) {
+      if (started && mounted) {
         setIsScanning(true);
         scanner.startScanning((code) => {
           onScan(code);
@@ -75,16 +77,22 @@ export function MobileScannerLayout({
     
     initScanner();
     
+    // Cleanup function - properly stop camera when component unmounts
     return () => {
+      mounted = false;
+      console.log('🧹 [MobileScannerLayout] Unmounting - stopping camera');
       scanner.stopCamera();
+      setIsScanning(false);
     };
-  }, []);
+  }, []); // Empty deps - run only on mount/unmount
 
   const handleToggleScanning = useCallback(async () => {
     if (isScanning) {
+      console.log('🛑 [MobileScannerLayout] User paused scanning');
       scanner.stopCamera();
       setIsScanning(false);
     } else {
+      console.log('▶️ [MobileScannerLayout] User resumed scanning');
       const started = await scanner.startCamera();
       if (started) {
         setIsScanning(true);
