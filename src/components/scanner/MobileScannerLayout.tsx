@@ -383,7 +383,7 @@ export function MobileScannerLayout({
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.3 }}
-                className="text-center text-foreground"
+                className="text-center text-foreground px-6"
               >
                 <motion.div
                   animate={{ scale: [1, 1.05, 1] }}
@@ -393,6 +393,25 @@ export function MobileScannerLayout({
                 </motion.div>
                 <p className="text-lg text-muted-foreground">Câmera pausada</p>
                 <p className="text-sm text-muted-foreground/60 mt-1">Toque no botão abaixo para iniciar</p>
+
+                {scanner.blockedByPolicy && (
+                  <div className="mt-4 rounded-xl border bg-muted/30 p-3 text-sm">
+                    <p className="font-medium">Câmera bloqueada nesta visualização</p>
+                    <p className="mt-1 text-muted-foreground">
+                      No preview do editor a câmera pode ser bloqueada. Abra o scanner em uma nova aba para permitir.
+                    </p>
+                    <div className="mt-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        onClick={() => window.open(window.location.href, '_blank', 'noopener,noreferrer')}
+                      >
+                        Abrir em nova aba
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           )}
