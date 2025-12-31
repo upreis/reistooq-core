@@ -294,7 +294,7 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
                   <motion.button
                     ref={buttonRef}
                     className={cn(
-                      "size-16 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden",
+                      "size-14 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden",
                       "bg-primary transition-colors shadow-xl"
                     )}
                     onClick={() => setActive(!active)}
