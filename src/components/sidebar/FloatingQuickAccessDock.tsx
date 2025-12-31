@@ -316,7 +316,7 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
 
                     {/* Button Container */}
                     <motion.div
-                      className="relative w-14 h-14 flex items-center justify-center cursor-pointer"
+                      className="relative w-10 h-10 flex items-center justify-center cursor-pointer"
                       style={{
                         filter: isHovered ? `url(#${filters.unopaq})` : 'none',
                       }}
