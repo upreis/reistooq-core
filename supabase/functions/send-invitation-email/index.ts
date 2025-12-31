@@ -1,4 +1,4 @@
-import { corsHeaders, makeClient } from "../_shared/client.ts";
+import { corsHeaders, makeServiceClient } from "../_shared/client.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -19,8 +19,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Always use service role client (no user RLS)
-    const client = makeClient(null);
+    // Use service role client to bypass RLS
+    const client = makeServiceClient();
     
     const body = await req.json();
     const { invitation_id } = body;
