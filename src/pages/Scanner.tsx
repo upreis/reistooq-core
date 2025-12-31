@@ -16,6 +16,14 @@ import { ScannedProduct } from "@/features/scanner/types/scanner.types";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+// Types for scan feedback
+interface ScanFeedback {
+  type: 'success' | 'error' | 'new';
+  message: string;
+  productName?: string;
+  code: string;
+}
+
 const Scanner = () => {
   const isMobile = useIsMobile();
   const [scannedProduct, setScannedProduct] = useState<ScannedProduct | null>(null);
@@ -27,6 +35,7 @@ const Scanner = () => {
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [scannedCode, setScannedCode] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [lastScanResult, setLastScanResult] = useState<ScanFeedback | null>(null);
   const { getProducts } = useProducts();
 
   const findProductByCode = async (code: string): Promise<Product | null> => {
@@ -107,17 +116,29 @@ const Scanner = () => {
           updated_at: existingProduct.updated_at,
           organization_id: existingProduct.organization_id
         });
+        
+        // Set feedback for mobile layout
+        setLastScanResult({
+          type: 'success',
+          message: 'Produto encontrado',
+          productName: existingProduct.nome,
+          code
+        });
+        
         setIsEditModalOpen(true);
         toast.success(`Produto encontrado: ${existingProduct.nome}`);
-        
-        // Vibração de sucesso
-        if ('vibrate' in navigator) {
-          navigator.vibrate([100, 50, 100]);
-        }
       } else {
         // Produto não existe - abrir seletor de tipo
         setCurrentProduct(null);
         setScannedProduct(null);
+        
+        // Set feedback for mobile layout
+        setLastScanResult({
+          type: 'new',
+          message: 'Código não encontrado',
+          code
+        });
+        
         setIsTypeSelectorOpen(true);
         toast.info(`Código não encontrado: ${code}`);
       }
@@ -242,6 +263,7 @@ const Scanner = () => {
             onError={handleScanError}
             scanHistory={scanHistory}
             isProcessing={isProcessing}
+            lastScanResult={lastScanResult}
           />
         </ScannerErrorBoundary>
 
