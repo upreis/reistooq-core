@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Grid3X3 } from "lucide-react";
 import { AplicativosGuard } from "@/core/aplicativos/guards/AplicativosGuard";
 import { AplicativosNav } from "@/features/aplicativos/components/AplicativosNav";
@@ -9,13 +9,16 @@ import AplicativosNotas from "./aplicativos/AplicativosNotas";
 import Scanner from "./Scanner";
 
 const AplicativosContent = () => {
+  const location = useLocation();
+  const isScanner = location.pathname.includes('/scanner');
+
   return (
     <div className="space-y-6">
-      {/* Stats cards */}
-      <AplicativosStats />
+      {/* Stats cards - hide on scanner page */}
+      {!isScanner && <AplicativosStats />}
       
       {/* 4. Conteúdo das rotas */}
-      <div className="mt-6">
+      <div className={isScanner ? "" : "mt-6"}>
         <Routes>
           <Route index element={<Navigate to="calendario" replace />} />
           <Route path="calendario" element={<AplicativosCalendario />} />
