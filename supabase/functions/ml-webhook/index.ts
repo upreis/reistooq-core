@@ -12,8 +12,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = 'https://tdjyfqnxvjgossuncpwm.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkanlmcW54dmpnb3NzdW5jcHdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4OTczNTMsImV4cCI6MjA2OTQ3MzM1M30.qrEBpARgfuWF74zHoRzGJyWjgxN_oCG5DdKjPVGJYxk';
+    // ✅ CORRIGIDO: Usar variáveis de ambiente em vez de hardcoded keys
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('[ML Webhook] Missing SUPABASE_URL or SUPABASE_ANON_KEY');
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log(`[ML Webhook] ${req.method} request received`);
