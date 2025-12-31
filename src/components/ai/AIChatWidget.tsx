@@ -127,6 +127,7 @@ Por favor:
       const decoder = new TextDecoder();
       let assistantContent = '';
       let receivedConversationId: string | null = null;
+      let textBuffer = '';
 
       // Adicionar mensagem vazia do assistente para atualizar progressivamente
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
@@ -135,18 +136,23 @@ Por favor:
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        textBuffer += decoder.decode(value, { stream: true });
 
-        for (const line of lines) {
+        // Processar linha por linha conforme chegam
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
           if (!line.trim() || line.startsWith(':')) continue;
           if (!line.startsWith('data: ')) continue;
 
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
 
           try {
-            const parsed = JSON.parse(data);
+            const parsed = JSON.parse(jsonStr);
             
             if (parsed.content) {
               assistantContent += parsed.content;
@@ -166,8 +172,34 @@ Por favor:
               setConversationId(parsed.conversationId);
             }
           } catch (e) {
-            console.warn('Erro ao parsear chunk SSE:', e);
+            textBuffer = line + '\n' + textBuffer;
+            break;
           }
+        }
+      }
+      
+      // Flush final
+      if (textBuffer.trim()) {
+        for (let line of textBuffer.split('\n')) {
+          if (!line.trim()) continue;
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.content) {
+              assistantContent += parsed.content;
+              setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  role: 'assistant',
+                  content: assistantContent
+                };
+                return newMessages;
+              });
+            }
+          } catch { /* ignorar */ }
         }
       }
 
@@ -242,6 +274,7 @@ Por favor:
       const decoder = new TextDecoder();
       let assistantContent = '';
       let receivedConversationId: string | null = null;
+      let textBuffer = '';
 
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
@@ -249,18 +282,26 @@ Por favor:
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        textBuffer += decoder.decode(value, { stream: true });
 
-        for (const line of lines) {
+        // Processar linha por linha conforme chegam
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          // Remover CRLF se existir
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          
+          // Ignorar linhas vazias ou comentários SSE
           if (!line.trim() || line.startsWith(':')) continue;
           if (!line.startsWith('data: ')) continue;
 
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
 
           try {
-            const parsed = JSON.parse(data);
+            const parsed = JSON.parse(jsonStr);
             
             if (parsed.content) {
               assistantContent += parsed.content;
@@ -280,8 +321,36 @@ Por favor:
               setConversationId(parsed.conversationId);
             }
           } catch (e) {
-            console.warn('Erro ao parsear chunk SSE:', e);
+            // JSON incompleto - recolocar na buffer e esperar mais dados
+            textBuffer = line + '\n' + textBuffer;
+            break;
           }
+        }
+      }
+      
+      // Flush final para dados remanescentes
+      if (textBuffer.trim()) {
+        const lines = textBuffer.split('\n');
+        for (let line of lines) {
+          if (!line.trim()) continue;
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.content) {
+              assistantContent += parsed.content;
+              setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  role: 'assistant',
+                  content: assistantContent
+                };
+                return newMessages;
+              });
+            }
+          } catch { /* ignorar JSON parcial final */ }
         }
       }
 
