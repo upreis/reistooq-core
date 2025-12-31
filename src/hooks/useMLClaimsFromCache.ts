@@ -110,6 +110,8 @@ interface CachedClaimsResponse {
   cache_expired?: boolean;
   last_synced_at?: string;
   error?: string;
+  has_more?: boolean; // ✅ FASE 6: Indica se há mais dados além do limit
+  limit_applied?: number; // ✅ FASE 6: Limit aplicado na query
 }
 
 export function useMLClaimsFromCache({
@@ -150,6 +152,8 @@ export function useMLClaimsFromCache({
       console.log('📦 [CACHE] Buscando de ml_claims...');
       
       // ✅ SELECT claim_data JSONB para ter dados enriquecidos completos
+      // ✅ FASE 6: Limit 1001 para detectar se há mais dados (1000 + 1 para verificação)
+      const SERVER_LIMIT = 1000;
       const { data: cachedClaims, error: cacheError } = await supabase
         .from('ml_claims')
         .select(`
@@ -159,7 +163,8 @@ export function useMLClaimsFromCache({
           claim_data
         `)
         .in('integration_account_id', integration_account_ids)
-        .order('date_created', { ascending: false });
+        .order('date_created', { ascending: false })
+        .limit(SERVER_LIMIT + 1); // +1 para detectar se há mais
 
       // ✅ VERIFICAR SE CACHE TEM DADOS ÚTEIS (order_items com SKU, etc.)
       // O cache ml_claims tem dados em claim_data.raw - usar isso como indicador de dados válidos
@@ -357,13 +362,19 @@ export function useMLClaimsFromCache({
           return trackingNumber.trim().length > 0;
         });
 
+        // ✅ FASE 6: Detectar se há mais dados além do limit
+        const hasMore = cachedClaims.length > SERVER_LIMIT;
+        const limitedDevolucoes = hasMore ? filteredDevolucoes.slice(0, SERVER_LIMIT) : filteredDevolucoes;
+
         return {
           success: true,
           source: 'cache',
-          devolucoes: filteredDevolucoes,
-          total_count: filteredDevolucoes.length,
+          devolucoes: limitedDevolucoes,
+          total_count: limitedDevolucoes.length,
           cache_expired: false,
-          last_synced_at: cachedClaims[0]?.last_synced_at || new Date().toISOString()
+          last_synced_at: cachedClaims[0]?.last_synced_at || new Date().toISOString(),
+          has_more: hasMore,
+          limit_applied: hasMore ? SERVER_LIMIT : undefined
         };
       }
 

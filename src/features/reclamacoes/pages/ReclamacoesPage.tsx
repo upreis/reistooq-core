@@ -31,6 +31,8 @@ import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { ReclamacoesPagination } from '../components/ReclamacoesPagination';
 import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 
 
@@ -467,8 +469,19 @@ export function ReclamacoesPage() {
                   </div>
                 </div>
                 
+                {/* ⚠️ FASE 6: Aviso quando há mais dados além do limit */}
+                {cacheResponse?.has_more && (
+                  <Alert variant="default" className="mt-4 border-amber-500/50 bg-amber-500/10">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    <AlertDescription className="text-amber-700 dark:text-amber-400">
+                      Exibindo as <strong>{cacheResponse.limit_applied?.toLocaleString()}</strong> reclamações mais recentes. 
+                      Para ver dados mais antigos, reduza o período de busca usando os filtros de data.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 {/* Resumo de Métricas - após as abas */}
-                <div className="mt-12">
+                <div className="mt-4">
                   <ReclamacoesResumo 
                     reclamacoes={reclamacoesEnriquecidas} 
                     onFiltroClick={setFiltroResumo}
