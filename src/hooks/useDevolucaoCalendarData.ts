@@ -49,16 +49,34 @@ export const useDevolucaoCalendarData = () => {
       const sixtyDaysAgo = subDays(new Date(), 60).toISOString();
       
       // ✅ OTIMIZADO: Busca apenas colunas leves que EXISTEM (sem claim_data JSONB pesado)
-      const { data: claims, error: fetchError } = await supabase
-        .from('ml_claims')
-        .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed')
-        .gte('date_created', sixtyDaysAgo)
-        .order('date_created', { ascending: false })
-        .limit(500); // Limitar para performance
+      // ✅ FASE 6: Removido limit(500) - usar paginação para buscar todos os dados
+      const allClaims: any[] = [];
+      let offset = 0;
+      const pageSize = 1000; // Supabase max
+      let hasMore = true;
 
-      if (fetchError) {
-        throw fetchError;
+      while (hasMore) {
+        const { data: claims, error: fetchError } = await supabase
+          .from('ml_claims')
+          .select('claim_id, order_id, status, stage, reason_id, date_created, date_closed')
+          .gte('date_created', sixtyDaysAgo)
+          .order('date_created', { ascending: false })
+          .range(offset, offset + pageSize - 1);
+
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        if (!claims || claims.length === 0) {
+          hasMore = false;
+        } else {
+          allClaims.push(...claims);
+          offset += pageSize;
+          hasMore = claims.length === pageSize;
+        }
       }
+
+      const claims = allClaims;
 
       if (!isMountedRef.current) return;
 
