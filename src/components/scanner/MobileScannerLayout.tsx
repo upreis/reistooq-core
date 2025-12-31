@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { 
   Camera, 
   CameraOff, 
@@ -16,18 +17,29 @@ import {
   Check,
   AlertCircle,
   Loader2,
-  Send
+  Send,
+  Repeat,
+  Plus
 } from 'lucide-react';
 import { useModernBarcodeScanner } from '@/hooks/useModernBarcodeScanner';
 import { cn } from '@/lib/utils';
+import { feedbackSuccess, feedbackError, feedbackScanDetected } from './utils/scannerFeedback';
 
 interface ScanHistoryItem {
   code: string;
   timestamp: Date;
   product?: {
+    id?: string;
     nome: string;
     quantidade_atual: number;
   };
+}
+
+interface ScanFeedback {
+  type: 'success' | 'error' | 'new';
+  message: string;
+  productName?: string;
+  code: string;
 }
 
 interface MobileScannerLayoutProps {
@@ -35,25 +47,27 @@ interface MobileScannerLayoutProps {
   onError?: (error: string) => void;
   scanHistory?: ScanHistoryItem[];
   isProcessing?: boolean;
+  lastScanResult?: ScanFeedback | null;
 }
 
 /**
  * Layout mobile-first otimizado para scanner de código de barras
- * - Área de escaneamento retangular (16:9) ocupando tela inteira
- * - Botões grandes e acessíveis na zona do polegar
- * - Histórico em bottom sheet colapsável
- * - Auto-start da câmera
+ * Fase 2: UX Workflow - Feedback visual, sons, modo contínuo
  */
 export function MobileScannerLayout({ 
   onScan, 
   onError,
   scanHistory = [],
-  isProcessing = false
+  isProcessing = false,
+  lastScanResult
 }: MobileScannerLayoutProps) {
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [isScanning, setIsScanning] = useState(false);
+  const [continuousMode, setContinuousMode] = useState(true);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const feedbackTimeoutRef = useRef<NodeJS.Timeout>();
 
   const scanner = useModernBarcodeScanner({
     preferredCamera: 'back',
@@ -70,6 +84,7 @@ export function MobileScannerLayout({
       if (started && mounted) {
         setIsScanning(true);
         scanner.startScanning((code) => {
+          feedbackScanDetected();
           onScan(code);
         });
       }
@@ -83,8 +98,34 @@ export function MobileScannerLayout({
       console.log('🧹 [MobileScannerLayout] Unmounting - stopping camera');
       scanner.stopCamera();
       setIsScanning(false);
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
     };
   }, []); // Empty deps - run only on mount/unmount
+
+  // Show feedback toast when scan result changes
+  useEffect(() => {
+    if (lastScanResult) {
+      // Play audio/haptic feedback based on result
+      if (lastScanResult.type === 'success') {
+        feedbackSuccess();
+      } else if (lastScanResult.type === 'error' || lastScanResult.type === 'new') {
+        feedbackError();
+      }
+      
+      // Show visual feedback
+      setShowFeedback(true);
+      
+      // Auto-hide after 2.5 seconds
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
+      feedbackTimeoutRef.current = setTimeout(() => {
+        setShowFeedback(false);
+      }, 2500);
+    }
+  }, [lastScanResult]);
 
   const handleToggleScanning = useCallback(async () => {
     if (isScanning) {
@@ -97,6 +138,7 @@ export function MobileScannerLayout({
       if (started) {
         setIsScanning(true);
         scanner.startScanning((code) => {
+          feedbackScanDetected();
           onScan(code);
         });
       } else {
@@ -136,7 +178,7 @@ export function MobileScannerLayout({
       {/* Header - Minimal */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 to-transparent">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Badge 
               variant={isScanning ? "default" : "secondary"} 
               className={cn(
@@ -153,6 +195,20 @@ export function MobileScannerLayout({
                scanner.error ? 'Erro' : 
                isScanning ? 'Escaneando' : 'Pausado'}
             </Badge>
+            
+            {/* Continuous Mode Toggle */}
+            <button
+              onClick={() => setContinuousMode(!continuousMode)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                continuousMode 
+                  ? "bg-primary/90 text-primary-foreground" 
+                  : "bg-white/20 text-white/70"
+              )}
+            >
+              <Repeat className={cn("w-3.5 h-3.5", continuousMode && "animate-spin-slow")} />
+              Contínuo
+            </button>
           </div>
           
           {/* Torch Button */}
@@ -233,6 +289,44 @@ export function MobileScannerLayout({
               <Camera className="w-20 h-20 mx-auto mb-4 opacity-40" />
               <p className="text-lg opacity-60">Câmera pausada</p>
               <p className="text-sm opacity-40 mt-1">Toque no botão abaixo para iniciar</p>
+            </div>
+          </div>
+        )}
+
+        {/* Scan Result Feedback Toast */}
+        {showFeedback && lastScanResult && (
+          <div 
+            className={cn(
+              "absolute top-20 left-4 right-4 z-30 p-4 rounded-2xl shadow-2xl",
+              "transform transition-all duration-300 ease-out",
+              "animate-in slide-in-from-top-4 fade-in",
+              lastScanResult.type === 'success' && "bg-green-500/95 text-white",
+              lastScanResult.type === 'error' && "bg-amber-500/95 text-white",
+              lastScanResult.type === 'new' && "bg-blue-500/95 text-white"
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                lastScanResult.type === 'success' && "bg-white/20",
+                lastScanResult.type === 'error' && "bg-white/20",
+                lastScanResult.type === 'new' && "bg-white/20"
+              )}>
+                {lastScanResult.type === 'success' && <Check className="w-6 h-6" />}
+                {lastScanResult.type === 'error' && <AlertCircle className="w-6 h-6" />}
+                {lastScanResult.type === 'new' && <Plus className="w-6 h-6" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-base">
+                  {lastScanResult.type === 'success' && 'Produto encontrado'}
+                  {lastScanResult.type === 'error' && 'Não encontrado'}
+                  {lastScanResult.type === 'new' && 'Novo produto'}
+                </p>
+                {lastScanResult.productName && (
+                  <p className="text-sm opacity-90 truncate">{lastScanResult.productName}</p>
+                )}
+                <code className="text-xs opacity-75 font-mono">{lastScanResult.code}</code>
+              </div>
             </div>
           </div>
         )}
@@ -409,6 +503,13 @@ export function MobileScannerLayout({
         @keyframes scan-line {
           0%, 100% { top: 0; }
           50% { top: calc(100% - 4px); }
+        }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 3s linear infinite;
         }
       `}</style>
     </div>
