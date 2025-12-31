@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface GlowChatButtonProps {
@@ -10,14 +10,22 @@ interface GlowChatButtonProps {
 
 const GlowChatButton = ({ children, onClick, className, isPulsing }: GlowChatButtonProps) => {
   const id = useId().replace(/:/g, '');
+  const [isHovered, setIsHovered] = useState(false);
+  
   const filters = {
     unopaq: `unopaq-${id}`,
     unopaq2: `unopaq2-${id}`,
     unopaq3: `unopaq3-${id}`,
   };
 
+  const showGlow = isHovered || isPulsing;
+
   return (
-    <div className={cn("relative inline-block", className)}>
+    <div 
+      className={cn("relative inline-block", className)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* SVG Filters */}
       <svg className="absolute w-0 h-0">
         <filter id={filters.unopaq}>
@@ -49,14 +57,17 @@ const GlowChatButton = ({ children, onClick, className, isPulsing }: GlowChatBut
 
       {/* Button Container */}
       <div
-        className="relative w-14 h-14 flex items-center justify-center"
+        className="relative w-14 h-14 flex items-center justify-center transition-all duration-300"
         style={{
-          filter: `url(#${filters.unopaq})`,
+          filter: showGlow ? `url(#${filters.unopaq})` : 'none',
         }}
       >
-        {/* Outer Glow Layer */}
+        {/* Outer Glow Layer - only visible on hover */}
         <div
-          className="absolute inset-0 rounded-full overflow-hidden"
+          className={cn(
+            "absolute inset-0 rounded-full overflow-hidden transition-opacity duration-300",
+            showGlow ? "opacity-100" : "opacity-0"
+          )}
           style={{
             filter: 'blur(4px)',
           }}
@@ -69,16 +80,19 @@ const GlowChatButton = ({ children, onClick, className, isPulsing }: GlowChatBut
             style={{
               inset: '-100%',
               background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--primary)/0.6), hsl(var(--primary)), hsl(var(--primary)/0.6), hsl(var(--primary)))',
-              animation: isPulsing 
-                ? 'speen 4s linear infinite, woah 3s ease-in-out infinite' 
-                : 'speen 4s linear infinite',
+              animation: showGlow 
+                ? (isPulsing ? 'speen 4s linear infinite, woah 3s ease-in-out infinite' : 'speen 4s linear infinite')
+                : 'none',
             }}
           />
         </div>
 
-        {/* Middle Glow Layer */}
+        {/* Middle Glow Layer - only visible on hover */}
         <div
-          className="absolute rounded-full overflow-hidden"
+          className={cn(
+            "absolute rounded-full overflow-hidden transition-opacity duration-300",
+            showGlow ? "opacity-100" : "opacity-0"
+          )}
           style={{
             inset: '1px',
             filter: `blur(1.5px) url(#${filters.unopaq2})`,
@@ -89,7 +103,7 @@ const GlowChatButton = ({ children, onClick, className, isPulsing }: GlowChatBut
             style={{
               inset: '-100%',
               background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--primary)/0.4), hsl(var(--primary)), hsl(var(--primary)/0.4), hsl(var(--primary)))',
-              animation: 'speen 4s linear infinite',
+              animation: showGlow ? 'speen 4s linear infinite' : 'none',
             }}
           />
         </div>
@@ -99,7 +113,7 @@ const GlowChatButton = ({ children, onClick, className, isPulsing }: GlowChatBut
           className="absolute rounded-full overflow-hidden"
           style={{
             inset: '2px',
-            filter: `url(#${filters.unopaq3})`,
+            filter: showGlow ? `url(#${filters.unopaq3})` : 'none',
           }}
         >
           <div
@@ -108,13 +122,15 @@ const GlowChatButton = ({ children, onClick, className, isPulsing }: GlowChatBut
               background: 'hsl(var(--background))',
             }}
           >
-            {/* Inner Glow Layer */}
+            {/* Inner Glow Layer - only visible on hover */}
             <div
-              className="absolute rounded-full overflow-hidden"
+              className={cn(
+                "absolute rounded-full overflow-hidden transition-opacity duration-300",
+                showGlow ? "opacity-50" : "opacity-0"
+              )}
               style={{
                 inset: '-1px',
                 filter: 'blur(6px)',
-                opacity: 0.5,
               }}
             >
               <div
@@ -122,17 +138,19 @@ const GlowChatButton = ({ children, onClick, className, isPulsing }: GlowChatBut
                 style={{
                   inset: '-100%',
                   background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--primary)/0.3), hsl(var(--primary)), hsl(var(--primary)/0.3), hsl(var(--primary)))',
-                  animation: 'speen 4s linear infinite',
+                  animation: showGlow ? 'speen 4s linear infinite' : 'none',
                 }}
               />
             </div>
 
             {/* Button Surface */}
             <div
-              className="absolute inset-[3px] rounded-full flex items-center justify-center text-primary-foreground"
+              className="absolute inset-[3px] rounded-full flex items-center justify-center text-primary-foreground transition-all duration-300"
               style={{
                 background: 'linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--primary)/0.85) 100%)',
-                boxShadow: 'inset 0 1px 2px hsl(var(--primary)/0.3), 0 2px 8px hsl(var(--primary)/0.4)',
+                boxShadow: showGlow 
+                  ? 'inset 0 1px 2px hsl(var(--primary)/0.3), 0 2px 8px hsl(var(--primary)/0.4)'
+                  : 'inset 0 1px 2px hsl(var(--primary)/0.2), 0 2px 4px hsl(var(--primary)/0.2)',
               }}
             >
               {children}
