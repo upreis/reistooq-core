@@ -20,7 +20,13 @@ export function AIChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Olá! Sou seu assistente inteligente. Como posso ajudar você hoje?'
+      content: `Olá! Sou o assistente de ajuda do Reistoq.
+
+Posso explicar como usar as telas e o que fazer em cada situação.
+
+Não faço alterações nem executo ações por você.
+
+Como posso ajudar?`
     }
   ]);
   const [input, setInput] = useState('');
