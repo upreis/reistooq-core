@@ -196,6 +196,24 @@ serve(async (req) => {
     }
 
     // Buscar histórico da conversa se existir
+    // ===== CONHECIMENTO FIXO DAS PÁGINAS =====
+    const pagesKnowledge: Record<string, string> = {
+      '/estoque/de-para': `Essa página de De/Para serve para mapear o SKU do pedido com o SKU do estoque e assim dar saída corretamente do estoque.
+
+Por exemplo, se no pedido estiver SKU:123 e no estoque tiver algum produto com o SKU:123, ele irá dar a saída corretamente. Mas caso em algum cadastro erre o SKU e coloque 124, esse SKU cairá no de/para e aguardará seu preenchimento na coluna SKU Correto.
+
+Depois de cadastrado, os pedidos que ainda não saíram do estoque por erro de cadastro de SKU poderão ser baixados do estoque normalmente.
+
+E as próximas vendas, se quiser corrigir o SKU para 123 no marketplace, pode corrigir, pois ele já está mapeado que o SKU Pedido 124 é igual ao SKU Correto 123.
+
+A página mostra uma lista de todos os mapeamentos, com as colunas SKU Pedido (o SKU que veio errado do marketplace), SKU Correto (o SKU real do seu estoque), Nome do Produto, Status (ativo ou inativo) e data de criação.
+
+Você pode adicionar novos mapeamentos clicando no botão de adicionar, editar mapeamentos existentes ou desativar mapeamentos que não são mais necessários.`
+    };
+    
+    // Buscar conhecimento da página atual
+    const currentPageKnowledge = context ? pagesKnowledge[context] || '' : '';
+    
     // ===== SYSTEM PROMPT SAC - TOM HUMANO =====
     const sacSystemPrompt = `Você é o assistente de ajuda do REISTOQ, um sistema para gestão de e-commerce.
 
@@ -208,7 +226,7 @@ Regras de escrita.
 Não use markdown e não use listas com hífen, asterisco ou numeração. Escreva em português do Brasil, em parágrafos curtos. Use frases completas, com sujeito e verbo. Não repita a mesma ideia com palavras diferentes.
 
 Regra para começo de resposta (obrigatória).
-Se a pergunta for sobre uma tela ou “essa página”, comece a primeira frase exatamente com "Essa página" e use o verbo "mostra". Exemplo: "Essa página mostra ...".
+Se a pergunta for sobre uma tela ou "essa página", comece a primeira frase exatamente com "Essa página" e use o verbo "mostra" ou "serve". Exemplo: "Essa página mostra ..." ou "Essa página serve para ...".
 Se a pergunta for sobre período, filtros, busca, como fazer ou onde clicar, comece a primeira frase com "Você pode". Exemplo: "Você pode escolher o período...".
 
 Como explicar uma página.
@@ -224,7 +242,7 @@ Se pedirem algo fora do que você faz: "Eu não consigo fazer isso por aqui. Pos
 Se relatarem um problema técnico: "Entendo que você está com dificuldade. Tente atualizar a página e repetir o passo. Se continuar, fale com nosso suporte técnico: suporte@reistoq.com.br"
 
 Contexto para te orientar.
-${knowledgeContext ? `Informações da base de conhecimento:\n${knowledgeContext}` : 'Sem informações adicionais da base de conhecimento.'}
+${currentPageKnowledge ? `CONHECIMENTO DA PÁGINA ATUAL (use isso para responder):\n${currentPageKnowledge}\n\n` : ''}${knowledgeContext ? `Informações adicionais da base de conhecimento:\n${knowledgeContext}` : 'Sem informações adicionais da base de conhecimento.'}
 Página atual do usuário: ${context || 'Navegando no sistema'}`;
 
     let messages: any[] = [
