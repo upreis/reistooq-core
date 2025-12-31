@@ -10,7 +10,97 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Importar assets locais para garantir que sempre funcionem
+import pedidosNewIcon from "@/assets/icons/pedidos-marketplace-new-icon.png";
+import estoqueNewIcon from "@/assets/estoque-icon-v2.png";
+import canceladasComEnvioIcon from "@/assets/icons/canceladas-com-envio-icon.png";
+import clientesNewIcon from "@/assets/oms-clientes-icon-v2.png";
+import reclamacoesIcon from "@/assets/icons/reclamacoes-new-icon.png";
+import devolucoesIcon from "@/assets/icons/devolucoes-venda-icon-new.png";
+import visaoGeralIcon from "@/assets/icons/visao-geral-icon.png";
+import dashboardVendasIcon from "@/assets/dashboard_vendas.png";
+import dashboardEstoqueIcon from "@/assets/dashboard_estoque.png";
+import dashboardAnalisesIcon from "@/assets/dashboard_analises.png";
+import pedidosOmsNewIcon from "@/assets/oms-pedidos-icon-v2.png";
+import vendedoresNewIcon from "@/assets/oms-vendedores-icon-v2.png";
+import configuracoesOmsNewIcon from "@/assets/oms-configuracoes-icon-v2.png";
+import composicoesIcon from "@/assets/composicoes.png";
+import estoqueHistoricoNewIcon from "@/assets/historico-estoque-icon-v2.png";
+import pedidosCompraNewIcon from "@/assets/pedidos-compra-icon-v2.png";
+import cotacoesIcon from "@/assets/cotacoes.png";
+import fornecedoresNewIcon from "@/assets/fornecedores-new-icon.png";
+import importacaoIcon from "@/assets/icons/compras-importacao-new-icon.png";
+import calendarioIcon from "@/assets/calendario.png";
+import notasIcon from "@/assets/notas.png";
+import scannerIcon from "@/assets/icons/scanner-icon.png";
+import integracoesIcon from "@/assets/integracoes.png";
+import anunciosIcon from "@/assets/anuncios.png";
+import adminIcon from "@/assets/admin.png";
+import usuariosIcon from "@/assets/usuarios.png";
+import cargosIcon from "@/assets/cargos.png";
+import convitesIcon from "@/assets/convites.png";
+import alertasIcon from "@/assets/alertas.png";
+import segurancaIcon from "@/assets/seguranca.png";
+import auditoriaIcon from "@/assets/auditoria.png";
+import perfilAdminIcon from "@/assets/perfil_admin.png";
+import deParaIcon from "@/assets/de_para.png";
+import historicoIcon from "@/assets/historico.png";
+
 const STORAGE_KEY = 'dashboard-quick-shortcuts';
+
+// Mapeamento de rotas para ícones locais
+const ROUTE_TO_ICON: Record<string, string> = {
+  '/dashboardinicial/visao-geral': visaoGeralIcon,
+  '/dashboardinicial/vendas': dashboardVendasIcon,
+  '/dashboardinicial/estoque': dashboardEstoqueIcon,
+  '/dashboardinicial/analises': dashboardAnalisesIcon,
+  '/pedidos': pedidosNewIcon,
+  '/vendas-com-envio': canceladasComEnvioIcon,
+  '/oms/pedidos': pedidosOmsNewIcon,
+  '/oms/clientes': clientesNewIcon,
+  '/oms/vendedores': vendedoresNewIcon,
+  '/oms/configuracoes': configuracoesOmsNewIcon,
+  '/estoque': estoqueNewIcon,
+  '/estoque/composicoes': composicoesIcon,
+  '/estoque/historico': estoqueHistoricoNewIcon,
+  '/estoque/de-para': deParaIcon,
+  '/devolucoesdevenda': devolucoesIcon,
+  '/reclamacoes': reclamacoesIcon,
+  '/compras/pedidos': pedidosCompraNewIcon,
+  '/compras/cotacoes': cotacoesIcon,
+  '/compras/fornecedores': fornecedoresNewIcon,
+  '/compras/importacao': importacaoIcon,
+  '/aplicativos/calendario': calendarioIcon,
+  '/aplicativos/notas': notasIcon,
+  '/aplicativos/scanner': scannerIcon,
+  '/configuracoes/integracoes': integracoesIcon,
+  '/configuracoes/anuncios': anunciosIcon,
+  '/admin': adminIcon,
+  '/admin/usuarios': usuariosIcon,
+  '/admin/cargos': cargosIcon,
+  '/admin/convites': convitesIcon,
+  '/admin/alertas': alertasIcon,
+  '/admin/seguranca': segurancaIcon,
+  '/admin/perfil': perfilAdminIcon,
+  '/historico': historicoIcon,
+};
+
+// Função para obter o ícone correto com fallback
+function getValidIconUrl(shortcut: Service): string {
+  // Primeiro: tentar mapear pela rota (sempre funciona com assets locais)
+  const localIcon = ROUTE_TO_ICON[shortcut.href];
+  if (localIcon) {
+    return localIcon;
+  }
+  
+  // Segundo: usar imageUrl se for um asset local válido (começa com /)
+  if (shortcut.imageUrl && shortcut.imageUrl.startsWith('/')) {
+    return shortcut.imageUrl;
+  }
+  
+  // Terceiro: fallback para ícone genérico
+  return visaoGeralIcon;
+}
 
 interface Service {
   name: string;
@@ -23,25 +113,25 @@ interface Service {
 const DEFAULT_SHORTCUTS: Service[] = [
   {
     name: 'Pedidos',
-    imageUrl: 'https://img.icons8.com/fluency/96/shopping-cart.png',
+    imageUrl: pedidosNewIcon,
     href: '/pedidos',
     gradient: 'bg-gradient-to-br from-blue-500 to-blue-600'
   },
   {
     name: 'Estoque',
-    imageUrl: 'https://img.icons8.com/fluency/96/warehouse.png',
+    imageUrl: estoqueNewIcon,
     href: '/estoque',
     gradient: 'bg-gradient-to-br from-amber-500 to-orange-600'
   },
-{
+  {
     name: 'Canceladas com Envio',
-    imageUrl: 'https://img.icons8.com/fluency/96/online-store.png',
+    imageUrl: canceladasComEnvioIcon,
     href: '/vendas-com-envio',
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-600'
   },
   {
     name: 'Clientes',
-    imageUrl: 'https://img.icons8.com/fluency/96/customer.png',
+    imageUrl: clientesNewIcon,
     href: '/oms/clientes',
     gradient: 'bg-gradient-to-br from-pink-500 to-rose-600'
   }
@@ -94,7 +184,7 @@ function DockIcon({ item, mouseX, onClick }: DockIconProps) {
         }}
       >
         <img
-          src={item.imageUrl}
+          src={getValidIconUrl(item)}
           alt={item.name}
           className="w-full h-full object-contain rounded-2xl"
         />
