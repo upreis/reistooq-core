@@ -403,6 +403,45 @@ Página atual do usuário: ${context || 'Navegando no sistema'}`;
 
         const decoder = new TextDecoder();
         let assistantMessage = '';
+        let prefixFixed = false;
+
+        // Heurística simples para evitar começos "cortados" (ex: "Essa importantes...")
+        const isPageQuestion = /\b(p[aá]gina|tela|essa\s+p[aá]gina)\b/i.test(message);
+        const isFilterOrPeriodQuestion = /\b(per[ií]odo|data|filtro|filtrar|buscar|pesquisar|pesquisa|selecionar)\b/i.test(message);
+
+        const fixFirstChunkPrefix = (chunkText: string) => {
+          const t = chunkText || '';
+          const lower = t.toLowerCase();
+
+          // Preferência: perguntas sobre página
+          if (isPageQuestion && !isFilterOrPeriodQuestion) {
+            if (lower.startsWith('essa página mostra')) return t;
+
+            if (lower.startsWith('essa página ')) {
+              return t.replace(/^Essa\s+p[aá]gina\s+/i, 'Essa página mostra ');
+            }
+
+            if (lower.startsWith('essa ')) {
+              // "Essa X" -> "Essa página mostra X"
+              return t.replace(/^Essa\s+/i, 'Essa página mostra ');
+            }
+
+            return `Essa página mostra ${t}`;
+          }
+
+          // Perguntas sobre filtros/período/como fazer
+          if (isFilterOrPeriodQuestion) {
+            if (lower.startsWith('você pode')) return t;
+
+            if (lower.startsWith('você ')) {
+              return t.replace(/^Você\s+/i, 'Você pode ');
+            }
+
+            return `Você pode ${t}`;
+          }
+
+          return t;
+        };
 
         try {
           while (true) {
@@ -422,12 +461,15 @@ Página atual do usuário: ${context || 'Navegando no sistema'}`;
               try {
                 const parsed = JSON.parse(data);
                 const content = parsed.choices?.[0]?.delta?.content;
-                
+
                 if (content) {
-                  assistantMessage += content;
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-                    content,
-                    conversationId: finalConversationId 
+                  const out = prefixFixed ? content : fixFirstChunkPrefix(content);
+                  prefixFixed = true;
+
+                  assistantMessage += out;
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                    content: out,
+                    conversationId: finalConversationId
                   })}\n\n`));
                 }
               } catch (e) {
