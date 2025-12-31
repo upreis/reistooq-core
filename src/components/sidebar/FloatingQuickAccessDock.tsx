@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Plus, X } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, MouseEvent } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import {
@@ -161,6 +161,20 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
   const mouseX = useMotionValue(Infinity);
   const navigate = useNavigate();
 
+  // Hover glow state
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [glowPosition, setGlowPosition] = useState({ x: 32, y: 32 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: MouseEvent<HTMLButtonElement>) => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      setGlowPosition({ x, y });
+    }
+  };
+
   // Sync with localStorage changes
   useEffect(() => {
     const handleStorageChange = () => {
@@ -278,11 +292,15 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
               <Tooltip>
                 <TooltipTrigger asChild>
                   <motion.button
+                    ref={buttonRef}
                     className={cn(
-                      "size-16 rounded-full flex items-center justify-center flex-shrink-0",
-                      "bg-primary hover:bg-primary/90 transition-colors shadow-xl"
+                      "size-16 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden",
+                      "bg-primary transition-colors shadow-xl"
                     )}
                     onClick={() => setActive(!active)}
+                    onMouseMove={handleMouseMove}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
                     animate={{ 
                       rotate: active ? 180 : 0,
                     }}
@@ -293,7 +311,21 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
                     }}
                     whileTap={{ scale: 0.95 }}
                   >
+                    {/* Glow effect */}
+                    <div
+                      className={cn(
+                        "absolute w-[120px] h-[120px] rounded-full opacity-70 pointer-events-none transition-transform duration-300 ease-out -translate-x-1/2 -translate-y-1/2",
+                        isHovered ? "scale-125" : "scale-0"
+                      )}
+                      style={{
+                        left: `${glowPosition.x}px`,
+                        top: `${glowPosition.y}px`,
+                        background: 'radial-gradient(circle, hsl(var(--primary-foreground) / 0.6) 10%, transparent 70%)',
+                        zIndex: 0,
+                      }}
+                    />
                     <motion.div
+                      className="relative z-10"
                       animate={{
                         rotate: active ? 0 : 0,
                       }}
