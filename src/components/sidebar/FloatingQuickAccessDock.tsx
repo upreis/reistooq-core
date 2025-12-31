@@ -236,14 +236,14 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-              "flex h-24 rounded-3xl bg-card backdrop-blur-md border-2 border-border shadow-xl overflow-visible",
-              active ? "items-end gap-4 px-6 pb-4" : "items-center justify-center gap-0"
+              "flex h-16 rounded-2xl bg-card backdrop-blur-md border-2 border-border shadow-xl overflow-visible",
+              active ? "items-end gap-3 px-4 pb-3" : "items-center justify-center gap-0"
             )}
             animate={{
-              width: active ? "auto" : 80,
-              paddingLeft: active ? "1.5rem" : 0,
-              paddingRight: active ? "1.5rem" : 0,
-              paddingBottom: active ? "1rem" : 0,
+              width: active ? "auto" : 56,
+              paddingLeft: active ? "1rem" : 0,
+              paddingRight: active ? "1rem" : 0,
+              paddingBottom: active ? "0.75rem" : 0,
             }}
             transition={{
               type: "spring",
