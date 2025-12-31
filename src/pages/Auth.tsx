@@ -15,9 +15,28 @@ const Auth = () => {
   useEffect(() => {
     const acceptIfNeeded = async () => {
       if (user && !loading) {
-        if (invite) {
+        let tokenToAccept = invite;
+        
+        // Se não tem token na URL, verificar se há convite pendente para o email do usuário
+        if (!tokenToAccept) {
+          const { data: pendingInvite } = await supabase
+            .from('invitations')
+            .select('token')
+            .eq('email', user.email)
+            .eq('status', 'pending')
+            .gt('expires_at', new Date().toISOString())
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (pendingInvite?.token) {
+            tokenToAccept = pendingInvite.token;
+          }
+        }
+        
+        if (tokenToAccept) {
           // Aceitar convite automaticamente após autenticação
-          await supabase.rpc('accept_invitation_secure', { _token: invite });
+          await supabase.rpc('accept_invitation_secure', { _token: tokenToAccept });
         }
         navigate('/', { replace: true });
       }
