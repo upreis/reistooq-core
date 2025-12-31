@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Plus, X } from "lucide-react";
-import { useState, useRef, useEffect, MouseEvent } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import {
@@ -161,18 +161,14 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
   const mouseX = useMotionValue(Infinity);
   const navigate = useNavigate();
 
-  // Hover glow state
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [glowPosition, setGlowPosition] = useState({ x: 32, y: 32 });
+  // Glow effect state
+  const id = useId().replace(/:/g, '');
   const [isHovered, setIsHovered] = useState(false);
-
-  const handleMouseMove = (e: MouseEvent<HTMLButtonElement>) => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      setGlowPosition({ x, y });
-    }
+  
+  const filters = {
+    unopaq: `unopaq-dock-${id}`,
+    unopaq2: `unopaq2-dock-${id}`,
+    unopaq3: `unopaq3-dock-${id}`,
   };
 
   // Sync with localStorage changes
@@ -287,64 +283,164 @@ export function FloatingQuickAccessDock({ isSidebarCollapsed }: FloatingQuickAcc
               </motion.div>
             ))}
 
-            {/* Botão toggle - sempre visível, muda entre + e X */}
+            {/* Botão toggle com efeito glow rotativo */}
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <motion.button
-                    ref={buttonRef}
-                    className={cn(
-                      "size-14 rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden",
-                      "bg-primary transition-colors shadow-xl"
-                    )}
-                    onClick={() => setActive(!active)}
-                    onMouseMove={handleMouseMove}
+                  <div
+                    className="relative inline-block"
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
-                    animate={{ 
-                      rotate: active ? 180 : 0,
-                    }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 260,
-                      damping: 20,
-                    }}
-                    whileTap={{ scale: 0.95 }}
                   >
-                    {/* Glow effect */}
+                    {/* SVG Filters */}
+                    <svg className="absolute w-0 h-0">
+                      <filter id={filters.unopaq}>
+                        <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 3 0" />
+                      </filter>
+                      <filter id={filters.unopaq2}>
+                        <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 9 0" />
+                      </filter>
+                      <filter id={filters.unopaq3}>
+                        <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 0" />
+                      </filter>
+                    </svg>
+
+                    {/* Backdrop */}
                     <div
-                      className={cn(
-                        "absolute w-[120px] h-[120px] rounded-full opacity-70 pointer-events-none transition-transform duration-300 ease-out -translate-x-1/2 -translate-y-1/2",
-                        isHovered ? "scale-125" : "scale-0"
-                      )}
+                      className="absolute rounded-full"
                       style={{
-                        left: `${glowPosition.x}px`,
-                        top: `${glowPosition.y}px`,
-                        background: 'radial-gradient(circle, hsl(var(--primary-foreground) / 0.6) 10%, transparent 70%)',
-                        zIndex: 0,
+                        inset: '-1px',
+                        background: 'hsl(var(--background))',
                       }}
                     />
+
+                    {/* Button Container */}
                     <motion.div
-                      className="relative z-10"
-                      animate={{
-                        rotate: active ? 0 : 0,
+                      className="relative w-14 h-14 flex items-center justify-center cursor-pointer"
+                      style={{
+                        filter: isHovered ? `url(#${filters.unopaq})` : 'none',
                       }}
+                      onClick={() => setActive(!active)}
+                      animate={{ 
+                        rotate: active ? 180 : 0,
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 20,
+                      }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      {active ? (
-                        <X 
-                          size={24} 
-                          strokeWidth={3} 
-                          className="text-primary-foreground" 
+                      {/* Outer Glow Layer */}
+                      <div
+                        className={cn(
+                          "absolute inset-0 rounded-full overflow-hidden transition-opacity duration-300",
+                          isHovered ? "opacity-100" : "opacity-0"
+                        )}
+                        style={{
+                          filter: 'blur(4px)',
+                        }}
+                      >
+                        <div
+                          className="absolute rounded-full"
+                          style={{
+                            inset: '-100%',
+                            background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--primary)/0.6), hsl(var(--primary)), hsl(var(--primary)/0.6), hsl(var(--primary)))',
+                            animation: isHovered ? 'speen 4s linear infinite' : 'none',
+                          }}
                         />
-                      ) : (
-                        <Plus 
-                          size={24} 
-                          strokeWidth={3} 
-                          className="text-primary-foreground" 
+                      </div>
+
+                      {/* Middle Glow Layer */}
+                      <div
+                        className={cn(
+                          "absolute rounded-full overflow-hidden transition-opacity duration-300",
+                          isHovered ? "opacity-100" : "opacity-0"
+                        )}
+                        style={{
+                          inset: '1px',
+                          filter: `blur(1.5px) url(#${filters.unopaq2})`,
+                        }}
+                      >
+                        <div
+                          className="absolute rounded-full"
+                          style={{
+                            inset: '-100%',
+                            background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--primary)/0.4), hsl(var(--primary)), hsl(var(--primary)/0.4), hsl(var(--primary)))',
+                            animation: isHovered ? 'speen 4s linear infinite' : 'none',
+                          }}
                         />
-                      )}
+                      </div>
+
+                      {/* Button Border */}
+                      <div
+                        className="absolute rounded-full overflow-hidden"
+                        style={{
+                          inset: '2px',
+                          filter: isHovered ? `url(#${filters.unopaq3})` : 'none',
+                        }}
+                      >
+                        <div
+                          className="absolute inset-0 rounded-full overflow-hidden"
+                          style={{
+                            background: 'hsl(var(--background))',
+                          }}
+                        >
+                          {/* Inner Glow Layer */}
+                          <div
+                            className={cn(
+                              "absolute rounded-full overflow-hidden transition-opacity duration-300",
+                              isHovered ? "opacity-50" : "opacity-0"
+                            )}
+                            style={{
+                              inset: '-1px',
+                              filter: 'blur(6px)',
+                            }}
+                          >
+                            <div
+                              className="absolute rounded-full"
+                              style={{
+                                inset: '-100%',
+                                background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--primary)/0.3), hsl(var(--primary)), hsl(var(--primary)/0.3), hsl(var(--primary)))',
+                                animation: isHovered ? 'speen 4s linear infinite' : 'none',
+                              }}
+                            />
+                          </div>
+
+                          {/* Button Surface */}
+                          <div
+                            className="absolute inset-[3px] rounded-full flex items-center justify-center text-primary-foreground transition-all duration-300"
+                            style={{
+                              background: 'linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--primary)/0.85) 100%)',
+                              boxShadow: isHovered 
+                                ? 'inset 0 1px 2px hsl(var(--primary)/0.3), 0 2px 8px hsl(var(--primary)/0.4)'
+                                : 'inset 0 1px 2px hsl(var(--primary)/0.2), 0 2px 4px hsl(var(--primary)/0.2)',
+                            }}
+                          >
+                            {active ? (
+                              <X 
+                                size={24} 
+                                strokeWidth={3} 
+                              />
+                            ) : (
+                              <Plus 
+                                size={24} 
+                                strokeWidth={3} 
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </motion.div>
-                  </motion.button>
+
+                    <style>{`
+                      @keyframes speen {
+                        0% { transform: rotate(10deg); }
+                        50% { transform: rotate(190deg); }
+                        100% { transform: rotate(370deg); }
+                      }
+                    `}</style>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="z-[60]">
                   <p>Acesso Rápido</p>
