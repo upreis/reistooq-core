@@ -4,30 +4,28 @@ import { cn } from "@/lib/utils";
 import { AIChatWidget } from "@/components/ai/AIChatWidget";
 import { useAIChat } from "@/contexts/AIChatContext";
 import { Badge } from "@/components/ui/badge";
+import { GlowChatButton } from "@/components/ui/glow-chat-button";
 
 export function AIChatBubble() {
   const { isOpen, toggleChat, closeChat, pendingInsight } = useAIChat();
 
   return (
     <>
-      {/* Balão flutuante */}
-      <Button
-        onClick={toggleChat}
+      {/* Balão flutuante com efeito glow */}
+      <div
         className={cn(
-          "fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg",
-          "bg-primary hover:bg-primary/90 transition-all duration-200",
-          "flex items-center justify-center",
-          isOpen && "scale-0",
-          pendingInsight && "animate-pulse ring-2 ring-yellow-400"
+          "fixed bottom-6 right-6 z-50 transition-all duration-300",
+          isOpen && "scale-0 opacity-0 pointer-events-none"
         )}
-        aria-label="Abrir assistente"
       >
-        {pendingInsight ? (
-          <Brain className="h-6 w-6" />
-        ) : (
-          <MessageCircle className="h-6 w-6" />
-        )}
-      </Button>
+        <GlowChatButton onClick={toggleChat} isPulsing={!!pendingInsight}>
+          {pendingInsight ? (
+            <Brain className="h-6 w-6" />
+          ) : (
+            <MessageCircle className="h-6 w-6" />
+          )}
+        </GlowChatButton>
+      </div>
 
       {/* Widget do chat */}
       <div
