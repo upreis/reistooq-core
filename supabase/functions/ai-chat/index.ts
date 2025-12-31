@@ -403,43 +403,55 @@ Página atual do usuário: ${context || 'Navegando no sistema'}`;
 
         const decoder = new TextDecoder();
         let assistantMessage = '';
-        let prefixFixed = false;
+        let buffer = '';
+        let bufferSent = false;
+        const BUFFER_SIZE = 80; // Acumular pelo menos 80 caracteres antes de enviar
 
-        // Heurística simples para evitar começos "cortados" (ex: "Essa importantes...")
-        const isPageQuestion = /\b(p[aá]gina|tela|essa\s+p[aá]gina)\b/i.test(message);
-        const isFilterOrPeriodQuestion = /\b(per[ií]odo|data|filtro|filtrar|buscar|pesquisar|pesquisa|selecionar)\b/i.test(message);
-
-        const fixFirstChunkPrefix = (chunkText: string) => {
-          const t = chunkText || '';
+        // Função para verificar se o início da resposta está correto
+        const fixResponseStart = (text: string): string => {
+          if (!text || text.length < 5) return text;
+          
+          const t = text.trim();
           const lower = t.toLowerCase();
-
-          // Preferência: perguntas sobre página
-          if (isPageQuestion && !isFilterOrPeriodQuestion) {
-            if (lower.startsWith('essa página mostra')) return t;
-
-            if (lower.startsWith('essa página ')) {
-              return t.replace(/^Essa\s+p[aá]gina\s+/i, 'Essa página mostra ');
-            }
-
-            if (lower.startsWith('essa ')) {
-              // "Essa X" -> "Essa página mostra X"
-              return t.replace(/^Essa\s+/i, 'Essa página mostra ');
-            }
-
+          
+          // Padrões corretos - não mexer
+          if (lower.startsWith('essa página mostra') ||
+              lower.startsWith('essa tela mostra') ||
+              lower.startsWith('você pode') ||
+              lower.startsWith('para ') ||
+              lower.startsWith('o ') ||
+              lower.startsWith('a ') ||
+              lower.startsWith('não tenho essa informação') ||
+              lower.startsWith('eu não consigo') ||
+              lower.startsWith('entendo que você')) {
+            return t;
+          }
+          
+          // Detectar e corrigir padrões quebrados
+          // "Essa X" sem "página mostra" -> adicionar
+          if (/^essa\s+(?!página|tela)/i.test(t)) {
+            return t.replace(/^essa\s+/i, 'Essa página mostra ');
+          }
+          
+          // "Você X" sem "pode" -> adicionar
+          if (/^você\s+(?!pode|vai|deve|precisa)/i.test(t)) {
+            return t.replace(/^você\s+/i, 'Você pode ');
+          }
+          
+          // Começa com palavra solta (provável frase cortada)
+          // Adicionar prefixo genérico baseado no tipo de pergunta
+          const isPageQuestion = /\b(p[aá]gina|tela|essa\s+p[aá]gina|serve|para que)\b/i.test(message);
+          const isHowToQuestion = /\b(como|onde|quando|qual)\b/i.test(message);
+          
+          if (isPageQuestion) {
             return `Essa página mostra ${t}`;
           }
-
-          // Perguntas sobre filtros/período/como fazer
-          if (isFilterOrPeriodQuestion) {
-            if (lower.startsWith('você pode')) return t;
-
-            if (lower.startsWith('você ')) {
-              return t.replace(/^Você\s+/i, 'Você pode ');
-            }
-
+          
+          if (isHowToQuestion) {
             return `Você pode ${t}`;
           }
-
+          
+          // Fallback: não modificar
           return t;
         };
 
@@ -463,19 +475,43 @@ Página atual do usuário: ${context || 'Navegando no sistema'}`;
                 const content = parsed.choices?.[0]?.delta?.content;
 
                 if (content) {
-                  const out = prefixFixed ? content : fixFirstChunkPrefix(content);
-                  prefixFixed = true;
-
-                  assistantMessage += out;
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                    content: out,
-                    conversationId: finalConversationId
-                  })}\n\n`));
+                  if (!bufferSent) {
+                    // Acumular no buffer até atingir tamanho mínimo
+                    buffer += content;
+                    
+                    if (buffer.length >= BUFFER_SIZE) {
+                      // Corrigir e enviar buffer
+                      const fixed = fixResponseStart(buffer);
+                      assistantMessage += fixed;
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                        content: fixed,
+                        conversationId: finalConversationId
+                      })}\n\n`));
+                      bufferSent = true;
+                    }
+                  } else {
+                    // Após buffer enviado, enviar tokens diretamente
+                    assistantMessage += content;
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                      content,
+                      conversationId: finalConversationId
+                    })}\n\n`));
+                  }
                 }
               } catch (e) {
                 // Skip invalid JSON
               }
             }
+          }
+          
+          // Se ainda houver buffer não enviado (resposta curta), enviar agora
+          if (!bufferSent && buffer.length > 0) {
+            const fixed = fixResponseStart(buffer);
+            assistantMessage += fixed;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              content: fixed,
+              conversationId: finalConversationId
+            })}\n\n`));
           }
 
           // Save complete assistant message with proper error handling
