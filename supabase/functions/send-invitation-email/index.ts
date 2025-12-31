@@ -91,6 +91,63 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate temporary password for the user
     const tempPassword = generatePassword(12);
 
+    // Helper: ensure profile exists and is linked to the invitation organization
+    const ensureProfileLinkedToOrg = async (userId: string) => {
+      // 1) Try update first (more explicit than upsert, avoids "kept old org" edge cases)
+      const { data: updated, error: updErr } = await client
+        .from('profiles')
+        .update({
+          nome_completo: invitation.email.split('@')[0],
+          nome_exibicao: invitation.email.split('@')[0],
+          organizacao_id: invitation.organization_id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+        .select('id, organizacao_id')
+        .maybeSingle();
+
+      if (updErr) {
+        console.error('Failed to update profile:', updErr);
+      }
+
+      // 2) If profile doesn't exist, insert
+      if (!updated?.id) {
+        const { data: inserted, error: insErr } = await client
+          .from('profiles')
+          .insert({
+            id: userId,
+            nome_completo: invitation.email.split('@')[0],
+            nome_exibicao: invitation.email.split('@')[0],
+            organizacao_id: invitation.organization_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select('id, organizacao_id')
+          .maybeSingle();
+
+        if (insErr) {
+          console.error('Failed to insert profile:', insErr);
+        } else {
+          console.log('Profile inserted with organization:', inserted?.organizacao_id);
+        }
+      } else {
+        console.log('Profile updated with organization:', updated.organizacao_id);
+      }
+
+      // 3) Log what is stored now (audit)
+      const { data: finalProfile, error: readErr } = await client
+        .from('profiles')
+        .select('id, organizacao_id, updated_at')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (readErr) {
+        console.error('Failed to read profile after update:', readErr);
+      } else {
+        console.log('Profile after link:', finalProfile);
+      }
+    };
+
     // Check if user already exists
     const { data: existingUsers } = await client.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(u => u.email === invitation.email);
@@ -102,12 +159,12 @@ const handler = async (req: Request): Promise<Response> => {
       // User already exists, just update their password
       userId = existingUser.id;
       console.log('User already exists:', userId);
-      
+
       // Update password for existing user
       const { error: updateError } = await client.auth.admin.updateUserById(userId, {
         password: tempPassword
       });
-      
+
       if (updateError) {
         console.error('Failed to update user password:', updateError);
         return new Response(
@@ -116,22 +173,8 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // IMPORTANT: Also update/create the profile for existing users to link them to the new organization
-      const { error: profileError } = await client
-        .from('profiles')
-        .upsert({
-          id: userId,
-          nome_completo: invitation.email.split('@')[0],
-          nome_exibicao: invitation.email.split('@')[0],
-          organizacao_id: invitation.organization_id,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
-
-      if (profileError) {
-        console.error('Failed to update profile for existing user:', profileError);
-      } else {
-        console.log('Profile updated for existing user with organization:', invitation.organization_id);
-      }
+      // Ensure profile is linked to the invitation organization
+      await ensureProfileLinkedToOrg(userId);
     } else {
       // Create new user with the generated password
       isNewUser = true;
@@ -157,22 +200,8 @@ const handler = async (req: Request): Promise<Response> => {
       userId = newUser.user.id;
       console.log('Created new user:', userId);
 
-      // Create profile for the new user
-      const { error: profileError } = await client
-        .from('profiles')
-        .upsert({
-          id: userId,
-          nome_completo: invitation.email.split('@')[0],
-          nome_exibicao: invitation.email.split('@')[0],
-          organizacao_id: invitation.organization_id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
-
-      if (profileError) {
-        console.error('Failed to create profile:', profileError);
-        // Don't fail here, profile can be created later
-      }
+      // Ensure profile exists and is linked
+      await ensureProfileLinkedToOrg(userId);
     }
 
     // Assign role to user
