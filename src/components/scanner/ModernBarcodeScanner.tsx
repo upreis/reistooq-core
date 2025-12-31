@@ -213,6 +213,25 @@ export function ModernBarcodeScanner({
 
           {/* Controls */}
           <div className="space-y-3">
+            {scanner.blockedByPolicy && (
+              <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                <p className="font-medium">Câmera bloqueada nesta visualização</p>
+                <p className="mt-1 text-muted-foreground">
+                  No preview do editor a câmera pode ser bloqueada. Abra o scanner em uma nova aba para permitir o uso.
+                </p>
+                <div className="mt-3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => window.open(window.location.href, '_blank', 'noopener,noreferrer')}
+                  >
+                    Abrir em nova aba
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Primary Actions */}
             {!isScanning ? (
               <Button 

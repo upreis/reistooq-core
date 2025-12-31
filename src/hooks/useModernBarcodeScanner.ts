@@ -68,6 +68,10 @@ interface ScannerState {
   isLoading: boolean;
   hasPermission: boolean | null;
   error: string | null;
+  /**
+   * True when camera access is blocked by browser policy (e.g., inside an iframe without camera permission).
+   */
+  blockedByPolicy: boolean;
   devices: MediaDeviceInfo[];
   currentDevice: string | null;
   torchEnabled: boolean;
@@ -87,6 +91,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
     isLoading: false,
     hasPermission: null,
     error: null,
+    blockedByPolicy: false,
     devices: [],
     currentDevice: null,
     torchEnabled: false,
@@ -210,7 +215,8 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         isScanning: false,
         isLoading: false,
         torchEnabled: false,
-        torchSupported: false
+        torchSupported: false,
+        blockedByPolicy: false
       }));
     }
 
@@ -439,7 +445,8 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         isLoading: false,
         currentDevice: deviceId || prev.currentDevice,
         torchSupported,
-        hasPermission: true
+        hasPermission: true,
+        blockedByPolicy: false
       }));
 
       console.log('✅ [Scanner] Camera started successfully');
@@ -448,13 +455,20 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
 
     } catch (error: any) {
       console.error('❌ [Scanner] Failed to start camera:', error);
-      
+
+      const rawMessage = String(error?.message || '');
+      const isPolicyBlocked =
+        error?.name === 'NotAllowedError' &&
+        /(permissions policy|permission policy|not allowed by the user agent|notallowederror)/i.test(rawMessage);
+
       let errorMessage = 'Falha ao acessar câmera';
-      if (error.name === 'NotAllowedError') {
+      if (isPolicyBlocked) {
+        errorMessage = 'A câmera está bloqueada nesta visualização. Abra em uma nova aba para permitir.';
+      } else if (error.name === 'NotAllowedError') {
         errorMessage = 'Permissão de câmera negada';
       } else if (error.name === 'NotFoundError') {
         errorMessage = 'Nenhuma câmera encontrada';
-      } else if (error.message.includes('HTTPS')) {
+      } else if (error.message?.includes('HTTPS')) {
         errorMessage = 'HTTPS necessário para acesso à câmera';
       }
 
@@ -463,7 +477,8 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         isScanning: false,
         isLoading: false,
         error: errorMessage,
-        hasPermission: false
+        hasPermission: false,
+        blockedByPolicy: isPolicyBlocked
       }));
 
       isInitializingRef.current = false;
