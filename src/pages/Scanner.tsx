@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package, TrendingUp } from "lucide-react";
 import { toast } from 'sonner';
 import { ModernBarcodeScanner } from "@/components/scanner/ModernBarcodeScanner";
+import { MobileScannerLayout } from "@/components/scanner/MobileScannerLayout";
 import { ScannerErrorBoundary } from "@/components/scanner/ScannerErrorBoundary";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { CreateParentProductModal } from "@/components/estoque/CreateParentProductModal";
@@ -13,8 +14,10 @@ import { CreateChildProductModal } from "@/components/estoque/CreateChildProduct
 import { ProductTypeSelector } from "@/components/scanner/ProductTypeSelector";
 import { ScannedProduct } from "@/features/scanner/types/scanner.types";
 import { useProducts, Product } from "@/hooks/useProducts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Scanner = () => {
+  const isMobile = useIsMobile();
   const [scannedProduct, setScannedProduct] = useState<ScannedProduct | null>(null);
   const [scanHistory, setScanHistory] = useState<{ code: string; timestamp: Date; product?: ScannedProduct }[]>([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -23,6 +26,7 @@ const Scanner = () => {
   const [isChildModalOpen, setIsChildModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [scannedCode, setScannedCode] = useState<string>("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const { getProducts } = useProducts();
 
   const findProductByCode = async (code: string): Promise<Product | null> => {
@@ -75,6 +79,7 @@ const Scanner = () => {
   const handleScanResult = async (code: string) => {
     console.log('📱 Código escaneado:', code);
     setScannedCode(code);
+    setIsProcessing(true);
     
     try {
       // Buscar produto diretamente no banco
@@ -141,6 +146,8 @@ const Scanner = () => {
         code,
         timestamp: new Date()
       }, ...prev.slice(0, 9)]);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -225,6 +232,52 @@ const Scanner = () => {
     }
   };
 
+  // Mobile Layout - Fullscreen optimized
+  if (isMobile) {
+    return (
+      <>
+        <ScannerErrorBoundary>
+          <MobileScannerLayout 
+            onScan={handleScanResult}
+            onError={handleScanError}
+            scanHistory={scanHistory}
+            isProcessing={isProcessing}
+          />
+        </ScannerErrorBoundary>
+
+        {/* Modals - Same for mobile and desktop */}
+        <ProductTypeSelector
+          open={isTypeSelectorOpen}
+          barcode={scannedCode}
+          onSelectType={handleProductTypeSelect}
+          onCancel={handleTypeSelectorCancel}
+        />
+
+        <ProductModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          product={currentProduct}
+          onSuccess={handleEditModalSuccess}
+        />
+
+        <CreateParentProductModal
+          open={isParentModalOpen}
+          onOpenChange={setIsParentModalOpen}
+          onSuccess={handleParentModalSuccess}
+          initialBarcode={scannedCode}
+        />
+
+        <CreateChildProductModal
+          open={isChildModalOpen}
+          onOpenChange={setIsChildModalOpen}
+          onSuccess={handleChildModalSuccess}
+          initialBarcode={scannedCode}
+        />
+      </>
+    );
+  }
+
+  // Desktop Layout - Original
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-lg mx-auto space-y-6">
