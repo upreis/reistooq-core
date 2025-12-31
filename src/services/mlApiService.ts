@@ -2,12 +2,17 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ML_BASE_URL = 'https://api.mercadolibre.com';
 
+// ⚠️ ATENÇÃO: Este service é LEGACY - produção usa Edge Functions
+// Ver: ml-api-direct, unified-orders, ml-claims-fetch
+// Token deve ser definido via setAccessToken() antes de usar
+const INVALID_TOKEN_PLACEHOLDER = '__NO_TOKEN_SET__';
+
 export class MLApiService {
   private accessToken: string;
 
   constructor() {
-    // Token fixo temporário - SUBSTITUA PELO SEU TOKEN REAL
-    this.accessToken = 'APP_USR-YOUR_REAL_TOKEN_HERE';
+    // ✅ CORRIGIDO: Sem token hardcoded - deve ser definido via setAccessToken()
+    this.accessToken = INVALID_TOKEN_PLACEHOLDER;
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
@@ -69,7 +74,8 @@ export class MLApiService {
   }
 
   hasValidToken(): boolean {
-    return !!this.accessToken && this.accessToken.length > 0 && this.accessToken !== 'APP_USR-YOUR_REAL_TOKEN_HERE';
+    // ✅ CORRIGIDO: Verificar contra placeholder seguro
+    return !!this.accessToken && this.accessToken.length > 0 && this.accessToken !== INVALID_TOKEN_PLACEHOLDER;
   }
 
   async validateToken(): Promise<boolean> {
@@ -426,7 +432,8 @@ export class MLApiService {
 
   // Métodos de compatibilidade
   clearToken(): void {
-    this.accessToken = 'APP_USR-YOUR_REAL_TOKEN_HERE';
+    // ✅ CORRIGIDO: Usar placeholder seguro
+    this.accessToken = INVALID_TOKEN_PLACEHOLDER;
   }
 
   async initialize(): Promise<void> {
