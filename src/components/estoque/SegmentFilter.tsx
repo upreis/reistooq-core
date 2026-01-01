@@ -160,7 +160,7 @@ export function SegmentFilter({
                 layout
                 onClick={handleSelectAll}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-[2px] rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
+                  "compact inline-flex items-center gap-1.5 px-2.5 py-[2px] rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
                   isAllSelected
                     ? "bg-secondary text-secondary-foreground border-secondary shadow-sm"
                     : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary/80 hover:text-foreground"
@@ -198,7 +198,7 @@ export function SegmentFilter({
                     }}
                     onClick={() => handleToggleSegment(segment.name)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-2.5 py-[2px] rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
+                      "compact inline-flex items-center gap-1.5 px-2.5 py-[2px] rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
                       colorClasses
                     )}
                     whileHover={{ scale: 1.02 }}
