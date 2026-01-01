@@ -8671,6 +8671,10 @@ export type Database = {
         }
         Returns: Json
       }
+      remove_user_from_organization: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       revoke_invitation: { Args: { _id: string }; Returns: Json }
       search_customers_secure:
         | {

@@ -402,8 +402,19 @@ export class AdminService {
   }
 
   async deleteUser(id: string): Promise<void> {
-    // Admin users can delete profiles through service role backend only
-    throw new Error('User deletions must be performed through secure backend operations');
+    // Use secure RPC function to remove user from organization
+    const { data, error } = await supabase.rpc('remove_user_from_organization', {
+      target_user_id: id
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to remove user from organization');
+    }
+
+    const result = data as { success: boolean; error?: string; message?: string };
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to remove user from organization');
+    }
   }
 
   async assignRole(userId: string, roleId: string): Promise<void> {
