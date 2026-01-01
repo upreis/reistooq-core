@@ -23,6 +23,7 @@ import { Product } from "@/hooks/useProducts";
 import { SkuGroup, groupProductsBySku } from "@/utils/skuGrouping";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HoverableProductImage } from "./HoverableProductImage";
+import { SegmentFilter } from "./SegmentFilter";
 
 export type LayoutMode = "list" | "grid";
 
@@ -56,6 +57,10 @@ interface HierarchicalEstoqueTableProps {
   // Layout mode
   layoutMode?: LayoutMode;
   onLayoutChange?: (mode: LayoutMode) => void;
+  // Segment filter
+  selectedSegments?: string[];
+  onSegmentChange?: (segments: string[]) => void;
+  allProductsForSegments?: Product[];
 }
 
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
@@ -366,6 +371,15 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
             )}
           </div>
         </div>
+      )}
+
+      {/* Filtro de Segmentos */}
+      {props.selectedSegments !== undefined && props.onSegmentChange && props.allProductsForSegments && (
+        <SegmentFilter
+          products={props.allProductsForSegments}
+          selectedSegments={props.selectedSegments}
+          onSegmentChange={props.onSegmentChange}
+        />
       )}
 
       {/* Grupos hierárquicos */}
