@@ -272,9 +272,12 @@ export const useProducts = () => {
     
     
 
-    // ✅ Criar registro de estoque APENAS NO ESTOQUE PRINCIPAL
+    // ✅ Criar registro de estoque no Estoque Principal + criar "slots" (quantidade 0) nos demais locais
+    // Regra:
+    // - Principal recebe a quantidade informada
+    // - Locais com sincronizar_com_principal=true (ex.: In House) serão espelhados via trigger do banco
+    // - Demais locais recebem registro com quantidade 0 (para só ganhar saldo via transferência)
     try {
-      // Buscar local principal
       const { data: localPrincipal, error: localError } = await supabase
         .from('locais_estoque')
         .select('id, nome, tipo')
@@ -282,40 +285,69 @@ export const useProducts = () => {
         .eq('tipo', 'principal')
         .eq('ativo', true)
         .maybeSingle();
-      
+
       if (localError) {
         console.error('❌ [createProduct] Erro ao buscar local principal:', localError);
       }
 
       if (localPrincipal) {
-        // Criar estoque no local principal
-        
-        const { error: estoqueError } = await supabase
+        // 1) Estoque principal com quantidade
+        const { error: estoquePrincipalError } = await supabase
           .from('estoque_por_local')
           .insert({
             produto_id: data.id,
             local_id: localPrincipal.id,
             quantidade: product.quantidade_atual || 0,
-            organization_id: orgId
+            organization_id: orgId,
           });
 
-        if (estoqueError) {
-          console.error('❌ [createProduct] Erro ao criar estoque_por_local:', {
-            error: estoqueError,
-            code: estoqueError.code,
-            message: estoqueError.message,
-            details: estoqueError.details
+        if (estoquePrincipalError) {
+          console.error('❌ [createProduct] Erro ao criar estoque_por_local (principal):', {
+            error: estoquePrincipalError,
+            code: estoquePrincipalError.code,
+            message: estoquePrincipalError.message,
+            details: estoquePrincipalError.details,
           });
-          // Não falha a criação do produto, apenas registra o erro
-        } else {
-          // Estoque criado com sucesso
         }
-      } else {
-        // Nenhum local principal encontrado
+
+        // 2) Criar registros com quantidade 0 nos demais locais (sem espelhamento)
+        const { data: outrosLocais, error: outrosLocaisError } = await supabase
+          .from('locais_estoque')
+          .select('id, tipo, sincronizar_com_principal')
+          .eq('organization_id', orgId)
+          .eq('ativo', true)
+          .neq('id', localPrincipal.id);
+
+        if (outrosLocaisError) {
+          console.error('❌ [createProduct] Erro ao buscar outros locais:', outrosLocaisError);
+        } else {
+          const locaisSemEspelho = (outrosLocais || []).filter(
+            (l: any) => l.sincronizar_com_principal !== true
+          );
+
+          if (locaisSemEspelho.length > 0) {
+            const payloadZeros = locaisSemEspelho.map((l: any) => ({
+              produto_id: data.id,
+              local_id: l.id,
+              quantidade: 0,
+              organization_id: orgId,
+            }));
+
+            const { error: zerosError } = await supabase
+              .from('estoque_por_local')
+              .upsert(payloadZeros, {
+                onConflict: 'produto_id,local_id',
+                ignoreDuplicates: true,
+              });
+
+            if (zerosError) {
+              console.error('⚠️ [createProduct] Erro ao criar slots 0 em outros locais:', zerosError);
+            }
+          }
+        }
       }
     } catch (estoqueError) {
       console.error('❌ [createProduct] Exceção ao criar estoque_por_local:', estoqueError);
-      // Não falha a criação do produto
     }
 
     return data as unknown as Product;
