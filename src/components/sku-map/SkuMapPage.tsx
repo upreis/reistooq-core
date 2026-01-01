@@ -184,18 +184,15 @@ export function SkuMapPage() {
         </div>
       )}
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-3 space-y-6">
-          <SkuMapList
-            filters={filters}
-            selectedItems={selectedItems}
-            onSelectionChange={setSelectedItems}
-            onEdit={handleEdit}
-            onFiltersChange={updateFilters}
-          />
-        </div>
+      {/* Main Content */}
+      <div className="space-y-6">
+        <SkuMapList
+          filters={filters}
+          selectedItems={selectedItems}
+          onSelectionChange={setSelectedItems}
+          onEdit={handleEdit}
+          onFiltersChange={updateFilters}
+        />
       </div>
     </div>
   );
