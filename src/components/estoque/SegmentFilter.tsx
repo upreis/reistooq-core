@@ -154,13 +154,13 @@ export function SegmentFilter({
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="flex md:flex-wrap gap-1.5 px-3 pb-3 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            <div className="flex md:flex-wrap gap-1 md:gap-1.5 px-2 md:px-3 pb-2 md:pb-3 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {/* Botão "Todos" */}
               <motion.button
                 layout
                 onClick={handleSelectAll}
                 className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
+                  "inline-flex items-center gap-0.5 md:gap-1 px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
                   isAllSelected
                     ? "bg-secondary text-secondary-foreground border-secondary shadow-sm"
                     : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary/80 hover:text-foreground"
@@ -168,11 +168,11 @@ export function SegmentFilter({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {isAllSelected && <CheckCircle className="w-3 h-3" />}
-                <Tag className="w-3 h-3" />
+                {isAllSelected && <CheckCircle className="w-2.5 h-2.5 md:w-3 md:h-3" />}
+                <Tag className="w-2.5 h-2.5 md:w-3 md:h-3" />
                 Todos
                 <span className={cn(
-                  "text-[10px] px-1 py-0.5 rounded-full",
+                  "text-[9px] md:text-[10px] px-1 rounded-full",
                   isAllSelected ? "bg-foreground/10" : "bg-muted"
                 )}>
                   {products.length}
@@ -198,17 +198,17 @@ export function SegmentFilter({
                     }}
                     onClick={() => handleToggleSegment(segment.name)}
                     className={cn(
-                      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
+                      "inline-flex items-center gap-0.5 md:gap-1 px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
                       colorClasses
                     )}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {isSelected && <CheckCircle className="w-3 h-3" />}
+                    {isSelected && <CheckCircle className="w-2.5 h-2.5 md:w-3 md:h-3" />}
                     {segment.name}
                     <span
                       className={cn(
-                        "text-[10px] px-1 py-0.5 rounded-full font-semibold",
+                        "text-[9px] md:text-[10px] px-1 rounded-full font-semibold",
                         isSelected
                           ? "bg-white/20"
                           : "bg-current/10"
