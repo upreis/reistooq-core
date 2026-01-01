@@ -260,9 +260,9 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Layout Toggle */}
+            {/* Layout Toggle - hidden on mobile (available in header) */}
             {props.onLayoutChange && (
-              <div className="flex items-center gap-0.5 rounded-md bg-secondary/50 p-0.5">
+              <div className="hidden md:flex items-center gap-0.5 rounded-md bg-secondary/50 p-0.5">
                 {(["list", "grid"] as const).map((mode) => {
                   const Icon = mode === "grid" ? Grid3X3 : LayoutList;
                   return (
