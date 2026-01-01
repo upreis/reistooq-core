@@ -92,6 +92,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }, 0);
       };
 
+      // Registrar primeiro login do usuário (se ainda não foi registrado)
+      const recordFirstLogin = async (userId: string) => {
+        try {
+          // Verificar se já tem first_login_at
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_login_at')
+            .eq('id', userId)
+            .single();
+
+          if (profile && !profile.first_login_at) {
+            // Registrar primeiro login
+            await supabase
+              .from('profiles')
+              .update({ first_login_at: new Date().toISOString() })
+              .eq('id', userId);
+            console.log('✅ Primeiro login registrado para usuário:', userId);
+          }
+        } catch (err) {
+          // Silent: registro de primeiro login é best-effort
+          console.warn('⚠️ Falha ao registrar primeiro login:', err);
+        }
+      };
+
       // Safety timeout: evita ficar preso em "loading" para sempre
       const safetyTimeout = window.setTimeout(() => {
         if (!didCancel) {
@@ -111,6 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (event === 'SIGNED_IN') {
             runAutoAcceptInvite();
+            // Registrar primeiro login se ainda não foi registrado
+            if (session?.user?.id) {
+              setTimeout(() => {
+                recordFirstLogin(session.user.id);
+              }, 0);
+            }
           }
 
           // Handle auth events - não mostrar toast em mobile

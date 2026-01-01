@@ -57,8 +57,15 @@ export interface Invitation {
   expires_at: string;
   created_at: string;
   accepted_at?: string;
+  accepted_user_id?: string;
   role?: Role;
   invited_by_user?: UserProfile;
+  // Dados do profile do usuário aceito (para verificar primeiro acesso)
+  accepted_user_profile?: {
+    id: string;
+    first_login_at?: string;
+    nome_exibicao?: string;
+  };
 }
 
 export interface InvitationCreate {

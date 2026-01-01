@@ -486,12 +486,34 @@ export class AdminService {
       throw new Error(`Failed to fetch roles: ${roleError.message}`);
     }
 
-    // Map roles to invitations
+    // Get profiles for accepted invitations to check first_login_at
+    const acceptedUserIds = invitations
+      .filter(inv => inv.status === 'accepted' && inv.accepted_user_id)
+      .map(inv => inv.accepted_user_id)
+      .filter((id): id is string => !!id);
+
+    let profileMap = new Map<string, { id: string; first_login_at: string | null; nome_exibicao: string | null }>();
+    
+    if (acceptedUserIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_login_at, nome_exibicao')
+        .in('id', acceptedUserIds);
+      
+      if (profiles) {
+        profileMap = new Map(profiles.map(p => [p.id, p]));
+      }
+    }
+
+    // Map roles and profiles to invitations
     const roleMap = new Map(roles?.map(role => [role.id, role]) || []);
     
     const transformedData = invitations.map(invitation => ({
       ...invitation,
-      role: roleMap.get(invitation.role_id) || null
+      role: roleMap.get(invitation.role_id) || null,
+      accepted_user_profile: invitation.accepted_user_id 
+        ? profileMap.get(invitation.accepted_user_id) || null
+        : null
     }));
 
     return transformedData as Invitation[];

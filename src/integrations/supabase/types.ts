@@ -2943,6 +2943,7 @@ export type Database = {
       invitations: {
         Row: {
           accepted_at: string | null
+          accepted_user_id: string | null
           created_at: string
           email: string | null
           expires_at: string
@@ -2956,6 +2957,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          accepted_user_id?: string | null
           created_at?: string
           email?: string | null
           expires_at?: string
@@ -2969,6 +2971,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          accepted_user_id?: string | null
           created_at?: string
           email?: string | null
           expires_at?: string
@@ -6054,6 +6057,7 @@ export type Database = {
           configuracoes_notificacao: Json | null
           created_at: string
           departamento: string | null
+          first_login_at: string | null
           id: string
           nome_completo: string | null
           nome_exibicao: string | null
@@ -6072,6 +6076,7 @@ export type Database = {
           configuracoes_notificacao?: Json | null
           created_at?: string
           departamento?: string | null
+          first_login_at?: string | null
           id: string
           nome_completo?: string | null
           nome_exibicao?: string | null
@@ -6090,6 +6095,7 @@ export type Database = {
           configuracoes_notificacao?: Json | null
           created_at?: string
           departamento?: string | null
+          first_login_at?: string | null
           id?: string
           nome_completo?: string | null
           nome_exibicao?: string | null
@@ -7467,6 +7473,7 @@ export type Database = {
               configuracoes_notificacao: Json | null
               created_at: string
               departamento: string | null
+              first_login_at: string | null
               id: string
               nome_completo: string | null
               nome_exibicao: string | null
@@ -7640,6 +7647,7 @@ export type Database = {
         Args: { _email: string; _expires_in_days?: number; _role_id: string }
         Returns: {
           accepted_at: string | null
+          accepted_user_id: string | null
           created_at: string
           email: string | null
           expires_at: string
@@ -7662,6 +7670,7 @@ export type Database = {
         Args: { _expires_in_days?: number; _role_id: string; _username: string }
         Returns: {
           accepted_at: string | null
+          accepted_user_id: string | null
           created_at: string
           email: string | null
           expires_at: string
@@ -8472,6 +8481,7 @@ export type Database = {
           configuracoes_notificacao: Json | null
           created_at: string
           departamento: string | null
+          first_login_at: string | null
           id: string
           nome_completo: string | null
           nome_exibicao: string | null
