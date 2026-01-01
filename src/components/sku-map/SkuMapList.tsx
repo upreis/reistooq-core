@@ -360,22 +360,22 @@ export function SkuMapList({
 
           {/* Pagination */}
           {data && data.totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Mostrando {((data.page - 1) * data.pageSize) + 1} a{" "}
-                {Math.min(data.page * data.pageSize, data.total)} de {data.total} resultados
+            <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0">
+              <div className="text-xs md:text-sm text-muted-foreground">
+                {((data.page - 1) * data.pageSize) + 1}-{Math.min(data.page * data.pageSize, data.total)} de {data.total}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1 md:gap-2">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-7 md:h-8 px-2 md:px-3 text-xs md:text-sm"
                   onClick={() => onFiltersChange({ page: data.page - 1 })}
                   disabled={data.page <= 1}
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  Anterior
+                  <ChevronLeft className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden md:inline">Anterior</span>
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 md:gap-1">
                   {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
                     const page = i + 1;
                     return (
@@ -383,6 +383,7 @@ export function SkuMapList({
                         key={page}
                         variant={page === data.page ? "default" : "outline"}
                         size="sm"
+                        className="h-7 md:h-8 w-7 md:w-8 p-0 text-xs md:text-sm"
                         onClick={() => onFiltersChange({ page })}
                       >
                         {page}
@@ -393,11 +394,12 @@ export function SkuMapList({
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-7 md:h-8 px-2 md:px-3 text-xs md:text-sm"
                   onClick={() => onFiltersChange({ page: data.page + 1 })}
                   disabled={data.page >= data.totalPages}
                 >
-                  Próxima
-                  <ChevronRight className="w-4 h-4" />
+                  <span className="hidden md:inline">Próxima</span>
+                  <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
                 </Button>
               </div>
             </div>
