@@ -41,8 +41,10 @@ const Scanner = () => {
   const { getProducts } = useProducts();
   const { setLocalAtivo } = useLocalEstoqueAtivo();
 
-  // Ao montar, forçar o local ativo para o estoque principal
+  // Ao montar, forçar o local ativo para o estoque principal (apenas uma vez)
   useEffect(() => {
+    let mounted = true;
+    
     const forceEstoquePrincipal = async () => {
       try {
         const { data: localPrincipal } = await supabase
@@ -51,7 +53,7 @@ const Scanner = () => {
           .eq('tipo', 'principal')
           .single();
 
-        if (localPrincipal) {
+        if (localPrincipal && mounted) {
           setLocalAtivo({
             id: localPrincipal.id,
             nome: localPrincipal.nome,
@@ -65,7 +67,11 @@ const Scanner = () => {
     };
 
     forceEstoquePrincipal();
-  }, [setLocalAtivo]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // Remove setLocalAtivo das dependências para evitar loop
 
   const findProductByCode = async (code: string): Promise<Product | null> => {
     try {
