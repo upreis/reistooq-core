@@ -373,7 +373,7 @@ export function EstoqueGridView({
         <div
           ref={gridContainerRef}
           onMouseMove={handleMouseMove}
-          className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4"
+          className="relative grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 p-3"
         >
           <AnimatePresence mode="sync">
             {filteredProducts.map((product, index) => {
@@ -388,7 +388,7 @@ export function EstoqueGridView({
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.5) }}
                   className={cn(
-                    "relative flex flex-col rounded-lg border bg-card p-3 cursor-pointer transition-all hover:shadow-lg",
+                    "relative flex flex-col rounded-lg border bg-card p-2 cursor-pointer transition-all hover:shadow-lg",
                     status.bg,
                     isSelected && "ring-2 ring-primary"
                   )}
@@ -431,7 +431,7 @@ export function EstoqueGridView({
                   </div>
 
                   {/* Product image */}
-                  <div className="aspect-square w-full bg-muted rounded-md flex items-center justify-center overflow-hidden mb-2">
+                  <div className="aspect-square w-full bg-muted rounded-md flex items-center justify-center overflow-hidden mb-1">
                     {product.url_imagem ? (
                       <img
                         src={product.url_imagem}
@@ -456,14 +456,14 @@ export function EstoqueGridView({
 
                   {/* Product info */}
                   <div className="flex-1 min-h-0">
-                    <p className="text-xs font-mono text-muted-foreground truncate">
+                    <p className="text-[10px] font-mono text-muted-foreground truncate">
                       {highlightText(product.sku_interno || "", searchTerm)}
                     </p>
-                    <p className={cn("text-sm font-semibold", status.color)}>
+                    <p className={cn("text-xs font-semibold", status.color)}>
                       {product.quantidade_atual ?? 0} un
                     </p>
                     {product.nome && (
-                      <p className="text-xs text-muted-foreground truncate mt-1">
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
                         {highlightText(product.nome, searchTerm)}
                       </p>
                     )}
