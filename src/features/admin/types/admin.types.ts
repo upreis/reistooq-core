@@ -47,7 +47,8 @@ export interface UserProfile {
 
 export interface Invitation {
   id: string;
-  email: string;
+  email?: string;
+  username?: string;
   token: string;
   status: 'pending' | 'accepted' | 'revoked';
   role_id: string;
@@ -61,7 +62,7 @@ export interface Invitation {
 }
 
 export interface InvitationCreate {
-  email: string;
+  username: string;
   role_id: string;
   expires_at: string; // ISO date string
 }
