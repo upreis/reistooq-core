@@ -167,7 +167,7 @@ export function SkuMapHistory() {
                           const oldValue = entry.valores_anteriores[key];
                           const newValue = entry.valores_novos[key];
                           
-                          if (oldValue !== newValue && key !== 'updated_at') {
+                          if (oldValue !== newValue && key !== 'updated_at' && key !== 'organization_id') {
                             return (
                               <div key={key} className="flex gap-2">
                                 <span className="capitalize font-medium">{key}:</span>
