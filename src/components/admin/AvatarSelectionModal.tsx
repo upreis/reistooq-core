@@ -9,24 +9,45 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Upload, Camera, X, Loader2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Upload, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Avatares pré-definidos para seleção
-const PRESET_AVATARS = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Bailey',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Dakota',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Emery',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Finley',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Harley',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Kennedy',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Logan',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Morgan',
+// Lista de seeds para gerar mais de 100 avatares únicos
+const AVATAR_SEEDS = [
+  'Felix', 'Aneka', 'Bailey', 'Charlie', 'Dakota', 'Emery', 'Finley', 'Harley', 'Jordan', 'Kennedy',
+  'Logan', 'Morgan', 'Parker', 'Quinn', 'Riley', 'Sage', 'Taylor', 'Avery', 'Blake', 'Cameron',
+  'Drew', 'Eden', 'Frankie', 'Gray', 'Hayden', 'Indigo', 'Jamie', 'Kai', 'Lane', 'Micah',
+  'Noel', 'Oakley', 'Peyton', 'River', 'Sawyer', 'Tatum', 'Val', 'Winter', 'Xen', 'Yuri',
+  'Zion', 'Alex', 'Ash', 'Brook', 'Cory', 'Dallas', 'Ellis', 'Flynn', 'Gene', 'Harper',
+  'Ira', 'Jesse', 'Kit', 'Lee', 'Max', 'Nico', 'Onyx', 'Pat', 'Ray', 'Sam',
+  'Terry', 'Uma', 'Vic', 'Wren', 'Xander', 'Yael', 'Zeke', 'Arden', 'Billie', 'Casey',
+  'Devon', 'Emerson', 'Fallon', 'Greer', 'Hollis', 'Ivory', 'Jules', 'Kerry', 'Lennox', 'Milan',
+  'Navy', 'Ocean', 'Phoenix', 'Raven', 'Shiloh', 'True', 'Urban', 'Venice', 'West', 'Zephyr',
+  'Addison', 'Brooklyn', 'Campbell', 'Denver', 'Essex', 'Florence', 'Geneva', 'Hudson', 'Ireland', 'Justice',
 ];
+
+// Gerar avatares com diferentes estilos do DiceBear
+const AVATAR_STYLES = ['avataaars', 'bottts', 'lorelei', 'micah', 'notionists', 'open-peeps', 'personas', 'pixel-art', 'thumbs'];
+
+// Gerar lista completa de avatares
+const generateAvatarList = () => {
+  const avatars: { url: string; style: string; seed: string }[] = [];
+  
+  AVATAR_STYLES.forEach((style) => {
+    AVATAR_SEEDS.slice(0, 12).forEach((seed) => {
+      avatars.push({
+        url: `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}`,
+        style,
+        seed,
+      });
+    });
+  });
+  
+  return avatars;
+};
+
+const PRESET_AVATARS = generateAvatarList();
 
 interface AvatarSelectionModalProps {
   open: boolean;
@@ -152,31 +173,34 @@ export function AvatarSelectionModal({
             JPG, PNG ou GIF. Máximo 800KB.
           </p>
 
-          {/* Grade de Avatares Pré-definidos */}
+          {/* Grade de Avatares Pré-definidos com Scroll */}
           <div>
-            <p className="text-sm font-medium mb-3">Ou escolha um avatar</p>
-            <div className="grid grid-cols-4 gap-3">
-              {PRESET_AVATARS.map((avatar, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setSelectedAvatar(avatar);
-                    setUploadPreview(null);
-                  }}
-                  className={cn(
-                    'relative group rounded-full transition-all',
-                    selectedAvatar === avatar
-                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
-                      : 'hover:ring-2 hover:ring-muted-foreground/30'
-                  )}
-                >
-                  <Avatar className="w-14 h-14 transition-transform group-hover:scale-105">
-                    <AvatarImage src={avatar} alt={`Avatar ${index + 1}`} />
-                    <AvatarFallback>{index + 1}</AvatarFallback>
-                  </Avatar>
-                </button>
-              ))}
-            </div>
+            <p className="text-sm font-medium mb-3">Ou escolha um avatar ({PRESET_AVATARS.length} opções)</p>
+            <ScrollArea className="h-[300px] rounded-md border p-3">
+              <div className="grid grid-cols-6 gap-2">
+                {PRESET_AVATARS.map((avatar, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setSelectedAvatar(avatar.url);
+                      setUploadPreview(null);
+                    }}
+                    className={cn(
+                      'relative group rounded-full transition-all',
+                      selectedAvatar === avatar.url
+                        ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                        : 'hover:ring-2 hover:ring-muted-foreground/30'
+                    )}
+                    title={`${avatar.style} - ${avatar.seed}`}
+                  >
+                    <Avatar className="w-12 h-12 transition-transform group-hover:scale-105">
+                      <AvatarImage src={avatar.url} alt={`Avatar ${index + 1}`} />
+                      <AvatarFallback className="text-[10px]">{index + 1}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </div>
 
