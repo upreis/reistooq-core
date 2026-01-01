@@ -7,6 +7,8 @@ import HistoricoMovimentacoesPage from "./estoque/HistoricoMovimentacoesPage";
 import DePara from "./DePara";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { EstoqueLayoutProvider } from "./estoque/contexts/EstoqueLayoutContext";
+import { MobileLayoutToggle } from "./estoque/components/MobileLayoutToggle";
 
 const EstoqueContent = () => {
   const location = useLocation();
@@ -14,6 +16,8 @@ const EstoqueContent = () => {
   
   // De-Para tem seu próprio MobileAppShell, não envolver novamente
   const isDeParaRoute = location.pathname.includes('/de-para');
+  // Mostrar toggle apenas na rota principal de estoque
+  const isMainEstoqueRoute = location.pathname === '/estoque' || location.pathname === '/estoque/';
   
   const breadcrumb = (
     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -42,6 +46,7 @@ const EstoqueContent = () => {
     <MobileAppShell 
       title="Estoque" 
       breadcrumb={breadcrumb}
+      headerActions={isMainEstoqueRoute ? <MobileLayoutToggle /> : undefined}
     >
       {routes}
     </MobileAppShell>
@@ -51,7 +56,9 @@ const EstoqueContent = () => {
 const Estoque = () => {
   return (
     <EstoqueGuard>
-      <EstoqueContent />
+      <EstoqueLayoutProvider>
+        <EstoqueContent />
+      </EstoqueLayoutProvider>
     </EstoqueGuard>
   );
 };

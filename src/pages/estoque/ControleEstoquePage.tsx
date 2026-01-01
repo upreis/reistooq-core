@@ -16,7 +16,8 @@ import { EstoqueActionButtons } from "./components/EstoqueActionButtons";
 import { EstoquePagination } from "./components/EstoquePagination";
 import { EstoqueModals } from "./components/EstoqueModals";
 import { TransferenciaEstoqueModal } from "@/components/estoque/TransferenciaEstoqueModal";
-import { EstoqueLocationTabs, LayoutMode } from "@/components/estoque/EstoqueLocationTabs";
+import { EstoqueLocationTabs } from "@/components/estoque/EstoqueLocationTabs";
+import { useEstoqueLayout } from "./contexts/EstoqueLayoutContext";
 
 export default function ControleEstoquePage() {
   // Modal states
@@ -31,7 +32,7 @@ export default function ControleEstoquePage() {
   const [isToolbarExpanded, setIsToolbarExpanded] = useState(false);
   const [notificationsCollapsed, setNotificationsCollapsed] = useState(true);
   const [notificationsCount, setNotificationsCount] = useState(0);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("list");
+  const { layoutMode, setLayoutMode } = useEstoqueLayout();
   
   // Estado de visualização hierárquica
   const [showHierarchy, setShowHierarchy] = useState(true);
