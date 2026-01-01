@@ -9,17 +9,61 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { startOfDay, endOfDay, getYear, getMonth } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
+import { Store } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const TIMEZONE = 'America/Sao_Paulo';
 
-const ACCOUNT_COLORS: Record<string, string> = {
-  "BRCR20240514161447": "border-blue-500 bg-blue-500",
-  "PLATINUMLOJA2020": "border-pink-500 bg-pink-500",
-  "UNIVERSOMELI": "border-green-500 bg-green-500",
-  "HORE20240106205039": "border-orange-500 bg-orange-500",
-  "LOJAOITO": "border-purple-500 bg-purple-500",
-  "LUTHORSHOPLTDA": "border-cyan-500 bg-cyan-500",
-  "MSMARKETSTORE": "border-rose-500 bg-rose-500",
+// Cores com estilo StatusBadge - fundo transparente com borda colorida
+const ACCOUNT_COLORS: Record<string, { border: string; bg: string; text: string; activeBg: string }> = {
+  "BRCR20240514161447": {
+    border: "border-blue-500/50",
+    bg: "bg-blue-500/10",
+    text: "text-blue-400",
+    activeBg: "bg-blue-500/30"
+  },
+  "IG20251024151201": {
+    border: "border-sky-500/50",
+    bg: "bg-sky-500/10",
+    text: "text-sky-400",
+    activeBg: "bg-sky-500/30"
+  },
+  "PLATINUMLOJA2020": {
+    border: "border-pink-500/50",
+    bg: "bg-pink-500/10",
+    text: "text-pink-400",
+    activeBg: "bg-pink-500/30"
+  },
+  "UNIVERSOMELI": {
+    border: "border-green-500/50",
+    bg: "bg-green-500/10",
+    text: "text-green-400",
+    activeBg: "bg-green-500/30"
+  },
+  "HORE20240106205039": {
+    border: "border-orange-500/50",
+    bg: "bg-orange-500/10",
+    text: "text-orange-400",
+    activeBg: "bg-orange-500/30"
+  },
+  "LOJAOITO": {
+    border: "border-purple-500/50",
+    bg: "bg-purple-500/10",
+    text: "text-purple-400",
+    activeBg: "bg-purple-500/30"
+  },
+  "LUTHORSHOPLTDA": {
+    border: "border-cyan-500/50",
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-400",
+    activeBg: "bg-cyan-500/30"
+  },
+  "MSMARKETSTORE": {
+    border: "border-rose-500/50",
+    bg: "bg-rose-500/10",
+    text: "text-rose-400",
+    activeBg: "bg-rose-500/30"
+  },
 };
 
 export type ViewMode = "day" | "month";
@@ -76,46 +120,65 @@ export function FeaturesBentoGrid() {
     refetchOnMount: true,
   });
 
-  const getAccountColor = (account: string, isActive: boolean) => {
+  const getAccountColors = (account: string, isActive: boolean) => {
     const colorKey = Object.keys(ACCOUNT_COLORS).find(key => 
       account.toLowerCase().includes(key.toLowerCase()) || 
       key.toLowerCase().includes(account.toLowerCase())
     );
-    const baseColor = colorKey ? ACCOUNT_COLORS[colorKey] : "border-gray-500 bg-gray-500";
-    const [borderClass, bgClass] = baseColor.split(" ");
     
-    if (isActive) {
-      return `${bgClass} text-white ${borderClass}`;
-    }
-    return `bg-background ${borderClass} hover:bg-accent`;
+    const colors = colorKey 
+      ? ACCOUNT_COLORS[colorKey] 
+      : { 
+          border: "border-gray-500/50", 
+          bg: "bg-gray-500/10", 
+          text: "text-gray-400",
+          activeBg: "bg-gray-500/30"
+        };
+    
+    return {
+      className: cn(
+        "border",
+        colors.border,
+        colors.text,
+        isActive ? colors.activeBg : colors.bg,
+        !isActive && "hover:opacity-80"
+      ),
+      textColor: colors.text
+    };
   };
 
   return (
     <div className="space-y-4">
       {/* Barra de Filtros */}
-      <div className="flex gap-2 items-center flex-wrap py-3 px-4 bg-background/50 rounded-lg border border-muted-foreground/30">
+      <div className="flex gap-2 items-center flex-wrap py-3 px-4 bg-background/80 rounded-lg border border-muted-foreground/20">
         <span className="text-xs text-muted-foreground font-medium">Filtrar por:</span>
         <button
           onClick={() => setSelectedAccount("todas")}
-          className={`px-3 py-1.5 text-xs rounded-full border-2 transition-all font-medium ${
+          className={cn(
+            "px-3 py-1.5 text-xs rounded-full border transition-all font-medium inline-flex items-center gap-1.5",
             selectedAccount === "todas"
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-background border-border hover:bg-accent"
-          }`}
+              ? "bg-yellow-500/30 text-yellow-400 border-yellow-500/50"
+              : "bg-yellow-500/10 text-yellow-400 border-yellow-500/50 hover:bg-yellow-500/20"
+          )}
         >
           Todos
         </button>
-        {accounts.map((account) => (
-          <button
-            key={account}
-            onClick={() => setSelectedAccount(account)}
-            className={`px-3 py-1.5 text-xs rounded-full border-2 transition-all font-medium ${
-              getAccountColor(account, selectedAccount === account)
-            }`}
-          >
-            🏪 {account}
-          </button>
-        ))}
+        {accounts.map((account) => {
+          const { className } = getAccountColors(account, selectedAccount === account);
+          return (
+            <button
+              key={account}
+              onClick={() => setSelectedAccount(account)}
+              className={cn(
+                "px-3 py-1.5 text-xs rounded-full transition-all font-medium inline-flex items-center gap-1.5",
+                className
+              )}
+            >
+              <Store className="w-3 h-3" />
+              {account}
+            </button>
+          );
+        })}
       </div>
 
       {/* Layout: Vendas + Produtos | Gráfico */}
