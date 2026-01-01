@@ -231,6 +231,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
+      try {
+        localStorage.removeItem('reistoq.last_login');
+      } catch {
+        // ignore
+      }
       return { error };
     } catch (error: any) {
       return { error };
