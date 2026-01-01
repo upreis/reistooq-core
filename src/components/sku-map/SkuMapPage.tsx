@@ -5,7 +5,6 @@ import { SkuMapList } from "./SkuMapList";
 import { SkuMapFilters } from "./SkuMapFilters";
 import { SkuMapActions } from "./SkuMapActions";
 import { SkuMapForm } from "./SkuMapForm";
-import { SkuMapHistory } from "./SkuMapHistory";
 import { BulkEditModal } from "./BulkEditModal";
 import { ImportWizard } from "./import/ImportWizard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -196,11 +195,6 @@ export function SkuMapPage() {
             onEdit={handleEdit}
             onFiltersChange={updateFilters}
           />
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <SkuMapHistory />
         </div>
       </div>
     </div>
