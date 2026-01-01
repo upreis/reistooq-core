@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useRef, useState } from "react";
 import { useSidebarUI } from '@/context/SidebarUIContext';
+import { Package, Clock, FileText, Bell } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ContributionDay {
   date: string;
@@ -99,53 +101,62 @@ export function HorizontalSemesterCalendar({
               <span className="text-xs text-muted-foreground font-medium">Filtrar por:</span>
               <button
                 onClick={() => setFilterType('all')}
-                className={`px-3 py-1 text-xs rounded-md border-2 transition-colors ${
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
                   filterType === 'all' 
-                    ? 'bg-primary text-primary-foreground border-primary' 
-                    : 'bg-background border-border hover:bg-accent'
-                }`}
+                    ? 'bg-yellow-500/25 text-yellow-400 border-yellow-500/40' 
+                    : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/20'
+                )}
               >
                 Todos
               </button>
               <button
                 onClick={() => setFilterType('delivery')}
-                className={`px-3 py-1 text-xs rounded-md border-2 border-blue-500 transition-colors ${
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
                   filterType === 'delivery' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-background hover:bg-blue-50 dark:hover:bg-blue-950'
-                }`}
+                    ? 'bg-blue-500/25 text-blue-400 border-blue-500/40' 
+                    : 'bg-blue-500/10 text-blue-400 border-blue-500/40 hover:bg-blue-500/20'
+                )}
               >
-                📦 Devoluções Recebidas
+                <Package className="w-3 h-3" />
+                Devoluções Recebidas
               </button>
               <button
                 onClick={() => setFilterType('review')}
-                className={`px-3 py-1 text-xs rounded-md border-2 border-orange-500 transition-colors ${
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
                   filterType === 'review' 
-                    ? 'bg-orange-500 text-white' 
-                    : 'bg-background hover:bg-orange-50 dark:hover:bg-orange-950'
-                }`}
+                    ? 'bg-orange-500/25 text-orange-400 border-orange-500/40' 
+                    : 'bg-orange-500/10 text-orange-400 border-orange-500/40 hover:bg-orange-500/20'
+                )}
               >
-                ⏰ Devoluções a Revisar
+                <Clock className="w-3 h-3" />
+                Devoluções a Revisar
               </button>
               <button
                 onClick={() => setFilterType('claim_created')}
-                className={`px-3 py-1 text-xs rounded-md border-2 border-green-500 transition-colors ${
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
                   filterType === 'claim_created' 
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-background hover:bg-green-50 dark:hover:bg-green-950'
-                }`}
+                    ? 'bg-emerald-500/25 text-emerald-400 border-emerald-500/40' 
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20'
+                )}
               >
-                📝 Reclamações Criadas
+                <FileText className="w-3 h-3" />
+                Reclamações Criadas
               </button>
               <button
                 onClick={() => setFilterType('claim_deadline')}
-                className={`px-3 py-1 text-xs rounded-md border-2 border-red-500 transition-colors ${
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
                   filterType === 'claim_deadline' 
-                    ? 'bg-red-500 text-white' 
-                    : 'bg-background hover:bg-red-50 dark:hover:bg-red-950'
-                }`}
+                    ? 'bg-red-500/25 text-red-400 border-red-500/40' 
+                    : 'bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20'
+                )}
               >
-                🔔 Prazos de Análise
+                <Bell className="w-3 h-3" />
+                Prazos de Análise
               </button>
             </div>
           </div>
