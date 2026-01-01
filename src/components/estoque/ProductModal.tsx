@@ -389,6 +389,13 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       // Senão, mantém a imagePreview atual (pode ser a URL existente ou null)
       let imageUrl: string | null = imagePreview;
 
+      console.log('📝 [ProductModal] Dados do formulário:', {
+        categoria: data.categoria,
+        categoria_principal: data.categoria_principal,
+        selectedCategoriaPrincipal,
+        selectedCategoria,
+      });
+
       if (product) {
         // Atualizar produto existente
         if (imageFile) {
