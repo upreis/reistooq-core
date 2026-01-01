@@ -9,7 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building, MapPin, Phone, Mail, Globe, User, FileText, Upload, Save, Loader2 } from 'lucide-react';
+import { Building, MapPin, Phone, Mail, Globe, User, FileText, Upload, Save, Loader2, Camera } from 'lucide-react';
+import { AvatarSelectionModal } from '@/components/admin/AvatarSelectionModal';
 
 interface OrganizationData {
   id: string;
@@ -78,6 +79,7 @@ export default function AdminPerfil() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<Partial<OrganizationData>>({});
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -192,14 +194,23 @@ export default function AdminPerfil() {
       <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            {/* Avatar do Proprietário */}
+            {/* Avatar do Proprietário - Clicável */}
             <div className="flex-shrink-0">
-              <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
-                <AvatarImage src={data.logo_url || undefined} alt={data.admin_nome || 'Proprietário'} />
-                <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">
-                  {data.admin_nome?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'AD'}
-                </AvatarFallback>
-              </Avatar>
+              <button
+                onClick={() => setAvatarModalOpen(true)}
+                className="relative group cursor-pointer"
+              >
+                <Avatar className="w-24 h-24 border-4 border-background shadow-lg transition-transform group-hover:scale-105">
+                  <AvatarImage src={data.logo_url || undefined} alt={data.admin_nome || 'Proprietário'} />
+                  <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">
+                    {data.admin_nome?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'AD'}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Overlay com ícone de câmera */}
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+              </button>
             </div>
             
             {/* Dados do Proprietário */}
@@ -621,6 +632,15 @@ export default function AdminPerfil() {
           )}
         </Button>
       </div>
+
+      {/* Modal de Seleção de Avatar */}
+      <AvatarSelectionModal
+        open={avatarModalOpen}
+        onOpenChange={setAvatarModalOpen}
+        currentAvatar={data.logo_url}
+        onAvatarChange={(avatarUrl) => handleChange('logo_url', avatarUrl)}
+        userName={data.admin_nome || 'Proprietário'}
+      />
     </div>
   );
 }
