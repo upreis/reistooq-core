@@ -465,7 +465,7 @@ export function MobileScannerLayout({
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-background via-background/95 to-transparent pt-8"
+        className="absolute bottom-20 left-0 right-0 z-20 bg-gradient-to-t from-background via-background/95 to-transparent pt-8"
       >
         {/* Manual Input */}
         <AnimatePresence>
