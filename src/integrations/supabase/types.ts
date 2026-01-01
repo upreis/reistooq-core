@@ -4562,34 +4562,115 @@ export type Database = {
       }
       organizacoes: {
         Row: {
+          admin_celular: string | null
+          admin_email: string | null
+          admin_nome: string | null
           ativo: boolean
+          bairro: string | null
+          celular: string | null
+          cep: string | null
+          cidade: string | null
+          cnae: string | null
           cnpj: string | null
+          complemento: string | null
           created_at: string
+          email: string | null
+          endereco: string | null
+          endereco_numero: string | null
+          fantasia: string | null
+          fax: string | null
           id: string
+          ie_isento: boolean | null
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          logo_url: string | null
           nome: string
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
           plano: string
+          razao_social: string | null
+          regime_tributario: string | null
+          segmento: string | null
           slug: string
+          telefone: string | null
+          tipo_pessoa: string | null
+          uf: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
+          admin_celular?: string | null
+          admin_email?: string | null
+          admin_nome?: string | null
           ativo?: boolean
+          bairro?: string | null
+          celular?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnae?: string | null
           cnpj?: string | null
+          complemento?: string | null
           created_at?: string
+          email?: string | null
+          endereco?: string | null
+          endereco_numero?: string | null
+          fantasia?: string | null
+          fax?: string | null
           id?: string
+          ie_isento?: boolean | null
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          logo_url?: string | null
           nome: string
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           plano?: string
+          razao_social?: string | null
+          regime_tributario?: string | null
+          segmento?: string | null
           slug: string
+          telefone?: string | null
+          tipo_pessoa?: string | null
+          uf?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          admin_celular?: string | null
+          admin_email?: string | null
+          admin_nome?: string | null
           ativo?: boolean
+          bairro?: string | null
+          celular?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnae?: string | null
           cnpj?: string | null
+          complemento?: string | null
           created_at?: string
+          email?: string | null
+          endereco?: string | null
+          endereco_numero?: string | null
+          fantasia?: string | null
+          fax?: string | null
           id?: string
+          ie_isento?: boolean | null
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          logo_url?: string | null
           nome?: string
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           plano?: string
+          razao_social?: string | null
+          regime_tributario?: string | null
+          segmento?: string | null
           slug?: string
+          telefone?: string | null
+          tipo_pessoa?: string | null
+          uf?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -7730,6 +7811,7 @@ export type Database = {
       }
       get_current_org_id: { Args: never; Returns: string }
       get_current_org_slug: { Args: never; Returns: string }
+      get_current_organization_data: { Args: never; Returns: Json }
       get_current_sales_rep_id: { Args: never; Returns: string }
       get_customer_secure: {
         Args: { p_customer_id: string }
@@ -8890,6 +8972,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_organization_data: { Args: { p_data: Json }; Returns: Json }
       user_matches_announcement: {
         Args: { target_roles: string[]; target_users: string[] }
         Returns: boolean
