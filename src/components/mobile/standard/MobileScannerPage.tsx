@@ -18,8 +18,11 @@ export const MobileScannerPage = () => {
     <MobileAppShell 
       title="Scanner" 
       showBottomNav={true}
+      className="pt-0"
     >
-      <Scanner />
+      <div className="pt-14">
+        <Scanner />
+      </div>
     </MobileAppShell>
   );
 };
