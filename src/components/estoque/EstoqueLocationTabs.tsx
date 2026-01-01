@@ -352,12 +352,12 @@ export function EstoqueLocationTabs({
   };
 
   return (
-    <div className="flex items-start justify-between gap-4 pb-4 border-b border-border">
+    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 pb-4 border-b border-border">
       {/* Lado esquerdo: Locais de estoque */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 overflow-x-auto">
         {/* Seção: Unitário Geral (Estoque Principal) */}
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
+          <span className="text-[10px] font-medium text-muted-foreground tracking-wide hidden md:block">
             Unitário geral
           </span>
           <div className="flex items-center gap-2">
@@ -367,13 +367,13 @@ export function EstoqueLocationTabs({
 
         {/* Separador vertical - In-house */}
         {locaisInhouse.length > 0 && (
-          <div className="h-8 w-px bg-muted-foreground/50" />
+          <div className="h-8 w-px bg-muted-foreground/50 hidden md:block" />
         )}
 
         {/* Seção: In-house (inclui filial e outros) */}
         {locaisInhouse.length > 0 && (
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
+            <span className="text-[10px] font-medium text-muted-foreground tracking-wide hidden md:block">
               In-house
             </span>
             <div className="flex items-center gap-2 flex-wrap">
@@ -384,13 +384,13 @@ export function EstoqueLocationTabs({
 
         {/* Separador vertical - Fullfilment */}
         {locaisFullfilment.length > 0 && (
-          <div className="h-8 w-px bg-muted-foreground/50" />
+          <div className="h-8 w-px bg-muted-foreground/50 hidden md:block" />
         )}
 
         {/* Seção: Fullfilment */}
         {locaisFullfilment.length > 0 && (
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
+            <span className="text-[10px] font-medium text-muted-foreground tracking-wide hidden md:block">
               Fullfilment
             </span>
             <div className="flex items-center gap-2 flex-wrap">
@@ -400,8 +400,8 @@ export function EstoqueLocationTabs({
         )}
       </div>
 
-      {/* Lado direito: Controles */}
-      <div className="flex items-center gap-2">
+      {/* Lado direito: Controles - hidden on mobile */}
+      <div className="hidden md:flex items-center gap-2">
         {/* Transferir Estoque */}
         {onTransferClick && (
           <Button
