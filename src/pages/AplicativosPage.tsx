@@ -6,7 +6,7 @@ import { AplicativosNav } from "@/features/aplicativos/components/AplicativosNav
 import { AplicativosStats } from "@/features/aplicativos/components/AplicativosStats";
 import AplicativosCalendario from "./aplicativos/AplicativosCalendario";
 import AplicativosNotas from "./aplicativos/AplicativosNotas";
-import Scanner from "./Scanner";
+import { MobileScannerPage } from "@/components/mobile/standard/MobileScannerPage";
 
 const AplicativosContent = () => {
   const location = useLocation();
@@ -16,14 +16,14 @@ const AplicativosContent = () => {
     <div className="space-y-6">
       {/* Stats cards - hide on scanner page */}
       {!isScanner && <AplicativosStats />}
-      
+
       {/* 4. Conteúdo das rotas */}
       <div className={isScanner ? "" : "mt-6"}>
         <Routes>
           <Route index element={<Navigate to="calendario" replace />} />
           <Route path="calendario" element={<AplicativosCalendario />} />
           <Route path="notas" element={<AplicativosNotas />} />
-          <Route path="scanner" element={<Scanner />} />
+          <Route path="scanner" element={<MobileScannerPage />} />
           <Route path="*" element={<Navigate to="calendario" replace />} />
         </Routes>
       </div>
