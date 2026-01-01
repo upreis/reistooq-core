@@ -165,5 +165,3 @@ verify_jwt = false
 [functions.create-invited-user]
 verify_jwt = true
 
-[functions.fix-user-email]
-verify_jwt = true
