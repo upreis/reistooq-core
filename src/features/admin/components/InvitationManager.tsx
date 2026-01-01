@@ -12,9 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Mail, Plus, RotateCcw, X, CalendarIcon, Shield, User, Copy, Trash2 } from 'lucide-react';
+import { Mail, Plus, RotateCcw, X, CalendarIcon, Shield, User, Copy, Trash2, Check, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -23,20 +23,29 @@ import type { InvitationCreate, Invitation } from '../types/admin.types';
 
 interface InvitationFormProps {
   roles: any[];
-  onSave: (data: InvitationCreate) => Promise<void>;
+  onSave: (data: InvitationCreate) => Promise<{ login: string; password: string } | null>;
   onCancel: () => void;
+}
+
+interface CredentialsResult {
+  login: string;
+  password: string;
+  email: string;
+  roleName: string;
 }
 
 const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
+    email: '',
     username: '',
     role_id: '',
     expires_at: undefined as Date | undefined
   });
   const [loading, setLoading] = useState(false);
   const [orgFantasia, setOrgFantasia] = useState<string>('');
-
   const [error, setError] = useState<string | null>(null);
+  const [credentials, setCredentials] = useState<CredentialsResult | null>(null);
+  const { toast } = useToast();
 
   // Buscar fantasia da organização
   React.useEffect(() => {
@@ -52,19 +61,28 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username.trim() || !formData.role_id || !formData.expires_at) return;
+    if (!formData.email.trim() || !formData.username.trim() || !formData.role_id || !formData.expires_at) return;
     
     setLoading(true);
     setError(null);
     try {
       const invitationData = {
+        email: formData.email.toLowerCase().trim(),
         username: formData.username.toLowerCase().trim(),
         role_id: formData.role_id,
         expires_at: formData.expires_at.toISOString()
       };
-      await onSave(invitationData);
-      setFormData({ username: '', role_id: '', expires_at: undefined });
-      onCancel();
+      const result = await onSave(invitationData);
+      
+      if (result) {
+        const selectedRole = roles.find(r => r.id === formData.role_id);
+        setCredentials({
+          login: result.login,
+          password: result.password,
+          email: formData.email,
+          roleName: selectedRole?.name || 'Cargo'
+        });
+      }
     } catch (err) {
       console.error('Failed to create invitation:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao enviar convite';
@@ -74,8 +92,116 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
     }
   };
 
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copiado!",
+      description: `${label} copiado para a área de transferência`,
+    });
+  };
+
+  const handleClose = () => {
+    setFormData({ email: '', username: '', role_id: '', expires_at: undefined });
+    setCredentials(null);
+    setError(null);
+    onCancel();
+  };
+
+  // Se temos credenciais, mostrar tela de sucesso
+  if (credentials) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <div className="mx-auto w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
+            <Check className="w-6 h-6 text-green-500" />
+          </div>
+          <h3 className="text-lg font-semibold">Usuário Criado com Sucesso!</h3>
+          <p className="text-sm text-muted-foreground">
+            Um email foi enviado para <strong>{credentials.email}</strong> com as credenciais de acesso.
+          </p>
+        </div>
+
+        <div className="space-y-4 bg-muted/50 p-4 rounded-lg">
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Login</Label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-background px-3 py-2 rounded border text-sm font-mono">
+                {credentials.login}
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => copyToClipboard(credentials.login, 'Login')}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Senha</Label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-background px-3 py-2 rounded border text-sm font-mono">
+                {credentials.password}
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => copyToClipboard(credentials.password, 'Senha')}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Cargo</Label>
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">{credentials.roleName}</span>
+            </div>
+          </div>
+        </div>
+
+        <Alert>
+          <Key className="w-4 h-4" />
+          <AlertDescription>
+            Guarde essas credenciais em um local seguro. A senha não poderá ser recuperada depois.
+          </AlertDescription>
+        </Alert>
+
+        <div className="flex justify-end">
+          <Button onClick={handleClose}>
+            Fechar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="email">Email para Enviar Convite *</Label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            placeholder="usuario@email.com"
+            required
+            className="pl-10"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          O convite com login e senha será enviado para este email
+        </p>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="username">Nome de Usuário *</Label>
         <div className="flex items-center gap-2">
@@ -156,11 +282,14 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
       )}
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={handleClose}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={loading || !formData.username.trim() || !formData.role_id || !formData.expires_at}>
-          {loading ? 'Criando...' : 'Criar Usuário'}
+        <Button 
+          type="submit" 
+          disabled={loading || !formData.email.trim() || !formData.username.trim() || !formData.role_id || !formData.expires_at}
+        >
+          {loading ? 'Criando...' : 'Criar Usuário e Enviar Convite'}
         </Button>
       </div>
     </form>
@@ -178,8 +307,9 @@ export const InvitationManager: React.FC = () => {
     (invitation.username || invitation.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSave = async (data: InvitationCreate) => {
-    await createInvitation(data);
+  const handleSave = async (data: InvitationCreate): Promise<{ login: string; password: string } | null> => {
+    const result = await createInvitation(data);
+    return result;
   };
 
   const copyInviteLink = (token: string) => {
@@ -204,15 +334,6 @@ export const InvitationManager: React.FC = () => {
       return <Badge variant="secondary">Expirado</Badge>;
     }
     return <Badge variant="outline">Pendente</Badge>;
-  };
-
-  const getStatusColor = (invitation: Invitation) => {
-    const isExpired = new Date(invitation.expires_at) < new Date();
-    
-    if (invitation.status === 'accepted') return 'text-green-600';
-    if (invitation.status === 'revoked') return 'text-red-600';
-    if (isExpired) return 'text-gray-500';
-    return 'text-blue-600';
   };
 
   if (loading) {
@@ -252,6 +373,9 @@ export const InvitationManager: React.FC = () => {
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Novo Usuário</DialogTitle>
+              <DialogDescription>
+                Preencha os dados para criar um novo usuário e enviar o convite por email.
+              </DialogDescription>
             </DialogHeader>
             <InvitationForm
               roles={roles}
