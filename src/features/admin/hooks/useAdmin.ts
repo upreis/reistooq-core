@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminService } from '../services/AdminService';
 import type {
@@ -441,10 +442,18 @@ export const useSystemAlerts = (): UseSystemAlertsReturn => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const adminService = useMemo(() => new AdminService(), []);
 
   const loadAlerts = useCallback(async () => {
+    // Não buscar alertas se não houver usuário autenticado
+    if (!user) {
+      setAlerts([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -453,15 +462,18 @@ export const useSystemAlerts = (): UseSystemAlertsReturn => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load alerts';
       setError(errorMessage);
-      toast({
-        title: "Erro ao carregar alertas",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      // Não mostrar toast de erro para usuários não autenticados ou erros de permissão
+      if (user && !errorMessage.includes('permission denied')) {
+        toast({
+          title: "Erro ao carregar alertas",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [adminService, toast]);
+  }, [adminService, toast, user]);
 
   const createAlert = useCallback(async (data: Omit<SystemAlert, 'id' | 'created_at' | 'updated_at'>) => {
     try {
