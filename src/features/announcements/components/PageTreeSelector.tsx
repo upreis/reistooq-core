@@ -66,7 +66,7 @@ const PAGE_GROUPS: PageGroup[] = [
   },
   {
     id: 'admin',
-    label: 'Administração',
+    label: 'Configurações',
     children: [
       { value: '/admin', label: 'Geral' },
       { value: '/admin/usuarios', label: 'Usuários' },

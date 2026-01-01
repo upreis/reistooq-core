@@ -171,10 +171,10 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         permission: 'historico:view'
       },
       
-      // ADMINISTRAÇÃO
+      // CONFIGURAÇÕES
       { 
         id: 'admin', 
-        label: 'Administração', 
+        label: 'Configurações',
         icon: 'Shield',
         permission: 'admin:access',
         children: [
