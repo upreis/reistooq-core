@@ -196,7 +196,7 @@ export default function Header() {
     if (path.startsWith('/admin/seguranca')) return { icon: '🔒', label: 'Admin / Segurança' };
     
     if (path.startsWith('/admin/perfil')) return { icon: '👤', label: 'Admin / Perfil' };
-    if (path.startsWith('/admin')) return { icon: '🛡️', label: 'Administração' };
+    if (path.startsWith('/admin')) return { icon: '⚙️', label: 'Configurações' };
     
     
     return null;

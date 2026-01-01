@@ -162,7 +162,7 @@ export const AdminDashboard: React.FC = () => {
           <Settings className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Administração</h1>
+          <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
           <p className="text-muted-foreground">
             Gerencie usuários, cargos, permissões e configurações do sistema
           </p>
