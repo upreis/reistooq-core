@@ -161,8 +161,8 @@ export function HorizontalSemesterCalendar({
             </div>
           </div>
 
-          <div ref={scrollContainerRef} className="overflow-x-auto pb-4">
-            <div className="inline-flex gap-6 min-w-max">
+          <div ref={scrollContainerRef} className="overflow-x-auto pb-2">
+            <div className="inline-flex gap-3 lg:gap-4 min-w-max">
               {months.map((monthStart, monthIndex) => {
                 const monthEnd = endOfMonth(monthStart);
                 const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -171,23 +171,23 @@ export function HorizontalSemesterCalendar({
                 const emptyDays = Array.from({ length: firstDayWeekday }, (_, i) => i);
 
                 return (
-                  <div key={monthIndex} className="flex flex-col gap-3">
+                  <div key={monthIndex} className="flex flex-col gap-1">
                     {/* Cabeçalho do mês */}
-                    <div className="text-center pb-2 border-b-2 border-primary/20">
-                      <div className="text-sm font-bold uppercase">
+                    <div className="text-center pb-1 border-b border-primary/20">
+                      <div className="text-[10px] lg:text-xs font-bold uppercase">
                         {format(monthStart, "MMMM", { locale: ptBR })}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-[9px] lg:text-[10px] text-muted-foreground">
                         {format(monthStart, "yyyy")}
                       </div>
                     </div>
 
                     {/* Grade de dias da semana */}
-                    <div className="grid grid-cols-7 gap-1">
+                    <div className="grid grid-cols-7 gap-0.5">
                       {weekDays.map((day, idx) => (
                         <div
                           key={idx}
-                          className="w-8 h-6 flex items-center justify-center text-[10px] font-medium text-muted-foreground"
+                          className="w-5 h-4 lg:w-6 lg:h-5 flex items-center justify-center text-[8px] lg:text-[9px] font-medium text-muted-foreground"
                         >
                           {day}
                         </div>
@@ -195,10 +195,10 @@ export function HorizontalSemesterCalendar({
                     </div>
 
                     {/* Grade de dias do mês */}
-                    <div className="grid grid-cols-7 gap-1">
+                    <div className="grid grid-cols-7 gap-0.5">
                       {/* Células vazias */}
                       {emptyDays.map((idx) => (
-                        <div key={`empty-${idx}`} className="w-8 h-8" />
+                        <div key={`empty-${idx}`} className="w-5 h-5 lg:w-6 lg:h-6" />
                       ))}
                       
                       {/* Dias do mês */}
@@ -274,19 +274,19 @@ export function HorizontalSemesterCalendar({
                             ref={isToday ? todayRef : undefined}
                             key={dayIndex}
                             className={`
-                              w-8 h-8 rounded-md flex flex-col items-center justify-center
-                              text-xs font-medium cursor-pointer
+                              w-5 h-5 lg:w-6 lg:h-6 rounded flex flex-col items-center justify-center
+                              text-[8px] lg:text-[9px] font-medium cursor-pointer
                               transition-all overflow-hidden
                               ${borderStyle}
                               ${backgroundStyle}
-                              ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}
+                              ${isToday ? 'ring-1 ring-primary ring-offset-1' : ''}
                               hover:scale-110 hover:shadow-md hover:z-10
                               group relative
                             `}
                             onClick={() => handleDayClick(contribution, day)}
                             title={`${format(day, "PPP", { locale: ptBR })}`}
                           >
-                            <span className={`text-[9px] font-medium z-10 ${isToday ? 'text-blue-700 dark:text-blue-900 font-bold' : hasMultipleTypes ? 'text-white font-bold' : 'text-foreground/70'}`}>
+                            <span className={`text-[7px] lg:text-[8px] font-medium z-10 ${isToday ? 'text-blue-700 dark:text-blue-900 font-bold' : hasMultipleTypes ? 'text-white font-bold' : 'text-foreground/70'}`}>
                               {format(day, "d")}
                             </span>
 
