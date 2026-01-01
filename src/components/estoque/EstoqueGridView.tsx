@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Search, X, Link as LinkIcon, Trash2, Plus, ChevronDown, ChevronUp, Bell, Grid3X3, LayoutList } from "lucide-react";
+import { Package, Search, X, Link as LinkIcon, Trash2, Plus, ChevronDown, ChevronUp, Bell, Grid3X3, LayoutList, Filter } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,7 @@ export function EstoqueGridView({
 }: EstoqueGridViewProps) {
   const [hoveredProductIndex, setHoveredProductIndex] = useState<number | null>(null);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [showSegmentFilter, setShowSegmentFilter] = useState(true);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
 
@@ -224,6 +225,26 @@ export function EstoqueGridView({
               Gerenciar Vinculação
             </Button>
           )}
+
+          {/* Botão Segmentos */}
+          <button
+            onClick={() => setShowSegmentFilter(!showSegmentFilter)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+          >
+            <Filter className="w-3 h-3" />
+            <span className="font-medium">Segmentos</span>
+            {selectedSegments.length > 0 && (
+              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                {selectedSegments.length}
+              </Badge>
+            )}
+            <span className={cn(
+              "text-[10px] transition-transform duration-200",
+              showSegmentFilter ? "" : "rotate-180"
+            )}>
+              ▲
+            </span>
+          </button>
           
           {/* Delete Selected */}
           {selectedProducts.length > 0 && onDeleteSelected && (
@@ -352,11 +373,13 @@ export function EstoqueGridView({
       </div>
 
       {/* Filtro de Segmentos - usa todos os produtos filtrados */}
-      <SegmentFilter
-        products={productsForSegments}
-        selectedSegments={selectedSegments}
-        onSegmentChange={onSelectedSegmentsChange}
-      />
+      {showSegmentFilter && (
+        <SegmentFilter
+          products={productsForSegments}
+          selectedSegments={selectedSegments}
+          onSegmentChange={onSelectedSegmentsChange}
+        />
+      )}
 
       {/* Grid */}
       {filteredProducts.length === 0 ? (
