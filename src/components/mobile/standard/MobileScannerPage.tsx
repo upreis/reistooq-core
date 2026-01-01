@@ -20,9 +20,7 @@ export const MobileScannerPage = () => {
       showBottomNav={true}
       className="pt-0"
     >
-      <div className="pt-14">
-        <Scanner />
-      </div>
+      <Scanner />
     </MobileAppShell>
   );
 };

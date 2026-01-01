@@ -204,13 +204,13 @@ export function MobileScannerLayout({
   }, [sheetY]);
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
-      {/* Header - Minimal with blur (offset to avoid AppMobileHeader overlap) */}
+    <div className="fixed inset-0 top-12 bg-background flex flex-col overflow-hidden">
+      {/* Header - Minimal with blur */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="absolute top-12 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 via-black/50 to-transparent backdrop-blur-sm"
+        className="absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 via-black/50 to-transparent backdrop-blur-sm"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
