@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell, Trash2, Link as LinkIcon, Grid3X3, LayoutList } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Search, X, Plus, ChevronUp, ChevronDown as ChevronDownIcon, Bell, Trash2, Link as LinkIcon, Grid3X3, LayoutList, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
   // Estados internos como fallback se não forem passados externamente
   const [internalExpandedGroups, setInternalExpandedGroups] = useState<Set<string>>(new Set());
   const [internalShowHierarchy, setInternalShowHierarchy] = useState(true);
+  const [showSegmentFilter, setShowSegmentFilter] = useState(true);
   
   // Usar estado externo se disponível, senão usar interno
   const showHierarchy = props.showHierarchy ?? internalShowHierarchy;
@@ -251,6 +252,24 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 Gerenciar Vinculação
               </Button>
             )}
+
+            {/* Botão Segmentos */}
+            {props.selectedSegments !== undefined && props.onSegmentChange && (
+              <Button
+                variant={showSegmentFilter ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowSegmentFilter(!showSegmentFilter)}
+                className="gap-1.5"
+              >
+                <Filter className="h-4 w-4" />
+                Segmentos
+                {props.selectedSegments.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                    {props.selectedSegments.length}
+                  </Badge>
+                )}
+              </Button>
+            )}
             
             {props.selectedProducts.length > 0 && props.onDeleteSelected && (
               <Button 
@@ -374,7 +393,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
       )}
 
       {/* Filtro de Segmentos */}
-      {props.selectedSegments !== undefined && props.onSegmentChange && props.allProductsForSegments && (
+      {showSegmentFilter && props.selectedSegments !== undefined && props.onSegmentChange && props.allProductsForSegments && (
         <SegmentFilter
           products={props.allProductsForSegments}
           selectedSegments={props.selectedSegments}
