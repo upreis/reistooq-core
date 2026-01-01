@@ -126,13 +126,13 @@ export function SegmentFilter({
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="flex flex-wrap gap-2 px-3 pb-3">
+            <div className="flex md:flex-wrap gap-2 px-3 pb-3 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {/* Botão "Todos" */}
               <motion.button
                 layout
                 onClick={handleSelectAll}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                  "inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
                   "border hover:shadow-sm",
                   isAllSelected
                     ? "bg-primary text-primary-foreground border-primary shadow-md"
@@ -141,9 +141,9 @@ export function SegmentFilter({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Tag className="w-3.5 h-3.5" />
+                <Tag className="w-3 h-3 md:w-3.5 md:h-3.5" />
                 Todos
-                <span className="text-xs opacity-70">({products.length})</span>
+                <span className="text-[10px] md:text-xs opacity-70">({products.length})</span>
               </motion.button>
 
               {/* Chips dos segmentos */}
@@ -164,7 +164,7 @@ export function SegmentFilter({
                     }}
                     onClick={() => handleToggleSegment(segment.name)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                      "inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
                       "border hover:shadow-sm",
                       isSelected
                         ? "bg-primary text-primary-foreground border-primary shadow-md"
@@ -176,7 +176,7 @@ export function SegmentFilter({
                     {segment.name}
                     <span
                       className={cn(
-                        "text-xs px-1.5 py-0.5 rounded-full",
+                        "text-[10px] md:text-xs px-1 md:px-1.5 py-0.5 rounded-full",
                         isSelected
                           ? "bg-primary-foreground/20 text-primary-foreground"
                           : "bg-muted text-muted-foreground"
