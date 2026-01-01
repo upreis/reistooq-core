@@ -255,20 +255,24 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
 
             {/* Botão Segmentos */}
             {props.selectedSegments !== undefined && props.onSegmentChange && (
-              <Button
-                variant={showSegmentFilter ? "default" : "outline"}
-                size="sm"
+              <button
                 onClick={() => setShowSegmentFilter(!showSegmentFilter)}
-                className="gap-1.5"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5"
               >
-                <Filter className="h-4 w-4" />
-                Segmentos
+                <Filter className="w-4 h-4" />
+                <span className="font-medium">Segmentos</span>
                 {props.selectedSegments.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                     {props.selectedSegments.length}
                   </Badge>
                 )}
-              </Button>
+                <span className={cn(
+                  "text-xs transition-transform duration-200",
+                  showSegmentFilter ? "" : "rotate-180"
+                )}>
+                  ▲
+                </span>
+              </button>
             )}
             
             {props.selectedProducts.length > 0 && props.onDeleteSelected && (
