@@ -1,5 +1,5 @@
 // 🛡️ PÁGINA PROTEGIDA - NÃO MODIFICAR SEM AUTORIZAÇÃO EXPLÍCITA
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ import { ProductTypeSelector } from "@/components/scanner/ProductTypeSelector";
 import { ScannedProduct } from "@/features/scanner/types/scanner.types";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
 
 // Types for scan feedback
 interface ScanFeedback {
@@ -37,6 +39,33 @@ const Scanner = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastScanResult, setLastScanResult] = useState<ScanFeedback | null>(null);
   const { getProducts } = useProducts();
+  const { setLocalAtivo } = useLocalEstoqueAtivo();
+
+  // Ao montar, forçar o local ativo para o estoque principal
+  useEffect(() => {
+    const forceEstoquePrincipal = async () => {
+      try {
+        const { data: localPrincipal } = await supabase
+          .from('locais_estoque')
+          .select('id, nome, tipo')
+          .eq('tipo', 'principal')
+          .single();
+
+        if (localPrincipal) {
+          setLocalAtivo({
+            id: localPrincipal.id,
+            nome: localPrincipal.nome,
+            tipo: localPrincipal.tipo
+          });
+          console.log('📍 Scanner: Forçando estoque principal:', localPrincipal.nome);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar estoque principal:', error);
+      }
+    };
+
+    forceEstoquePrincipal();
+  }, [setLocalAtivo]);
 
   const findProductByCode = async (code: string): Promise<Product | null> => {
     try {
