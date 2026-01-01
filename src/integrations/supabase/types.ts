@@ -8858,6 +8858,7 @@ export type Database = {
         Args: { target_roles: string[]; target_users: string[] }
         Returns: boolean
       }
+      validate_invitation_email: { Args: { p_email: string }; Returns: Json }
       validate_invitation_token: {
         Args: { _token: string }
         Returns: {
