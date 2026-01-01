@@ -1,6 +1,6 @@
 import React from "react";
 import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert, RotateCcw } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import visaoGeralIcon from "@/assets/dashboard-visao-geral-icon.png";
 import pedidosIcon from "@/assets/icons/pedidos-icon.png";
 import reclamacoesIcon from "@/assets/icons/reclamacoes-new-icon.png";
@@ -66,6 +66,7 @@ import { useOnboarding } from "@/contexts/OnboardingContext";
 
 export default function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed } = useSidebarUI();
   const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
@@ -289,7 +290,7 @@ export default function Header() {
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex items-center gap-3">
+              <DropdownMenuItem className="flex items-center gap-3" onClick={() => navigate('/admin/perfil')}>
                 <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
                   <User className="w-4 h-4 text-orange-600" />
                 </div>
