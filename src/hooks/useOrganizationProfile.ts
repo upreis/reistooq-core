@@ -55,28 +55,48 @@ export function useOrganizationProfile() {
   }, [user]);
 
   // Verificar se o usuário atual é o proprietário (admin)
-  const isOwner = user?.email && orgProfile?.admin_email 
-    ? user.email.toLowerCase() === orgProfile.admin_email.toLowerCase()
+  // Regras:
+  // - Proprietário pode entrar tanto com o email real (admin_email) quanto com o login curto (slug.adminUser)
+  //   que vira email interno no formato: slug.adminUser@interno.local
+  const normalize = (v?: string | null) => (v ?? '').trim().toLowerCase();
+
+  const adminEmail = normalize(orgProfile?.admin_email);
+  const userEmail = normalize(user?.email);
+
+  const adminUser = adminEmail ? adminEmail.split('@')[0] : '';
+  const ownerSyntheticEmail = orgProfile?.slug && adminUser
+    ? `${normalize(orgProfile.slug)}.${adminUser}@interno.local`
+    : '';
+
+  const isOwner = !!userEmail && !!adminEmail
+    ? userEmail === adminEmail || (ownerSyntheticEmail ? userEmail === ownerSyntheticEmail : false)
     : false;
 
   // Helper para obter o login display baseado no tipo de usuário
   // Proprietário: mostra email real
-  // Colaborador: mostra fantasia.nome
-  const getLoginDisplay = (userEmail?: string | null) => {
-    if (!userEmail) return '';
-    
-    // Se for o proprietário, mostra o email real
+  // Colaborador: mostra fantasia.nome (sem @interno.local)
+  const getLoginDisplay = (rawEmail?: string | null) => {
+    if (!rawEmail) return '';
+
+    // Se for o proprietário, sempre mostra o email real cadastrado (se existir)
     if (isOwner) {
-      return userEmail;
+      return orgProfile?.admin_email || rawEmail;
     }
-    
-    // Se for colaborador e tiver slug, mostra no formato fantasia.nome
-    if (orgProfile?.slug) {
-      const username = userEmail.split('@')[0];
+
+    const lowered = rawEmail.toLowerCase();
+
+    // Colaborador via login curto (interno)
+    if (lowered.endsWith('@interno.local')) {
+      return rawEmail.split('@')[0];
+    }
+
+    // Fallback: se não for email interno, mantém o valor (ou prefixa com slug quando fizer sentido)
+    if (orgProfile?.slug && rawEmail.includes('@')) {
+      const username = rawEmail.split('@')[0];
       return `${orgProfile.slug}.${username}`;
     }
-    
-    return userEmail;
+
+    return rawEmail;
   };
 
   return {
