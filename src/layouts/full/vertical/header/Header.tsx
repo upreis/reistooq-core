@@ -108,8 +108,9 @@ export default function Header() {
     if (path.startsWith('/compras')) return { icon: '🛒', label: 'Compras' };
     
     // Aplicativos
-    if (path.startsWith('/aplicativos/calendario')) return { icon: aplicativosCalendarioIcon, label: 'Aplicativos / Calendário', isImage: true };
-    if (path.startsWith('/aplicativos/notas')) return { icon: aplicativosNotasIcon, label: 'Aplicativos / Notas', isImage: true };
+    if (path.startsWith('/aplicativos/calendario')) return { icon: aplicativosCalendarioIcon, label: 'Calendário', isImage: true };
+    if (path.startsWith('/aplicativos/notas')) return { icon: aplicativosNotasIcon, label: 'Notas', isImage: true };
+    if (path.startsWith('/aplicativos/scanner')) return { icon: scannerIcon, label: 'Scanner', isImage: true };
     
     // Misc
     if (path.startsWith('/historico')) return { icon: historicoIcon, label: 'Histórico', isImage: true };
@@ -158,8 +159,9 @@ export default function Header() {
     if (path.startsWith('/historico')) return { icon: '📜', label: 'Histórico' };
     
     // Aplicativos
-    if (path.startsWith('/aplicativos/calendario')) return { icon: '📅', label: 'Aplicativos / Calendário' };
-    if (path.startsWith('/aplicativos/notas')) return { icon: '📝', label: 'Aplicativos / Notas' };
+    if (path.startsWith('/aplicativos/calendario')) return { icon: '📅', label: 'Calendário' };
+    if (path.startsWith('/aplicativos/notas')) return { icon: '📝', label: 'Notas' };
+    if (path.startsWith('/aplicativos/scanner')) return { icon: '📷', label: 'Scanner' };
     if (path.startsWith('/aplicativos')) return { icon: '🎨', label: 'Aplicativos' };
     
     // Admin
