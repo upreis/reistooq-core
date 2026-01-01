@@ -204,9 +204,9 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
       {/* Controles de visualização */}
       {!isMobile && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {/* Checkbox para selecionar todos */}
-            <div className="flex items-center gap-2 border-r pr-3">
+            <div className="flex items-center gap-1.5 border-r pr-2">
               <Checkbox
                 checked={props.products.length > 0 && props.products.every(p => props.selectedProducts.includes(p.id))}
                 onCheckedChange={(checked) => {
@@ -214,19 +214,20 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     props.onSelectAll(checked);
                   }
                 }}
+                className="h-4 w-4"
               />
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Todos ({props.selectedProducts.length}/{props.products.length})
               </span>
             </div>
             
             {/* Campo de busca */}
             {props.onSearchChange && (
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <div className="relative w-52">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
                 <Input 
-                  placeholder="Buscar por nome, SKU, código de barras..." 
-                  className="pl-10 h-8"
+                  placeholder="Buscar por nome, SKU, código" 
+                  className="pl-7 h-6 text-xs"
                   value={props.searchTerm || ""}
                   onChange={(e) => props.onSearchChange?.(e.target.value)}
                 />
@@ -234,10 +235,10 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                    className="absolute right-0.5 top-1/2 transform -translate-y-1/2 h-5 w-5 p-0"
                     onClick={() => props.onSearchChange?.("")}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-2.5 h-2.5" />
                   </Button>
                 )}
               </div>
@@ -246,9 +247,10 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
               <Button 
                 variant="secondary" 
                 size="sm"
+                className="h-6 px-2 text-xs"
                 onClick={props.onLinkChild}
               >
-                <LinkIcon className="h-4 w-4 mr-2" />
+                <LinkIcon className="h-3 w-3 mr-1" />
                 Gerenciar Vinculação
               </Button>
             )}
@@ -257,17 +259,17 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
             {props.selectedSegments !== undefined && props.onSegmentChange && (
               <button
                 onClick={() => setShowSegmentFilter(!showSegmentFilter)}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-3 h-3" />
                 <span className="font-medium">Segmentos</span>
                 {props.selectedSegments.length > 0 && (
-                  <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                  <Badge variant="secondary" className="h-4 px-1 text-[10px]">
                     {props.selectedSegments.length}
                   </Badge>
                 )}
                 <span className={cn(
-                  "text-xs transition-transform duration-200",
+                  "text-[10px] transition-transform duration-200",
                   showSegmentFilter ? "" : "rotate-180"
                 )}>
                   ▲
@@ -279,15 +281,16 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
               <Button 
                 variant="destructive" 
                 size="sm"
+                className="h-6 px-2 text-xs"
                 onClick={props.onDeleteSelected}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-3 w-3 mr-1" />
                 Excluir ({props.selectedProducts.length})
               </Button>
             )}
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {/* Layout Toggle - hidden on mobile (available in header) */}
             {props.onLayoutChange && (
               <div className="hidden md:flex items-center gap-0.5 rounded-md bg-secondary/50 p-0.5">
@@ -298,14 +301,14 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       key={mode}
                       onClick={() => props.onLayoutChange?.(mode)}
                       className={cn(
-                        "rounded p-1.5 transition-all",
+                        "rounded p-1 transition-all",
                         props.layoutMode === mode
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                       )}
                       aria-label={`Visualização em ${mode === "grid" ? "grade" : "lista"}`}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-3 w-3" />
                     </button>
                   );
                 })}
@@ -318,15 +321,15 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="relative"
+                    className="relative h-6 px-2 text-xs"
                   >
                     {props.notificationsCount && props.notificationsCount > 0 && props.notificationsCollapsed && (
-                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
                       </span>
                     )}
-                    <ChevronDownIcon className="h-4 w-4 mr-1" />
+                    <ChevronDownIcon className="h-3 w-3 mr-1" />
                     <span>Filtros</span>
                   </Button>
                 </PopoverTrigger>
@@ -335,17 +338,17 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start"
+                      className="justify-start text-xs"
                       onClick={props.onToggleToolbar}
                     >
                       {props.isToolbarExpanded ? (
                         <>
-                          <ChevronUp className="h-4 w-4 mr-2" />
+                          <ChevronUp className="h-3 w-3 mr-1.5" />
                           Ocultar Filtros
                         </>
                       ) : (
                         <>
-                          <ChevronDownIcon className="h-4 w-4 mr-2" />
+                          <ChevronDownIcon className="h-3 w-3 mr-1.5" />
                           Mostrar Filtros
                         </>
                       )}
@@ -355,13 +358,13 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="justify-start relative"
+                        className="justify-start relative text-xs"
                         onClick={() => props.onToggleNotifications?.(!props.notificationsCollapsed)}
                       >
-                        <Bell className="h-4 w-4 mr-2" />
+                        <Bell className="h-3 w-3 mr-1.5" />
                         {props.notificationsCollapsed ? 'Mostrar Notificações' : 'Ocultar Notificações'}
                         {props.notificationsCount && props.notificationsCount > 0 && props.notificationsCollapsed && (
-                          <Badge variant="destructive" className="ml-2 animate-pulse text-xs h-5">
+                          <Badge variant="destructive" className="ml-1.5 animate-pulse text-[10px] h-4">
                             {props.notificationsCount}
                           </Badge>
                         )}
@@ -375,18 +378,18 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
             {props.onCreateParent && props.onCreateChild && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="default" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
+                  <Button variant="default" size="sm" className="h-6 px-2 text-xs">
+                    <Plus className="h-3 w-3 mr-1" />
                     Produto
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={props.onCreateParent}>
-                    <Plus className="h-4 w-4 mr-2" />
+                  <DropdownMenuItem onClick={props.onCreateParent} className="text-xs">
+                    <Plus className="h-3 w-3 mr-1.5" />
                     Criar Produto Pai
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={props.onCreateChild}>
-                    <Plus className="h-4 w-4 mr-2" />
+                  <DropdownMenuItem onClick={props.onCreateChild} className="text-xs">
+                    <Plus className="h-3 w-3 mr-1.5" />
                     Criar Produto Filho
                   </DropdownMenuItem>
                 </DropdownMenuContent>
