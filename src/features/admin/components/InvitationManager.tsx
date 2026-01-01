@@ -2,6 +2,7 @@
 // Sistema completo de convites por email com gestão de tokens
 
 import React, { useState } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useInvitations, useRoles } from '../hooks/useAdmin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,11 +35,14 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
   });
   const [loading, setLoading] = useState(false);
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email.trim() || !formData.role_id || !formData.expires_at) return;
     
     setLoading(true);
+    setError(null);
     try {
       const invitationData = {
         email: formData.email,
@@ -50,6 +54,8 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
       onCancel();
     } catch (err) {
       console.error('Failed to create invitation:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao enviar convite';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -122,6 +128,12 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
           </PopoverContent>
         </Popover>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex justify-end gap-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
