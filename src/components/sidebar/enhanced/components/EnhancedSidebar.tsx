@@ -105,12 +105,23 @@ const SidebarContent = memo(({
       const result: NavItem[] = [];
       
       for (const item of items) {
-        const children = item.children ? filterItems(item.children) : undefined;
-        const visible = item.permission ? hasPermission(item.permission) : true;
+        // Check if this item has required permission
+        const hasItemPermission = item.permission ? hasPermission(item.permission) : true;
         
-        if (children && children.length > 0) {
-          result.push({ ...item, children });
-        } else if (visible) {
+        // If item doesn't have permission, skip it entirely
+        if (!hasItemPermission) {
+          continue;
+        }
+        
+        // If item has children, filter them too
+        if (item.children && item.children.length > 0) {
+          const filteredChildren = filterItems(item.children);
+          // Only include parent if at least one child is visible
+          if (filteredChildren.length > 0) {
+            result.push({ ...item, children: filteredChildren });
+          }
+        } else {
+          // Item without children - include if visible
           result.push({ ...item, children: undefined });
         }
       }

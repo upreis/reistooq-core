@@ -10,47 +10,50 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'dashboard', 
         label: 'Dashboard', 
         icon: 'LayoutDashboard',
+        permission: 'dashboard:view',
         children: [
           {
             id: 'dashboard-inicial',
             label: 'Visão Geral',
             path: '/dashboardinicial/visao-geral',
-            icon: 'Home'
+            icon: 'Home',
+            permission: 'dashboard:view'
           }
-          // Páginas ocultas temporariamente (em desenvolvimento):
-          // - /dashboardinicial/vendas
-          // - /dashboardinicial/estoque
-          // - /dashboardinicial/analises
         ]
       },
       {
         id: 'oms',
         label: 'Vendas',
         icon: 'TrendingUp',
+        permission: 'vendas:view',
         children: [
           {
             id: 'vendas-marketplace',
             label: 'Marketplace',
             path: '/pedidos',
-            icon: 'Store'
+            icon: 'Store',
+            permission: 'orders:read'
           },
           {
             id: 'oms-pedidos',
             label: 'Atacado',
             path: '/oms/pedidos',
-            icon: 'ShoppingCart'
+            icon: 'ShoppingCart',
+            permission: 'orders:read'
           },
           {
             id: 'oms-cadastro',
             label: 'Cadastro',
             path: '/oms/cadastro',
-            icon: 'Users'
+            icon: 'Users',
+            permission: 'vendas:view'
           },
           {
             id: 'oms-configuracoes',
             label: 'Configurações OMS',
             path: '/oms/configuracoes',
-            icon: 'Settings'
+            icon: 'Settings',
+            permission: 'vendas:manage'
           }
         ]
       },
@@ -58,30 +61,35 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'compras',
         label: 'Compras',
         icon: 'ShoppingBag',
+        permission: 'compras:view',
         children: [
           {
             id: 'compras-pedidos',
             label: 'Pedidos',
             path: '/compras/pedidos',
-            icon: 'ShoppingCart'
+            icon: 'ShoppingCart',
+            permission: 'compras:view'
           },
           {
             id: 'compras-cotacoes',
             label: 'Cotações',
             path: '/compras/cotacoes',
-            icon: 'Calculator'
+            icon: 'Calculator',
+            permission: 'compras:view'
           },
           {
             id: 'compras-fornecedores',
             label: 'Fornecedores',
             path: '/compras/fornecedores',
-            icon: 'Building2'
+            icon: 'Building2',
+            permission: 'compras:view'
           },
           {
             id: 'compras-importacao',
             label: 'Importação',
             path: '/compras/importacao',
-            icon: 'Upload'
+            icon: 'Upload',
+            permission: 'compras:manage'
           }
         ]
       },
@@ -89,36 +97,42 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'estoque', 
         label: 'Estoque', 
         icon: 'Package',
+        permission: 'estoque:view',
         children: [
           {
             id: 'controle-estoque',
             label: 'Estoque',
             path: '/estoque',
-            icon: 'Package'
+            icon: 'Package',
+            permission: 'estoque:view'
           },
           {
             id: 'depara',
             label: 'De-Para',
             path: '/estoque/de-para',
-            icon: 'ArrowLeftRight'
+            icon: 'ArrowLeftRight',
+            permission: 'estoque:view'
           },
           {
             id: 'composicoes',
             label: 'Produtos',
             path: '/estoque/composicoes',
-            icon: 'Layers'
+            icon: 'Layers',
+            permission: 'estoque:view'
           },
           {
             id: 'insumos',
             label: 'Insumos',
             path: '/estoque/insumos',
-            icon: 'Box'
+            icon: 'Box',
+            permission: 'estoque:view'
           },
           {
             id: 'historico-estoque',
             label: 'Histórico',
             path: '/estoque/historico',
-            icon: 'Clock'
+            icon: 'Clock',
+            permission: 'estoque:view'
           }
         ]
       },
@@ -153,7 +167,8 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'historico', 
         label: 'Histórico', 
         path: '/historico', 
-        icon: 'History' 
+        icon: 'History',
+        permission: 'historico:view'
       },
       
       // ADMINISTRAÇÃO
@@ -161,42 +176,49 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'admin', 
         label: 'Administração', 
         icon: 'Shield',
+        permission: 'admin:access',
         children: [
           {
             id: 'admin-visao-geral',
             label: 'Geral',
             path: '/admin',
-            icon: 'LayoutDashboard'
+            icon: 'LayoutDashboard',
+            permission: 'admin:access'
           },
           {
             id: 'admin-usuarios',
             label: 'Usuários',
             path: '/admin/usuarios',
-            icon: 'Users'
+            icon: 'Users',
+            permission: 'admin:access'
           },
           {
             id: 'admin-convites',
             label: 'Convites',
             path: '/admin/convites',
-            icon: 'Mail'
+            icon: 'Mail',
+            permission: 'admin:access'
           },
           {
             id: 'admin-alertas',
             label: 'Alertas',
             path: '/admin/alertas',
-            icon: 'Bell'
+            icon: 'Bell',
+            permission: 'admin:access'
           },
           {
             id: 'admin-seguranca',
             label: 'Segurança',
             path: '/admin/seguranca',
-            icon: 'Lock'
+            icon: 'Lock',
+            permission: 'admin:access'
           },
           {
             id: 'admin-integracoes',
             label: 'Integrações',
             path: '/admin/integracoes',
-            icon: 'Zap'
+            icon: 'Zap',
+            permission: 'admin:access'
           },
           {
             id: 'admin-perfil',
