@@ -498,6 +498,21 @@ export class AdminService {
   }
 
   async createInvitation(data: InvitationCreate): Promise<Invitation> {
+    // Validate email before creating invitation
+    const { data: validation, error: validationError } = await supabase.rpc('validate_invitation_email', {
+      p_email: data.email
+    });
+
+    if (validationError) {
+      console.error('Error validating invitation email:', validationError);
+      throw new Error('Falha ao validar e-mail para convite');
+    }
+
+    const validationResult = validation as { valid: boolean; error?: string };
+    if (!validationResult.valid) {
+      throw new Error(validationResult.error || 'E-mail não pode receber convite');
+    }
+
     // Calculate days between now and expiration date
     const expiresAt = new Date(data.expires_at);
     const now = new Date();
