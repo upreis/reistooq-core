@@ -75,14 +75,21 @@ Deno.serve(async (req) => {
     const randomPassword = crypto.randomUUID().slice(0, 12);
     
     // Get org fantasia for email generation
-    const { data: orgData } = await supabaseAdmin
+    const { data: orgData, error: orgError } = await supabaseAdmin
       .from('organizacoes')
-      .select('fantasia, nome')
+      .select('fantasia, nome, slug')
       .eq('id', invitation.organization_id)
       .single();
 
+    console.log('[create-invited-user] Org query result:', { 
+      org_id: invitation.organization_id,
+      orgData, 
+      orgError 
+    });
+
     // Normaliza fantasia para minúsculas para consistência
-    const fantasia = (orgData?.fantasia || 'org').toLowerCase();
+    // Usar fantasia se existir, senão nome, senão fallback para 'org'
+    const fantasia = (orgData?.fantasia || orgData?.nome || 'org').toLowerCase().trim();
     const internalEmail = `${fantasia}.${invitation.username}@interno.local`;
     
     console.log('[create-invited-user] Creating auth user with email:', internalEmail);
