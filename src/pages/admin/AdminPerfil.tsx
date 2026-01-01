@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Building, MapPin, Phone, Mail, Globe, User, FileText, Upload, Save, Loader2 } from 'lucide-react';
@@ -187,28 +188,109 @@ export default function AdminPerfil() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Dados da Empresa</h1>
-          <p className="text-muted-foreground text-sm">
-            Configure os dados da sua empresa. O campo Fantasia será usado para logins ({data.slug || 'fantasia'}.usuario)
-          </p>
-        </div>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Salvando...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Salvar
-            </>
-          )}
-        </Button>
-      </div>
+      {/* Header com Proprietário */}
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+            {/* Avatar do Proprietário */}
+            <div className="flex-shrink-0">
+              <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
+                <AvatarImage src={data.logo_url || undefined} alt={data.admin_nome || 'Proprietário'} />
+                <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">
+                  {data.admin_nome?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'AD'}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            
+            {/* Dados do Proprietário */}
+            <div className="flex-1 text-center md:text-left space-y-3">
+              <div>
+                <h1 className="text-2xl font-bold">{data.admin_nome || 'Nome do Proprietário'}</h1>
+                <p className="text-muted-foreground">{data.fantasia || 'Nome da Empresa'}</p>
+              </div>
+              
+              <div className="flex flex-col md:flex-row gap-4 text-sm text-muted-foreground">
+                {data.admin_email && (
+                  <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <Mail className="w-4 h-4" />
+                    <span>{data.admin_email}</span>
+                  </div>
+                )}
+                {data.admin_celular && (
+                  <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <Phone className="w-4 h-4" />
+                    <span>{data.admin_celular}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Botão Salvar */}
+            <div className="flex-shrink-0">
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dados do Administrador - Editáveis */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Dados do Proprietário
+          </CardTitle>
+          <CardDescription>
+            Informações pessoais do sócio ou responsável pela empresa
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="admin_nome_top">Nome Completo</Label>
+              <Input
+                id="admin_nome_top"
+                value={data.admin_nome || ''}
+                onChange={(e) => handleChange('admin_nome', e.target.value)}
+                placeholder="Nome completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admin_email_top">E-mail</Label>
+              <Input
+                id="admin_email_top"
+                type="email"
+                value={data.admin_email || ''}
+                onChange={(e) => handleChange('admin_email', e.target.value)}
+                placeholder="admin@empresa.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admin_celular_top">Celular</Label>
+              <Input
+                id="admin_celular_top"
+                value={data.admin_celular || ''}
+                onChange={(e) => handleChange('admin_celular', formatPhone(e.target.value))}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Dados Principais */}
       <Card>
@@ -516,53 +598,6 @@ export default function AdminPerfil() {
               onChange={(e) => handleChange('email', e.target.value)}
               placeholder="contato@suaempresa.com.br"
             />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Administrador */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Pessoa Administradora
-          </CardTitle>
-          <CardDescription>
-            Dados do sócio ou responsável pela empresa
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="admin_nome">Nome do Administrador</Label>
-              <Input
-                id="admin_nome"
-                value={data.admin_nome || ''}
-                onChange={(e) => handleChange('admin_nome', e.target.value)}
-                placeholder="Nome completo"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="admin_email">E-mail</Label>
-              <Input
-                id="admin_email"
-                type="email"
-                value={data.admin_email || ''}
-                onChange={(e) => handleChange('admin_email', e.target.value)}
-                placeholder="admin@empresa.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="admin_celular">Celular</Label>
-              <Input
-                id="admin_celular"
-                value={data.admin_celular || ''}
-                onChange={(e) => handleChange('admin_celular', formatPhone(e.target.value))}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
           </div>
         </CardContent>
       </Card>
