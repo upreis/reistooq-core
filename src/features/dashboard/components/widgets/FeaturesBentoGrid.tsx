@@ -155,7 +155,7 @@ export function FeaturesBentoGrid() {
         <button
           onClick={() => setSelectedAccount("todas")}
           className={cn(
-            "px-3 py-1.5 text-xs rounded-full border transition-all font-medium inline-flex items-center gap-1.5",
+            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
             selectedAccount === "todas"
               ? "bg-yellow-500/30 text-yellow-400 border-yellow-500/50"
               : "bg-yellow-500/10 text-yellow-400 border-yellow-500/50 hover:bg-yellow-500/20"
@@ -170,7 +170,7 @@ export function FeaturesBentoGrid() {
               key={account}
               onClick={() => setSelectedAccount(account)}
               className={cn(
-                "px-3 py-1.5 text-xs rounded-full transition-all font-medium inline-flex items-center gap-1.5",
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
                 className
               )}
             >
