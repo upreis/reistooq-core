@@ -6,7 +6,6 @@ import { SkuMapFilters } from "./SkuMapFilters";
 import { SkuMapActions } from "./SkuMapActions";
 import { SkuMapForm } from "./SkuMapForm";
 import { SkuMapHistory } from "./SkuMapHistory";
-import { SavedFiltersManager } from "./SavedFiltersManager";
 import { BulkEditModal } from "./BulkEditModal";
 import { ImportWizard } from "./import/ImportWizard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -201,10 +200,6 @@ export function SkuMapPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <SavedFiltersManager
-            currentFilters={filters}
-            onLoadFilters={updateFilters}
-          />
           <SkuMapHistory />
         </div>
       </div>
