@@ -160,7 +160,7 @@ export function SegmentFilter({
                 layout
                 onClick={handleSelectAll}
                 className={cn(
-                  "inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[11px] md:text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
+                  "inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
                   isAllSelected
                     ? "bg-secondary text-secondary-foreground border-secondary shadow-sm"
                     : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary/80 hover:text-foreground"
@@ -168,11 +168,11 @@ export function SegmentFilter({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {isAllSelected && <CheckCircle className="w-3 h-3 md:w-3.5 md:h-3.5" />}
-                <Tag className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                {isAllSelected && <CheckCircle className="w-3.5 h-3.5" />}
+                <Tag className="w-3.5 h-3.5" />
                 Todos
                 <span className={cn(
-                  "text-[10px] md:text-[11px] font-semibold",
+                  "text-xs font-semibold",
                   isAllSelected ? "opacity-80" : "opacity-70"
                 )}>
                   {products.length}
@@ -198,17 +198,17 @@ export function SegmentFilter({
                     }}
                     onClick={() => handleToggleSegment(segment.name)}
                     className={cn(
-                      "inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[11px] md:text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
+                      "inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
                       colorClasses
                     )}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {isSelected && <CheckCircle className="w-3 h-3 md:w-3.5 md:h-3.5" />}
+                    {isSelected && <CheckCircle className="w-3.5 h-3.5" />}
                     {segment.name}
                     <span
                       className={cn(
-                        "text-[10px] md:text-[11px] font-semibold",
+                        "text-xs font-semibold",
                         isSelected
                           ? "opacity-90"
                           : "opacity-70"
