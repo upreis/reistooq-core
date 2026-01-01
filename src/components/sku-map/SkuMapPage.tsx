@@ -279,14 +279,8 @@ export function SkuMapPage() {
         onFiltersChange={updateFilters}
       />
 
-      {/* Sidebar content for mobile */}
-      <div className="space-y-4">
-        <SavedFiltersManager
-          currentFilters={filters}
-          onLoadFilters={updateFilters}
-        />
-        <SkuMapHistory />
-      </div>
+      {/* Sidebar content for mobile - hidden on mobile per request */}
+      {/* SavedFiltersManager and SkuMapHistory are hidden on mobile */}
     </div>
   );
 
