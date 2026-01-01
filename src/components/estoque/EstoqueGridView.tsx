@@ -169,20 +169,21 @@ export function EstoqueGridView({
   return (
     <div className="flex flex-col">
       {/* Toolbar - hidden on mobile */}
-      <div className="hidden md:flex flex-wrap items-center justify-between gap-2 p-3 border-b bg-card/50">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 border-b bg-card/50">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* Select All */}
           {onSelectAll && (
             <div 
-              className="flex items-center gap-2 cursor-pointer hover:bg-secondary/50 px-2 py-1 rounded"
+              className="flex items-center gap-1.5 cursor-pointer hover:bg-secondary/50 px-2 py-0.5 rounded-full border border-border text-xs"
               onClick={handleSelectAll}
             >
               <Checkbox 
                 checked={allSelected}
                 onClick={(e) => e.stopPropagation()}
                 onCheckedChange={() => handleSelectAll()}
+                className="h-3 w-3"
               />
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground">
                 Todos ({selectedProducts.length}/{filteredProducts.length})
               </span>
             </div>
@@ -190,11 +191,11 @@ export function EstoqueGridView({
           
           {/* Search */}
           {onSearchChange && (
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <div className="relative w-52">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
               <Input 
-                placeholder="Buscar por nome, SKU, código..." 
-                className="pl-10 h-8"
+                placeholder="Buscar por nome, SKU, código" 
+                className="pl-7 h-6 text-xs rounded-full"
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
               />
@@ -202,10 +203,10 @@ export function EstoqueGridView({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  className="absolute right-0.5 top-1/2 transform -translate-y-1/2 h-5 w-5 p-0"
                   onClick={() => onSearchChange("")}
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-2.5 h-2.5" />
                 </Button>
               )}
             </div>
@@ -216,9 +217,10 @@ export function EstoqueGridView({
             <Button 
               variant="secondary" 
               size="sm"
+              className="h-6 px-2 text-xs rounded-full"
               onClick={onLinkChild}
             >
-              <LinkIcon className="h-4 w-4 mr-2" />
+              <LinkIcon className="h-3 w-3 mr-1" />
               Gerenciar Vinculação
             </Button>
           )}
@@ -228,18 +230,19 @@ export function EstoqueGridView({
             <Button 
               variant="destructive" 
               size="sm"
+              className="h-6 px-2 text-xs rounded-full"
               onClick={onDeleteSelected}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-3 w-3 mr-1" />
               Excluir ({selectedProducts.length})
             </Button>
           )}
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Layout Toggle - hidden on mobile (available in header) */}
           {onLayoutChange && (
-            <div className="hidden md:flex items-center gap-0.5 rounded-md bg-secondary/50 p-0.5">
+            <div className="hidden md:flex items-center gap-0.5 rounded-full bg-secondary/50 p-0.5">
               {(["list", "grid"] as const).map((mode) => {
                 const Icon = mode === "grid" ? Grid3X3 : LayoutList;
                 return (
@@ -247,14 +250,14 @@ export function EstoqueGridView({
                     key={mode}
                     onClick={() => onLayoutChange(mode)}
                     className={cn(
-                      "rounded p-1.5 transition-all",
+                      "rounded-full p-1 transition-all",
                       layoutMode === mode
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                     )}
                     aria-label={`Visualização em ${mode === "grid" ? "grade" : "lista"}`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3 w-3" />
                   </button>
                 );
               })}
@@ -268,15 +271,15 @@ export function EstoqueGridView({
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="relative"
+                  className="relative h-6 px-2 text-xs rounded-full"
                 >
                   {notificationsCount && notificationsCount > 0 && notificationsCollapsed && (
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
                     </span>
                   )}
-                  <ChevronDown className="h-4 w-4 mr-1" />
+                  <ChevronDown className="h-3 w-3 mr-1" />
                   <span>Filtros</span>
                 </Button>
               </PopoverTrigger>
@@ -285,17 +288,17 @@ export function EstoqueGridView({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start"
+                    className="justify-start text-xs h-7"
                     onClick={onToggleToolbar}
                   >
                     {isToolbarExpanded ? (
                       <>
-                        <ChevronUp className="h-4 w-4 mr-2" />
+                        <ChevronUp className="h-3 w-3 mr-2" />
                         Ocultar Filtros
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="h-4 w-4 mr-2" />
+                        <ChevronDown className="h-3 w-3 mr-2" />
                         Mostrar Filtros
                       </>
                     )}
@@ -305,13 +308,13 @@ export function EstoqueGridView({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start relative"
+                      className="justify-start relative text-xs h-7"
                       onClick={() => onToggleNotifications(!notificationsCollapsed)}
                     >
-                      <Bell className="h-4 w-4 mr-2" />
+                      <Bell className="h-3 w-3 mr-2" />
                       {notificationsCollapsed ? 'Mostrar Notificações' : 'Ocultar Notificações'}
                       {notificationsCount && notificationsCount > 0 && notificationsCollapsed && (
-                        <Badge variant="destructive" className="ml-2 animate-pulse text-xs h-5">
+                        <Badge variant="destructive" className="ml-2 animate-pulse text-[10px] h-4">
                           {notificationsCount}
                         </Badge>
                       )}
@@ -326,19 +329,19 @@ export function EstoqueGridView({
           {(onCreateParent || onCreateChild) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size="sm" className="h-6 px-2 text-xs rounded-full">
+                  <Plus className="h-3 w-3 mr-1" />
                   Produto
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {onCreateParent && (
-                  <DropdownMenuItem onClick={onCreateParent}>
+                  <DropdownMenuItem onClick={onCreateParent} className="text-xs">
                     Criar Produto Pai
                   </DropdownMenuItem>
                 )}
                 {onCreateChild && (
-                  <DropdownMenuItem onClick={onCreateChild}>
+                  <DropdownMenuItem onClick={onCreateChild} className="text-xs">
                     Criar Produto Filho
                   </DropdownMenuItem>
                 )}
