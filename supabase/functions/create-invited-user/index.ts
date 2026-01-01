@@ -73,16 +73,27 @@ Deno.serve(async (req) => {
     // Generate random password (12 chars)
     const randomPassword = crypto.randomUUID().slice(0, 12);
     
-    console.log('[create-invited-user] Creating auth user with email:', invitation.email);
+    // Get org fantasia for email generation
+    const { data: orgData } = await supabaseAdmin
+      .from('organizacoes')
+      .select('fantasia, nome')
+      .eq('id', invitation.organization_id)
+      .single();
+
+    const fantasia = orgData?.fantasia || 'org';
+    const internalEmail = `${fantasia}.${invitation.username}@interno.local`;
+    
+    console.log('[create-invited-user] Creating auth user with email:', internalEmail);
 
     // Create user in auth.users using admin API
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: invitation.email,
+      email: internalEmail,
       password: randomPassword,
       email_confirm: true, // Auto-confirm the email
       user_metadata: {
         username: invitation.username,
         organization_id: invitation.organization_id,
+        fantasia: fantasia,
         invited: true
       }
     });
@@ -144,14 +155,7 @@ Deno.serve(async (req) => {
       console.error('Failed to update invitation:', updateError);
     }
 
-    // Get org slug for login display
-    const { data: org } = await supabaseAdmin
-      .from('organizacoes')
-      .select('slug, nome')
-      .eq('id', invitation.organization_id)
-      .single();
-
-    const loginFormat = org ? `${org.slug}.${invitation.username}` : invitation.email;
+    const loginFormat = `${fantasia}.${invitation.username}`;
 
     console.log('[create-invited-user] User created successfully. Login:', loginFormat);
 
@@ -161,7 +165,7 @@ Deno.serve(async (req) => {
         user_id: userId,
         login: loginFormat,
         password: randomPassword, // Return password so admin can share with user
-        organization: org?.nome || 'Organização',
+        organization: orgData?.nome || fantasia,
         message: `Usuário criado com sucesso! Login: ${loginFormat}`
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

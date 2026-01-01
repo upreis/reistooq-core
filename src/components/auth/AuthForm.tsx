@@ -145,7 +145,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
               <Input
                 id="loginIdentifier"
                 type={mode === "signup" ? "email" : "text"}
-                placeholder={mode === "login" ? "org.usuario ou email" : "seu@email.com"}
+                placeholder={mode === "login" ? "fantasia.usuario ou email" : "seu@email.com"}
                 value={loginIdentifier}
                 onChange={(e) => setLoginIdentifier(e.target.value)}
                 className="pl-10"
@@ -155,7 +155,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
             </div>
             {mode === "login" && (
               <p className="text-xs text-muted-foreground">
-                Use seu email ou formato organização.usuario
+                Use seu email ou formato <strong>fantasia.usuario</strong>
               </p>
             )}
           </div>

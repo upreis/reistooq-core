@@ -34,18 +34,20 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
     expires_at: undefined as Date | undefined
   });
   const [loading, setLoading] = useState(false);
-  const [orgSlug, setOrgSlug] = useState<string>('');
+  const [orgFantasia, setOrgFantasia] = useState<string>('');
 
   const [error, setError] = useState<string | null>(null);
 
-  // Buscar slug da organização
+  // Buscar fantasia da organização
   React.useEffect(() => {
-    const fetchOrgSlug = async () => {
+    const fetchOrgFantasia = async () => {
       const { supabase } = await import('@/integrations/supabase/client');
-      const { data } = await supabase.rpc('get_current_org_slug');
-      if (data) setOrgSlug(data);
+      const { data } = await supabase.rpc('get_current_organization_data');
+      if (data && (data as any).fantasia) {
+        setOrgFantasia((data as any).fantasia);
+      }
     };
-    fetchOrgSlug();
+    fetchOrgFantasia();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +79,7 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
       <div className="space-y-2">
         <Label htmlFor="username">Nome de Usuário *</Label>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm font-medium">{orgSlug}.</span>
+          <span className="text-muted-foreground text-sm font-medium">{orgFantasia}.</span>
           <Input
             id="username"
             type="text"
@@ -89,7 +91,7 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          O login será: <strong>{orgSlug}.{formData.username || 'nome_usuario'}</strong>
+          O login será: <strong>{orgFantasia}.{formData.username || 'nome_usuario'}</strong>
         </p>
       </div>
 
