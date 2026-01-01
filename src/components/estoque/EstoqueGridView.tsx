@@ -373,7 +373,7 @@ export function EstoqueGridView({
         <div
           ref={gridContainerRef}
           onMouseMove={handleMouseMove}
-          className="relative grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 p-3"
+          className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 p-3"
         >
           <AnimatePresence mode="sync">
             {filteredProducts.map((product, index) => {
