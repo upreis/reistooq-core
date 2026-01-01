@@ -170,7 +170,7 @@ export function EstoqueGridView({
   return (
     <div className="flex flex-col">
       {/* Toolbar - hidden on mobile */}
-      <div className="hidden md:flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 border-b bg-card/50">
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 bg-card/50">
         <div className="flex flex-wrap items-center gap-1.5">
           {/* Select All */}
           {onSelectAll && (

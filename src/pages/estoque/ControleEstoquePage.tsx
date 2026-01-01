@@ -269,7 +269,7 @@ export default function ControleEstoquePage() {
           <EstoqueSkeleton />
         </TableWrapper>
       ) : layoutMode === "grid" ? (
-        <div className="border rounded-lg bg-card">
+        <div className="rounded-lg bg-card">
           <EstoqueGridView
             products={paginatedProducts}
             allFilteredProducts={baseFilteredProducts}
