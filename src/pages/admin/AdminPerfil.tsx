@@ -187,7 +187,7 @@ export default function AdminPerfil() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-8">
+    <div className="space-y-6 pb-8">
       {/* Header com Proprietário */}
       <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
         <CardContent className="pt-6">
