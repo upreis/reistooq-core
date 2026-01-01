@@ -66,7 +66,19 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
         
         await signUp(loginIdentifier, password, userData);
       } else {
-        const authEmail = getAuthEmail(loginIdentifier);
+        const trimmedIdentifier = loginIdentifier.trim();
+        const authEmail = getAuthEmail(trimmedIdentifier);
+
+        // Guardar o identificador digitado para exibir no header exatamente como o usuário entrou
+        try {
+          localStorage.setItem(
+            'reistoq.last_login',
+            JSON.stringify({ identifier: trimmedIdentifier, authEmail })
+          );
+        } catch {
+          // ignore
+        }
+
         await signIn(authEmail, password);
       }
     } finally {

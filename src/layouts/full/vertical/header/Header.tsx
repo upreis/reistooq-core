@@ -75,6 +75,28 @@ export default function Header() {
   const { ownerName, ownerAvatar, companyName, slug, isOwner, getLoginDisplay } = useOrganizationProfile();
   const { resetOnboarding, openWizard } = useOnboarding();
 
+  const loginDisplay = React.useMemo(() => {
+    if (!user?.email) return '';
+
+    try {
+      const raw = localStorage.getItem('reistoq.last_login');
+      if (raw) {
+        const parsed = JSON.parse(raw) as { identifier?: string; authEmail?: string };
+        if (
+          parsed?.identifier &&
+          parsed?.authEmail &&
+          parsed.authEmail.toLowerCase() === user.email.toLowerCase()
+        ) {
+          return parsed.identifier;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return getLoginDisplay(user.email);
+  }, [getLoginDisplay, user?.email]);
+
   const handleSignOut = async () => {
     await signOut();
   };
@@ -295,7 +317,7 @@ export default function Header() {
                   <p className="text-sm font-medium truncate">{ownerName || fullName}</p>
                   <p className="text-xs text-muted-foreground">{profile?.cargo || 'Proprietário'}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {getLoginDisplay(user?.email)}
+                    {loginDisplay}
                   </p>
                 </div>
               </div>
