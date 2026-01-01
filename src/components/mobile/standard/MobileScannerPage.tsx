@@ -16,7 +16,7 @@ export const MobileScannerPage = () => {
 
   return (
     <MobileAppShell 
-      title="Scanner" 
+      title="/ Scanner" 
       showBottomNav={true}
       className="pt-0"
     >
