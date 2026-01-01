@@ -2944,7 +2944,7 @@ export type Database = {
         Row: {
           accepted_at: string | null
           created_at: string
-          email: string
+          email: string | null
           expires_at: string
           id: string
           invited_by: string
@@ -2952,11 +2952,12 @@ export type Database = {
           role_id: string
           status: string
           token: string
+          username: string | null
         }
         Insert: {
           accepted_at?: string | null
           created_at?: string
-          email: string
+          email?: string | null
           expires_at?: string
           id?: string
           invited_by: string
@@ -2964,11 +2965,12 @@ export type Database = {
           role_id: string
           status?: string
           token?: string
+          username?: string | null
         }
         Update: {
           accepted_at?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           expires_at?: string
           id?: string
           invited_by?: string
@@ -2976,6 +2978,7 @@ export type Database = {
           role_id?: string
           status?: string
           token?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -4565,6 +4568,7 @@ export type Database = {
           id: string
           nome: string
           plano: string
+          slug: string
           updated_at: string
         }
         Insert: {
@@ -4574,6 +4578,7 @@ export type Database = {
           id?: string
           nome: string
           plano?: string
+          slug: string
           updated_at?: string
         }
         Update: {
@@ -4583,6 +4588,7 @@ export type Database = {
           id?: string
           nome?: string
           plano?: string
+          slug?: string
           updated_at?: string
         }
         Relationships: []
@@ -5976,6 +5982,7 @@ export type Database = {
           organizacao_id: string | null
           telefone: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -5993,6 +6000,7 @@ export type Database = {
           organizacao_id?: string | null
           telefone?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -6010,6 +6018,7 @@ export type Database = {
           organizacao_id?: string | null
           telefone?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: [
           {
@@ -7386,6 +7395,7 @@ export type Database = {
               organizacao_id: string | null
               telefone: string | null
               updated_at: string
+              username: string | null
             }[]
             SetofOptions: {
               from: "*"
@@ -7550,7 +7560,7 @@ export type Database = {
         Returns: {
           accepted_at: string | null
           created_at: string
-          email: string
+          email: string | null
           expires_at: string
           id: string
           invited_by: string
@@ -7558,6 +7568,7 @@ export type Database = {
           role_id: string
           status: string
           token: string
+          username: string | null
         }
         SetofOptions: {
           from: "*"
@@ -7641,6 +7652,7 @@ export type Database = {
       fix_historico_integration_accounts: { Args: never; Returns: Json }
       fix_produtos_organization_id: { Args: never; Returns: Json }
       generate_category_hierarchy_from_products: { Args: never; Returns: Json }
+      generate_org_slug: { Args: { org_name: string }; Returns: string }
       generate_password_reset_token: { Args: { _email: string }; Returns: Json }
       gerar_numero_cotacao: { Args: never; Returns: string }
       gerar_numero_pedido_compra: { Args: never; Returns: string }
@@ -8364,6 +8376,7 @@ export type Database = {
           organizacao_id: string | null
           telefone: string | null
           updated_at: string
+          username: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -8858,6 +8871,10 @@ export type Database = {
         Args: { target_roles: string[]; target_users: string[] }
         Returns: boolean
       }
+      validate_invitation_by_username: {
+        Args: { p_organization_id: string; p_username: string }
+        Returns: Json
+      }
       validate_invitation_email: { Args: { p_email: string }; Returns: Json }
       validate_invitation_token: {
         Args: { _token: string }
@@ -8878,6 +8895,7 @@ export type Database = {
         }[]
       }
       validate_security_settings: { Args: never; Returns: Json }
+      validate_username: { Args: { p_username: string }; Returns: boolean }
       verify_integration_account_ownership: {
         Args: { p_integration_account_id: string; p_user_id: string }
         Returns: boolean
