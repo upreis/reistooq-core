@@ -308,13 +308,13 @@ export default function Header() {
                   <p className="text-xs text-muted-foreground">Notas diárias</p>
                 </div>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-3">
+              <DropdownMenuItem className="flex items-center gap-3" onClick={() => navigate('/dashboardinicial/visao-geral')}>
                 <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Bell className="w-4 h-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Minhas Tarefas</p>
-                  <p className="text-xs text-muted-foreground">Lista de tarefas diárias</p>
+                  <p className="text-sm font-medium">Dashboard</p>
+                  <p className="text-xs text-muted-foreground">Visão geral do sistema</p>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleRestartOnboarding} className="flex items-center gap-3 cursor-pointer">
