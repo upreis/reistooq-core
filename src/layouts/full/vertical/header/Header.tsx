@@ -295,7 +295,7 @@ export default function Header() {
                   <p className="text-sm font-medium truncate">{ownerName || fullName}</p>
                   <p className="text-xs text-muted-foreground">{profile?.cargo || 'Proprietário'}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {slug ? getLoginDisplay(user?.email) : user?.email}
+                    {user?.email}
                   </p>
                 </div>
               </div>
