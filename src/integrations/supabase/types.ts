@@ -7577,6 +7577,28 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_invitation_with_username: {
+        Args: { _expires_in_days?: number; _role_id: string; _username: string }
+        Returns: {
+          accepted_at: string | null
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          role_id: string
+          status: string
+          token: string
+          username: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_logistic_events_from_pedido: {
         Args: { p_pedido_data: Json }
         Returns: string[]
@@ -7707,6 +7729,7 @@ export type Database = {
         }[]
       }
       get_current_org_id: { Args: never; Returns: string }
+      get_current_org_slug: { Args: never; Returns: string }
       get_current_sales_rep_id: { Args: never; Returns: string }
       get_customer_secure: {
         Args: { p_customer_id: string }

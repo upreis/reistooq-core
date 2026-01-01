@@ -498,38 +498,23 @@ export class AdminService {
   }
 
   async createInvitation(data: InvitationCreate): Promise<Invitation> {
-    // Validate email before creating invitation
-    const { data: validation, error: validationError } = await supabase.rpc('validate_invitation_email', {
-      p_email: data.email
-    });
-
-    if (validationError) {
-      console.error('Error validating invitation email:', validationError);
-      throw new Error('Falha ao validar e-mail para convite');
-    }
-
-    const validationResult = validation as { valid: boolean; error?: string };
-    if (!validationResult.valid) {
-      throw new Error(validationResult.error || 'E-mail não pode receber convite');
-    }
-
     // Calculate days between now and expiration date
     const expiresAt = new Date(data.expires_at);
     const now = new Date();
     const diffTime = expiresAt.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // Use the standard create_invitation function
+    // Use the new create_invitation_with_username function
     const { data: result, error } = await supabase
-      .rpc('create_invitation', {
-        _email: data.email,
+      .rpc('create_invitation_with_username', {
+        _username: data.username,
         _role_id: data.role_id,
         _expires_in_days: Math.max(1, diffDays)
       });
 
     if (error) {
       console.error('Error creating invitation:', error);
-      throw new Error(`Failed to create invitation: ${error.message}`);
+      throw new Error(error.message || 'Falha ao criar convite');
     }
 
     // The result is the invitation object directly
@@ -539,27 +524,32 @@ export class AdminService {
       throw new Error('Failed to create invitation');
     }
 
+    // Create the user immediately via edge function
+    try {
+      const { data: userResult, error: userError } = await supabase.functions.invoke('create-invited-user', {
+        body: { invitation_id: invitationData.id }
+      });
+      
+      if (userError) {
+        console.error('Failed to create user:', userError);
+      } else if (userResult) {
+        console.log('User created:', userResult);
+        // Store credentials temporarily for display
+        (invitationData as any).credentials = {
+          login: userResult.login,
+          password: userResult.password
+        };
+      }
+    } catch (createUserError) {
+      console.error('Error calling create-invited-user:', createUserError);
+    }
+
     // Get role data separately
     const { data: roleData } = await supabase
       .from('roles')
       .select('*')
       .eq('id', invitationData.role_id)
       .single();
-
-    // Send invitation email automatically
-    try {
-      const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
-        body: { invitation_id: invitationData.id }
-      });
-      
-      if (emailError) {
-        console.error('Failed to send invitation email:', emailError);
-        // Don't throw here - invitation was created successfully, just email failed
-      }
-    } catch (emailError) {
-      console.error('Error calling send-invitation-email function:', emailError);
-      // Don't throw here - invitation was created successfully, just email failed
-    }
 
     return { ...invitationData, role: roleData } as Invitation;
   }

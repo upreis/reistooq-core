@@ -331,16 +331,27 @@ export const useInvitations = (): UseInvitationsReturn => {
 
   const createInvitation = useCallback(async (data: InvitationCreate) => {
     try {
-      await adminService.createInvitation(data);
+      const result = await adminService.createInvitation(data);
       await loadInvitations();
-      toast({
-        title: "Convite enviado",
-        description: `Convite enviado para ${data.email}`,
-      });
+      
+      // Check if credentials were returned
+      const credentials = (result as any).credentials;
+      if (credentials) {
+        toast({
+          title: "Usuário criado com sucesso!",
+          description: `Login: ${credentials.login} | Senha: ${credentials.password}`,
+          duration: 15000, // Keep visible longer for copying
+        });
+      } else {
+        toast({
+          title: "Usuário criado",
+          description: `Usuário ${data.username} criado`,
+        });
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create invitation';
       toast({
-        title: "Erro ao enviar convite",
+        title: "Erro ao criar usuário",
         description: errorMessage,
         variant: "destructive"
       });

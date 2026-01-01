@@ -13,7 +13,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
-  const [email, setEmail] = useState("");
+  const [loginIdentifier, setLoginIdentifier] = useState(""); // pode ser email ou org.usuario
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [nomeCompleto, setNomeCompleto] = useState("");
@@ -23,6 +23,21 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
   const [showResetForm, setShowResetForm] = useState(false);
   
   const { signIn, signUp } = useAuth();
+
+  // Detectar se é formato org.usuario ou email
+  const isOrgUserFormat = (value: string) => {
+    // Formato org.usuario: não contém @ e contém exatamente um .
+    const dotCount = (value.match(/\./g) || []).length;
+    return !value.includes('@') && dotCount === 1 && value.split('.').every(part => part.length > 0);
+  };
+
+  // Converter org.usuario para email interno
+  const getAuthEmail = (identifier: string): string => {
+    if (isOrgUserFormat(identifier)) {
+      return `${identifier}@interno.local`;
+    }
+    return identifier;
+  };
 
   // Se estiver mostrando formulário de reset, renderizar ele
   if (showResetForm) {
@@ -49,9 +64,10 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
           nome_exibicao: nomeCompleto.split(" ")[0], // Primeiro nome
         };
         
-        await signUp(email, password, userData);
+        await signUp(loginIdentifier, password, userData);
       } else {
-        await signIn(email, password);
+        const authEmail = getAuthEmail(loginIdentifier);
+        await signIn(authEmail, password);
       }
     } finally {
       setLoading(false);
@@ -60,9 +76,9 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
 
   const isFormValid = () => {
     if (mode === "login") {
-      return email && password;
+      return loginIdentifier && password;
     } else {
-      return email && password && confirmPassword && nomeCompleto && 
+      return loginIdentifier && password && confirmPassword && nomeCompleto && 
              password === confirmPassword && password.length >= 6;
     }
   };
@@ -121,20 +137,27 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="loginIdentifier">
+              {mode === "login" ? "Login" : "Email"}
+            </Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="loginIdentifier"
+                type={mode === "signup" ? "email" : "text"}
+                placeholder={mode === "login" ? "org.usuario ou email" : "seu@email.com"}
+                value={loginIdentifier}
+                onChange={(e) => setLoginIdentifier(e.target.value)}
                 className="pl-10"
-                autoComplete="email"
+                autoComplete={mode === "signup" ? "email" : "username"}
                 required
               />
             </div>
+            {mode === "login" && (
+              <p className="text-xs text-muted-foreground">
+                Use seu email ou formato organização.usuario
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

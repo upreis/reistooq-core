@@ -161,3 +161,6 @@ verify_jwt = false
 
 [functions.agregar-vendas-diarias]
 verify_jwt = false
+
+[functions.create-invited-user]
+verify_jwt = true

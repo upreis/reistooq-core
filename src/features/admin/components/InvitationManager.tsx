@@ -29,28 +29,39 @@ interface InvitationFormProps {
 
 const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     role_id: '',
     expires_at: undefined as Date | undefined
   });
   const [loading, setLoading] = useState(false);
+  const [orgSlug, setOrgSlug] = useState<string>('');
 
   const [error, setError] = useState<string | null>(null);
 
+  // Buscar slug da organização
+  React.useEffect(() => {
+    const fetchOrgSlug = async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase.rpc('get_current_org_slug');
+      if (data) setOrgSlug(data);
+    };
+    fetchOrgSlug();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email.trim() || !formData.role_id || !formData.expires_at) return;
+    if (!formData.username.trim() || !formData.role_id || !formData.expires_at) return;
     
     setLoading(true);
     setError(null);
     try {
       const invitationData = {
-        email: formData.email,
+        username: formData.username.toLowerCase().trim(),
         role_id: formData.role_id,
         expires_at: formData.expires_at.toISOString()
       };
       await onSave(invitationData);
-      setFormData({ email: '', role_id: '', expires_at: undefined });
+      setFormData({ username: '', role_id: '', expires_at: undefined });
       onCancel();
     } catch (err) {
       console.error('Failed to create invitation:', err);
@@ -64,15 +75,22 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="email">Email do Convidado *</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-          placeholder="usuario@exemplo.com"
-          required
-        />
+        <Label htmlFor="username">Nome de Usuário *</Label>
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-sm font-medium">{orgSlug}.</span>
+          <Input
+            id="username"
+            type="text"
+            value={formData.username}
+            onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') }))}
+            placeholder="nome_usuario"
+            required
+            className="flex-1"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          O login será: <strong>{orgSlug}.{formData.username || 'nome_usuario'}</strong>
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -139,8 +157,8 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={loading || !formData.email.trim() || !formData.role_id || !formData.expires_at}>
-          {loading ? 'Enviando...' : 'Enviar Convite'}
+        <Button type="submit" disabled={loading || !formData.username.trim() || !formData.role_id || !formData.expires_at}>
+          {loading ? 'Criando...' : 'Criar Usuário'}
         </Button>
       </div>
     </form>
@@ -155,7 +173,7 @@ export const InvitationManager: React.FC = () => {
   const { toast } = useToast();
 
   const filteredInvitations = invitations.filter(invitation =>
-    invitation.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (invitation.username || invitation.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSave = async (data: InvitationCreate) => {
@@ -231,7 +249,7 @@ export const InvitationManager: React.FC = () => {
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Enviar Convite</DialogTitle>
+              <DialogTitle>Novo Usuário</DialogTitle>
             </DialogHeader>
             <InvitationForm
               roles={roles}
@@ -245,7 +263,7 @@ export const InvitationManager: React.FC = () => {
       {/* Search */}
       <div className="flex gap-2">
         <Input
-          placeholder="Buscar convites por email..."
+          placeholder="Buscar por nome de usuário..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm h-7 text-xs"
@@ -265,7 +283,7 @@ export const InvitationManager: React.FC = () => {
               {!searchTerm && (
                 <Button onClick={() => setShowForm(true)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Enviar Primeiro Convite
+                  Criar Primeiro Usuário
                 </Button>
               )}
             </CardContent>
@@ -277,7 +295,13 @@ export const InvitationManager: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{invitation.email}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {invitation.username ? (
+                          <span className="font-mono">{invitation.email?.split('@')[0] || invitation.username}</span>
+                        ) : (
+                          invitation.email
+                        )}
+                      </CardTitle>
                       {getStatusBadge(invitation)}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
