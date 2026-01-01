@@ -74,6 +74,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔧 AuthProvider: useEffect starting...');
       let didCancel = false;
 
+      const runAutoAcceptInvite = () => {
+        // IMPORTANT: defer any Supabase calls to avoid deadlocks in auth listeners
+        window.setTimeout(async () => {
+          try {
+            const { data, error } = await supabase.rpc('auto_accept_pending_invitation');
+            if (error) return;
+
+            const result = data as { accepted?: boolean } | null;
+            if (result?.accepted) {
+              // Organization changed; reload to re-hydrate org-scoped data.
+              window.location.reload();
+            }
+          } catch {
+            // Silent: invite auto-accept is best-effort.
+          }
+        }, 0);
+      };
+
       // Safety timeout: evita ficar preso em "loading" para sempre
       const safetyTimeout = window.setTimeout(() => {
         if (!didCancel) {
@@ -90,6 +108,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
+
+          if (event === 'SIGNED_IN') {
+            runAutoAcceptInvite();
+          }
 
           // Handle auth events - não mostrar toast em mobile
           const isMobile = window.innerWidth < 768;
@@ -110,6 +132,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
+
+          if (session?.user) {
+            runAutoAcceptInvite();
+          }
         })
         .catch((error) => {
           console.error('❌ AuthProvider: getSession failed:', error);
