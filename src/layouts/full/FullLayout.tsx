@@ -59,9 +59,15 @@ const InnerLayout = () => {
   };
 
   // Pages that use MobileAppShell (which already includes AppMobileHeader)
+  // or pages that render a full-screen experience and should NOT have the global mobile header.
   const usesMobileAppShell = () => {
     const path = location.pathname;
-    return path.startsWith("/estoque") || path.startsWith("/pedidos") || path.startsWith("/de-para");
+    return (
+      path.startsWith("/estoque") ||
+      path.startsWith("/pedidos") ||
+      path.startsWith("/de-para") ||
+      path.startsWith("/aplicativos/scanner")
+    );
   };
 
   return (
