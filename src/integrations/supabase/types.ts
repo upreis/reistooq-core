@@ -7419,6 +7419,7 @@ export type Database = {
         Args: { p_pedido_id: string }
         Returns: string
       }
+      auto_accept_pending_invitation: { Args: never; Returns: Json }
       backfill_config_for_current_org: { Args: never; Returns: Json }
       backfill_historico_vendas_orphans: { Args: never; Returns: Json }
       baixar_estoque_direto:
