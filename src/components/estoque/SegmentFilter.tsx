@@ -160,7 +160,7 @@ export function SegmentFilter({
                 layout
                 onClick={handleSelectAll}
                 className={cn(
-                  "inline-flex items-center gap-0.5 md:gap-1 px-1.5 md:px-2 py-px md:py-0.5 rounded-full text-[10px] md:text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border leading-tight",
+                  "inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[11px] md:text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
                   isAllSelected
                     ? "bg-secondary text-secondary-foreground border-secondary shadow-sm"
                     : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary/80 hover:text-foreground"
@@ -168,12 +168,12 @@ export function SegmentFilter({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {isAllSelected && <CheckCircle className="w-2.5 h-2.5 md:w-3 md:h-3" />}
-                <Tag className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                {isAllSelected && <CheckCircle className="w-3 h-3 md:w-3.5 md:h-3.5" />}
+                <Tag className="w-3 h-3 md:w-3.5 md:h-3.5" />
                 Todos
                 <span className={cn(
-                  "text-[9px] md:text-[10px] px-1 rounded-full",
-                  isAllSelected ? "bg-foreground/10" : "bg-muted"
+                  "text-[10px] md:text-[11px] font-semibold",
+                  isAllSelected ? "opacity-80" : "opacity-70"
                 )}>
                   {products.length}
                 </span>
@@ -198,20 +198,20 @@ export function SegmentFilter({
                     }}
                     onClick={() => handleToggleSegment(segment.name)}
                     className={cn(
-                      "inline-flex items-center gap-0.5 md:gap-1 px-1.5 md:px-2 py-px md:py-0.5 rounded-full text-[10px] md:text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border leading-tight",
+                      "inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[11px] md:text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 border",
                       colorClasses
                     )}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {isSelected && <CheckCircle className="w-2.5 h-2.5 md:w-3 md:h-3" />}
+                    {isSelected && <CheckCircle className="w-3 h-3 md:w-3.5 md:h-3.5" />}
                     {segment.name}
                     <span
                       className={cn(
-                        "text-[9px] md:text-[10px] px-1 rounded-full font-semibold",
+                        "text-[10px] md:text-[11px] font-semibold",
                         isSelected
-                          ? "bg-white/20"
-                          : "bg-current/10"
+                          ? "opacity-90"
+                          : "opacity-70"
                       )}
                     >
                       {segment.count}
