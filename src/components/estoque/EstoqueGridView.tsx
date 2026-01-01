@@ -411,8 +411,9 @@ export function EstoqueGridView({
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.5) }}
                   className={cn(
-                    "relative flex flex-col p-2 cursor-pointer transition-all",
-                    isSelected && "ring-2 ring-primary rounded-lg"
+                    "relative flex flex-col rounded-lg border bg-card p-2 cursor-pointer transition-all hover:shadow-lg",
+                    status.bg,
+                    isSelected && "ring-2 ring-primary"
                   )}
                   onClick={() => onEditProduct(product)}
                   onMouseEnter={() => handleMouseEnter(index)}
