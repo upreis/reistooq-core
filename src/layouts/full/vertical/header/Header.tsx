@@ -63,6 +63,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarUI } from "@/context/SidebarUIContext";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useOrganizationProfile } from "@/hooks/useOrganizationProfile";
 
 export default function Header() {
   const location = useLocation();
@@ -71,6 +72,7 @@ export default function Header() {
   const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
   const { profile, displayName, fullName, initials } = useCurrentProfile();
+  const { ownerName, ownerAvatar, companyName, slug, getLoginDisplay } = useOrganizationProfile();
   const { resetOnboarding, openWizard } = useOnboarding();
 
   const handleSignOut = async () => {
@@ -270,25 +272,31 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={profile?.avatar_url} alt={fullName} />
-                  <AvatarFallback>{initials}</AvatarFallback>
+                  <AvatarImage src={ownerAvatar || profile?.avatar_url} alt={ownerName || fullName} />
+                  <AvatarFallback>
+                    {ownerName?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="text-left hidden sm:block">
-                  <p className="text-sm font-medium">{displayName}</p>
-                  <p className="text-xs text-muted-foreground">{profile?.cargo || 'Usuário'}</p>
+                  <p className="text-sm font-medium">{ownerName || displayName}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.cargo || 'Proprietário'}</p>
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuContent align="end" className="w-72">
               <div className="flex items-center gap-3 p-3">
                 <Avatar className="w-12 h-12">
-                  <AvatarImage src={profile?.avatar_url} alt={fullName} />
-                  <AvatarFallback>{initials}</AvatarFallback>
+                  <AvatarImage src={ownerAvatar || profile?.avatar_url} alt={ownerName || fullName} />
+                  <AvatarFallback>
+                    {ownerName?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || initials}
+                  </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="text-sm font-medium">{fullName}</p>
-                  <p className="text-xs text-muted-foreground">{profile?.cargo || 'Usuário'}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{ownerName || fullName}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.cargo || 'Proprietário'}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {slug ? getLoginDisplay(user?.email) : user?.email}
+                  </p>
                 </div>
               </div>
               <DropdownMenuSeparator />
