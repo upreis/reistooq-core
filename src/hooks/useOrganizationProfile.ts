@@ -54,13 +54,29 @@ export function useOrganizationProfile() {
     loadOrgProfile();
   }, [user]);
 
-  // Helper para obter o login display (email ou fantasia.nome)
+  // Verificar se o usuário atual é o proprietário (admin)
+  const isOwner = user?.email && orgProfile?.admin_email 
+    ? user.email.toLowerCase() === orgProfile.admin_email.toLowerCase()
+    : false;
+
+  // Helper para obter o login display baseado no tipo de usuário
+  // Proprietário: mostra email real
+  // Colaborador: mostra fantasia.nome
   const getLoginDisplay = (userEmail?: string | null) => {
-    if (orgProfile?.slug && userEmail) {
+    if (!userEmail) return '';
+    
+    // Se for o proprietário, mostra o email real
+    if (isOwner) {
+      return userEmail;
+    }
+    
+    // Se for colaborador e tiver slug, mostra no formato fantasia.nome
+    if (orgProfile?.slug) {
       const username = userEmail.split('@')[0];
       return `${orgProfile.slug}.${username}`;
     }
-    return userEmail || '';
+    
+    return userEmail;
   };
 
   return {
@@ -70,8 +86,10 @@ export function useOrganizationProfile() {
     // Helpers
     ownerName: orgProfile?.admin_nome || 'Proprietário',
     ownerAvatar: orgProfile?.logo_url,
+    ownerEmail: orgProfile?.admin_email,
     companyName: orgProfile?.fantasia || orgProfile?.nome || '',
     slug: orgProfile?.slug || '',
+    isOwner,
     getLoginDisplay,
   };
 }

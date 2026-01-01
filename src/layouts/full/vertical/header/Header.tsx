@@ -72,7 +72,7 @@ export default function Header() {
   const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
   const { profile, displayName, fullName, initials } = useCurrentProfile();
-  const { ownerName, ownerAvatar, companyName, slug, getLoginDisplay } = useOrganizationProfile();
+  const { ownerName, ownerAvatar, companyName, slug, isOwner, getLoginDisplay } = useOrganizationProfile();
   const { resetOnboarding, openWizard } = useOnboarding();
 
   const handleSignOut = async () => {
@@ -295,7 +295,7 @@ export default function Header() {
                   <p className="text-sm font-medium truncate">{ownerName || fullName}</p>
                   <p className="text-xs text-muted-foreground">{profile?.cargo || 'Proprietário'}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {user?.email}
+                    {getLoginDisplay(user?.email)}
                   </p>
                 </div>
               </div>
