@@ -299,7 +299,7 @@ export default function Header() {
                   <p className="text-xs text-muted-foreground">Configurações da conta</p>
                 </div>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-3">
+              <DropdownMenuItem className="flex items-center gap-3" onClick={() => navigate('/aplicativos/notas')}>
                 <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                   <Settings className="w-4 h-4 text-emerald-600" />
                 </div>
