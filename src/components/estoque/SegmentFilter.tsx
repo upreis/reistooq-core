@@ -168,8 +168,6 @@ export function SegmentFilter({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {isAllSelected && <CheckCircle className="w-3.5 h-3.5" />}
-                <Tag className="w-3.5 h-3.5" />
                 Todos
                 <span className={cn(
                   "text-xs font-semibold",
