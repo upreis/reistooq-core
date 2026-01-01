@@ -298,22 +298,22 @@ export function EstoqueLocationTabs({
     const isSynced = (local as any).sincronizar_com_principal;
     
     return (
-      <div key={local.id} className="relative group">
+      <div key={local.id} className="relative group shrink-0">
         <Button
           variant={isActive ? "default" : "outline"}
           size="sm"
           onClick={() => handleLocalChange(local.id)}
           className={cn(
-            "flex items-center gap-1.5 transition-all h-7 px-2.5 text-xs",
+            "flex items-center gap-1 md:gap-1.5 transition-all h-6 md:h-7 px-2 md:px-2.5 text-[10px] md:text-xs",
             isActive && isPrincipal && "bg-amber-500 hover:bg-amber-600 text-amber-950 border-amber-500 shadow-sm",
             isActive && !isPrincipal && "shadow-sm",
             isSynced && !isActive && "border-green-400 dark:border-green-600"
           )}
         >
-          {TIPO_ICONS[local.tipo] || <Package className="h-3 w-3" />}
-          <span className="font-medium">{local.nome}</span>
+          {TIPO_ICONS[local.tipo] || <Package className="h-3 w-3 md:h-3 md:w-3" />}
+          <span className="font-medium max-w-[80px] md:max-w-none truncate">{local.nome}</span>
           {isSynced && (
-            <span title="Sincronizado com Principal">
+            <span title="Sincronizado com Principal" className="hidden md:inline">
               <RefreshCw className="h-3 w-3 text-green-500" />
             </span>
           )}
@@ -352,9 +352,9 @@ export function EstoqueLocationTabs({
   };
 
   return (
-    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 pb-4 border-b border-border">
+    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 md:gap-4 pb-4 border-b border-border">
       {/* Lado esquerdo: Locais de estoque */}
-      <div className="flex items-center gap-4 overflow-x-auto">
+      <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-1 -mb-1 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         {/* Seção: Unitário Geral (Estoque Principal) */}
         <div className="flex flex-col gap-1">
           <span className="text-[10px] font-medium text-muted-foreground tracking-wide hidden md:block">
