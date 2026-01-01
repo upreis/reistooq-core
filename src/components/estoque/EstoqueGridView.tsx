@@ -174,17 +174,14 @@ export function EstoqueGridView({
         <div className="flex flex-wrap items-center gap-1.5">
           {/* Select All */}
           {onSelectAll && (
-            <div 
-              className="flex items-center gap-1.5 cursor-pointer hover:bg-secondary/50 px-2 py-0.5 rounded-full border border-border text-xs"
-              onClick={handleSelectAll}
-            >
+            <div className="flex items-center gap-1.5 border-r pr-2">
               <Checkbox 
                 checked={allSelected}
                 onClick={(e) => e.stopPropagation()}
                 onCheckedChange={() => handleSelectAll()}
-                className="h-3 w-3"
+                className="h-4 w-4"
               />
-              <span className="text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Todos ({selectedProducts.length}/{filteredProducts.length})
               </span>
             </div>
