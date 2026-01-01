@@ -325,7 +325,22 @@ export const InvitationManager: React.FC = () => {
     const isExpired = new Date(invitation.expires_at) < new Date();
     
     if (invitation.status === 'accepted') {
-      return <Badge variant="default">Aceito</Badge>;
+      // Verificar se o usuário já fez o primeiro login
+      const hasLoggedIn = invitation.accepted_user_profile?.first_login_at;
+      
+      if (hasLoggedIn) {
+        return (
+          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+            Ativo
+          </Badge>
+        );
+      }
+      // Usuário criado mas ainda não fez login
+      return (
+        <Badge variant="secondary" className="bg-amber-600 hover:bg-amber-700 text-white">
+          Aguardando Acesso
+        </Badge>
+      );
     }
     if (invitation.status === 'revoked') {
       return <Badge variant="destructive">Revogado</Badge>;
