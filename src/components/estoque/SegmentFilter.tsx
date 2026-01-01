@@ -108,9 +108,9 @@ export function SegmentFilter({
   }
 
   return (
-    <div className={cn("bg-card/30 overflow-hidden", className)}>
+    <div className={cn("overflow-hidden", className)}>
       {/* Chips de segmentos - sempre visíveis, sem header */}
-      <div className="flex md:flex-wrap gap-1 md:gap-1.5 px-0 py-2 md:py-3 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+      <div className="flex md:flex-wrap gap-1 md:gap-1.5 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {/* Botão "Todos" */}
               <motion.button
                 layout
