@@ -11,10 +11,11 @@ export function AIChatBubble() {
 
   return (
     <>
-      {/* Balão flutuante com efeito glow */}
+      {/* Balão flutuante com efeito glow - hidden on mobile */}
       <div
         className={cn(
           "fixed bottom-6 right-6 z-50 transition-all duration-300",
+          "hidden md:block",
           isOpen && "scale-0 opacity-0 pointer-events-none"
         )}
       >
