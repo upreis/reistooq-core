@@ -205,12 +205,12 @@ export function MobileScannerLayout({
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col overflow-hidden">
-      {/* Header - Minimal with blur */}
+      {/* Header - Minimal with blur (offset to avoid AppMobileHeader overlap) */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 via-black/50 to-transparent backdrop-blur-sm"
+        className="absolute top-12 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 via-black/50 to-transparent backdrop-blur-sm"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -426,7 +426,7 @@ export function MobileScannerLayout({
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={cn(
-                "absolute top-20 left-4 right-4 z-30 p-4 rounded-2xl shadow-2xl backdrop-blur-sm",
+                "absolute top-32 left-4 right-4 z-30 p-4 rounded-2xl shadow-2xl backdrop-blur-sm",
                 lastScanResult.type === 'success' && "bg-green-500/95 text-white shadow-green-500/30",
                 lastScanResult.type === 'error' && "bg-amber-500/95 text-white shadow-amber-500/30",
                 lastScanResult.type === 'new' && "bg-blue-500/95 text-white shadow-blue-500/30"
