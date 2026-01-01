@@ -325,6 +325,9 @@ export default function ControleEstoquePage() {
             onExpandedGroupsChange={setExpandedGroups}
             layoutMode={layoutMode}
             onLayoutChange={setLayoutMode}
+            selectedSegments={selectedSegments}
+            onSegmentChange={setSelectedSegments}
+            allProductsForSegments={baseFilteredProducts}
           />
         </TableWrapper>
       )}
