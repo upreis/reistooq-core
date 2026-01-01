@@ -109,52 +109,8 @@ export function SegmentFilter({
 
   return (
     <div className={cn("border-b bg-card/30 overflow-hidden", className)}>
-      {/* Header com toggle */}
-      <div className="flex items-center justify-between px-2 md:px-3 py-1.5 md:py-2">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1 md:gap-2 text-[10px] md:text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Filter className="w-3 h-3 md:w-4 md:h-4" />
-          <span className="font-medium">Segmentos</span>
-          {selectedSegments.length > 0 && (
-            <Badge variant="secondary" className="h-4 md:h-5 px-1 md:px-1.5 text-[9px] md:text-xs">
-              {selectedSegments.length}
-            </Badge>
-          )}
-          <motion.span
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="text-[9px] md:text-xs"
-          >
-            ▼
-          </motion.span>
-        </button>
-
-        {selectedSegments.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearFilters}
-            className="h-5 md:h-6 px-1.5 md:px-2 text-[10px] md:text-xs text-muted-foreground hover:text-foreground"
-          >
-            <X className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5 md:mr-1" />
-            Limpar
-          </Button>
-        )}
-      </div>
-
-      {/* Chips de segmentos */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="flex md:flex-wrap gap-1 md:gap-1.5 px-2 md:px-3 pb-2 md:pb-3 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+      {/* Chips de segmentos - sempre visíveis, sem header */}
+      <div className="flex md:flex-wrap gap-1 md:gap-1.5 px-2 md:px-3 py-2 md:py-3 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {/* Botão "Todos" */}
               <motion.button
                 layout
@@ -218,9 +174,6 @@ export function SegmentFilter({
                 );
               })}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
