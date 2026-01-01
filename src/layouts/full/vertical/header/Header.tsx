@@ -188,15 +188,15 @@ export default function Header() {
     if (path.startsWith('/aplicativos/scanner')) return { icon: '📷', label: 'Scanner' };
     if (path.startsWith('/aplicativos')) return { icon: '🎨', label: 'Aplicativos' };
     
-    // Admin
-    if (path.startsWith('/admin/usuarios')) return { icon: '👥', label: 'Admin / Usuários' };
-    if (path.startsWith('/admin/cargos')) return { icon: '🎭', label: 'Admin / Cargos' };
-    if (path.startsWith('/admin/convites')) return { icon: '✉️', label: 'Admin / Convites' };
-    if (path.startsWith('/admin/alertas')) return { icon: '🚨', label: 'Admin / Alertas' };
-    if (path.startsWith('/admin/seguranca')) return { icon: '🔒', label: 'Admin / Segurança' };
+    // Configurações
+    if (path.startsWith('/admin/usuarios')) return { icon: '👥', label: 'Configurações / Usuários' };
+    if (path.startsWith('/admin/cargos')) return { icon: '🎭', label: 'Configurações / Cargos' };
+    if (path.startsWith('/admin/convites')) return { icon: '✉️', label: 'Configurações / Convites' };
+    if (path.startsWith('/admin/alertas')) return { icon: '🚨', label: 'Configurações / Alertas' };
+    if (path.startsWith('/admin/seguranca')) return { icon: '🔒', label: 'Configurações / Segurança' };
     
-    if (path.startsWith('/admin/perfil')) return { icon: '👤', label: 'Admin / Perfil' };
-    if (path.startsWith('/admin')) return { icon: '⚙️', label: 'Configurações' };
+    if (path.startsWith('/admin/perfil')) return { icon: '👤', label: 'Configurações / Perfil' };
+    if (path.startsWith('/admin')) return { icon: '⚙️', label: 'Configurações / Geral' };
     
     
     return null;
