@@ -81,7 +81,8 @@ Deno.serve(async (req) => {
       .eq('id', invitation.organization_id)
       .single();
 
-    const fantasia = orgData?.fantasia || 'org';
+    // Normaliza fantasia para minúsculas para consistência
+    const fantasia = (orgData?.fantasia || 'org').toLowerCase();
     const internalEmail = `${fantasia}.${invitation.username}@interno.local`;
     
     console.log('[create-invited-user] Creating auth user with email:', internalEmail);

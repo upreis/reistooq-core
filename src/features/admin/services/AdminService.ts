@@ -694,6 +694,26 @@ export class AdminService {
     return [];
   }
 
+  // ==================== FIX USER EMAIL ====================
+
+  async fixUserEmail(userId: string, newEmail: string, newFantasia: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fix-user-email', {
+        body: { user_id: userId, new_email: newEmail, new_fantasia: newFantasia }
+      });
+
+      if (error) {
+        console.error('[AdminService] Error fixing user email:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, message: data?.message || 'Email atualizado com sucesso' };
+    } catch (err: any) {
+      console.error('[AdminService] Exception fixing user email:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
   // ==================== CACHE MANAGEMENT ====================
 
   getCacheStats() {
