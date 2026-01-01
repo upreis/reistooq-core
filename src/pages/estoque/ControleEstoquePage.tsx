@@ -182,6 +182,7 @@ export default function ControleEstoquePage() {
         selectedProductsCount={selectedProducts.length}
         layoutMode={layoutMode}
         onLayoutChange={setLayoutMode}
+        isPrincipal={localAtivo?.tipo === 'principal'}
       />
 
       <EstoqueFilters
@@ -198,8 +199,9 @@ export default function ControleEstoquePage() {
         onSearch={handleSearch}
         useHierarchicalCategories={false}
         hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
-        onCreateParent={() => setParentProductModalOpen(true)}
-        onCreateChild={() => setChildProductModalOpen(true)}
+        onCreateParent={localAtivo?.tipo === 'principal' ? () => setParentProductModalOpen(true) : undefined}
+        onCreateChild={localAtivo?.tipo === 'principal' ? () => setChildProductModalOpen(true) : undefined}
+        isPrincipal={localAtivo?.tipo === 'principal'}
       />
 
       <EstoqueNotifications 
@@ -280,9 +282,9 @@ export default function ControleEstoquePage() {
             onSelectAll={(selected) => handleSelectAll(selected, paginatedProducts, setSelectedProducts)}
             onEditProduct={handleEditProduct}
             onDeleteSelected={handleDeleteSelected}
-            onLinkChild={() => setLinkChildModalOpen(true)}
-            onCreateParent={() => setParentProductModalOpen(true)}
-            onCreateChild={() => setChildProductModalOpen(true)}
+            onLinkChild={localAtivo?.tipo === 'principal' ? () => setLinkChildModalOpen(true) : undefined}
+            onCreateParent={localAtivo?.tipo === 'principal' ? () => setParentProductModalOpen(true) : undefined}
+            onCreateChild={localAtivo?.tipo === 'principal' ? () => setChildProductModalOpen(true) : undefined}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             totalProducts={finalFilteredProducts.length}
@@ -310,11 +312,11 @@ export default function ControleEstoquePage() {
             onEditParentProduct={handleEditParentProduct}
             onDeleteProduct={handleDeleteProduct}
             onDeleteSelected={handleDeleteSelected}
-            onLinkChild={() => setLinkChildModalOpen(true)}
+            onLinkChild={localAtivo?.tipo === 'principal' ? () => setLinkChildModalOpen(true) : undefined}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            onCreateParent={() => setParentProductModalOpen(true)}
-            onCreateChild={() => setChildProductModalOpen(true)}
+            onCreateParent={localAtivo?.tipo === 'principal' ? () => setParentProductModalOpen(true) : undefined}
+            onCreateChild={localAtivo?.tipo === 'principal' ? () => setChildProductModalOpen(true) : undefined}
             isToolbarExpanded={isToolbarExpanded}
             onToggleToolbar={() => setIsToolbarExpanded(!isToolbarExpanded)}
             notificationsCollapsed={notificationsCollapsed}
