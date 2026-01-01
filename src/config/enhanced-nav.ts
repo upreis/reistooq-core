@@ -174,8 +174,8 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       // CONFIGURAÇÕES
       { 
         id: 'admin', 
-        label: 'Configurações',
-        icon: 'Shield',
+        label: 'Configurações', 
+        icon: 'Settings',
         permission: 'admin:access',
         children: [
           {
