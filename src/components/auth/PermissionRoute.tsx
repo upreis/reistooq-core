@@ -1,21 +1,23 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface PermissionRouteProps {
   children: React.ReactNode;
   requiredPermissions?: string[];
   requiredAny?: string[];
   fallbackComponent?: React.ComponentType;
+  redirectTo?: string;
 }
 
 export function PermissionRoute({ 
   children, 
   requiredPermissions = [], 
   requiredAny = [],
-  fallbackComponent: FallbackComponent 
+  fallbackComponent: FallbackComponent,
+  redirectTo = '/'
 }: PermissionRouteProps) {
   const { permissions, loading, error, hasAllPermissions, hasAnyPermission } = useUserPermissions();
 
@@ -64,50 +66,14 @@ export function PermissionRoute({
 
   const hasAccess = hasRequiredPermissions && hasAnyRequiredPermission;
 
-  // Acesso negado
+  // Acesso negado - redirecionar para página inicial
   if (!hasAccess) {
     if (FallbackComponent) {
       return <FallbackComponent />;
     }
 
-    return (
-      <div className="p-6 space-y-4">
-        <Alert className="border-destructive/20 bg-destructive/10">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="space-y-2">
-            <div className="font-medium text-destructive">
-              🚫 Acesso Negado
-            </div>
-            <div className="text-sm">
-              Você não possui permissão para acessar esta página. 
-              Entre em contato com seu administrador para solicitar acesso.
-            </div>
-            {requiredPermissions.length > 0 && (
-              <div className="text-xs text-muted-foreground mt-2">
-                Permissões obrigatórias: {requiredPermissions.map(p => `"${p}"`).join(', ')}
-              </div>
-            )}
-            {requiredAny.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                Pelo menos uma destas permissões: {requiredAny.map(p => `"${p}"`).join(', ')}
-              </div>
-            )}
-            <div className="text-xs text-muted-foreground">
-              Suas permissões: {permissions.length > 0 ? permissions.map(p => `"${p}"`).join(', ') : 'Nenhuma'}
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => window.location.reload()}
-              className="mt-2"
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Recarregar
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+    // Redirecionar silenciosamente para a página inicial ou destino configurado
+    return <Navigate to={redirectTo} replace />;
   }
 
   // Acesso autorizado - renderizar children
