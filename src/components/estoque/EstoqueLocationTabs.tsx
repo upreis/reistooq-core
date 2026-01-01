@@ -356,7 +356,7 @@ export function EstoqueLocationTabs({
   return (
     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 md:gap-4 pb-4 border-b border-border">
       {/* Lado esquerdo: Locais de estoque */}
-      <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-1 -mb-1 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+      <div className="flex items-center gap-2 md:gap-4 flex-wrap">
         {/* Seção: Unitário Geral (Estoque Principal) */}
         <div className="flex flex-col gap-1">
           <span className="text-[10px] font-medium text-muted-foreground tracking-wide hidden md:block">
