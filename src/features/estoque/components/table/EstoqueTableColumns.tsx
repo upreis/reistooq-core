@@ -308,23 +308,27 @@ export function getEstoqueTableColumns({
       key: "origem",
       label: "Origem",
       sortable: true,
-      width: "90px",
-      render: (value: number) => {
-        const origemMap: Record<number, string> = {
-          0: "Nacional",
-          1: "Estrangeira - Importação direta",
-          2: "Estrangeira - Adquirida no mercado interno",
-          3: "Nacional - Mercadoria com Conteúdo de Importação superior a 40%",
-          4: "Nacional - Produção conforme processos produtivos básicos",
-          5: "Nacional - Mercadoria com Conteúdo de Importação inferior ou igual a 40%",
-          6: "Estrangeira - Importação direta, sem similar nacional",
-          7: "Estrangeira - Adquirida no mercado interno, sem similar nacional",
-          8: "Nacional - Mercadoria com Conteúdo de Importação superior a 70%",
+      width: "100px",
+      render: (value: number | string | null | undefined) => {
+        const origemMap: Record<number, { short: string; full: string }> = {
+          0: { short: "Nacional", full: "0 - Nacional" },
+          1: { short: "Estrangeira", full: "1 - Estrangeira - Importação direta" },
+          2: { short: "Estrangeira", full: "2 - Estrangeira - Adquirida no mercado interno" },
+          3: { short: "Nacional", full: "3 - Nacional - Conteúdo de Importação > 40%" },
+          4: { short: "Nacional", full: "4 - Nacional - Processos produtivos básicos" },
+          5: { short: "Nacional", full: "5 - Nacional - Conteúdo de Importação ≤ 40%" },
+          6: { short: "Estrangeira", full: "6 - Estrangeira - Importação direta, sem similar" },
+          7: { short: "Estrangeira", full: "7 - Estrangeira - Mercado interno, sem similar" },
+          8: { short: "Nacional", full: "8 - Nacional - Conteúdo de Importação > 70%" },
         };
-        const label = value !== null && value !== undefined ? origemMap[value] || `${value}` : null;
+        
+        // Converte para número se for string
+        const numValue = value !== null && value !== undefined ? Number(value) : null;
+        const origem = numValue !== null && !isNaN(numValue) ? origemMap[numValue] : null;
+        
         return (
-          <span className="text-[11px] block text-center" title={label || undefined}>
-            {label ? (label.length > 12 ? label.substring(0, 12) + "..." : label) : "-"}
+          <span className="text-[11px] block text-center" title={origem?.full || undefined}>
+            {origem ? origem.short : "-"}
           </span>
         );
       }
