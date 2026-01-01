@@ -98,7 +98,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
       </CardHeader>
       
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {mode === "signup" && (
             <>
               <div className="space-y-2">
@@ -141,16 +141,19 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
               {mode === "login" ? "Login" : "Email"}
             </Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              {mode === "login" ? (
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              ) : (
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              )}
               <Input
                 id="loginIdentifier"
-                type={mode === "signup" ? "email" : "text"}
+                type="text"
                 placeholder={mode === "login" ? "fantasia.usuario ou email" : "seu@email.com"}
                 value={loginIdentifier}
                 onChange={(e) => setLoginIdentifier(e.target.value)}
                 className="pl-10"
                 autoComplete={mode === "signup" ? "email" : "username"}
-                required
               />
             </div>
             {mode === "login" && (
