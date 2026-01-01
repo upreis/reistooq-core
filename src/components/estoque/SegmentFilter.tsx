@@ -108,7 +108,7 @@ export function SegmentFilter({
   }
 
   return (
-    <div className={cn("border-b bg-card/30 overflow-hidden", className)}>
+    <div className={cn("bg-card/30 overflow-hidden", className)}>
       {/* Chips de segmentos - sempre visíveis, sem header */}
       <div className="flex md:flex-wrap gap-1 md:gap-1.5 px-2 md:px-3 py-2 md:py-3 overflow-x-auto md:overflow-x-visible scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {/* Botão "Todos" */}
