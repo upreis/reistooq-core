@@ -62,6 +62,7 @@ export interface Invitation {
 }
 
 export interface InvitationCreate {
+  email: string; // Email real para enviar convite
   username: string;
   role_id: string;
   expires_at: string; // ISO date string
@@ -139,7 +140,7 @@ export interface UseInvitationsReturn {
   invitations: Invitation[];
   loading: boolean;
   error: string | null;
-  createInvitation: (data: InvitationCreate) => Promise<void>;
+  createInvitation: (data: InvitationCreate) => Promise<{ login: string; password: string } | null>;
   revokeInvitation: (id: string) => Promise<void>;
   resendInvitation: (id: string) => Promise<void>;
   deleteInvitation: (id: string) => Promise<void>;

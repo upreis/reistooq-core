@@ -329,7 +329,7 @@ export const useInvitations = (): UseInvitationsReturn => {
     }
   }, [adminService, toast]);
 
-  const createInvitation = useCallback(async (data: InvitationCreate) => {
+  const createInvitation = useCallback(async (data: InvitationCreate): Promise<{ login: string; password: string } | null> => {
     try {
       const result = await adminService.createInvitation(data);
       await loadInvitations();
@@ -337,17 +337,9 @@ export const useInvitations = (): UseInvitationsReturn => {
       // Check if credentials were returned
       const credentials = (result as any).credentials;
       if (credentials) {
-        toast({
-          title: "Usuário criado com sucesso!",
-          description: `Login: ${credentials.login} | Senha: ${credentials.password}`,
-          duration: 15000, // Keep visible longer for copying
-        });
-      } else {
-        toast({
-          title: "Usuário criado",
-          description: `Usuário ${data.username} criado`,
-        });
+        return { login: credentials.login, password: credentials.password };
       }
+      return null;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create invitation';
       toast({

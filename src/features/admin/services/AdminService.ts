@@ -527,7 +527,10 @@ export class AdminService {
     // Create the user immediately via edge function
     try {
       const { data: userResult, error: userError } = await supabase.functions.invoke('create-invited-user', {
-        body: { invitation_id: invitationData.id }
+        body: { 
+          invitation_id: invitationData.id,
+          user_email: data.email // Pass real email for sending credentials
+        }
       });
       
       if (userError) {
