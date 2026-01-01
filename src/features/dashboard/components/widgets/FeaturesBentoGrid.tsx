@@ -14,55 +14,55 @@ import { cn } from "@/lib/utils";
 
 const TIMEZONE = 'America/Sao_Paulo';
 
-// Cores com estilo StatusBadge - fundo transparente com borda colorida
+// Cores distintas com estilo StatusBadge - cada empresa com cor única
 const ACCOUNT_COLORS: Record<string, { border: string; bg: string; text: string; activeBg: string }> = {
   "BRCR20240514161447": {
-    border: "border-blue-500/50",
+    border: "border-blue-500/40",
     bg: "bg-blue-500/10",
     text: "text-blue-400",
-    activeBg: "bg-blue-500/30"
+    activeBg: "bg-blue-500/25"
   },
   "IG20251024151201": {
-    border: "border-sky-500/50",
-    bg: "bg-sky-500/10",
-    text: "text-sky-400",
-    activeBg: "bg-sky-500/30"
+    border: "border-amber-500/40",
+    bg: "bg-amber-500/10",
+    text: "text-amber-400",
+    activeBg: "bg-amber-500/25"
   },
   "PLATINUMLOJA2020": {
-    border: "border-pink-500/50",
-    bg: "bg-pink-500/10",
-    text: "text-pink-400",
-    activeBg: "bg-pink-500/30"
+    border: "border-fuchsia-500/40",
+    bg: "bg-fuchsia-500/10",
+    text: "text-fuchsia-400",
+    activeBg: "bg-fuchsia-500/25"
   },
   "UNIVERSOMELI": {
-    border: "border-green-500/50",
-    bg: "bg-green-500/10",
-    text: "text-green-400",
-    activeBg: "bg-green-500/30"
+    border: "border-emerald-500/40",
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-400",
+    activeBg: "bg-emerald-500/25"
   },
   "HORE20240106205039": {
-    border: "border-orange-500/50",
+    border: "border-orange-500/40",
     bg: "bg-orange-500/10",
     text: "text-orange-400",
-    activeBg: "bg-orange-500/30"
+    activeBg: "bg-orange-500/25"
   },
   "LOJAOITO": {
-    border: "border-purple-500/50",
-    bg: "bg-purple-500/10",
-    text: "text-purple-400",
-    activeBg: "bg-purple-500/30"
+    border: "border-violet-500/40",
+    bg: "bg-violet-500/10",
+    text: "text-violet-400",
+    activeBg: "bg-violet-500/25"
   },
   "LUTHORSHOPLTDA": {
-    border: "border-cyan-500/50",
+    border: "border-cyan-500/40",
     bg: "bg-cyan-500/10",
     text: "text-cyan-400",
-    activeBg: "bg-cyan-500/30"
+    activeBg: "bg-cyan-500/25"
   },
   "MSMARKETSTORE": {
-    border: "border-rose-500/50",
+    border: "border-rose-500/40",
     bg: "bg-rose-500/10",
     text: "text-rose-400",
-    activeBg: "bg-rose-500/30"
+    activeBg: "bg-rose-500/25"
   },
 };
 
