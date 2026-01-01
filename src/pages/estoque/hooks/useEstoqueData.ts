@@ -22,6 +22,8 @@ export function useEstoqueData() {
 
     try {
       setLoading(true);
+      // ✅ Evita “lista antiga” aparecer enquanto troca de local (parece que clonou itens)
+      setProducts([]);
       
       // Carrega produtos do local selecionado
       // Para o Estoque Principal, mantemos a lista completa (inclui itens com zero)
