@@ -170,7 +170,7 @@ export function EstoqueGridView({
   return (
     <div className="flex flex-col">
       {/* Toolbar - hidden on mobile */}
-      <div className="hidden md:flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 bg-card/50">
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-1.5 py-2 bg-card/50">
         <div className="flex flex-wrap items-center gap-1.5">
           {/* Select All */}
           {onSelectAll && (
@@ -396,7 +396,7 @@ export function EstoqueGridView({
         <div
           ref={gridContainerRef}
           onMouseMove={handleMouseMove}
-          className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 px-2 md:px-3 py-3"
+          className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 py-3"
         >
           <AnimatePresence mode="sync">
             {filteredProducts.map((product, index) => {
