@@ -48,6 +48,8 @@ interface EstoqueFiltersProps {
   // Callbacks para criar produtos
   onCreateParent?: () => void;
   onCreateChild?: () => void;
+  // Controle de visibilidade baseado no estoque
+  isPrincipal?: boolean;
 }
 
 export function EstoqueFilters({
@@ -68,6 +70,7 @@ export function EstoqueFilters({
   onHierarchicalFiltersChange,
   onCreateParent,
   onCreateChild,
+  isPrincipal = true,
 }: EstoqueFiltersProps) {
   // Removido: priceRange e stockRange eram estados locais não utilizados na filtragem real
   const isMobile = useIsMobile();
@@ -118,18 +121,20 @@ export function EstoqueFilters({
               )}
             </div>
             
-            {/* Sheet de Filtros para Mobile */}
-            <EstoqueFilterSheet
-              selectedCategory={selectedCategory}
-              onCategoryChange={onCategoryChange}
-              selectedStatus={selectedStatus}
-              onStatusChange={onStatusChange}
-              selectedProductType={selectedProductType}
-              onProductTypeChange={onProductTypeChange}
-              categories={categories}
-              onClearFilters={onClearFilters}
-              hasActiveFilters={hasActiveFilters}
-            />
+            {/* Sheet de Filtros para Mobile - só mostra no estoque principal */}
+            {isPrincipal && (
+              <EstoqueFilterSheet
+                selectedCategory={selectedCategory}
+                onCategoryChange={onCategoryChange}
+                selectedStatus={selectedStatus}
+                onStatusChange={onStatusChange}
+                selectedProductType={selectedProductType}
+                onProductTypeChange={onProductTypeChange}
+                categories={categories}
+                onClearFilters={onClearFilters}
+                hasActiveFilters={hasActiveFilters}
+              />
+            )}
             
             {/* Dropdown + Produto compacto */}
             {onCreateParent && onCreateChild && (

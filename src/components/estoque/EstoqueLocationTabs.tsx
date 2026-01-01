@@ -53,6 +53,7 @@ interface EstoqueLocationTabsProps {
   onLayoutChange?: (mode: LayoutMode) => void;
   onTransferClick?: () => void;
   selectedProductsCount?: number;
+  isPrincipal?: boolean;
 }
 
 
@@ -61,7 +62,8 @@ export function EstoqueLocationTabs({
   layoutMode = "list",
   onLayoutChange,
   onTransferClick,
-  selectedProductsCount = 0
+  selectedProductsCount = 0,
+  isPrincipal = true
 }: EstoqueLocationTabsProps) {
   const [locais, setLocais] = useState<LocalEstoque[]>([]);
   const [loading, setLoading] = useState(true);
@@ -402,8 +404,8 @@ export function EstoqueLocationTabs({
 
       {/* Lado direito: Controles - hidden on mobile */}
       <div className="hidden md:flex items-center gap-2">
-        {/* Transferir Estoque */}
-        {onTransferClick && (
+        {/* Transferir Estoque - só mostra no estoque principal */}
+        {isPrincipal && onTransferClick && (
           <Button
             variant="outline"
             size="sm"
@@ -421,19 +423,21 @@ export function EstoqueLocationTabs({
           </Button>
         )}
 
-        {/* Novo Local de Estoque */}
-        <GerenciarLocaisModal 
-          trigger={
-            <Button variant="outline" size="sm" className="h-9">
-              <Plus className="h-4 w-4 mr-2" />
-              Local de Estoque
-            </Button>
-          }
-          onSuccess={() => {
-            carregarLocais();
-            window.dispatchEvent(new Event('reload-locais-estoque'));
-          }}
-        />
+        {/* Novo Local de Estoque - só mostra no estoque principal */}
+        {isPrincipal && (
+          <GerenciarLocaisModal 
+            trigger={
+              <Button variant="outline" size="sm" className="h-9">
+                <Plus className="h-4 w-4 mr-2" />
+                Local de Estoque
+              </Button>
+            }
+            onSuccess={() => {
+              carregarLocais();
+              window.dispatchEvent(new Event('reload-locais-estoque'));
+            }}
+          />
+        )}
       </div>
 
       {/* Dialog de Exclusão */}
