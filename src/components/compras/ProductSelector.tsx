@@ -17,6 +17,7 @@ interface Product {
   nome: string;
   sku_interno: string;
   preco_custo: number;
+  preco_venda: number;
   quantidade_atual: number;
   estoque_minimo?: number;
   categoria?: string;
@@ -390,7 +391,8 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                   <TableHead>Produto</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Preço</TableHead>
+                  <TableHead>Custo</TableHead>
+                  <TableHead>Venda</TableHead>
                   <TableHead>Estoque</TableHead>
                   <TableHead className="w-32">Quantidade</TableHead>
                 </TableRow>
@@ -426,8 +428,13 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">
+                        <div className="font-medium text-muted-foreground">
                           {formatMoney(product.preco_custo)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          {formatMoney(product.preco_venda)}
                         </div>
                       </TableCell>
                       <TableCell>
