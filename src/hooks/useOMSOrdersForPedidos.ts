@@ -78,15 +78,15 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
   const organizationId = profile?.organizacao_id;
 
   const fetchOrders = useCallback(async () => {
-    if (!enabled || !organizationId) return;
+    if (!enabled) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      if (isDev) console.log('🛒 [OMS] Buscando pedidos aprovados...');
+      if (isDev) console.log('🛒 [OMS] Buscando pedidos aprovados...', { organizationId });
       
-      // Primeiro buscar os pedidos
+      // Buscar pedidos aprovados (RLS cuida da segurança)
       let query = supabase
         .from('oms_orders')
         .select(`
@@ -97,9 +97,14 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
             document
           )
         `, { count: 'exact' })
-        .eq('organization_id', organizationId)
         .in('status', ['approved', 'shipped', 'delivered', 'Aprovado', 'Enviado', 'Entregue']) // Apenas pedidos aprovados+
         .order('order_date', { ascending: false });
+      
+      // Filtrar por organization_id se disponível (mas não obrigatório por causa de dados legados)
+      if (organizationId) {
+        // Usar OR para pegar tanto os que têm org_id quanto os que têm null (dados antigos)
+        query = query.or(`organization_id.eq.${organizationId},organization_id.is.null`);
+      }
       
       // Filtro de busca
       if (search && search.trim()) {
