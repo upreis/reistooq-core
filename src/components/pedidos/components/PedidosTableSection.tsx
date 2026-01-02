@@ -477,20 +477,23 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                order.raw?.shipping?.costs?.senders?.[0]?.cost ||
                                                0;
                         
-                        // Calcular Custo Fixo Meli (mesma lógica da coluna separada)
+                        // Calcular Custo Fixo Meli (baseado no VALOR UNITÁRIO, não no total)
                         const quantidadeTotal = order.quantity || 
                                               order.quantidade || 
                                               order.unified?.quantity || 
                                               order.raw?.order_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 
                                               1;
                         
+                        // Valor unitário = valor total / quantidade
+                        const valorUnitario = quantidadeTotal > 0 ? valorTotal / quantidadeTotal : valorTotal;
+                        
                         let custoFixoMeli = 0;
-                        if (valorTotal < 79.00) {
-                          if (valorTotal <= 12.50) {
-                            custoFixoMeli = (valorTotal / 2) * quantidadeTotal;
-                          } else if (valorTotal <= 29.00) {
+                        if (valorUnitario < 79.00) {
+                          if (valorUnitario <= 12.50) {
+                            custoFixoMeli = (valorUnitario / 2) * quantidadeTotal;
+                          } else if (valorUnitario <= 29.00) {
                             custoFixoMeli = 6.25 * quantidadeTotal;
-                          } else if (valorTotal <= 50.00) {
+                          } else if (valorUnitario <= 50.00) {
                             custoFixoMeli = 6.50 * quantidadeTotal;
                           } else {
                             custoFixoMeli = 6.75 * quantidadeTotal;
@@ -563,7 +566,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        }
                      
                      case 'custo_fixo_meli': {
-                        // Calcular Custo Fixo Meli
+                        // Calcular Custo Fixo Meli baseado no VALOR UNITÁRIO
                         const valorTotal = order.total_amount || 
                                          order.valor_total || 
                                          order.unified?.total_amount || 
@@ -576,17 +579,20 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                               order.raw?.order_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 
                                               1;
                         
+                        // Valor unitário = valor total / quantidade
+                        const valorUnitario = quantidadeTotal > 0 ? valorTotal / quantidadeTotal : valorTotal;
+                        
                         let custoFixoMeli = 0;
                         
-                        // Se Valor Total for abaixo de R$ 79, aplicar as faixas
-                        if (valorTotal < 79.00) {
-                          if (valorTotal <= 12.50) {
+                        // Aplicar faixas baseado no VALOR UNITÁRIO (não no total)
+                        if (valorUnitario < 79.00) {
+                          if (valorUnitario <= 12.50) {
                             // Até R$ 12,50: metade do preço do produto por unidade
-                            custoFixoMeli = (valorTotal / 2) * quantidadeTotal;
-                          } else if (valorTotal <= 29.00) {
+                            custoFixoMeli = (valorUnitario / 2) * quantidadeTotal;
+                          } else if (valorUnitario <= 29.00) {
                             // Entre R$ 12,50 e R$ 29: R$ 6,25 por unidade
                             custoFixoMeli = 6.25 * quantidadeTotal;
-                          } else if (valorTotal <= 50.00) {
+                          } else if (valorUnitario <= 50.00) {
                             // Entre R$ 29 e R$ 50: R$ 6,50 por unidade
                             custoFixoMeli = 6.50 * quantidadeTotal;
                           } else {
