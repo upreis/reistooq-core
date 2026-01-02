@@ -243,6 +243,7 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
           title: item.title || '-',
           quantity: Number(item.qty) || 0,
           unit_price: Number(item.unit_price) || 0,
+          custo_unitario: Number(item.custo_unitario) || 0,
           total: Number(item.total) || (Number(item.qty) * Number(item.unit_price)) || 0,
         })),
 
