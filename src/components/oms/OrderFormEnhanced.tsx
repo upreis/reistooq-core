@@ -151,6 +151,30 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
         }, {} as Record<string, number>);
 
         // ✅ MAPEAR DADOS DO PEDIDO EXISTENTE PARA O FORMATO DO FORMULÁRIO
+        const itemsForForm = (initialData.oms_order_items || []).map((item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
+          sku: item.sku,
+          title: item.title,
+          qty: item.qty,
+          unit_price: item.unit_price,
+          discount_pct: item.discount_pct || 0,
+          discount_value: item.discount_value || 0,
+          tax_value: item.tax_value || 0,
+          total: item.total,
+          custo_unitario: item.custo_unitario || 0,
+          available_stock: stockMap[item.product_id] || 0 // ✅ ESTOQUE REAL DO PRODUTO
+        }));
+
+        const itemsSubtotal = itemsForForm.reduce((sum: number, it: any) => sum + (Number(it.total) || 0), 0);
+        const discountAmount = Number(initialData.discount_amount) || 0;
+        const discountType = initialData.discount_type || "percentage";
+
+        // Se o desconto é percentual, no banco guardamos o VALOR (ex: 6,10), então convertemos para % para exibir no input.
+        const discountForInput = discountType === 'percentage'
+          ? (itemsSubtotal > 0 ? (discountAmount / itemsSubtotal) * 100 : 0)
+          : discountAmount;
+
         const mappedData = {
           selectedCustomer: customerExists ? String(initialData.customer_id) : "",
           selectedSalesRep: salesRepExists ? String(initialData.sales_rep_id) : "",
@@ -159,8 +183,8 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           paymentTerm: initialData.payment_terms || "30_days",
           customPaymentDays: initialData.payment_term_days || 30,
           paymentMethod: initialData.payment_method || "bank_transfer",
-          discount: initialData.discount_amount || 0,
-          discountType: initialData.discount_type || "percentage",
+          discount: Number(discountForInput) || 0,
+          discountType,
           shippingTotal: initialData.shipping_total || 0,
           shippingMethod: initialData.shipping_method || "standard",
           deliveryAddress: initialData.delivery_address || "",
@@ -178,21 +202,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           enderecoCep: initialData.endereco_cep || "",
           enderecoCidade: initialData.endereco_cidade || "",
           enderecoUf: initialData.endereco_uf || "",
-          // ✅ MAPEAR ITENS DO PEDIDO COM ESTOQUE REAL
-          items: (initialData.oms_order_items || []).map((item: any) => ({
-            id: item.id,
-            product_id: item.product_id,
-            sku: item.sku,
-            title: item.title,
-            qty: item.qty,
-            unit_price: item.unit_price,
-            discount_pct: item.discount_pct || 0,
-            discount_value: item.discount_value || 0,
-            tax_value: item.tax_value || 0,
-            total: item.total,
-            custo_unitario: item.custo_unitario || 0,
-            available_stock: stockMap[item.product_id] || 0 // ✅ ESTOQUE REAL DO PRODUTO
-          }))
+          items: itemsForForm,
         };
         
         console.log('🔍 DEBUG dados mapeados com estoque real:', mappedData);
@@ -1289,7 +1299,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           Cancelar
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Salvando..." : "Criar Pedido"}
+          {isLoading ? "Salvando..." : (initialData?.id ? "Atualizar Pedido" : "Criar Pedido")}
         </Button>
       </div>
 

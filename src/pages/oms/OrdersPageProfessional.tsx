@@ -451,7 +451,15 @@ export default function OrdersPageProfessional({
             <Download className="h-3.5 w-3.5" />
             Exportar
           </Button>
-          <Button onClick={() => setOrderDialogOpen(true)} className="h-7 px-2.5 text-xs gap-1.5">
+          <Button
+            onClick={() => {
+              // Abrir em modo "+ novo" sempre limpo
+              setEditingOrder(null);
+              setIsEditMode(false);
+              setOrderDialogOpen(true);
+            }}
+            className="h-7 px-2.5 text-xs gap-1.5"
+          >
             <Plus className="h-3.5 w-3.5" />
             Novo Pedido
           </Button>
