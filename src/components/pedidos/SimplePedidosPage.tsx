@@ -468,18 +468,25 @@ function SimplePedidosPage({ className }: Props) {
       const comissaoPerUnit = totalQty > 0 ? comissaoTotal / totalQty : 0;
       const fretePerUnit = totalQty > 0 ? freteTotal / totalQty : 0;
 
+      const orderNumber = o.unified?.numero || o.unified?.order_number || o.raw?.number || '';
+      
       return items.map((it, idx) => {
         const rowId = it.id || `${base.id}-item-${idx}`;
         const itemQty = Number(it.quantity) || 0;
         const comissaoItem = itemQty * comissaoPerUnit;
         const freteItem = itemQty * fretePerUnit;
+        const itemSku = it.sku || '-';
+        
+        // ID único: SKU-numero_pedido (ex: FL-105-DOUR-1-000008/2026)
+        const idUnico = `${itemSku}-${orderNumber}`;
         
         return {
           ...base,
           oms_order_id: base.id, // manter referência ao pedido OMS (uuid)
           id: rowId, // precisa ser único por linha na tabela
-          sku: it.sku || '-',
-          skus: [it.sku].filter(Boolean),
+          id_unico: idUnico,
+          sku: itemSku,
+          skus: [itemSku].filter(Boolean),
           produto_titulo: it.title || '-',
           quantidade: itemQty,
           // Comissão e frete proporcional ao item
