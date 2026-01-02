@@ -214,7 +214,8 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
     const newSelected = { ...selectedItems };
     
     if (checked) {
-      newSelected[product.id] = { product, quantidade: 1 };
+      // Iniciar com quantidade vazia (0) para o usuário preencher
+      newSelected[product.id] = { product, quantidade: 0 };
     } else {
       delete newSelected[product.id];
     }
@@ -400,7 +401,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
               <TableBody>
                 {filteredProducts.map((product) => {
                   const isSelected = !!selectedItems[product.id];
-                  const quantidade = selectedItems[product.id]?.quantidade || 1;
+                  const quantidade = selectedItems[product.id]?.quantidade ?? 0;
                   const stockStatus = getStockStatus(product);
                   const StockIcon = stockStatus.icon;
 
