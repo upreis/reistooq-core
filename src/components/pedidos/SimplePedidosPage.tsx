@@ -751,7 +751,7 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'receita_flex', label: 'Receita Flex', default: false, category: 'financial' },
     { key: 'custo_envio_seller', label: 'Custo Envio', default: false, category: 'financial' },
     
-    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
+    { key: 'marketplace_fee', label: 'Comissão Vendedor', default: true, category: 'financial' },
     { key: 'custo_fixo_meli', label: 'Custo Fixo Meli', default: false, category: 'financial' },
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
