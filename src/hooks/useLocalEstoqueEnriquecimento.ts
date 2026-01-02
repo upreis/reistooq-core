@@ -125,15 +125,45 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
       const tipoLogistico = rowAny.tipo_logistico_raw || rowAny.tipo_logistico || row.unified?.tipo_logistico_raw || row.unified?.tipo_logistico || '';
 
       // Função para normalizar tipo logístico de forma consistente
+      // Inclui tipos ML (fulfillment, flex, etc) E tipos OMS (proprio, correios, etc)
       const normalizarTipoLogistico = (tipo: string): string => {
+        if (!tipo) return '';
         const tipoLower = tipo.toLowerCase().trim();
+        
+        // ===== MERCADO LIVRE =====
         if (tipoLower.includes('fulfillment') || tipoLower.includes('full')) {
           return 'fulfillment';
         } else if (tipoLower.includes('flex') || tipoLower.includes('self') || tipoLower.includes('envios')) {
           return 'flex';
         } else if (tipoLower.includes('cross')) {
           return 'crossdocking';
+        } else if (tipoLower.includes('drop')) {
+          return 'dropoff';
+        } else if (tipoLower.includes('xd_drop') || tipoLower.includes('ponto')) {
+          return 'xd_dropoff';
         }
+        
+        // ===== OMS / ECOMM =====
+        else if (tipoLower.includes('proprio') || tipoLower.includes('própria') || tipoLower.includes('propria')) {
+          return 'proprio';
+        } else if (tipoLower.includes('correios') || tipoLower.includes('pac') || tipoLower.includes('sedex')) {
+          return 'correios';
+        } else if (tipoLower.includes('transportadora')) {
+          return 'transportadora';
+        } else if (tipoLower.includes('motoboy')) {
+          return 'motoboy';
+        } else if (tipoLower.includes('retirada')) {
+          return 'retirada';
+        }
+        
+        // ===== SHOPEE =====
+        else if (tipoLower.includes('shopee') && tipoLower.includes('xpress')) {
+          return 'shopee_xpress';
+        } else if (tipoLower.includes('shopee') && tipoLower.includes('direta')) {
+          return 'shopee_direta';
+        }
+        
+        // Retorna o valor original normalizado (lowercase)
         return tipoLower;
       };
 
@@ -150,16 +180,21 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
       }
 
       // Buscar mapeamento correspondente (Empresa + Tipo Logístico)
+      // Estratégia: 1) Match EXATO primeiro, 2) Match NORMALIZADO depois
       const mapeamento = mapeamentos.find(m => {
-        // ✅ Normalizar AMBOS os lados para garantir match correto
+        // ✅ Empresa deve ser igual (case insensitive)
+        const empresaMatch = m.empresa?.toLowerCase().trim() === empresa?.toLowerCase().trim();
+        
+        if (!empresaMatch) return false;
+        
+        // ✅ 1) Tentar match EXATO primeiro (importante para tipos OMS como "proprio", "correios")
+        const tipoExatoMatch = m.tipo_logistico?.toLowerCase().trim() === tipoLogistico?.toLowerCase().trim();
+        
+        // ✅ 2) Match NORMALIZADO (para compatibilidade com variações)
         const tipoMapeamentoNormalizado = normalizarTipoLogistico(m.tipo_logistico);
+        const tipoNormalizadoMatch = tipoMapeamentoNormalizado === tipoLogisticoNormalizado;
         
-        // ✅ Empresa deve ser igual
-        const empresaMatch = m.empresa === empresa;
-        
-        // ✅ Tipo logístico normalizado
-        const tipoMatch = tipoMapeamentoNormalizado === tipoLogisticoNormalizado;
-        
+        const tipoMatch = tipoExatoMatch || tipoNormalizadoMatch;
         const match = empresaMatch && tipoMatch;
         
         if (isDev && index < 3) {
@@ -171,9 +206,10 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
           });
           console.log(`📦 [LocalEstoque] Comparação:`, {
             empresa_match: empresaMatch,
-            tipo_match: tipoMatch,
+            tipo_exato_match: tipoExatoMatch,
+            tipo_normalizado_match: tipoNormalizadoMatch,
+            tipo_pedido: tipoLogistico,
             tipo_pedido_norm: tipoLogisticoNormalizado,
-            tipo_mapeamento_norm: tipoMapeamentoNormalizado,
             MATCH_FINAL: match
           });
         }
