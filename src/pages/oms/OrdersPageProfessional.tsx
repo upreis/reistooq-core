@@ -816,13 +816,16 @@ export default function OrdersPageProfessional({
                         <TableHead>Representante</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Data</TableHead>
+                        <TableHead>Tipo Logístico</TableHead>
+                        <TableHead>Rastreamento</TableHead>
+                        <TableHead>Endereço</TableHead>
                         <TableHead>Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {loading ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
+                          <TableCell colSpan={10} className="text-center py-8">
                             <div className="flex items-center justify-center gap-2">
                               <RefreshCw className="h-4 w-4 animate-spin" />
                               Carregando pedidos...
@@ -831,7 +834,7 @@ export default function OrdersPageProfessional({
                         </TableRow>
                       ) : ordersByTab[tabKey].length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
+                          <TableCell colSpan={10} className="text-center py-8">
                             <div className="flex flex-col items-center gap-2">
                               <Package className="h-8 w-8 text-muted-foreground" />
                               <span className="text-muted-foreground">
@@ -901,6 +904,15 @@ export default function OrdersPageProfessional({
                                   </span>
                                 </div>
                               </TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                {order.tipo_logistico || '-'}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                {order.tracking_number || order.codigo_rastreamento || '-'}
+                              </TableCell>
+                              <TableCell className="max-w-[200px] truncate" title={order.endereco_rua ? `${order.endereco_rua}, ${order.endereco_numero || ''} - ${order.endereco_bairro || ''}, ${order.endereco_cidade || ''}/${order.endereco_uf || ''}` : '-'}>
+                                {order.endereco_rua ? `${order.endereco_cidade || ''}/${order.endereco_uf || ''}` : '-'}
+                              </TableCell>
                                <TableCell onClick={(e) => e.stopPropagation()}>
                                  <div className="flex items-center gap-1">
                                    <Button 
@@ -947,7 +959,7 @@ export default function OrdersPageProfessional({
                             {/* Linha expansível com detalhes */}
                             {expandedOrders.includes(order.id) && (
                               <TableRow className="bg-muted/30">
-                                <TableCell colSpan={8} className="p-4">
+                                <TableCell colSpan={10} className="p-4">
                                   <div className="space-y-4">
                                     {/* Itens do pedido */}
                                     {order.oms_order_items && order.oms_order_items.length > 0 && (
@@ -974,7 +986,7 @@ export default function OrdersPageProfessional({
                                               : '-';
                                             
                                             return (
-                                              <table className="w-full text-sm min-w-[1200px]">
+                                              <table className="w-full text-sm">
                                                 <thead className="bg-muted">
                                                   <tr>
                                                     <th className="text-left p-2 whitespace-nowrap">SKU</th>
@@ -986,13 +998,10 @@ export default function OrdersPageProfessional({
                                                     <th className="text-right p-2 whitespace-nowrap">Frete Item</th>
                                                     <th className="text-right p-2 whitespace-nowrap">Comissão</th>
                                                     <th className="text-right p-2 whitespace-nowrap">Valor Líquido</th>
-                                                    <th className="text-left p-2 whitespace-nowrap">Tipo Logístico</th>
-                                                    <th className="text-left p-2 whitespace-nowrap">Rastreamento</th>
-                                                    <th className="text-left p-2 whitespace-nowrap">Endereço</th>
                                                   </tr>
                                                 </thead>
                                                 <tbody>
-                                                  {order.oms_order_items.map((item: any, index: number) => {
+                                                  {order.oms_order_items.map((item: any) => {
                                                     const itemQty = Number(item.qty) || 0;
                                                     const itemTotal = Number(item.total) || 0;
                                                     const freteItem = itemQty * freightPerUnit;
@@ -1005,9 +1014,6 @@ export default function OrdersPageProfessional({
                                                     // Valor líquido do item = total - frete - comissão
                                                     const valorLiquidoItem = totalItem - freteItem - comissaoItem;
                                                     
-                                                    // Mostrar info do pedido apenas na primeira linha
-                                                    const isFirstRow = index === 0;
-                                                    
                                                     return (
                                                       <tr key={item.id} className="border-t">
                                                         <td className="p-2 font-mono text-xs whitespace-nowrap">{item.sku}</td>
@@ -1019,9 +1025,6 @@ export default function OrdersPageProfessional({
                                                         <td className="p-2 text-right text-muted-foreground whitespace-nowrap">{formatCurrency(freteItem)}</td>
                                                         <td className="p-2 text-right text-amber-600 whitespace-nowrap">{formatCurrency(comissaoItem)}</td>
                                                         <td className="p-2 text-right text-emerald-600 font-medium whitespace-nowrap">{formatCurrency(valorLiquidoItem)}</td>
-                                                        <td className="p-2 whitespace-nowrap">{isFirstRow ? (order.tipo_logistico || '-') : ''}</td>
-                                                        <td className="p-2 whitespace-nowrap">{isFirstRow ? (order.tracking_number || '-') : ''}</td>
-                                                        <td className="p-2 whitespace-nowrap max-w-[300px] truncate" title={enderecoCompleto}>{isFirstRow ? enderecoCompleto : ''}</td>
                                                       </tr>
                                                     );
                                                   })}
