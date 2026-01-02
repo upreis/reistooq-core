@@ -25,9 +25,9 @@ import { CustomerSelector, type Customer } from "./CustomerSelector";
 import { 
   useEmpresaData, 
   useNextOrderNumber, 
-  useLocaisEstoque,
   useOMSSalesReps 
 } from "../hooks/useOMSData";
+import { LocalEstoqueOMSSelector } from "./LocalEstoqueOMSSelector";
 import { format } from "date-fns";
 
 export interface OrderItem {
@@ -120,10 +120,10 @@ const UFS = [
 export function OrderForm({ initialData, onSubmit, onCancel, isLoading = false }: OrderFormProps) {
   const { data: empresaData } = useEmpresaData();
   const { data: numeroSequencial } = useNextOrderNumber();
-  const { data: locaisEstoque = [] } = useLocaisEstoque();
   const { data: vendedores = [] } = useOMSSalesReps();
   
   const [expandedItems, setExpandedItems] = useState(true);
+  const [localVendaId, setLocalVendaId] = useState<string | undefined>();
   
   const [formData, setFormData] = useState<OrderFormData>({
     numero: "",
@@ -471,23 +471,16 @@ export function OrderForm({ initialData, onSubmit, onCancel, isLoading = false }
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <LocalEstoqueOMSSelector
+              value={formData.localEstoqueId}
+              localVendaId={localVendaId}
+              onChange={(localEstoqueId, novoLocalVendaId) => {
+                setFormData(prev => ({ ...prev, localEstoqueId }));
+                setLocalVendaId(novoLocalVendaId);
+              }}
+            />
+            
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Local de Estoque</Label>
-                <Select 
-                  value={formData.localEstoqueId}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, localEstoqueId: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locaisEstoque.map(l => (
-                      <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div>
                 <Label>Tipo Logístico</Label>
                 <Select 
@@ -504,9 +497,6 @@ export function OrderForm({ initialData, onSubmit, onCancel, isLoading = false }
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Custo de Envio (R$)</Label>
                 <Input
@@ -520,14 +510,15 @@ export function OrderForm({ initialData, onSubmit, onCancel, isLoading = false }
                   }))}
                 />
               </div>
-              <div>
-                <Label>Código Rastreamento</Label>
-                <Input
-                  value={formData.codigoRastreamento}
-                  onChange={(e) => setFormData(prev => ({ ...prev, codigoRastreamento: e.target.value }))}
-                  placeholder="Ex: AA123456789BR"
-                />
-              </div>
+            </div>
+            
+            <div>
+              <Label>Código Rastreamento</Label>
+              <Input
+                value={formData.codigoRastreamento}
+                onChange={(e) => setFormData(prev => ({ ...prev, codigoRastreamento: e.target.value }))}
+                placeholder="Ex: AA123456789BR"
+              />
             </div>
           </CardContent>
         </Card>
