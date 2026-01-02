@@ -96,6 +96,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showCustomPayment, setShowCustomPayment] = useState(false);
   const [showProductSelector, setShowProductSelector] = useState(false);
+  const [usarEnderecoAlternativo, setUsarEnderecoAlternativo] = useState(false);
 
   // Formas de pagamento configuráveis
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([
@@ -201,23 +202,42 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     }
   }, [initialData, customers, salesReps]);
 
-  // ✅ EFEITO PARA PREENCHER ENDEREÇO QUANDO SELECIONAR CLIENTE
+  // ✅ EFEITO PARA PREENCHER ENDEREÇO QUANDO SELECIONAR CLIENTE (se não for alternativo)
   useEffect(() => {
+    if (formData.selectedCustomer && customers.length > 0 && !usarEnderecoAlternativo) {
+      const selectedCustomerData = customers.find(c => c.id === formData.selectedCustomer);
+      if (selectedCustomerData) {
+        // ✅ FORÇAR PREENCHIMENTO COM DADOS DO CLIENTE (não manter valores antigos)
+        setFormData(prev => ({
+          ...prev,
+          enderecoRua: selectedCustomerData.endereco_rua || "",
+          enderecoNumero: selectedCustomerData.endereco_numero || "",
+          enderecoBairro: selectedCustomerData.endereco_bairro || "",
+          enderecoCep: selectedCustomerData.endereco_cep || "",
+          enderecoCidade: selectedCustomerData.endereco_cidade || "",
+          enderecoUf: selectedCustomerData.endereco_uf || ""
+        }));
+      }
+    }
+  }, [formData.selectedCustomer, customers, usarEnderecoAlternativo]);
+
+  // ✅ FUNÇÃO PARA RESTAURAR ENDEREÇO DO CLIENTE
+  const restaurarEnderecoCliente = () => {
     if (formData.selectedCustomer && customers.length > 0) {
       const selectedCustomerData = customers.find(c => c.id === formData.selectedCustomer);
       if (selectedCustomerData) {
         setFormData(prev => ({
           ...prev,
-          enderecoRua: selectedCustomerData.endereco_rua || prev.enderecoRua,
-          enderecoNumero: selectedCustomerData.endereco_numero || prev.enderecoNumero,
-          enderecoBairro: selectedCustomerData.endereco_bairro || prev.enderecoBairro,
-          enderecoCep: selectedCustomerData.endereco_cep || prev.enderecoCep,
-          enderecoCidade: selectedCustomerData.endereco_cidade || prev.enderecoCidade,
-          enderecoUf: selectedCustomerData.endereco_uf || prev.enderecoUf
+          enderecoRua: selectedCustomerData.endereco_rua || "",
+          enderecoNumero: selectedCustomerData.endereco_numero || "",
+          enderecoBairro: selectedCustomerData.endereco_bairro || "",
+          enderecoCep: selectedCustomerData.endereco_cep || "",
+          enderecoCidade: selectedCustomerData.endereco_cidade || "",
+          enderecoUf: selectedCustomerData.endereco_uf || ""
         }));
       }
     }
-  }, [formData.selectedCustomer, customers]);
+  };
 
   const handleSearch = async (query: string) => {
     if (query.length >= 2) {
@@ -1039,7 +1059,50 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       {/* Endereço de Entrega */}
       <Card>
         <CardHeader>
-          <CardTitle>Endereço de Entrega</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Endereço de Entrega</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="usarEnderecoAlternativo"
+                  checked={usarEnderecoAlternativo}
+                  onChange={(e) => {
+                    setUsarEnderecoAlternativo(e.target.checked);
+                    // Se desmarcar, restaurar endereço do cliente
+                    if (!e.target.checked) {
+                      restaurarEnderecoCliente();
+                    } else {
+                      // Se marcar, limpar os campos para digitar novo
+                      setFormData(prev => ({
+                        ...prev,
+                        enderecoRua: "",
+                        enderecoNumero: "",
+                        enderecoBairro: "",
+                        enderecoCep: "",
+                        enderecoCidade: "",
+                        enderecoUf: ""
+                      }));
+                    }
+                  }}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <Label htmlFor="usarEnderecoAlternativo" className="text-sm font-normal cursor-pointer">
+                  Entregar em outro endereço
+                </Label>
+              </div>
+            </div>
+          </div>
+          {!usarEnderecoAlternativo && formData.selectedCustomer && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Endereço do cliente selecionado
+            </p>
+          )}
+          {usarEnderecoAlternativo && (
+            <p className="text-sm text-yellow-600 mt-1">
+              ⚠️ Digitando endereço alternativo
+            </p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1049,6 +1112,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 value={formData.enderecoRua}
                 onChange={(e) => setFormData(prev => ({ ...prev, enderecoRua: e.target.value }))}
                 placeholder="Nome da rua"
+                disabled={!usarEnderecoAlternativo && !formData.selectedCustomer}
               />
             </div>
             <div>
@@ -1057,6 +1121,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 value={formData.enderecoNumero}
                 onChange={(e) => setFormData(prev => ({ ...prev, enderecoNumero: e.target.value }))}
                 placeholder="Nº"
+                disabled={!usarEnderecoAlternativo && !formData.selectedCustomer}
               />
             </div>
             <div>
@@ -1065,6 +1130,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 value={formData.enderecoBairro}
                 onChange={(e) => setFormData(prev => ({ ...prev, enderecoBairro: e.target.value }))}
                 placeholder="Bairro"
+                disabled={!usarEnderecoAlternativo && !formData.selectedCustomer}
               />
             </div>
           </div>
@@ -1076,6 +1142,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 value={formData.enderecoCep}
                 onChange={(e) => setFormData(prev => ({ ...prev, enderecoCep: e.target.value }))}
                 placeholder="00000-000"
+                disabled={!usarEnderecoAlternativo && !formData.selectedCustomer}
               />
             </div>
             <div>
@@ -1084,6 +1151,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 value={formData.enderecoCidade}
                 onChange={(e) => setFormData(prev => ({ ...prev, enderecoCidade: e.target.value }))}
                 placeholder="Cidade"
+                disabled={!usarEnderecoAlternativo && !formData.selectedCustomer}
               />
             </div>
             <div>
@@ -1093,6 +1161,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 onChange={(e) => setFormData(prev => ({ ...prev, enderecoUf: e.target.value }))}
                 placeholder="UF"
                 maxLength={2}
+                disabled={!usarEnderecoAlternativo && !formData.selectedCustomer}
               />
             </div>
           </div>
