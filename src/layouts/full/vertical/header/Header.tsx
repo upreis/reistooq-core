@@ -25,7 +25,7 @@ import adminSegurancaIcon from "@/assets/admin-seguranca-icon.png";
 import adminAuditoriaIcon from "@/assets/admin-auditoria-icon.png";
 import adminPerfilIcon from "@/assets/icons/admin-perfil.png";
 import scannerIcon from "@/assets/icons/scanner-icon.png";
-import deParaIcon from "@/assets/de-para-icon.png";
+import deParaIcon from "@/assets/icons/de-para-icon.png";
 import alertasIcon from "@/assets/alertas-icon.png";
 import historicoIcon from "@/assets/historico-icon.png";
 import devolucoesdevendaIcon from "@/assets/icons/devolucoes-venda-page-icon.png";
