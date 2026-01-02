@@ -448,7 +448,19 @@ export function OrderForm({ initialData, onSubmit, onCancel, isLoading = false }
             </CardHeader>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Seletor de Estoque e Local de Venda */}
+              <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                <LocalEstoqueOMSSelector
+                  value={formData.localEstoqueId}
+                  localVendaId={localVendaId}
+                  onChange={(localEstoqueId, novoLocalVendaId) => {
+                    setFormData(prev => ({ ...prev, localEstoqueId }));
+                    setLocalVendaId(novoLocalVendaId);
+                  }}
+                />
+              </div>
+              
               <OrderItemsTable 
                 items={formData.itens}
                 onAddItem={handleAddItem}
@@ -471,15 +483,6 @@ export function OrderForm({ initialData, onSubmit, onCancel, isLoading = false }
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <LocalEstoqueOMSSelector
-              value={formData.localEstoqueId}
-              localVendaId={localVendaId}
-              onChange={(localEstoqueId, novoLocalVendaId) => {
-                setFormData(prev => ({ ...prev, localEstoqueId }));
-                setLocalVendaId(novoLocalVendaId);
-              }}
-            />
-            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Tipo Logístico</Label>
