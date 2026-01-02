@@ -190,28 +190,31 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
       const unified = {
         id: order.id,
         order_id: order.number || order.id,
+        // Compatibilidade com coluna "Número do Pedido"
+        numero: order.number || undefined,
+        order_number: order.number || undefined,
         id_unico: order.id_unico || `OMS-${order.number}`,
         marketplace: 'oms',
         marketplace_label: 'Orçamento',
-        
+
         // Dados do pedido
         data_pedido: order.order_date,
         created_at: order.created_at,
         status: order.status,
         situacao: order.status,
-        
+
         // Dados financeiros
         valor_total: order.grand_total || 0,
         valor_frete: order.shipping_total || 0,
         valor_desconto: order.discount_amount || 0,
         valor_liquido: order.valor_liquido || 0,
         comissao_valor: order.comissao_valor || 0,
-        
+
         // Dados do cliente
         comprador_nome: order.oms_customers?.name || '-',
         comprador_email: order.oms_customers?.email || '-',
         cpf_cnpj: order.oms_customers?.doc || '-',
-        
+
         // Endereço
         endereco_rua: order.endereco_rua,
         endereco_numero: order.endereco_numero,
@@ -219,32 +222,34 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
         cidade: order.endereco_cidade,
         uf: order.endereco_uf,
         cep: order.endereco_cep,
-        
+
         // Logística
         empresa: order.empresa || 'Orçamento',
         tipo_logistico: order.tipo_logistico || '-',
         codigo_rastreamento: order.codigo_rastreamento || '-',
         shipping_mode: order.tipo_logistico,
-        
+
         // Produto (primeiro item ou agregado)
         sku: skus[0] || '-',
         skus: skus,
         produto_titulo: firstItem?.title || '-',
         quantidade: order.items?.reduce((sum: number, i: any) => sum + (Number(i.qty) || 0), 0) || 0,
-        
-        // Todos os itens do pedido para exibição detalhada
+
+        // Todos os itens do pedido (para explode/baixar estoque por SKU)
         items: (order.items || []).map((item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
           sku: item.sku || '-',
           title: item.title || '-',
           quantity: Number(item.qty) || 0,
           unit_price: Number(item.unit_price) || 0,
           total: Number(item.total) || (Number(item.qty) * Number(item.unit_price)) || 0,
         })),
-        
+
         // Observações
         notes: order.notes,
         obs: order.notes,
-        
+
         // Campos extras para compatibilidade
         foi_atualizado: false,
         pack_id: null,
