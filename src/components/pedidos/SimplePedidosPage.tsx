@@ -519,6 +519,11 @@ function SimplePedidosPage({ className }: Props) {
           skus: [itemSku].filter(Boolean),
           produto_titulo: it.title || '-',
           quantidade: itemQty,
+          // Valor de venda do item (não do pedido total)
+          valor_total: Number(it.unit_price) || 0,
+          total_amount: Number(it.unit_price) || 0,
+          // Custo unitário do item
+          custo_uni: Number(it.custo_unitario) || 0,
           // Comissão e frete proporcional ao item
           comissao_valor: comissaoItem,
           taxa_marketplace: comissaoItem, // alias para coluna marketplace_fee
