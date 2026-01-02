@@ -815,7 +815,6 @@ export default function OrdersPageProfessional({
                         <TableHead>Cliente</TableHead>
                         <TableHead>Representante</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Total</TableHead>
                         <TableHead>Data</TableHead>
                         <TableHead>Ações</TableHead>
                       </TableRow>
@@ -823,7 +822,7 @@ export default function OrdersPageProfessional({
                     <TableBody>
                       {loading ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8">
+                          <TableCell colSpan={7} className="text-center py-8">
                             <div className="flex items-center justify-center gap-2">
                               <RefreshCw className="h-4 w-4 animate-spin" />
                               Carregando pedidos...
@@ -832,7 +831,7 @@ export default function OrdersPageProfessional({
                         </TableRow>
                       ) : ordersByTab[tabKey].length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8">
+                          <TableCell colSpan={7} className="text-center py-8">
                             <div className="flex flex-col items-center gap-2">
                               <Package className="h-8 w-8 text-muted-foreground" />
                               <span className="text-muted-foreground">
@@ -861,12 +860,7 @@ export default function OrdersPageProfessional({
                                 />
                               </TableCell>
                               <TableCell className="font-medium">
-                                <div className="flex flex-col">
-                                  <span>{order.number}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    ID: {order.id_unico || order.id.slice(0, 8)}
-                                  </span>
-                                </div>
+                                <span>{order.number}</span>
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-col">
@@ -893,9 +887,6 @@ export default function OrdersPageProfessional({
                                   {order.status === 'invoiced' && 'Faturado'}
                                   {order.status === 'cancelled' && 'Cancelado'}
                                 </Badge>
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {formatCurrency(order.grand_total)}
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-col">
