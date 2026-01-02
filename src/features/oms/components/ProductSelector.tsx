@@ -70,7 +70,13 @@ export function ProductSelector({
   });
 
   const handleSelect = (product: Product) => {
-    onSelect(product);
+    // Map to expected format for OrderItemsTable
+    onSelect({
+      ...product,
+      sku: product.sku_interno,
+      titulo: product.nome,
+      custo: 0 // Will be fetched from product if available
+    } as any);
     setOpen(false);
     setSearchTerm("");
   };

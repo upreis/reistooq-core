@@ -4310,6 +4310,12 @@ export type Database = {
           created_at: string
           doc: string | null
           email: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
           id: string
           is_active: boolean | null
           name: string
@@ -4325,6 +4331,12 @@ export type Database = {
           created_at?: string
           doc?: string | null
           email?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -4340,6 +4352,12 @@ export type Database = {
           created_at?: string
           doc?: string | null
           email?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
@@ -4363,6 +4381,7 @@ export type Database = {
       oms_order_items: {
         Row: {
           created_at: string
+          custo_unitario: number | null
           discount_pct: number | null
           discount_value: number | null
           id: string
@@ -4378,6 +4397,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custo_unitario?: number | null
           discount_pct?: number | null
           discount_value?: number | null
           id?: string
@@ -4393,6 +4413,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custo_unitario?: number | null
           discount_pct?: number | null
           discount_value?: number | null
           id?: string
@@ -4418,16 +4439,29 @@ export type Database = {
       }
       oms_orders: {
         Row: {
+          codigo_rastreamento: string | null
+          comissao_percentual: number | null
+          comissao_valor: number | null
           confirmed_at: string | null
           created_at: string
+          custo_produto_total: number | null
           customer_id: string
           delivery_address: string | null
           delivery_date: string | null
           discount_amount: number | null
           discount_type: string | null
+          empresa: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
           grand_total: number
           id: string
+          id_unico: string | null
           internal_notes: string | null
+          local_estoque_id: string | null
           notes: string | null
           number: string
           order_date: string
@@ -4441,19 +4475,34 @@ export type Database = {
           status: string | null
           subtotal: number
           tax_total: number | null
+          tipo_logistico: string | null
           updated_at: string
+          valor_liquido: number | null
         }
         Insert: {
+          codigo_rastreamento?: string | null
+          comissao_percentual?: number | null
+          comissao_valor?: number | null
           confirmed_at?: string | null
           created_at?: string
+          custo_produto_total?: number | null
           customer_id: string
           delivery_address?: string | null
           delivery_date?: string | null
           discount_amount?: number | null
           discount_type?: string | null
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
           grand_total?: number
           id?: string
+          id_unico?: string | null
           internal_notes?: string | null
+          local_estoque_id?: string | null
           notes?: string | null
           number: string
           order_date?: string
@@ -4467,19 +4516,34 @@ export type Database = {
           status?: string | null
           subtotal?: number
           tax_total?: number | null
+          tipo_logistico?: string | null
           updated_at?: string
+          valor_liquido?: number | null
         }
         Update: {
+          codigo_rastreamento?: string | null
+          comissao_percentual?: number | null
+          comissao_valor?: number | null
           confirmed_at?: string | null
           created_at?: string
+          custo_produto_total?: number | null
           customer_id?: string
           delivery_address?: string | null
           delivery_date?: string | null
           discount_amount?: number | null
           discount_type?: string | null
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
           grand_total?: number
           id?: string
+          id_unico?: string | null
           internal_notes?: string | null
+          local_estoque_id?: string | null
           notes?: string | null
           number?: string
           order_date?: string
@@ -4493,7 +4557,9 @@ export type Database = {
           status?: string | null
           subtotal?: number
           tax_total?: number | null
+          tipo_logistico?: string | null
           updated_at?: string
+          valor_liquido?: number | null
         }
         Relationships: [
           {
@@ -4501,6 +4567,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "oms_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oms_orders_local_estoque_id_fkey"
+            columns: ["local_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
             referencedColumns: ["id"]
           },
           {
@@ -7764,6 +7837,8 @@ export type Database = {
       fix_historico_integration_accounts: { Args: never; Returns: Json }
       fix_produtos_organization_id: { Args: never; Returns: Json }
       generate_category_hierarchy_from_products: { Args: never; Returns: Json }
+      generate_oms_id_unico: { Args: { order_id: string }; Returns: string }
+      generate_oms_order_number: { Args: never; Returns: string }
       generate_org_slug: { Args: { org_name: string }; Returns: string }
       generate_password_reset_token: { Args: { _email: string }; Returns: Json }
       gerar_numero_cotacao: { Args: never; Returns: string }

@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   Popover, 
   PopoverContent, 
@@ -17,17 +15,20 @@ import {
 } from "@/components/ui/command";
 import { Search, Plus, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useOMSCustomers } from "../hooks/useOMSData";
 
-interface Customer {
+export interface Customer {
   id: string;
-  nome: string;
-  documento: string;
-  email?: string;
-  telefone?: string;
-  cidade?: string;
-  uf?: string;
+  name: string;
+  doc: string | null;
+  email: string | null;
+  phone: string | null;
+  endereco_rua: string | null;
+  endereco_numero: string | null;
+  endereco_bairro: string | null;
+  endereco_cep: string | null;
+  endereco_cidade: string | null;
+  endereco_uf: string | null;
 }
 
 interface CustomerSelectorProps {
@@ -39,60 +40,28 @@ interface CustomerSelectorProps {
 export function CustomerSelector({ 
   value, 
   onChange, 
-  placeholder = "Pesquise pelas iniciais do nome do cliente, pelo cpf/cnpj ou pelo e-mail" 
+  placeholder = "Pesquise pelo nome, CPF/CNPJ ou e-mail do cliente" 
 }: CustomerSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Mock customers data - replace with real data from Supabase
-  const { data: customers = [] } = useQuery({
-    queryKey: ['customers', searchTerm],
-    queryFn: async () => {
-      // For now, return mock data
-      // Later, implement real Supabase query
-      const mockCustomers: Customer[] = [
-        {
-          id: "1",
-          nome: "João Silva Santos",
-          documento: "123.456.789-00",
-          email: "joao@email.com",
-          telefone: "(11) 99999-9999",
-          cidade: "São Paulo",
-          uf: "SP"
-        },
-        {
-          id: "2", 
-          nome: "Maria Oliveira",
-          documento: "987.654.321-00",
-          email: "maria@email.com",
-          telefone: "(11) 88888-8888",
-          cidade: "Rio de Janeiro",
-          uf: "RJ"
-        },
-        {
-          id: "3",
-          nome: "Empresa ABC Ltda",
-          documento: "12.345.678/0001-90",
-          email: "contato@abc.com",
-          telefone: "(11) 77777-7777",
-          cidade: "Belo Horizonte",
-          uf: "MG"
-        }
-      ];
+  const { data: customers = [], isLoading } = useOMSCustomers(searchTerm);
 
-      if (!searchTerm) return mockCustomers;
-      
-      return mockCustomers.filter(customer => 
-        customer.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.documento.includes(searchTerm) ||
-        customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    },
-    enabled: open
-  });
-
-  const handleSelect = (customer: Customer) => {
-    onChange(customer);
+  const handleSelect = (customer: any) => {
+    const mappedCustomer: Customer = {
+      id: customer.id,
+      name: customer.name,
+      doc: customer.doc,
+      email: customer.email,
+      phone: customer.phone,
+      endereco_rua: customer.endereco_rua,
+      endereco_numero: customer.endereco_numero,
+      endereco_bairro: customer.endereco_bairro,
+      endereco_cep: customer.endereco_cep,
+      endereco_cidade: customer.endereco_cidade,
+      endereco_uf: customer.endereco_uf
+    };
+    onChange(mappedCustomer);
     setOpen(false);
   };
 
@@ -100,10 +69,6 @@ export function CustomerSelector({
     onChange(null);
     setSearchTerm("");
   };
-
-  const displayValue = value 
-    ? `${value.nome} - ${value.documento}`
-    : "";
 
   return (
     <div className="space-y-2">
@@ -118,9 +83,9 @@ export function CustomerSelector({
             <div className="flex flex-col items-start w-full">
               {value ? (
                 <>
-                  <span className="font-medium">{value.nome}</span>
+                  <span className="font-medium">{value.name}</span>
                   <span className="text-sm text-muted-foreground">
-                    {value.documento} • {value.cidade}, {value.uf}
+                    {value.doc} {value.endereco_cidade && `• ${value.endereco_cidade}, ${value.endereco_uf}`}
                   </span>
                 </>
               ) : (
@@ -148,13 +113,19 @@ export function CustomerSelector({
             <CommandList>
               <CommandEmpty>
                 <div className="p-4 text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Nenhum cliente encontrado
-                  </p>
-                  <Button size="sm" variant="outline">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Cadastrar novo cliente
-                  </Button>
+                  {isLoading ? (
+                    <p className="text-sm text-muted-foreground">Carregando...</p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Nenhum cliente encontrado
+                      </p>
+                      <Button size="sm" variant="outline">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Cadastrar novo cliente
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CommandEmpty>
               
@@ -174,15 +145,15 @@ export function CustomerSelector({
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="font-medium">{customer.nome}</p>
+                        <p className="font-medium">{customer.name}</p>
                         <span className="text-sm text-muted-foreground">
-                          {customer.cidade}, {customer.uf}
+                          {customer.endereco_cidade}, {customer.endereco_uf}
                         </span>
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <span>{customer.documento}</span>
+                        <span>{customer.doc}</span>
                         {customer.email && <span>{customer.email}</span>}
-                        {customer.telefone && <span>{customer.telefone}</span>}
+                        {customer.phone && <span>{customer.phone}</span>}
                       </div>
                     </div>
                   </CommandItem>
@@ -194,14 +165,11 @@ export function CustomerSelector({
           <div className="border-t p-3">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <div className="flex items-center space-x-4">
-                <Button variant="link" size="sm" className="text-blue-600 p-0 h-auto">
+                <Button variant="link" size="sm" className="text-primary p-0 h-auto">
                   Dados do cliente
                 </Button>
-                <Button variant="link" size="sm" className="text-blue-600 p-0 h-auto">
+                <Button variant="link" size="sm" className="text-primary p-0 h-auto">
                   Ver últimas vendas
-                </Button>
-                <Button variant="link" size="sm" className="text-blue-600 p-0 h-auto">
-                  Limite de crédito
                 </Button>
               </div>
               {value && (
@@ -209,7 +177,7 @@ export function CustomerSelector({
                   variant="ghost" 
                   size="sm" 
                   onClick={handleClear}
-                  className="text-red-600"
+                  className="text-destructive"
                 >
                   Limpar
                 </Button>
@@ -218,17 +186,6 @@ export function CustomerSelector({
           </div>
         </PopoverContent>
       </Popover>
-
-      {value && (
-        <div className="p-3 bg-muted/50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <span className="font-medium">Endereço:</span> O endereço de entrega do cliente é diferente do endereço de cobrança
-            </div>
-            <input type="checkbox" className="rounded" />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   Table, 
   TableBody, 
@@ -10,7 +9,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Plus, Search, Trash2, Calculator, Package } from "lucide-react";
+import { Plus, Trash2, Package } from "lucide-react";
 import { ProductSelector } from "./ProductSelector";
 
 interface OrderItem {
@@ -20,6 +19,7 @@ interface OrderItem {
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
+  custoUnitario: number;
   icms: number;
   icmsSt: number;
   ipi: number;
@@ -46,6 +46,7 @@ export function OrderItemsTable({
     descricao: '',
     quantidade: 1,
     valorUnitario: 0,
+    custoUnitario: 0,
     icms: 0,
     icmsSt: 0,
     ipi: 0,
@@ -65,6 +66,7 @@ export function OrderItemsTable({
         descricao: '',
         quantidade: 1,
         valorUnitario: 0,
+        custoUnitario: 0,
         icms: 0,
         icmsSt: 0,
         ipi: 0,
@@ -95,8 +97,9 @@ export function OrderItemsTable({
     setNewItem(prev => ({
       ...prev,
       sku: product.sku,
-      descricao: product.nome,
-      valorUnitario: product.preco_venda || 0
+      descricao: product.titulo || product.nome,
+      valorUnitario: product.preco_venda || 0,
+      custoUnitario: product.custo || 0
     }));
   };
 
@@ -104,25 +107,14 @@ export function OrderItemsTable({
     <div className="space-y-4">
       {/* Cabeçalho da tabela com ações */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsAddingItem(true)}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Adicionar outro item
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-blue-600 hover:text-blue-700"
-          >
-            <Search className="w-4 h-4 mr-1" />
-            Busca avançada de itens
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsAddingItem(true)}
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          Adicionar Item
+        </Button>
       </div>
 
       {/* Tabela de itens */}
@@ -131,12 +123,12 @@ export function OrderItemsTable({
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="w-12">Nº</TableHead>
-              <TableHead className="min-w-64">Descrição</TableHead>
-              <TableHead className="w-32">Código (SKU)</TableHead>
+              <TableHead className="w-28">SKU</TableHead>
+              <TableHead className="min-w-48">Título do Produto</TableHead>
               <TableHead className="w-20">Qtde</TableHead>
-              <TableHead className="w-20">UN</TableHead>
-              <TableHead className="w-24">Preço un</TableHead>
-              <TableHead className="w-24">Preço total</TableHead>
+              <TableHead className="w-24">Preço Un.</TableHead>
+              <TableHead className="w-24">Custo Un.</TableHead>
+              <TableHead className="w-24">Valor Total</TableHead>
               <TableHead className="w-16">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -145,16 +137,13 @@ export function OrderItemsTable({
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{index + 1}</TableCell>
                 <TableCell>
+                  <span className="font-mono text-sm">{item.sku}</span>
+                </TableCell>
+                <TableCell>
                   <Input
                     value={item.descricao}
                     onChange={(e) => onUpdateItem(item.id, { descricao: e.target.value })}
                     className="min-w-full"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    value={item.sku}
-                    onChange={(e) => onUpdateItem(item.id, { sku: e.target.value })}
                   />
                 </TableCell>
                 <TableCell>
@@ -166,7 +155,6 @@ export function OrderItemsTable({
                     className="w-20"
                   />
                 </TableCell>
-                <TableCell className="text-center">UN</TableCell>
                 <TableCell>
                   <Input
                     type="number"
@@ -177,56 +165,50 @@ export function OrderItemsTable({
                 </TableCell>
                 <TableCell>
                   <Input
-                    value={item.valorTotal.toFixed(2)}
-                    readOnly
-                    className="bg-muted"
+                    type="number"
+                    step="0.01"
+                    value={item.custoUnitario}
+                    onChange={(e) => onUpdateItem(item.id, { custoUnitario: parseFloat(e.target.value) || 0 })}
                   />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center space-x-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-green-600 hover:text-green-700"
-                    >
-                      Salvar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onRemoveItem(item.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <span className="font-medium">R$ {item.valorTotal.toFixed(2)}</span>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onRemoveItem(item.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
 
             {/* Linha para adicionar novo item */}
             {isAddingItem && (
-              <TableRow className="bg-blue-50 dark:bg-blue-950">
+              <TableRow className="bg-primary/5">
                 <TableCell className="font-medium">{items.length + 1}</TableCell>
-                <TableCell>
-                  <div className="space-y-2">
-                    <ProductSelector
-                      onSelect={handleProductSelect}
-                      placeholder="Pesquise por descrição, código (SKU) ou código de barras"
-                    />
-                    <Input
-                      value={newItem.descricao}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, descricao: e.target.value }))}
-                      placeholder="Ou digite a descrição manualmente"
-                    />
-                  </div>
-                </TableCell>
                 <TableCell>
                   <Input
                     value={newItem.sku}
                     onChange={(e) => setNewItem(prev => ({ ...prev, sku: e.target.value }))}
                     placeholder="SKU"
+                    className="w-24"
                   />
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-2">
+                    <ProductSelector
+                      onSelect={handleProductSelect}
+                      placeholder="Buscar produto..."
+                    />
+                    {newItem.descricao && (
+                      <span className="text-sm text-muted-foreground">{newItem.descricao}</span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Input
@@ -240,7 +222,6 @@ export function OrderItemsTable({
                     className="w-20"
                   />
                 </TableCell>
-                <TableCell className="text-center">UN</TableCell>
                 <TableCell>
                   <Input
                     type="number"
@@ -254,26 +235,36 @@ export function OrderItemsTable({
                 </TableCell>
                 <TableCell>
                   <Input
-                    value={(newItem.quantidade * newItem.valorUnitario).toFixed(2)}
-                    readOnly
-                    className="bg-muted"
+                    type="number"
+                    step="0.01"
+                    value={newItem.custoUnitario}
+                    onChange={(e) => setNewItem(prev => ({ 
+                      ...prev, 
+                      custoUnitario: parseFloat(e.target.value) || 0 
+                    }))}
                   />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center space-x-1">
+                  <span className="font-medium">
+                    R$ {(newItem.quantidade * newItem.valorUnitario).toFixed(2)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={handleAddNewItem}
                       className="text-green-600 hover:text-green-700"
+                      disabled={!newItem.sku || !newItem.descricao}
                     >
-                      Salvar
+                      OK
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setIsAddingItem(false)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -285,18 +276,18 @@ export function OrderItemsTable({
         </Table>
       </div>
 
-      {/* Resumo dos itens */}
+      {/* Estado vazio */}
       {items.length === 0 && !isAddingItem && (
         <div className="text-center py-8 text-muted-foreground">
           <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>Nenhum item adicionado ainda</p>
+          <p>Nenhum produto selecionado</p>
+          <p className="text-sm mb-4">Use o seletor avançado ou busque produtos acima para adicionar itens ao pedido.</p>
           <Button
-            variant="outline"
+            variant="default"
             onClick={() => setIsAddingItem(true)}
-            className="mt-2"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Adicionar primeiro item
+            Usar Seletor Avançado
           </Button>
         </div>
       )}
