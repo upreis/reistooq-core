@@ -107,6 +107,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
+    key: 'desconto_cliente',
+    label: 'Desconto Cliente',
+    category: 'financial',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Desconto aplicado para o cliente',
+    width: 120,
+    sortable: true
+  },
+  {
     key: 'receita_flex',
     label: 'Receita Flex',
     category: 'financial',
