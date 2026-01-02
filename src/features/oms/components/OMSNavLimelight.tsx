@@ -6,7 +6,7 @@ import mercadoLivreLogo from "@/assets/mercado-livre-logo.png";
 const navItems = [
   {
     path: "/pedidos",
-    label: "Mercado Livre",
+    label: "Marketplace",
     icon: null,
     customIcon: mercadoLivreLogo,
     preserveSearch: true,
