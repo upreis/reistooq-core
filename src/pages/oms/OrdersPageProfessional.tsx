@@ -1001,6 +1001,7 @@ export default function OrdersPageProfessional({
                                                     <th className="text-left p-2">Produto</th>
                                                     <th className="text-right p-2">Qtd</th>
                                                     <th className="text-right p-2">Preço Unit.</th>
+                                                    <th className="text-right p-2">Desconto</th>
                                                     <th className="text-right p-2">Frete Item</th>
                                                     <th className="text-right p-2">Comissão</th>
                                                     <th className="text-right p-2">Total</th>
@@ -1011,12 +1012,14 @@ export default function OrdersPageProfessional({
                                                     const itemQty = Number(item.qty) || 0;
                                                     const freteItem = itemQty * freightPerUnit;
                                                     const comissaoItem = itemQty * comissaoPerUnit;
+                                                    const desconto = Number(item.discount) || 0;
                                                     return (
                                                       <tr key={item.id} className="border-t">
                                                         <td className="p-2 font-mono text-xs">{item.sku}</td>
                                                         <td className="p-2">{item.title}</td>
                                                         <td className="p-2 text-right">{item.qty}</td>
                                                         <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
+                                                        <td className="p-2 text-right text-green-600">{desconto > 0 ? formatCurrency(desconto) : '-'}</td>
                                                         <td className="p-2 text-right text-muted-foreground">{formatCurrency(freteItem)}</td>
                                                         <td className="p-2 text-right text-amber-600">{formatCurrency(comissaoItem)}</td>
                                                         <td className="p-2 text-right font-medium">{formatCurrency(item.total)}</td>
