@@ -364,14 +364,18 @@ export function useOMSOrders() {
           discount_value: item.discount_value,
           tax_value: item.tax_value,
           total: item.total,
-          custo_unitario: item.custo_unitario || 0
+          custo_unitario: item.custo_unitario || 0,
         }));
 
         const { error: itemsError } = await supabase
           .from('oms_order_items')
           .insert(orderItems);
 
-        if (itemsError) throw itemsError;
+        // ✅ Se falhar ao inserir itens, removemos o pedido para não ficar órfão
+        if (itemsError) {
+          await supabase.from('oms_orders').delete().eq('id', newOrder.id);
+          throw itemsError;
+        }
       }
 
       await fetchOrders(); // Recarregar dados
