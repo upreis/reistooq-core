@@ -209,6 +209,7 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
         valor_desconto: order.discount_amount || 0,
         valor_liquido: order.valor_liquido || 0,
         comissao_valor: order.comissao_valor || 0,
+        comissao_percentual: order.comissao_percentual || 0,
 
         // Dados do cliente
         comprador_nome: order.oms_customers?.name || '-',
