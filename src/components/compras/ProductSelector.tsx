@@ -85,16 +85,16 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
   // Locais de venda filtrados pelo estoque selecionado
   const locaisVendaFiltrados = locaisVenda.filter(lv => lv.local_estoque_id === selectedLocalEstoqueId);
 
-  // Carregar produtos de COMPOSIÇÕES (tabela produtos_composicoes)
+  // Carregar produtos de COMPOSIÇÕES com estoque do local selecionado
   useEffect(() => {
     const loadProducts = async () => {
-      if (isOpen) {
+      if (isOpen && selectedLocalEstoqueId) {
         setLoading(true);
         try {
           // Buscar produtos da tabela produtos_composicoes (composições para OMS)
           const { data: composicoesData, error: composicoesError } = await supabase
             .from('produtos_composicoes')
-            .select('id, sku_interno, nome, categoria, preco_venda, preco_custo, quantidade_atual, estoque_minimo')
+            .select('id, sku_interno, nome, categoria, preco_venda, preco_custo, estoque_minimo')
             .eq('ativo', true)
             .order('nome');
 
@@ -104,17 +104,44 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
             return;
           }
 
-          // Mapear para o formato esperado
-          const produtosComposicoes = (composicoesData || []).map((item: any) => ({
-            id: item.id,
-            nome: item.nome,
-            sku_interno: item.sku_interno,
-            preco_custo: item.preco_custo || 0,
-            preco_venda: item.preco_venda || 0,
-            quantidade_atual: item.quantidade_atual || 0,
-            estoque_minimo: item.estoque_minimo || 0,
-            categoria: item.categoria
-          }));
+          // Buscar estoque do local selecionado
+          // Primeiro precisamos mapear sku_interno para produto_id da tabela produtos
+          const skus = (composicoesData || []).map((c: any) => c.sku_interno);
+          
+          // Buscar os produtos da tabela principal para pegar os IDs
+          const { data: produtosData } = await supabase
+            .from('produtos')
+            .select('id, sku_interno')
+            .in('sku_interno', skus);
+
+          const skuToProductId = new Map((produtosData || []).map((p: any) => [p.sku_interno, p.id]));
+          const productIds = Array.from(skuToProductId.values());
+
+          // Buscar estoque por local
+          const { data: estoqueData } = await supabase
+            .from('estoque_por_local')
+            .select('produto_id, quantidade')
+            .eq('local_id', selectedLocalEstoqueId)
+            .in('produto_id', productIds);
+
+          const estoqueMap = new Map((estoqueData || []).map((e: any) => [e.produto_id, e.quantidade]));
+
+          // Mapear para o formato esperado com estoque real
+          const produtosComposicoes = (composicoesData || []).map((item: any) => {
+            const produtoId = skuToProductId.get(item.sku_interno);
+            const quantidadeEstoque = produtoId ? (estoqueMap.get(produtoId) || 0) : 0;
+            
+            return {
+              id: item.id,
+              nome: item.nome,
+              sku_interno: item.sku_interno,
+              preco_custo: item.preco_custo || 0,
+              preco_venda: item.preco_venda || 0,
+              quantidade_atual: quantidadeEstoque,
+              estoque_minimo: item.estoque_minimo || 0,
+              categoria: item.categoria
+            };
+          });
 
           setProducts(produtosComposicoes);
         } catch (error) {
@@ -123,10 +150,12 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
         } finally {
           setLoading(false);
         }
+      } else if (isOpen && !selectedLocalEstoqueId) {
+        setProducts([]);
       }
     };
     loadProducts();
-  }, [isOpen]);
+  }, [isOpen, selectedLocalEstoqueId]);
 
   const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
