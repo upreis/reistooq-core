@@ -320,35 +320,50 @@ export default function OrdersPageProfessional({
         tax_total: data.tax_total,
         grand_total: data.grand_total,
         notes: data.notes,
-        internal_notes: data.internal_notes
+        internal_notes: data.internal_notes,
+
+        // ✅ Campos OMS (logística/endereço/comissão)
+        empresa: data.empresa,
+        tipo_logistico: data.tipo_logistico,
+        codigo_rastreamento: data.codigo_rastreamento,
+        local_estoque_id: data.local_estoque_id,
+        comissao_percentual: data.comissao_percentual,
+        comissao_valor: data.comissao_valor,
+        endereco_rua: data.endereco_rua,
+        endereco_numero: data.endereco_numero,
+        endereco_bairro: data.endereco_bairro,
+        endereco_cep: data.endereco_cep,
+        endereco_cidade: data.endereco_cidade,
+        endereco_uf: data.endereco_uf,
       });
 
-      // ✅ ATUALIZAR ITENS DO PEDIDO SEPARADAMENTE
-      if (data.items && data.items.length > 0) {
-        // Primeiro deletar itens existentes
-        const { error: deleteError } = await supabase
-          .from('oms_order_items')
-          .delete()
-          .eq('order_id', editingOrder.id);
-        
-        if (deleteError) throw deleteError;
+      // ✅ ATUALIZAR ITENS DO PEDIDO (sempre sincronizar)
+      const { error: deleteError } = await supabase
+        .from('oms_order_items')
+        .delete()
+        .eq('order_id', editingOrder.id);
 
-        // Inserir novos itens
+      if (deleteError) throw deleteError;
+
+      if (Array.isArray(data.items) && data.items.length > 0) {
         const { error: itemsError } = await supabase
           .from('oms_order_items')
-          .insert(data.items.map((item: any) => ({
-            order_id: editingOrder.id,
-            product_id: item.product_id,
-            sku: item.sku,
-            title: item.title,
-            qty: item.qty,
-            unit_price: item.unit_price,
-            discount_pct: item.discount_pct,
-            discount_value: item.discount_value,
-            tax_value: item.tax_value,
-            total: item.total
-          })));
-        
+          .insert(
+            data.items.map((item: any) => ({
+              order_id: editingOrder.id,
+              product_id: item.product_id,
+              sku: item.sku,
+              title: item.title,
+              qty: item.qty,
+              unit_price: item.unit_price,
+              discount_pct: item.discount_pct,
+              discount_value: item.discount_value,
+              tax_value: item.tax_value,
+              total: item.total,
+              custo_unitario: item.custo_unitario || 0,
+            }))
+          );
+
         if (itemsError) throw itemsError;
       }
       
