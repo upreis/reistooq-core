@@ -237,6 +237,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'nome_completo': {
                       const fullName = (
                         order.nome_completo ||
+                        order.comprador_nome || // 🛒 OMS: nome do cliente
+                        order.unified?.comprador_nome ||
                         order.shipping?.destination?.receiver_name ||
                         order.unified?.buyer_name ||
                         order.unified?.receiver_name ||
@@ -332,6 +334,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span>{quantidadeItens}</span>;
                      case 'titulo_anuncio':
                        const titulo = order.titulo_anuncio || 
+                                    order.produto_titulo || // 🛒 OMS: título do produto
+                                    order.unified?.produto_titulo ||
                                     order.order_items?.[0]?.item?.title || 
                                     order.unified?.titulo_anuncio ||
                                     order.raw?.order_items?.[0]?.item?.title ||
