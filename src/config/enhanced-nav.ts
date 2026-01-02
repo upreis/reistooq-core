@@ -200,13 +200,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             permission: 'admin:access'
           },
           {
-            id: 'admin-seguranca',
-            label: 'Segurança',
-            path: '/admin/seguranca',
-            icon: 'Lock',
-            permission: 'admin:access'
-          },
-          {
             id: 'admin-integracoes',
             label: 'Integrações',
             path: '/admin/integracoes',
