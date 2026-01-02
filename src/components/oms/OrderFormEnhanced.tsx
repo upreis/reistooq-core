@@ -511,8 +511,8 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       const totals = calculateTotals();
       const selectedPaymentTerm = paymentTerms.find(pt => pt.id === formData.paymentTerm);
       
-      // Calcular comissão baseada no percentual
-      const comissaoValor = (totals.grandTotal * formData.comissaoPercentual) / 100;
+      // Calcular comissão baseada no subtotal dos produtos (sem frete)
+      const comissaoValor = (totals.subtotal * formData.comissaoPercentual) / 100;
 
       const orderData = {
         customer_id: formData.selectedCustomer,
@@ -1210,7 +1210,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
             <div>
               <Label>Valor da Comissão</Label>
               <div className="h-9 flex items-center px-3 border rounded text-sm bg-muted">
-                {formatCurrency((calculateTotals().grandTotal * formData.comissaoPercentual) / 100)}
+                {formatCurrency((calculateTotals().subtotal * formData.comissaoPercentual) / 100)}
               </div>
             </div>
           </div>
