@@ -471,68 +471,32 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                               }
                     case 'desconto_cliente':
                       {
-                        // 🛒 OMS: Calcular desconto proporcional por item (mesma lógica do /oms/pedidos)
+                        // 🛒 OMS: Valor já vem calculado proporcionalmente no SimplePedidosPage
                         const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
-                        if (isOMS) {
-                          const items = order.unified?.items || order.items || [];
-                          const currentSku = order.unified?.sku || order.sku;
-                          const currentItem = items.find((i: any) => i.sku === currentSku) || items[0];
-                          const descontoTotal = order.unified?.valor_desconto ?? order.valor_desconto ?? order.discount_amount ?? 0;
-                          const subtotalItens = items.reduce((sum: number, i: any) => sum + (Number(i.total) || 0), 0);
-                          const itemTotal = Number(currentItem?.total) || 0;
-                          // Desconto proporcional ao VALOR do item
-                          const descontoItem = subtotalItens > 0 ? (itemTotal / subtotalItens) * descontoTotal : 0;
-                          const colorClass = descontoItem > 0 ? 'font-mono text-sm font-semibold text-green-600 dark:text-green-400' : '';
-                          return <span className={colorClass}>{descontoItem > 0 ? formatMoney(descontoItem) : '-'}</span>;
-                        }
-                        const desconto = order.discount || order.unified?.discount || 0;
+                        const desconto = isOMS
+                          ? (order.valor_desconto ?? order.discount_amount ?? order.unified?.valor_desconto ?? 0)
+                          : (order.discount || order.unified?.discount || 0);
                         const colorClass = desconto > 0 ? 'font-mono text-sm font-semibold text-green-600 dark:text-green-400' : '';
                         return <span className={colorClass}>{desconto > 0 ? formatMoney(desconto) : '-'}</span>;
                       }
                     case 'custo_envio_seller':
                       {
-                        // 🛒 OMS: Calcular frete proporcional por item (mesma lógica do /oms/pedidos)
+                        // 🛒 OMS: Valor já vem calculado proporcionalmente no SimplePedidosPage
                         const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
-                        if (isOMS) {
-                          const items = order.unified?.items || order.items || [];
-                          const currentSku = order.unified?.sku || order.sku;
-                          const currentItem = items.find((i: any) => i.sku === currentSku) || items[0];
-                          const shippingTotal = order.unified?.valor_frete ?? order.valor_frete ?? order.shipping_total ?? 0;
-                          const totalQty = items.reduce((sum: number, i: any) => sum + (Number(i.quantity) || Number(i.qty) || 0), 0);
-                          const itemQty = Number(currentItem?.quantity) || Number(currentItem?.qty) || 0;
-                          // Frete proporcional à QUANTIDADE do item
-                          const freightPerUnit = totalQty > 0 ? shippingTotal / totalQty : 0;
-                          const freteItem = itemQty * freightPerUnit;
-                          const colorClass = freteItem > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
-                          return <span className={colorClass}>{formatMoney(freteItem)}</span>;
-                        }
-                        const custoEnvio = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
+                        const custoEnvio = isOMS
+                          ? (order.frete_item ?? order.valor_frete ?? order.unified?.frete_item ?? 0)
+                          : (order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0);
                         const colorClass = custoEnvio > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
                         return <span className={colorClass}>{formatMoney(custoEnvio)}</span>;
                       }
                     
                     case 'marketplace_fee':
                       {
-                        // 🛒 OMS: Calcular comissão por item (mesma lógica do /oms/pedidos)
+                        // 🛒 OMS: Valor já vem calculado proporcionalmente no SimplePedidosPage
                         const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
-                        if (isOMS) {
-                          const items = order.unified?.items || order.items || [];
-                          const currentSku = order.unified?.sku || order.sku;
-                          const currentItem = items.find((i: any) => i.sku === currentSku) || items[0];
-                          const descontoTotal = order.unified?.valor_desconto ?? order.valor_desconto ?? order.discount_amount ?? 0;
-                          const subtotalItens = items.reduce((sum: number, i: any) => sum + (Number(i.total) || 0), 0);
-                          const itemTotal = Number(currentItem?.total) || 0;
-                          // Desconto proporcional ao VALOR do item
-                          const descontoItem = subtotalItens > 0 ? (itemTotal / subtotalItens) * descontoTotal : 0;
-                          // Total = valor do item - desconto
-                          const totalItemLiquido = itemTotal - descontoItem;
-                          // Comissão = percentual sobre o valor líquido (pegar do pedido)
-                          const comissaoPercentual = order.comissao_percentual ?? order.unified?.comissao_percentual ?? 0;
-                          const comissaoItem = (totalItemLiquido * comissaoPercentual) / 100;
-                          const colorClass = comissaoItem > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
-                          return <span className={colorClass}>{comissaoItem > 0 ? formatMoney(comissaoItem) : '-'}</span>;
-                        }
-                        const fee = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
+                        const fee = isOMS 
+                          ? (order.comissao_valor ?? order.taxa_marketplace ?? order.unified?.comissao_valor ?? 0)
+                          : (order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0);
                         const colorClass = fee > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
                         return <span className={colorClass}>{fee > 0 ? formatMoney(fee) : '-'}</span>;
                       }

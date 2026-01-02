@@ -491,11 +491,16 @@ function SimplePedidosPage({ className }: Props) {
       const items = (o.unified?.items || []) as Array<any>;
       if (!items.length) return [base];
 
-      // Calcular comissão e frete por unidade
+      // Calcular valores totais para distribuição proporcional
       const comissaoTotal = Number(o.unified?.comissao_valor) || 0;
       const freteTotal = Number(o.unified?.valor_frete) || 0;
+      const descontoTotal = Number(o.unified?.valor_desconto) || 0;
+      const comissaoPercentual = Number(o.unified?.comissao_percentual) || 0;
+      
       const totalQty = items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
-      const comissaoPerUnit = totalQty > 0 ? comissaoTotal / totalQty : 0;
+      const subtotalItens = items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
+      
+      // Frete por unidade (proporcional à quantidade)
       const fretePerUnit = totalQty > 0 ? freteTotal / totalQty : 0;
 
       const orderNumber = o.unified?.numero || o.unified?.order_number || o.raw?.number || '';
@@ -503,9 +508,20 @@ function SimplePedidosPage({ className }: Props) {
       return items.map((it, idx) => {
         const rowId = it.id || `${base.id}-item-${idx}`;
         const itemQty = Number(it.quantity) || 0;
-        const comissaoItem = itemQty * comissaoPerUnit;
-        const freteItem = itemQty * fretePerUnit;
+        const itemTotal = Number(it.total) || 0;
         const itemSku = it.sku || '-';
+        
+        // 🎯 DESCONTO proporcional ao VALOR do item (mesma lógica do /oms/pedidos)
+        const descontoItem = subtotalItens > 0 ? (itemTotal / subtotalItens) * descontoTotal : 0;
+        
+        // Total líquido do item (valor - desconto)
+        const totalItemLiquido = itemTotal - descontoItem;
+        
+        // 🎯 COMISSÃO = percentual sobre o valor líquido do item
+        const comissaoItem = (totalItemLiquido * comissaoPercentual) / 100;
+        
+        // 🎯 FRETE proporcional à quantidade do item
+        const freteItem = itemQty * fretePerUnit;
         
         // ID único: SKU-numero_pedido (ex: FL-105-DOUR-1-000008/2026)
         const idUnico = `${itemSku}-${orderNumber}`;
@@ -524,10 +540,13 @@ function SimplePedidosPage({ className }: Props) {
           total_amount: (Number(it.unit_price) || 0) * itemQty,
           // Custo unitário do item x quantidade
           custo_uni: (Number(it.custo_unitario) || 0) * itemQty,
-          // Comissão e frete proporcional ao item
+          // 🎯 Valores proporcionais calculados por item (igual /oms/pedidos)
+          valor_desconto: descontoItem,
+          discount_amount: descontoItem,
           comissao_valor: comissaoItem,
           taxa_marketplace: comissaoItem, // alias para coluna marketplace_fee
           frete_item: freteItem,
+          valor_frete: freteItem,
           // manter apenas o item da linha (para baixa de estoque por SKU)
           items: [it]
         };
