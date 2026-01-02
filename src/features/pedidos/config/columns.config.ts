@@ -61,18 +61,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 110,
     sortable: true
   },
-  {
-    key: 'last_updated',
-    label: 'Atualizado',
-    category: 'basic',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data da última atualização',
-    width: 130,
-    sortable: true
-  },
-
   // ====== PRODUTOS (da imagem 1) ======
   {
     key: 'skus_produtos',
