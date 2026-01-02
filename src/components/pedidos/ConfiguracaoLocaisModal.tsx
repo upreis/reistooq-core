@@ -41,6 +41,7 @@ export function ConfiguracaoLocaisModal({
   const [mapeamentos, setMapeamentos] = useState<MapeamentoLocalEstoque[]>([]);
   const [tiposLogisticosDinamicos, setTiposLogisticosDinamicos] = useState<string[]>([]);
   const [empresasShopee, setEmpresasShopee] = useState<string[]>([]);
+  const [empresasOrcamento, setEmpresasOrcamento] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
   const [empresaSelectorOpen, setEmpresaSelectorOpen] = useState(false);
@@ -98,7 +99,7 @@ export function ConfiguracaoLocaisModal({
   async function carregarDados() {
     try {
       setLoading(true);
-      const [locaisData, mapeamentosData, locaisVendaData, tiposLogisticosData, empresasShopeeData] = await Promise.all([
+      const [locaisData, mapeamentosData, locaisVendaData, tiposLogisticosData, empresasShopeeData, empresasOrcamentoData] = await Promise.all([
         listarLocaisEstoque(),
         listarMapeamentosLocais(),
         listarLocaisVenda(),
@@ -112,6 +113,13 @@ export function ConfiguracaoLocaisModal({
         // Buscar empresas únicas dos pedidos Shopee
         supabase
           .from('pedidos_shopee')
+          .select('empresa')
+          .not('empresa', 'is', null)
+          .not('empresa', 'eq', '')
+          .limit(1000),
+        // Buscar empresas únicas dos pedidos OMS (Orçamento)
+        supabase
+          .from('oms_orders')
           .select('empresa')
           .not('empresa', 'is', null)
           .not('empresa', 'eq', '')
@@ -139,6 +147,16 @@ export function ConfiguracaoLocaisModal({
             .filter((e): e is string => !!e && e.trim() !== '')
         )].sort();
         setEmpresasShopee(empresasUnicas);
+      }
+
+      // Extrair empresas únicas dos pedidos OMS (Orçamento)
+      if (empresasOrcamentoData.data) {
+        const empresasUnicas = [...new Set(
+          empresasOrcamentoData.data
+            .map(row => row.empresa)
+            .filter((e): e is string => !!e && e.trim() !== '')
+        )].sort();
+        setEmpresasOrcamento(empresasUnicas);
       }
     } catch (error: any) {
       toast.error('Erro ao carregar dados: ' + error.message);
@@ -278,7 +296,7 @@ export function ConfiguracaoLocaisModal({
                     <SelectValue placeholder="Selecione a empresa..." />
                   </SelectTrigger>
                   <SelectContent className="bg-background border border-border z-[9999]">
-                    {contasML.length === 0 && empresasShopee.length === 0 ? (
+                    {contasML.length === 0 && empresasShopee.length === 0 && empresasOrcamento.length === 0 ? (
                       <div className="p-2 text-sm text-muted-foreground">
                         Nenhuma conta disponível
                       </div>
@@ -310,6 +328,19 @@ export function ConfiguracaoLocaisModal({
                             </div>
                             {empresasShopee.map((empresa) => (
                               <SelectItem key={`shopee-${empresa}`} value={empresa}>
+                                <span className="font-medium">{empresa}</span>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {/* Empresas Orçamento (OMS) */}
+                        {empresasOrcamento.length > 0 && (
+                          <>
+                            <div className="px-2 py-1 text-xs text-muted-foreground font-semibold bg-muted/50 mt-1">
+                              📋 Orçamento
+                            </div>
+                            {empresasOrcamento.map((empresa) => (
+                              <SelectItem key={`orcamento-${empresa}`} value={empresa}>
                                 <span className="font-medium">{empresa}</span>
                               </SelectItem>
                             ))}
