@@ -131,12 +131,12 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'marketplace_fee',
-    label: 'Taxa Marketplace',
+    label: 'Comissão Vendedor',
     category: 'financial',
     priority: 'important',
     visible: true,
     default: true,
-    description: 'Taxa cobrada pelo marketplace',
+    description: 'Comissão do vendedor/representante',
     width: 120,
     sortable: true
   },
