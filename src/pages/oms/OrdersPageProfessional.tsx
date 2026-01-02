@@ -985,28 +985,43 @@ export default function OrdersPageProfessional({
                                       <div>
                                         <h4 className="font-medium mb-2">Itens do Pedido ({order.oms_order_items.length})</h4>
                                         <div className="border rounded-lg overflow-hidden">
-                                          <table className="w-full text-sm">
-                                            <thead className="bg-muted">
-                                              <tr>
-                                                <th className="text-left p-2">SKU</th>
-                                                <th className="text-left p-2">Produto</th>
-                                                <th className="text-right p-2">Qtd</th>
-                                                <th className="text-right p-2">Preço Unit.</th>
-                                                <th className="text-right p-2">Total</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              {order.oms_order_items.map((item: any) => (
-                                                <tr key={item.id} className="border-t">
-                                                  <td className="p-2 font-mono text-xs">{item.sku}</td>
-                                                  <td className="p-2">{item.title}</td>
-                                                  <td className="p-2 text-right">{item.qty}</td>
-                                                  <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
-                                                  <td className="p-2 text-right font-medium">{formatCurrency(item.total)}</td>
-                                                </tr>
-                                              ))}
-                                            </tbody>
-                                          </table>
+                                          {(() => {
+                                            // Calcular frete por unidade
+                                            const shippingTotal = Number(order.shipping_total) || 0;
+                                            const totalQty = order.oms_order_items.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0);
+                                            const freightPerUnit = totalQty > 0 ? shippingTotal / totalQty : 0;
+                                            
+                                            return (
+                                              <table className="w-full text-sm">
+                                                <thead className="bg-muted">
+                                                  <tr>
+                                                    <th className="text-left p-2">SKU</th>
+                                                    <th className="text-left p-2">Produto</th>
+                                                    <th className="text-right p-2">Qtd</th>
+                                                    <th className="text-right p-2">Preço Unit.</th>
+                                                    <th className="text-right p-2">Frete Item</th>
+                                                    <th className="text-right p-2">Total</th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody>
+                                                  {order.oms_order_items.map((item: any) => {
+                                                    const itemQty = Number(item.qty) || 0;
+                                                    const freteItem = itemQty * freightPerUnit;
+                                                    return (
+                                                      <tr key={item.id} className="border-t">
+                                                        <td className="p-2 font-mono text-xs">{item.sku}</td>
+                                                        <td className="p-2">{item.title}</td>
+                                                        <td className="p-2 text-right">{item.qty}</td>
+                                                        <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
+                                                        <td className="p-2 text-right text-muted-foreground">{formatCurrency(freteItem)}</td>
+                                                        <td className="p-2 text-right font-medium">{formatCurrency(item.total)}</td>
+                                                      </tr>
+                                                    );
+                                                  })}
+                                                </tbody>
+                                              </table>
+                                            );
+                                          })()}
                                         </div>
                                       </div>
                                     )}
