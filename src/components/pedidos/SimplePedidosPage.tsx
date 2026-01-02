@@ -448,31 +448,8 @@ function SimplePedidosPage({ className }: Props) {
   // Hook para verificar pedidos já processados
   const { pedidosProcessados, verificarPedidos, isLoading: loadingProcessados, isPedidoProcessado } = usePedidosProcessados();
   
-  // 📍 Hook para enriquecer pedidos com local de estoque
-  const { rowsEnriquecidos, loading: loadingLocais, refreshMapeamentos } = useLocalEstoqueEnriquecimento(state.orders);
-
-  // 🔧 FASE 4.1.2: Hooks de gerenciamento de contas
-  const { accounts, testAccount, loadAccounts } = usePedidosAccountsManager({
-    actions,
-    integrationAccountId: state.integrationAccountId
-  });
-
-  // 🔧 FASE 4.1.2: Hooks de handlers de UI
-  const handlers = usePedidosHandlers({
-    actions,
-    persistentState,
-    setQuickFilter,
-    setAdvancedStatusFilters
-  });
-
-  // 🔧 FASE 4.1.2: Hook de validação
-  const { validateSystem } = usePedidosValidation({ orders: rowsEnriquecidos });
-
-  // 🔧 FASE 4.1.2: Função movida para usePedidosHelpers (linha removida)
-  
-  // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
-  // 🛍️ SHOPEE + ML + OMS: Combinar dados quando marketplace = 'all'
-  const orders = useMemo(() => {
+  // 🛍️ SHOPEE + ML + OMS: Unificar TODOS os pedidos ANTES do enriquecimento
+  const allOrdersRaw = useMemo(() => {
     // ✅ CORREÇÃO: Preservar raw + unified para que foi_atualizado seja acessível
     const shopeeUnified = shopeeOrdersDB.orders.map((o) => ({
       ...o.unified,
@@ -553,20 +530,42 @@ function SimplePedidosPage({ className }: Props) {
       });
     });
     
+    // 📍 Retornar pedidos baseado no marketplace selecionado (SEM enriquecimento ainda)
     if (isOMSMarketplace) {
-      // Apenas OMS (Orçamento)
       return omsUnified;
     } else if (isShopeeMarketplace) {
-      // Apenas Shopee
       return shopeeUnified;
     } else if (isAllMarketplaces) {
       // Combinar ML + Shopee + OMS
-      return [...rowsEnriquecidos, ...shopeeUnified, ...omsUnified];
+      return [...(state.orders || []), ...shopeeUnified, ...omsUnified];
     } else {
       // Apenas Mercado Livre
-      return rowsEnriquecidos;
+      return state.orders || [];
     }
-  }, [isShopeeMarketplace, isOMSMarketplace, isAllMarketplaces, shopeeOrdersDB.orders, omsOrdersDB.orders, rowsEnriquecidos]);
+  }, [isShopeeMarketplace, isOMSMarketplace, isAllMarketplaces, shopeeOrdersDB.orders, omsOrdersDB.orders, state.orders]);
+
+  // 📍 Hook para enriquecer TODOS os pedidos com local de estoque (ML + Shopee + OMS)
+  const { rowsEnriquecidos, loading: loadingLocais, refreshMapeamentos } = useLocalEstoqueEnriquecimento(allOrdersRaw);
+
+  // 🔧 FASE 4.1.2: Hooks de gerenciamento de contas
+  const { accounts, testAccount, loadAccounts } = usePedidosAccountsManager({
+    actions,
+    integrationAccountId: state.integrationAccountId
+  });
+
+  // 🔧 FASE 4.1.2: Hooks de handlers de UI
+  const handlers = usePedidosHandlers({
+    actions,
+    persistentState,
+    setQuickFilter,
+    setAdvancedStatusFilters
+  });
+
+  // 🔧 FASE 4.1.2: Hook de validação
+  const { validateSystem } = usePedidosValidation({ orders: rowsEnriquecidos });
+
+  // 📍 Alias para compatibilidade - agora usa pedidos enriquecidos
+  const orders = rowsEnriquecidos;
 
   const total = isOMSMarketplace
     ? omsOrdersDB.total
