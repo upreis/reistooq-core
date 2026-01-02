@@ -326,15 +326,35 @@ function SimplePedidosPage({ className }: Props) {
     'tags',                // Tags do Pedido
   ]), []);
   
+  // 🛒 OMS: Colunas que não tem dados no Orçamento (ocultar na aba Orçamento)
+  const OMS_HIDDEN_COLUMNS = useMemo(() => new Set([
+    'power_seller_status', // Medalha
+    'level_id',            // Reputação
+    'conditions',          // Condição
+    'shipping_substatus',  // Substatus do Envio
+    'url_rastreamento',    // Rastreamento
+    'pack_id',             // Pack ID
+    'pickup_id',           // Pickup ID
+    'updated_at',          // Atualizado
+    'receita_flex',        // Receita Flex (não aplicável)
+    'custo_fixo_meli',     // Custo Fixo Meli (não aplicável)
+  ]), []);
+  
   // Filtrar colunas baseado no marketplace selecionado
   const visibleColumns = useMemo(() => {
     const baseVisible = columnManager.state.visibleColumns;
     
-    // Se for Shopee, remover colunas sem dados
-    if (isShopeeMarketplace) {
+    // Determinar quais colunas ocultar baseado no marketplace
+    const hiddenColumns = isShopeeMarketplace 
+      ? SHOPEE_HIDDEN_COLUMNS 
+      : isOMSMarketplace 
+        ? OMS_HIDDEN_COLUMNS 
+        : null;
+    
+    if (hiddenColumns) {
       const filtered = new Set<string>();
       baseVisible.forEach(col => {
-        if (!SHOPEE_HIDDEN_COLUMNS.has(col)) {
+        if (!hiddenColumns.has(col)) {
           filtered.add(col);
         }
       });
@@ -342,27 +362,39 @@ function SimplePedidosPage({ className }: Props) {
     }
     
     return baseVisible;
-  }, [columnManager.state.visibleColumns, isShopeeMarketplace, SHOPEE_HIDDEN_COLUMNS]);
+  }, [columnManager.state.visibleColumns, isShopeeMarketplace, isOMSMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS]);
   
-  // Filtrar definições de colunas para Shopee
+  // Filtrar definições de colunas para Shopee/OMS
   const filteredVisibleDefinitions = useMemo(() => {
-    if (isShopeeMarketplace) {
+    const hiddenColumns = isShopeeMarketplace 
+      ? SHOPEE_HIDDEN_COLUMNS 
+      : isOMSMarketplace 
+        ? OMS_HIDDEN_COLUMNS 
+        : null;
+        
+    if (hiddenColumns) {
       return columnManager.visibleDefinitions.filter(
-        def => !SHOPEE_HIDDEN_COLUMNS.has(def.key)
+        def => !hiddenColumns.has(def.key)
       );
     }
     return columnManager.visibleDefinitions;
-  }, [columnManager.visibleDefinitions, isShopeeMarketplace, SHOPEE_HIDDEN_COLUMNS]);
+  }, [columnManager.visibleDefinitions, isShopeeMarketplace, isOMSMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS]);
   
-  // Definições filtradas para o seletor de colunas (Shopee oculta algumas)
+  // Definições filtradas para o seletor de colunas (Shopee/OMS oculta algumas)
   const filteredDefinitions = useMemo(() => {
-    if (isShopeeMarketplace) {
+    const hiddenColumns = isShopeeMarketplace 
+      ? SHOPEE_HIDDEN_COLUMNS 
+      : isOMSMarketplace 
+        ? OMS_HIDDEN_COLUMNS 
+        : null;
+        
+    if (hiddenColumns) {
       return columnManager.definitions.filter(
-        def => !SHOPEE_HIDDEN_COLUMNS.has(def.key)
+        def => !hiddenColumns.has(def.key)
       );
     }
     return columnManager.definitions;
-  }, [columnManager.definitions, isShopeeMarketplace, SHOPEE_HIDDEN_COLUMNS]);
+  }, [columnManager.definitions, isShopeeMarketplace, isOMSMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS]);
   
   const shopeeOrdersDB = useShopeeOrdersFromDB({
     enabled: shouldLoadShopee,
