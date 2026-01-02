@@ -250,6 +250,10 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
         notes: order.notes,
         obs: order.notes,
 
+        // Pagamento
+        payment_method: order.payment_method,
+        metodo_pagamento: order.payment_method,
+
         // Campos extras para compatibilidade
         foi_atualizado: false,
         pack_id: null,
