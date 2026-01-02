@@ -874,8 +874,8 @@ export default function OrdersPageProfessional({
                                     {order.oms_customers?.name || '-'}
                                   </span>
                                   {order.endereco_rua && (
-                                    <span className="text-xs text-muted-foreground max-w-[200px] truncate" title={`${order.endereco_rua}, ${order.endereco_numero || ''} - ${order.endereco_bairro || ''}, ${order.endereco_cidade || ''}/${order.endereco_uf || ''}`}>
-                                      {order.endereco_cidade || ''}/{order.endereco_uf || ''}
+                                    <span className="text-xs text-muted-foreground">
+                                      {order.endereco_rua}, {order.endereco_numero || ''} - {order.endereco_bairro || ''}, {order.endereco_cidade || ''}/{order.endereco_uf || ''} - CEP: {order.endereco_cep || ''}
                                     </span>
                                   )}
                                   {order.oms_customers?.price_tier && (
