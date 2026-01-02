@@ -69,6 +69,7 @@ export default function OrdersPageProfessional({
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
   
   // Filtros avançados
   const [filters, setFilters] = useState({
@@ -819,151 +820,186 @@ export default function OrdersPageProfessional({
                         </TableRow>
                       ) : (
                         ordersByTab[tabKey].map((order) => (
-                          <TableRow 
-                            key={order.id} 
-                            className={selectedOrders.includes(order.id) ? "bg-muted/50" : "hover:bg-muted/50"}
-                          >
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedOrders.includes(order.id)}
-                                onCheckedChange={(checked) => handleSelectOrder(order.id, checked as boolean)}
-                              />
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              <div className="flex flex-col">
-                                <span>{order.number}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  ID: {order.id.slice(0, 8)}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium">
-                                  {order.oms_customers?.name || '-'}
-                                </span>
-                                {order.oms_customers?.price_tier && (
-                                  <Badge variant="outline" className="text-xs w-fit">
-                                    {order.oms_customers.price_tier}
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {order.oms_sales_reps?.name || '-'}
-                            </TableCell>
-                            <TableCell>
-                              {/* ✅ USAR FUNÇÃO EXISTENTE getStatusColor */}
-                              <Badge className={getStatusColor(order.status)}>
-                                {order.status === 'draft' && 'Rascunho'}
-                                {order.status === 'approved' && 'Aprovado'}
-                                {order.status === 'invoiced' && 'Faturado'}
-                                {order.status === 'cancelled' && 'Cancelado'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {/* ✅ USAR FUNÇÃO EXISTENTE formatCurrency */}
-                              {formatCurrency(order.grand_total)}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span>
-                                  {new Date(order.created_at).toLocaleDateString('pt-BR')}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(order.created_at).toLocaleTimeString('pt-BR', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
-                                </span>
-                              </div>
-                            </TableCell>
-                             <TableCell>
-                               <div className="flex items-center gap-1">
-                                 <Button 
-                                   variant="ghost" 
-                                   size="sm"
-                                   onClick={() => console.log('Visualizar pedido:', order.id)}
-                                   title="Visualizar pedido"
-                                 >
-                                   <Eye className="h-4 w-4" />
-                                 </Button>
-                                 <Button 
-                                   variant="ghost" 
-                                   size="sm"
-                                   onClick={() => handleEditOrder(order)}
-                                   title="Editar pedido"
-                                 >
-                                   <Edit className="h-4 w-4" />
-                                 </Button>
-                                {order.status === 'draft' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleApprove(order.id)}
-                                    disabled={loading}
-                                  >
-                                    <CheckCircle className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {order.status !== 'cancelled' && order.status !== 'invoiced' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleCancel(order.id)}
-                                    disabled={loading}
-                                  >
-                                    <XCircle className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <MoreHorizontal className="h-4 w-4" />
+                          <React.Fragment key={order.id}>
+                            <TableRow 
+                              className={`${selectedOrders.includes(order.id) ? "bg-muted/50" : "hover:bg-muted/50"} cursor-pointer`}
+                              onClick={() => {
+                                setExpandedOrders(prev => 
+                                  prev.includes(order.id) 
+                                    ? prev.filter(id => id !== order.id)
+                                    : [...prev, order.id]
+                                );
+                              }}
+                            >
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={selectedOrders.includes(order.id)}
+                                  onCheckedChange={(checked) => handleSelectOrder(order.id, checked as boolean)}
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <div className="flex flex-col">
+                                  <span>{order.number}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    ID: {order.id_unico || order.id.slice(0, 8)}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {order.oms_customers?.name || '-'}
+                                  </span>
+                                  {order.empresa && (
+                                    <span className="text-xs text-muted-foreground">{order.empresa}</span>
+                                  )}
+                                  {order.oms_customers?.price_tier && (
+                                    <Badge variant="outline" className="text-xs w-fit">
+                                      {order.oms_customers.price_tier}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {order.oms_sales_reps?.name || '-'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={getStatusColor(order.status)}>
+                                  {order.status === 'draft' && 'Rascunho'}
+                                  {order.status === 'approved' && 'Aprovado'}
+                                  {order.status === 'invoiced' && 'Faturado'}
+                                  {order.status === 'cancelled' && 'Cancelado'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {formatCurrency(order.grand_total)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span>
+                                    {new Date(order.created_at).toLocaleDateString('pt-BR')}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(order.created_at).toLocaleTimeString('pt-BR', { 
+                                      hour: '2-digit', 
+                                      minute: '2-digit' 
+                                    })}
+                                  </span>
+                                </div>
+                              </TableCell>
+                               <TableCell onClick={(e) => e.stopPropagation()}>
+                                 <div className="flex items-center gap-1">
+                                   <Button 
+                                     variant="ghost" 
+                                     size="sm"
+                                     onClick={() => setExpandedOrders(prev => 
+                                       prev.includes(order.id) ? prev.filter(id => id !== order.id) : [...prev, order.id]
+                                     )}
+                                     title="Ver detalhes"
+                                   >
+                                     {expandedOrders.includes(order.id) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                   </Button>
+                                   <Button 
+                                     variant="ghost" 
+                                     size="sm"
+                                     onClick={() => handleEditOrder(order)}
+                                     title="Editar pedido"
+                                   >
+                                     <Edit className="h-4 w-4" />
+                                   </Button>
+                                  {order.status === 'draft' && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleApprove(order.id)}
+                                      disabled={loading}
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
                                     </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-48">
-                                    <div className="space-y-2">
-                                       <Button
-                                         variant="ghost"
-                                         size="sm"
-                                         className="w-full justify-start"
-                                         onClick={() => handleEditOrder(order)}
-                                       >
-                                         <FileText className="h-4 w-4 mr-2" />
-                                         Editar Pedido
-                                       </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full justify-start"
-                                      >
-                                        <Download className="h-4 w-4 mr-2" />
-                                        Imprimir
-                                      </Button>
-                                       <Button
-                                         variant="ghost"
-                                         size="sm"
-                                         className="w-full justify-start"
-                                       >
-                                         <Upload className="h-4 w-4 mr-2" />
-                                         Duplicar
-                                       </Button>
-                                       <Button
-                                         variant="ghost"
-                                         size="sm"
-                                         className="w-full justify-start text-destructive hover:text-destructive"
-                                         onClick={() => handleDeleteOrder(order.id)}
-                                       >
-                                         <Trash2 className="h-4 w-4 mr-2" />
-                                         Excluir Pedido
-                                       </Button>
+                                  )}
+                                  {order.status !== 'cancelled' && order.status !== 'invoiced' && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleCancel(order.id)}
+                                      disabled={loading}
+                                    >
+                                      <XCircle className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                            {/* Linha expansível com detalhes */}
+                            {expandedOrders.includes(order.id) && (
+                              <TableRow className="bg-muted/30">
+                                <TableCell colSpan={8} className="p-4">
+                                  <div className="space-y-4">
+                                    {/* Informações gerais */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground">Tipo Logístico:</span>
+                                        <p className="font-medium">{order.tipo_logistico || '-'}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Rastreamento:</span>
+                                        <p className="font-medium">{order.codigo_rastreamento || '-'}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Frete:</span>
+                                        <p className="font-medium">{formatCurrency(order.shipping_total || 0)}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Valor Líquido:</span>
+                                        <p className="font-medium text-green-600">{formatCurrency(order.valor_liquido || 0)}</p>
+                                      </div>
                                     </div>
-                                  </PopoverContent>
-                                </Popover>
-                              </div>
-                            </TableCell>
-                          </TableRow>
+                                    
+                                    {/* Endereço */}
+                                    {order.endereco_rua && (
+                                      <div className="text-sm">
+                                        <span className="text-muted-foreground">Endereço:</span>
+                                        <p className="font-medium">
+                                          {order.endereco_rua}, {order.endereco_numero} - {order.endereco_bairro}, {order.endereco_cidade}/{order.endereco_uf} - CEP: {order.endereco_cep}
+                                        </p>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Itens do pedido */}
+                                    {order.oms_order_items && order.oms_order_items.length > 0 && (
+                                      <div>
+                                        <h4 className="font-medium mb-2">Itens do Pedido ({order.oms_order_items.length})</h4>
+                                        <div className="border rounded-lg overflow-hidden">
+                                          <table className="w-full text-sm">
+                                            <thead className="bg-muted">
+                                              <tr>
+                                                <th className="text-left p-2">SKU</th>
+                                                <th className="text-left p-2">Produto</th>
+                                                <th className="text-right p-2">Qtd</th>
+                                                <th className="text-right p-2">Preço Unit.</th>
+                                                <th className="text-right p-2">Total</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {order.oms_order_items.map((item: any) => (
+                                                <tr key={item.id} className="border-t">
+                                                  <td className="p-2 font-mono text-xs">{item.sku}</td>
+                                                  <td className="p-2">{item.title}</td>
+                                                  <td className="p-2 text-right">{item.qty}</td>
+                                                  <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
+                                                  <td className="p-2 text-right font-medium">{formatCurrency(item.total)}</td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
                         ))
                       )}
                     </TableBody>
