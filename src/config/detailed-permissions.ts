@@ -25,7 +25,7 @@ export const DETAILED_PERMISSIONS: DetailedPermission[] = [
   },
   {
     key: 'oms:pedidos',
-    name: 'Atacado',
+    name: 'Orçamento',
     description: 'Acessar página de vendas direta e atacado (/oms/pedidos)',
     category: 'VENDAS (OMS)'
   },

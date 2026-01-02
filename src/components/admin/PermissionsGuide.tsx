@@ -30,7 +30,7 @@ export const PermissionsGuide: React.FC = () => {
 
               <h5 className="font-medium text-primary">🛒 VENDAS (OMS)</h5>
               <p className="text-muted-foreground pl-4">• pedidos:marketplace - Marketplace</p>
-              <p className="text-muted-foreground pl-4">• oms:pedidos - Atacado</p>
+              <p className="text-muted-foreground pl-4">• oms:pedidos - Orçamento</p>
               <p className="text-muted-foreground pl-4">• oms:clientes - Clientes</p>
               <p className="text-muted-foreground pl-4">• oms:configuracoes - Configurações OMS</p>
 

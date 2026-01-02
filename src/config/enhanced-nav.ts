@@ -36,7 +36,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           },
           {
             id: 'oms-pedidos',
-            label: 'Atacado',
+            label: 'Orçamento',
             path: '/oms/pedidos',
             icon: 'ShoppingCart',
             permission: 'orders:read'

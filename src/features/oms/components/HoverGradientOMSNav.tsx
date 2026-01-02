@@ -23,7 +23,7 @@ const menuItems: HoverGradientMenuItem[] = [
   },
   { 
     icon: <ShoppingCart className="h-5 w-5" />, 
-    label: "Atacado", 
+    label: "Orçamento", 
     href: "/oms/pedidos", 
     gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)", 
     iconColor: "group-hover:text-orange-500 dark:group-hover:text-orange-400" 
