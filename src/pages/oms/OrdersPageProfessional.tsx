@@ -994,14 +994,18 @@ export default function OrdersPageProfessional({
                                         <h4 className="font-medium mb-2">Itens do Pedido ({order.oms_order_items.length})</h4>
                                         <div className="border rounded-lg overflow-hidden">
                                           {(() => {
-                                            // Calcular frete, comissão e desconto por unidade
+                                            // Calcular frete, comissão e desconto proporcionalmente
                                             const shippingTotal = Number(order.shipping_total) || 0;
                                             const comissaoTotal = Number(order.comissao_valor) || 0;
                                             const descontoTotal = Number(order.discount_amount) || 0;
+                                            
+                                            // Calcular totais para distribuição proporcional
                                             const totalQty = order.oms_order_items.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0);
+                                            const subtotalItens = order.oms_order_items.reduce((sum: number, it: any) => sum + (Number(it.total) || 0), 0);
+                                            
+                                            // Frete e comissão por unidade (proporcional à quantidade)
                                             const freightPerUnit = totalQty > 0 ? shippingTotal / totalQty : 0;
                                             const comissaoPerUnit = totalQty > 0 ? comissaoTotal / totalQty : 0;
-                                            const descontoPerUnit = totalQty > 0 ? descontoTotal / totalQty : 0;
                                             
                                             return (
                                               <table className="w-full text-sm">
@@ -1020,9 +1024,11 @@ export default function OrdersPageProfessional({
                                                 <tbody>
                                                   {order.oms_order_items.map((item: any) => {
                                                     const itemQty = Number(item.qty) || 0;
+                                                    const itemTotal = Number(item.total) || 0;
                                                     const freteItem = itemQty * freightPerUnit;
                                                     const comissaoItem = itemQty * comissaoPerUnit;
-                                                    const descontoItem = itemQty * descontoPerUnit;
+                                                    // Desconto proporcional ao VALOR do item (não à quantidade)
+                                                    const descontoItem = subtotalItens > 0 ? (itemTotal / subtotalItens) * descontoTotal : 0;
                                                     return (
                                                       <tr key={item.id} className="border-t">
                                                         <td className="p-2 font-mono text-xs">{item.sku}</td>
