@@ -40,6 +40,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoComposicao | null>(null);
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
+  const [vendaProdutos, setVendaProdutos] = useState<Record<string, number>>({});
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importProdutosModalOpen, setImportProdutosModalOpen] = useState(false);
@@ -366,15 +367,18 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
 
         const { data: produtosCusto } = await supabase
           .from('produtos')
-          .select('sku_interno, preco_custo')
+          .select('sku_interno, preco_custo, preco_venda')
           .in('sku_interno', skusUnicos as string[]);
 
         const custosMap: Record<string, number> = {};
+        const vendasMap: Record<string, number> = {};
         produtosCusto?.forEach(p => {
           custosMap[p.sku_interno] = p.preco_custo || 0;
+          vendasMap[p.sku_interno] = p.preco_venda || 0;
         });
 
         setCustosProdutos(custosMap);
+        setVendaProdutos(vendasMap);
       } catch (error) {
         console.error('Erro ao carregar custos:', error);
       }
@@ -575,11 +579,12 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                     <div className="text-[10px] font-medium text-muted-foreground">Componentes necessários:</div>
                     
                     {/* Cabeçalho das colunas */}
-                    <div className="grid grid-cols-[1fr_50px_40px_60px_32px] gap-2 text-[9px] font-medium text-muted-foreground border-b pb-1">
+                    <div className="grid grid-cols-[1fr_50px_40px_55px_55px_32px] gap-2 text-[9px] font-medium text-muted-foreground border-b pb-1">
                       <div className="truncate">SKU</div>
                       <div className="text-center">Estoque</div>
                       <div className="text-center">Faz</div>
                       <div className="text-center">Custo Uni</div>
+                      <div className="text-center">Venda Uni</div>
                       <div className="text-center">Qtd</div>
                     </div>
                     
@@ -587,6 +592,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                       {composicoes.map((comp, index) => {
                         const isLimitante = componenteLimitante?.sku === comp.sku_componente;
                         const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+                        const vendaUnitario = vendaProdutos[comp.sku_componente] || 0;
                         // Verifica se o componente não existe no controle de estoque
                         const componenteNaoExiste = comp.nome_componente === comp.sku_componente;
                         
@@ -594,7 +600,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                           <div key={index} className="relative">
                             {/* Badge "NÃO CADASTRADO" no canto superior */}
                             <div 
-                              className={`grid grid-cols-[1fr_50px_40px_60px_32px] gap-2 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
+                              className={`grid grid-cols-[1fr_50px_40px_55px_55px_32px] gap-2 items-center text-[10px] rounded px-1.5 py-0.5 min-w-0 ${
                                 componenteNaoExiste
                                   ? 'bg-destructive text-destructive-foreground border border-destructive'
                                   : isLimitante 
@@ -603,7 +609,7 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                               }`}
                             >
                               {componenteNaoExiste ? (
-                                <div className="col-span-5 flex items-center justify-between gap-1.5 min-w-0">
+                                <div className="col-span-6 flex items-center justify-between gap-1.5 min-w-0">
                                   <Badge variant="outline" className="border-destructive-foreground text-destructive-foreground font-mono text-[9px] px-1 py-0 flex-shrink-0 truncate max-w-[70px]">
                                     {comp.sku_componente}
                                   </Badge>
@@ -631,6 +637,9 @@ export function ComposicoesEstoque({ localId, localVendaId }: { localId?: string
                                   </div>
                                   <div className="text-center text-muted-foreground text-[9px]">
                                     {formatMoney(custoUnitario)}
+                                  </div>
+                                  <div className="text-center text-muted-foreground text-[9px]">
+                                    {formatMoney(vendaUnitario)}
                                   </div>
                                   <div className="text-center text-muted-foreground text-[9px]">
                                     {comp.quantidade}x
