@@ -989,7 +989,7 @@ export default function OrdersPageProfessional({
                                             // Calcular frete, comissão e desconto por unidade
                                             const shippingTotal = Number(order.shipping_total) || 0;
                                             const comissaoTotal = Number(order.comissao_valor) || 0;
-                                            const descontoTotal = Number(order.discount_total) || 0;
+                                            const descontoTotal = Number(order.discount_amount) || 0;
                                             const totalQty = order.oms_order_items.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0);
                                             const freightPerUnit = totalQty > 0 ? shippingTotal / totalQty : 0;
                                             const comissaoPerUnit = totalQty > 0 ? comissaoTotal / totalQty : 0;
