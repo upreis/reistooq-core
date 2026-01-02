@@ -450,12 +450,32 @@ function SimplePedidosPage({ className }: Props) {
       foi_atualizado: o.unified?.foi_atualizado || o.raw?.foi_atualizado || false
     }));
     
-    // 🛒 OMS: Pedidos de Orçamento aprovados
-    const omsUnified = omsOrdersDB.orders.map((o) => ({
-      ...o.unified,
-      raw: o.raw,
-      foi_atualizado: false
-    }));
+    // 🛒 OMS: Pedidos de Orçamento aprovados (explodir 1 linha por item)
+    const omsUnified = omsOrdersDB.orders.flatMap((o) => {
+      const base = {
+        ...o.unified,
+        raw: o.raw,
+        foi_atualizado: false
+      };
+
+      const items = (o.unified?.items || []) as Array<any>;
+      if (!items.length) return [base];
+
+      return items.map((it, idx) => {
+        const rowId = it.id || `${base.id}-item-${idx}`;
+        return {
+          ...base,
+          oms_order_id: base.id, // manter referência ao pedido OMS (uuid)
+          id: rowId, // precisa ser único por linha na tabela
+          sku: it.sku || '-',
+          skus: [it.sku].filter(Boolean),
+          produto_titulo: it.title || '-',
+          quantidade: Number(it.quantity) || 0,
+          // manter apenas o item da linha (para baixa de estoque por SKU)
+          items: [it]
+        };
+      });
+    });
     
     if (isOMSMarketplace) {
       // Apenas OMS (Orçamento)
