@@ -94,7 +94,7 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
           oms_customers!customer_id (
             name,
             email,
-            document
+            doc
           )
         `, { count: 'exact' })
         .in('status', ['approved', 'shipped', 'delivered', 'Aprovado', 'Enviado', 'Entregue']) // Apenas pedidos aprovados+
@@ -208,9 +208,9 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
         comissao_valor: order.comissao_valor || 0,
         
         // Dados do cliente
-        comprador_nome: order.customer?.name || '-',
-        comprador_email: order.customer?.email || '-',
-        cpf_cnpj: order.customer?.document || '-',
+        comprador_nome: order.oms_customers?.name || '-',
+        comprador_email: order.oms_customers?.email || '-',
+        cpf_cnpj: order.oms_customers?.doc || '-',
         
         // Endereço
         endereco_rua: order.endereco_rua,
