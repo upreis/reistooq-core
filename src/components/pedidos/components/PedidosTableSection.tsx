@@ -471,7 +471,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                               }
                     case 'custo_envio_seller':
                       {
-                        const custoEnvio = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
+                        // 🛒 OMS: Usar frete_item calculado por item
+                        const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
+                        const custoEnvio = isOMS
+                          ? (order.frete_item || 0)
+                          : (order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0);
                         const colorClass = custoEnvio > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
                         return <span className={colorClass}>{formatMoney(custoEnvio)}</span>;
                       }
