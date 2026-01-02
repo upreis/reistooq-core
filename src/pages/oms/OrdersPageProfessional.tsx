@@ -992,12 +992,13 @@ export default function OrdersPageProfessional({
                                     {order.oms_order_items && order.oms_order_items.length > 0 && (
                                       <div>
                                         <h4 className="font-medium mb-2">Itens do Pedido ({order.oms_order_items.length})</h4>
-                                        <div className="border rounded-lg overflow-hidden">
+                                        <div className="border rounded-lg overflow-x-auto">
                                           {(() => {
                                             // Calcular frete, comissão e desconto proporcionalmente
                                             const shippingTotal = Number(order.shipping_total) || 0;
                                             const descontoTotal = Number(order.discount_amount) || 0;
                                             const comissaoPercentual = Number(order.comissao_percentual) || 0;
+                                            const valorLiquidoPedido = Number(order.valor_liquido) || 0;
                                             
                                             // Calcular totais para distribuição proporcional
                                             const totalQty = order.oms_order_items.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0);
@@ -1006,22 +1007,31 @@ export default function OrdersPageProfessional({
                                             // Frete por unidade (proporcional à quantidade)
                                             const freightPerUnit = totalQty > 0 ? shippingTotal / totalQty : 0;
                                             
+                                            // Endereço formatado
+                                            const enderecoCompleto = order.endereco_rua 
+                                              ? `${order.endereco_rua}, ${order.endereco_numero || ''} - ${order.endereco_bairro || ''}, ${order.endereco_cidade || ''}/${order.endereco_uf || ''} - CEP: ${order.endereco_cep || ''}`
+                                              : '-';
+                                            
                                             return (
-                                              <table className="w-full text-sm">
+                                              <table className="w-full text-sm min-w-[1200px]">
                                                 <thead className="bg-muted">
                                                   <tr>
-                                                    <th className="text-left p-2">SKU</th>
-                                                    <th className="text-left p-2">Produto</th>
-                                                    <th className="text-right p-2">Qtd</th>
-                                                    <th className="text-right p-2">Preço Unit.</th>
-                                                    <th className="text-right p-2">Desconto</th>
-                                                    <th className="text-right p-2">Total</th>
-                                                    <th className="text-right p-2">Frete Item</th>
-                                                    <th className="text-right p-2">Comissão</th>
+                                                    <th className="text-left p-2 whitespace-nowrap">SKU</th>
+                                                    <th className="text-left p-2 whitespace-nowrap">Produto</th>
+                                                    <th className="text-right p-2 whitespace-nowrap">Qtd</th>
+                                                    <th className="text-right p-2 whitespace-nowrap">Preço Unit.</th>
+                                                    <th className="text-right p-2 whitespace-nowrap">Desconto</th>
+                                                    <th className="text-right p-2 whitespace-nowrap">Total</th>
+                                                    <th className="text-right p-2 whitespace-nowrap">Frete Item</th>
+                                                    <th className="text-right p-2 whitespace-nowrap">Comissão</th>
+                                                    <th className="text-right p-2 whitespace-nowrap">Valor Líquido</th>
+                                                    <th className="text-left p-2 whitespace-nowrap">Tipo Logístico</th>
+                                                    <th className="text-left p-2 whitespace-nowrap">Rastreamento</th>
+                                                    <th className="text-left p-2 whitespace-nowrap">Endereço</th>
                                                   </tr>
                                                 </thead>
                                                 <tbody>
-                                                  {order.oms_order_items.map((item: any) => {
+                                                  {order.oms_order_items.map((item: any, index: number) => {
                                                     const itemQty = Number(item.qty) || 0;
                                                     const itemTotal = Number(item.total) || 0;
                                                     const freteItem = itemQty * freightPerUnit;
@@ -1031,16 +1041,26 @@ export default function OrdersPageProfessional({
                                                     const totalItem = itemTotal - descontoItem;
                                                     // Comissão = percentual sobre o valor líquido
                                                     const comissaoItem = (totalItem * comissaoPercentual) / 100;
+                                                    // Valor líquido do item = total - frete - comissão
+                                                    const valorLiquidoItem = totalItem - freteItem - comissaoItem;
+                                                    
+                                                    // Mostrar info do pedido apenas na primeira linha
+                                                    const isFirstRow = index === 0;
+                                                    
                                                     return (
                                                       <tr key={item.id} className="border-t">
-                                                        <td className="p-2 font-mono text-xs">{item.sku}</td>
-                                                        <td className="p-2">{item.title}</td>
+                                                        <td className="p-2 font-mono text-xs whitespace-nowrap">{item.sku}</td>
+                                                        <td className="p-2 whitespace-nowrap">{item.title}</td>
                                                         <td className="p-2 text-right">{item.qty}</td>
-                                                        <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
-                                                        <td className="p-2 text-right text-green-600">{descontoItem > 0 ? formatCurrency(descontoItem) : '-'}</td>
-                                                        <td className="p-2 text-right font-medium">{formatCurrency(totalItem)}</td>
-                                                        <td className="p-2 text-right text-muted-foreground">{formatCurrency(freteItem)}</td>
-                                                        <td className="p-2 text-right text-amber-600">{formatCurrency(comissaoItem)}</td>
+                                                        <td className="p-2 text-right whitespace-nowrap">{formatCurrency(item.unit_price)}</td>
+                                                        <td className="p-2 text-right text-green-600 whitespace-nowrap">{descontoItem > 0 ? formatCurrency(descontoItem) : '-'}</td>
+                                                        <td className="p-2 text-right font-medium whitespace-nowrap">{formatCurrency(totalItem)}</td>
+                                                        <td className="p-2 text-right text-muted-foreground whitespace-nowrap">{formatCurrency(freteItem)}</td>
+                                                        <td className="p-2 text-right text-amber-600 whitespace-nowrap">{formatCurrency(comissaoItem)}</td>
+                                                        <td className="p-2 text-right text-emerald-600 font-medium whitespace-nowrap">{formatCurrency(valorLiquidoItem)}</td>
+                                                        <td className="p-2 whitespace-nowrap">{isFirstRow ? (order.tipo_logistico || '-') : ''}</td>
+                                                        <td className="p-2 whitespace-nowrap">{isFirstRow ? (order.tracking_number || '-') : ''}</td>
+                                                        <td className="p-2 whitespace-nowrap max-w-[300px] truncate" title={enderecoCompleto}>{isFirstRow ? enderecoCompleto : ''}</td>
                                                       </tr>
                                                     );
                                                   })}
