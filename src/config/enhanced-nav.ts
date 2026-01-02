@@ -179,13 +179,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         permission: 'admin:access',
         children: [
           {
-            id: 'admin-visao-geral',
-            label: 'Geral',
-            path: '/admin',
-            icon: 'LayoutDashboard',
-            permission: 'admin:access'
-          },
-          {
             id: 'admin-usuarios',
             label: 'Usuários',
             path: '/admin/usuarios',

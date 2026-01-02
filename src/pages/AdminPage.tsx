@@ -1,6 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AdminVisaoGeral } from "./admin/AdminVisaoGeral";
 import AdminUsuarios from "./admin/AdminUsuarios";
 import AdminAlertas from "./admin/AdminAlertas";
 import AdminSeguranca from "./admin/AdminSeguranca";
@@ -11,7 +10,7 @@ const AdminContent = () => {
   return (
     <div className="space-y-6">
       <Routes>
-        <Route index element={<AdminVisaoGeral />} />
+        <Route index element={<Navigate to="/admin/usuarios" replace />} />
         <Route path="usuarios" element={<AdminUsuarios />} />
         <Route path="cargos" element={<AdminUsuarios />} />
         <Route path="convites" element={<AdminUsuarios />} />
@@ -19,7 +18,7 @@ const AdminContent = () => {
         <Route path="seguranca" element={<AdminSeguranca />} />
         <Route path="integracoes" element={<ConfiguracoesIntegracoes />} />
         <Route path="perfil" element={<AdminPerfil />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<Navigate to="/admin/usuarios" replace />} />
       </Routes>
     </div>
   );
