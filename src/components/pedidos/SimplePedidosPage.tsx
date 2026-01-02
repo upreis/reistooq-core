@@ -928,6 +928,15 @@ function SimplePedidosPage({ className }: Props) {
                 Todos
               </Button>
               <Button
+                variant={filtersManager.filters.marketplace === 'oms' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => filtersManager.updateFilter('marketplace', 'oms')}
+                className="h-7 px-3 text-xs gap-1.5"
+              >
+                <span className="text-emerald-500">●</span>
+                Orçamento
+              </Button>
+              <Button
                 variant={filtersManager.filters.marketplace === 'ml' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => filtersManager.updateFilter('marketplace', 'ml')}
@@ -944,15 +953,6 @@ function SimplePedidosPage({ className }: Props) {
               >
                 <span className="text-orange-500">●</span>
                 Shopee
-              </Button>
-              <Button
-                variant={filtersManager.filters.marketplace === 'oms' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => filtersManager.updateFilter('marketplace', 'oms')}
-                className="h-7 px-3 text-xs gap-1.5"
-              >
-                <span className="text-emerald-500">●</span>
-                Orçamento
               </Button>
             </div>
             
