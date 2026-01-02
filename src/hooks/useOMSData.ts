@@ -34,18 +34,44 @@ export function useOMSCustomers() {
       // Buscar organization_id do usuário atual
       const { data: orgData } = await supabase.rpc('get_current_organization_data');
       const organizationId = (orgData as { id?: string } | null)?.id;
-      
+
       if (!organizationId) {
         throw new Error('Usuário não possui organização associada');
       }
 
+      const { contacts, ...customerData } = data || {};
+
       const { data: newCustomer, error } = await supabase
         .from('oms_customers')
-        .insert([{ ...data, organization_id: organizationId }])
+        .insert([{ ...customerData, organization_id: organizationId }])
         .select()
         .single();
-      
+
       if (error) throw error;
+
+      // Inserir contatos (se houver)
+      const safeContacts = Array.isArray(contacts)
+        ? contacts
+            .filter((c: any) => (c?.nome || '').trim().length > 0)
+            .map((c: any) => ({
+              customer_id: newCustomer.id,
+              organization_id: organizationId,
+              nome: (c?.nome || '').trim(),
+              setor: c?.setor || null,
+              email: c?.email || null,
+              telefone: c?.telefone || null,
+              ramal: c?.ramal || null
+            }))
+        : [];
+
+      if (safeContacts.length > 0) {
+        const { error: contactsError } = await supabase
+          .from('oms_customer_contacts')
+          .insert(safeContacts);
+
+        if (contactsError) throw contactsError;
+      }
+
       setCustomers([...customers, newCustomer]);
       return newCustomer;
     } finally {
@@ -56,12 +82,52 @@ export function useOMSCustomers() {
   const updateCustomer = async (id: string, data: any) => {
     setLoading(true);
     try {
+      const { data: orgData } = await supabase.rpc('get_current_organization_data');
+      const organizationId = (orgData as { id?: string } | null)?.id;
+
+      if (!organizationId) {
+        throw new Error('Usuário não possui organização associada');
+      }
+
+      const { contacts, ...customerData } = data || {};
+
       const { error } = await supabase
         .from('oms_customers')
-        .update(data)
+        .update(customerData)
         .eq('id', id);
-      
+
       if (error) throw error;
+
+      // Atualizar contatos: remove e reinsere
+      if (Array.isArray(contacts)) {
+        const { error: delError } = await supabase
+          .from('oms_customer_contacts')
+          .delete()
+          .eq('customer_id', id);
+
+        if (delError) throw delError;
+
+        const safeContacts = contacts
+          .filter((c: any) => (c?.nome || '').trim().length > 0)
+          .map((c: any) => ({
+            customer_id: id,
+            organization_id: organizationId,
+            nome: (c?.nome || '').trim(),
+            setor: c?.setor || null,
+            email: c?.email || null,
+            telefone: c?.telefone || null,
+            ramal: c?.ramal || null
+          }));
+
+        if (safeContacts.length > 0) {
+          const { error: insError } = await supabase
+            .from('oms_customer_contacts')
+            .insert(safeContacts);
+
+          if (insError) throw insError;
+        }
+      }
+
       await fetchCustomers(); // Recarregar dados
     } finally {
       setLoading(false);
