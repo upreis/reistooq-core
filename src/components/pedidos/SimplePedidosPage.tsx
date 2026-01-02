@@ -803,10 +803,11 @@ function SimplePedidosPage({ className }: Props) {
 
     // Financeiro - CAMPOS SEPARADOS E EXCLUSIVOS
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
+    { key: 'desconto_cliente', label: 'Desconto Cliente', default: true, category: 'financial', width: 120 },
     
     // 💰 FLEX & CUSTOS (Ocultos por padrão)
     { key: 'receita_flex', label: 'Receita Flex', default: false, category: 'financial' },
-    { key: 'custo_envio_seller', label: 'Custo Envio', default: false, category: 'financial' },
+    { key: 'custo_envio_seller', label: 'Custo Envio', default: true, category: 'financial' },
     
     { key: 'marketplace_fee', label: 'Comissão Vendedor', default: true, category: 'financial' },
     { key: 'custo_fixo_meli', label: 'Custo Fixo Meli', default: false, category: 'financial' },
