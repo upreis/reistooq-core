@@ -811,21 +811,19 @@ export default function OrdersPageProfessional({
                             onCheckedChange={handleSelectAll}
                           />
                         </TableHead>
-                        <TableHead>Número</TableHead>
-                        <TableHead>Cliente</TableHead>
+                        <TableHead>Número / Data</TableHead>
+                        <TableHead>Cliente / Endereço</TableHead>
                         <TableHead>Representante</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Data</TableHead>
                         <TableHead>Tipo Logístico</TableHead>
                         <TableHead>Rastreamento</TableHead>
-                        <TableHead>Endereço</TableHead>
                         <TableHead>Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {loading ? (
                         <TableRow>
-                          <TableCell colSpan={10} className="text-center py-8">
+                          <TableCell colSpan={8} className="text-center py-8">
                             <div className="flex items-center justify-center gap-2">
                               <RefreshCw className="h-4 w-4 animate-spin" />
                               Carregando pedidos...
@@ -834,7 +832,7 @@ export default function OrdersPageProfessional({
                         </TableRow>
                       ) : ordersByTab[tabKey].length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={10} className="text-center py-8">
+                          <TableCell colSpan={8} className="text-center py-8">
                             <div className="flex flex-col items-center gap-2">
                               <Package className="h-8 w-8 text-muted-foreground" />
                               <span className="text-muted-foreground">
@@ -863,15 +861,22 @@ export default function OrdersPageProfessional({
                                 />
                               </TableCell>
                               <TableCell className="font-medium">
-                                <span>{order.number}</span>
+                                <div className="flex flex-col">
+                                  <span>{order.number}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(order.created_at).toLocaleDateString('pt-BR')} {new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-col">
                                   <span className="font-medium">
                                     {order.oms_customers?.name || '-'}
                                   </span>
-                                  {order.empresa && (
-                                    <span className="text-xs text-muted-foreground">{order.empresa}</span>
+                                  {order.endereco_rua && (
+                                    <span className="text-xs text-muted-foreground max-w-[200px] truncate" title={`${order.endereco_rua}, ${order.endereco_numero || ''} - ${order.endereco_bairro || ''}, ${order.endereco_cidade || ''}/${order.endereco_uf || ''}`}>
+                                      {order.endereco_cidade || ''}/{order.endereco_uf || ''}
+                                    </span>
                                   )}
                                   {order.oms_customers?.price_tier && (
                                     <Badge variant="outline" className="text-xs w-fit">
@@ -891,27 +896,11 @@ export default function OrdersPageProfessional({
                                   {order.status === 'cancelled' && 'Cancelado'}
                                 </Badge>
                               </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span>
-                                    {new Date(order.created_at).toLocaleDateString('pt-BR')}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(order.created_at).toLocaleTimeString('pt-BR', { 
-                                      hour: '2-digit', 
-                                      minute: '2-digit' 
-                                    })}
-                                  </span>
-                                </div>
-                              </TableCell>
                               <TableCell className="whitespace-nowrap">
                                 {order.tipo_logistico || '-'}
                               </TableCell>
                               <TableCell className="whitespace-nowrap">
                                 {order.tracking_number || order.codigo_rastreamento || '-'}
-                              </TableCell>
-                              <TableCell className="max-w-[200px] truncate" title={order.endereco_rua ? `${order.endereco_rua}, ${order.endereco_numero || ''} - ${order.endereco_bairro || ''}, ${order.endereco_cidade || ''}/${order.endereco_uf || ''}` : '-'}>
-                                {order.endereco_rua ? `${order.endereco_cidade || ''}/${order.endereco_uf || ''}` : '-'}
                               </TableCell>
                                <TableCell onClick={(e) => e.stopPropagation()}>
                                  <div className="flex items-center gap-1">
@@ -959,7 +948,7 @@ export default function OrdersPageProfessional({
                             {/* Linha expansível com detalhes */}
                             {expandedOrders.includes(order.id) && (
                               <TableRow className="bg-muted/30">
-                                <TableCell colSpan={10} className="p-4">
+                                <TableCell colSpan={8} className="p-4">
                                   <div className="space-y-4">
                                     {/* Itens do pedido */}
                                     {order.oms_order_items && order.oms_order_items.length > 0 && (
