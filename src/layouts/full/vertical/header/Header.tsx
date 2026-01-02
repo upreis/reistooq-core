@@ -23,7 +23,7 @@ import adminConvitesIcon from "@/assets/admin-convites-icon.png";
 import adminAlertasIcon from "@/assets/admin-alertas-icon.png";
 import adminSegurancaIcon from "@/assets/admin-seguranca-icon.png";
 import adminAuditoriaIcon from "@/assets/admin-auditoria-icon.png";
-import adminPerfilIcon from "@/assets/admin-perfil-icon.png";
+import adminPerfilIcon from "@/assets/icons/admin-perfil.png";
 import scannerIcon from "@/assets/icons/scanner-icon.png";
 import deParaIcon from "@/assets/de-para-icon.png";
 import alertasIcon from "@/assets/alertas-icon.png";
