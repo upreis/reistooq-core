@@ -230,15 +230,15 @@ export function useOMSOrdersForPedidos(params: UseOMSOrdersForPedidosParams = {}
         sku: skus[0] || '-',
         skus: skus,
         produto_titulo: firstItem?.title || '-',
-        quantidade: order.items?.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) || 0,
+        quantidade: order.items?.reduce((sum: number, i: any) => sum + (Number(i.qty) || 0), 0) || 0,
         
         // Todos os itens do pedido para exibição detalhada
         items: (order.items || []).map((item: any) => ({
           sku: item.sku || '-',
           title: item.title || '-',
-          quantity: item.quantity || 0,
-          unit_price: item.unit_price || 0,
-          total: item.total || (item.quantity * item.unit_price) || 0,
+          quantity: Number(item.qty) || 0,
+          unit_price: Number(item.unit_price) || 0,
+          total: Number(item.total) || (Number(item.qty) * Number(item.unit_price)) || 0,
         })),
         
         // Observações

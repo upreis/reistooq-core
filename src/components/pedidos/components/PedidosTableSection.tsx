@@ -217,7 +217,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       item.item?.id?.toString()
                     ).filter(Boolean);
                 const quantidadeItens = orderItems.reduce((acc: number, item: any) => 
-                  acc + (item.quantity || item.quantidade || 1), 0) || 1;
+                  acc + (Number(item.quantity) || Number(item.qty) || item.quantidade || 1), 0) || 1;
 
                 const renderCell = (key: string) => {
                   switch (key) {
