@@ -912,13 +912,17 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                      <div>
                        <Label className="text-xs">Quantidade</Label>
                        <Input
-                         type="number"
-                         min="0.01"
-                         step="0.01"
+                         type="text"
+                         inputMode="numeric"
                          value={item.qty === 0 ? '' : item.qty}
-                         onChange={(e) => updateItem(index, 'qty', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
-                         placeholder="Qtd"
-                         className="bg-background text-foreground border-input"
+                         onChange={(e) => {
+                           const val = e.target.value;
+                           if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                             updateItem(index, 'qty', val === '' ? 0 : parseFloat(val) || 0);
+                           }
+                         }}
+                         placeholder="0"
+                         className="bg-background text-foreground border-input [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                        />
                        {/* ✅ AVISOS DE ESTOQUE - INFORMATIVOS */}
                        {item.available_stock > 0 && (

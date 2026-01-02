@@ -222,12 +222,12 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
     setSelectedItems(newSelected);
   };
 
-  const handleQuantityChange = (productId: string, quantidade: number) => {
-    if (quantidade <= 0) return;
-    
+  const handleQuantityChange = (productId: string, quantidade: number | string) => {
     const newSelected = { ...selectedItems };
     if (newSelected[productId]) {
-      newSelected[productId].quantidade = quantidade;
+      // Permitir string vazia ou número
+      const value = quantidade === '' || quantidade === 0 ? 0 : Number(quantidade);
+      newSelected[productId].quantidade = value < 0 ? 0 : value;
       setSelectedItems(newSelected);
     }
   };
@@ -448,30 +448,19 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                       </TableCell>
                       <TableCell>
                         {isSelected ? (
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleQuantityChange(product.id, quantidade - 1)}
-                              disabled={quantidade <= 1}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <Input
-                              type="number"
-                              value={quantidade}
-                              onChange={(e) => handleQuantityChange(product.id, parseInt(e.target.value) || 1)}
-                              className="w-16 h-8 text-center"
-                              min="1"
-                            />
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleQuantityChange(product.id, quantidade + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={quantidade === 0 ? '' : quantidade}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '' || /^\d+$/.test(val)) {
+                                handleQuantityChange(product.id, val === '' ? 0 : parseInt(val));
+                              }
+                            }}
+                            className="w-20 h-8 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            placeholder="0"
+                          />
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
                         )}
