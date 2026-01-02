@@ -1015,9 +1015,9 @@ export default function OrdersPageProfessional({
                                                     <th className="text-right p-2">Qtd</th>
                                                     <th className="text-right p-2">Preço Unit.</th>
                                                     <th className="text-right p-2">Desconto</th>
+                                                    <th className="text-right p-2">Total</th>
                                                     <th className="text-right p-2">Frete Item</th>
                                                     <th className="text-right p-2">Comissão</th>
-                                                    <th className="text-right p-2">Total</th>
                                                   </tr>
                                                 </thead>
                                                 <tbody>
@@ -1027,10 +1027,10 @@ export default function OrdersPageProfessional({
                                                     const freteItem = itemQty * freightPerUnit;
                                                     // Desconto proporcional ao VALOR do item
                                                     const descontoItem = subtotalItens > 0 ? (itemTotal / subtotalItens) * descontoTotal : 0;
-                                                    // Valor líquido do item (valor - desconto)
-                                                    const valorLiquidoItem = itemTotal - descontoItem;
+                                                    // Total = valor do item - desconto
+                                                    const totalItem = itemTotal - descontoItem;
                                                     // Comissão = percentual sobre o valor líquido
-                                                    const comissaoItem = (valorLiquidoItem * comissaoPercentual) / 100;
+                                                    const comissaoItem = (totalItem * comissaoPercentual) / 100;
                                                     return (
                                                       <tr key={item.id} className="border-t">
                                                         <td className="p-2 font-mono text-xs">{item.sku}</td>
@@ -1038,9 +1038,9 @@ export default function OrdersPageProfessional({
                                                         <td className="p-2 text-right">{item.qty}</td>
                                                         <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
                                                         <td className="p-2 text-right text-green-600">{descontoItem > 0 ? formatCurrency(descontoItem) : '-'}</td>
+                                                        <td className="p-2 text-right font-medium">{formatCurrency(totalItem)}</td>
                                                         <td className="p-2 text-right text-muted-foreground">{formatCurrency(freteItem)}</td>
                                                         <td className="p-2 text-right text-amber-600">{formatCurrency(comissaoItem)}</td>
-                                                        <td className="p-2 text-right font-medium">{formatCurrency(item.total)}</td>
                                                       </tr>
                                                     );
                                                   })}
