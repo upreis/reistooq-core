@@ -96,16 +96,44 @@ export function ConfiguracaoLocaisModal({
     }
   }, [open, empresasSelecionadas, contasML, editando]);
 
+  // Tipos logísticos base por fonte
+  const TIPOS_LOGISTICOS_ML = [
+    'fulfillment',      // Full
+    'self_service',     // Envios Flex
+    'cross_docking',    // Cross Docking
+    'drop_off',         // Drop Off
+    'xd_drop_off',      // Ponto de Coleta
+  ];
+
+  const TIPOS_LOGISTICOS_OMS = [
+    'proprio',          // Entrega Própria
+    'correios',         // Correios
+    'transportadora',   // Transportadora
+    'motoboy',          // Motoboy
+    'retirada',         // Retirada no Local
+    'Correios - PAC',
+    'Correios - SEDEX',
+    'Entrega Própria',
+    'Retirada no Local',
+  ];
+
   async function carregarDados() {
     try {
       setLoading(true);
-      const [locaisData, mapeamentosData, locaisVendaData, tiposLogisticosData, empresasShopeeData, empresasOrcamentoData] = await Promise.all([
+      const [locaisData, mapeamentosData, locaisVendaData, tiposLogisticosShopeeData, tiposLogisticosOMSData, empresasShopeeData, empresasOrcamentoData] = await Promise.all([
         listarLocaisEstoque(),
         listarMapeamentosLocais(),
         listarLocaisVenda(),
         // Buscar tipos logísticos únicos dos pedidos Shopee
         supabase
           .from('pedidos_shopee')
+          .select('tipo_logistico')
+          .not('tipo_logistico', 'is', null)
+          .not('tipo_logistico', 'eq', '')
+          .limit(1000),
+        // Buscar tipos logísticos únicos dos pedidos OMS
+        supabase
+          .from('oms_orders')
           .select('tipo_logistico')
           .not('tipo_logistico', 'is', null)
           .not('tipo_logistico', 'eq', '')
@@ -129,15 +157,23 @@ export function ConfiguracaoLocaisModal({
       setMapeamentos(mapeamentosData);
       setLocaisVenda(locaisVendaData);
 
-      // Extrair tipos únicos dos pedidos Shopee
-      if (tiposLogisticosData.data) {
-        const tiposUnicos = [...new Set(
-          tiposLogisticosData.data
-            .map(row => row.tipo_logistico)
-            .filter((t): t is string => !!t && t.trim() !== '')
-        )].sort();
-        setTiposLogisticosDinamicos(tiposUnicos);
-      }
+      // Combinar todos os tipos logísticos: base ML + base OMS + dinâmicos Shopee + dinâmicos OMS
+      const tiposDinamicosShopee = tiposLogisticosShopeeData.data
+        ?.map(row => row.tipo_logistico)
+        .filter((t): t is string => !!t && t.trim() !== '') || [];
+      
+      const tiposDinamicosOMS = tiposLogisticosOMSData.data
+        ?.map(row => row.tipo_logistico)
+        .filter((t): t is string => !!t && t.trim() !== '') || [];
+
+      const todosOsTipos = [...new Set([
+        ...TIPOS_LOGISTICOS_ML,
+        ...TIPOS_LOGISTICOS_OMS,
+        ...tiposDinamicosShopee,
+        ...tiposDinamicosOMS,
+      ])].sort();
+
+      setTiposLogisticosDinamicos(todosOsTipos);
 
       // Extrair empresas únicas dos pedidos Shopee
       if (empresasShopeeData.data) {
@@ -388,29 +424,58 @@ export function ConfiguracaoLocaisModal({
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-[9999]">
-                      {tiposLogisticosDinamicos.length > 0 ? (
-                        tiposLogisticosDinamicos.map(tipo => {
-                          const traduzido = translateLogisticType(tipo);
-                          // Mostrar tradução + valor original se forem diferentes
-                          const label = traduzido !== tipo 
-                            ? `${traduzido} (${tipo})`
-                            : tipo;
-                          return (
-                            <SelectItem key={tipo} value={tipo}>
-                              {label}
-                            </SelectItem>
-                          );
-                        })
-                      ) : (
+                    <SelectContent className="bg-background border border-border z-[9999] max-h-[400px]">
+                      {/* Tipos Mercado Livre */}
+                      <div className="px-2 py-1 text-xs text-muted-foreground font-semibold bg-muted/50">
+                        🏪 Mercado Livre
+                      </div>
+                      {TIPOS_LOGISTICOS_ML.map(tipo => {
+                        const traduzido = translateLogisticType(tipo);
+                        const label = traduzido !== tipo ? `${traduzido}` : tipo;
+                        return (
+                          <SelectItem key={`ml-${tipo}`} value={tipo}>
+                            {label}
+                          </SelectItem>
+                        );
+                      })}
+                      
+                      {/* Tipos OMS/Ecomm */}
+                      <div className="px-2 py-1 text-xs text-muted-foreground font-semibold bg-muted/50 mt-1">
+                        📋 Venda Direta / Ecomm
+                      </div>
+                      <SelectItem value="proprio">Entrega Própria</SelectItem>
+                      <SelectItem value="correios">Correios</SelectItem>
+                      <SelectItem value="transportadora">Transportadora</SelectItem>
+                      <SelectItem value="motoboy">Motoboy</SelectItem>
+                      <SelectItem value="retirada">Retirada no Local</SelectItem>
+                      
+                      {/* Tipos Shopee dinâmicos (se existirem tipos que não estão nas listas base) */}
+                      {tiposLogisticosDinamicos.filter(t => 
+                        !TIPOS_LOGISTICOS_ML.includes(t) && 
+                        !['proprio', 'correios', 'transportadora', 'motoboy', 'retirada', 'Correios - PAC', 'Correios - SEDEX', 'Entrega Própria', 'Retirada no Local'].includes(t)
+                      ).length > 0 && (
                         <>
-                          <SelectItem value="fulfillment">Full (fulfillment)</SelectItem>
-                          <SelectItem value="self_service">Envios Flex (self_service)</SelectItem>
-                          <SelectItem value="cross_docking">Cross Docking (cross_docking)</SelectItem>
-                          <SelectItem value="drop_off">Drop Off (drop_off)</SelectItem>
-                          <SelectItem value="xd_drop_off">Ponto de Coleta (xd_drop_off)</SelectItem>
+                          <div className="px-2 py-1 text-xs text-muted-foreground font-semibold bg-muted/50 mt-1">
+                            🛒 Shopee / Outros
+                          </div>
+                          {tiposLogisticosDinamicos
+                            .filter(t => 
+                              !TIPOS_LOGISTICOS_ML.includes(t) && 
+                              !['proprio', 'correios', 'transportadora', 'motoboy', 'retirada', 'Correios - PAC', 'Correios - SEDEX', 'Entrega Própria', 'Retirada no Local'].includes(t)
+                            )
+                            .map(tipo => {
+                              const traduzido = translateLogisticType(tipo);
+                              const label = traduzido !== tipo ? `${traduzido}` : tipo;
+                              return (
+                                <SelectItem key={`outros-${tipo}`} value={tipo}>
+                                  {label}
+                                </SelectItem>
+                              );
+                            })
+                          }
                         </>
                       )}
+                      
                       <SelectItem value="__custom__">✏️ Digitar outro...</SelectItem>
                     </SelectContent>
                   </Select>
