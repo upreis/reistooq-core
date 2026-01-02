@@ -1,14 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Settings, Users, Bell, Link2, User } from "lucide-react";
+import { Users, Bell, Link2, User } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const navItems = [
-  {
-    path: "/admin",
-    label: "Geral",
-    icon: Settings,
-  },
   {
     path: "/admin/usuarios",
     label: "Usuários", 

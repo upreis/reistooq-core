@@ -1,13 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Settings, Users, Bell, User, Link2 } from "lucide-react";
+import { Users, Bell, User, Link2 } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const navItems = [
-  {
-    path: "/admin",
-    label: "Geral",
-    icon: Settings,
-  },
   {
     path: "/admin/usuarios",
     label: "Usuários",
