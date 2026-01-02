@@ -986,12 +986,14 @@ export default function OrdersPageProfessional({
                                         <h4 className="font-medium mb-2">Itens do Pedido ({order.oms_order_items.length})</h4>
                                         <div className="border rounded-lg overflow-hidden">
                                           {(() => {
-                                            // Calcular frete e comissão por unidade
+                                            // Calcular frete, comissão e desconto por unidade
                                             const shippingTotal = Number(order.shipping_total) || 0;
                                             const comissaoTotal = Number(order.comissao_valor) || 0;
+                                            const descontoTotal = Number(order.discount_total) || 0;
                                             const totalQty = order.oms_order_items.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0);
                                             const freightPerUnit = totalQty > 0 ? shippingTotal / totalQty : 0;
                                             const comissaoPerUnit = totalQty > 0 ? comissaoTotal / totalQty : 0;
+                                            const descontoPerUnit = totalQty > 0 ? descontoTotal / totalQty : 0;
                                             
                                             return (
                                               <table className="w-full text-sm">
@@ -1012,14 +1014,14 @@ export default function OrdersPageProfessional({
                                                     const itemQty = Number(item.qty) || 0;
                                                     const freteItem = itemQty * freightPerUnit;
                                                     const comissaoItem = itemQty * comissaoPerUnit;
-                                                    const desconto = Number(item.discount) || 0;
+                                                    const descontoItem = itemQty * descontoPerUnit;
                                                     return (
                                                       <tr key={item.id} className="border-t">
                                                         <td className="p-2 font-mono text-xs">{item.sku}</td>
                                                         <td className="p-2">{item.title}</td>
                                                         <td className="p-2 text-right">{item.qty}</td>
                                                         <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
-                                                        <td className="p-2 text-right text-green-600">{desconto > 0 ? formatCurrency(desconto) : '-'}</td>
+                                                        <td className="p-2 text-right text-green-600">{descontoItem > 0 ? formatCurrency(descontoItem) : '-'}</td>
                                                         <td className="p-2 text-right text-muted-foreground">{formatCurrency(freteItem)}</td>
                                                         <td className="p-2 text-right text-amber-600">{formatCurrency(comissaoItem)}</td>
                                                         <td className="p-2 text-right font-medium">{formatCurrency(item.total)}</td>
