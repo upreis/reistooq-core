@@ -230,11 +230,17 @@ export function OrderForm({ onSubmit, onCancel, isLoading }: OrderFormProps) {
                     <div>
                       <Label className="text-xs">Quantidade</Label>
                       <Input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={item.qty}
-                        onChange={(e) => updateItem(index, 'qty', parseFloat(e.target.value) || 0)}
+                        type="text"
+                        inputMode="numeric"
+                        value={item.qty === 0 ? '' : item.qty}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                            updateItem(index, 'qty', val === '' ? 0 : parseFloat(val) || 0);
+                          }
+                        }}
+                        placeholder="0"
+                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                     <div>

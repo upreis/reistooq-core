@@ -327,11 +327,17 @@ export const ProductSelectorShop: React.FC<ProductSelectorShopProps> = ({
                                 <Minus className="h-3 w-3" />
                               </Button>
                               <Input
-                                type="number"
-                                value={quantidade}
-                                onChange={(e) => handleQuantityChange(product.id, parseInt(e.target.value) || 1)}
-                                className="w-16 h-8 text-center"
-                                min="1"
+                                type="text"
+                                inputMode="numeric"
+                                value={quantidade === 0 ? '' : quantidade}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === '' || /^\d+$/.test(val)) {
+                                    handleQuantityChange(product.id, val === '' ? 0 : parseInt(val));
+                                  }
+                                }}
+                                className="w-20 h-8 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="0"
                               />
                               <Button
                                 size="sm"
