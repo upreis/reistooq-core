@@ -478,7 +478,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     
                     case 'marketplace_fee':
                       {
-                        const fee = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
+                        // 🛒 OMS: Usar comissao_valor ou taxa_marketplace calculada por item
+                        const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
+                        const fee = isOMS 
+                          ? (order.comissao_valor || order.taxa_marketplace || 0)
+                          : (order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0);
                         const colorClass = fee > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
                         return <span className={colorClass}>{fee > 0 ? formatMoney(fee) : '-'}</span>;
                       }

@@ -461,8 +461,19 @@ function SimplePedidosPage({ className }: Props) {
       const items = (o.unified?.items || []) as Array<any>;
       if (!items.length) return [base];
 
+      // Calcular comissão e frete por unidade
+      const comissaoTotal = Number(o.unified?.comissao_valor) || 0;
+      const freteTotal = Number(o.unified?.valor_frete) || 0;
+      const totalQty = items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
+      const comissaoPerUnit = totalQty > 0 ? comissaoTotal / totalQty : 0;
+      const fretePerUnit = totalQty > 0 ? freteTotal / totalQty : 0;
+
       return items.map((it, idx) => {
         const rowId = it.id || `${base.id}-item-${idx}`;
+        const itemQty = Number(it.quantity) || 0;
+        const comissaoItem = itemQty * comissaoPerUnit;
+        const freteItem = itemQty * fretePerUnit;
+        
         return {
           ...base,
           oms_order_id: base.id, // manter referência ao pedido OMS (uuid)
@@ -470,7 +481,11 @@ function SimplePedidosPage({ className }: Props) {
           sku: it.sku || '-',
           skus: [it.sku].filter(Boolean),
           produto_titulo: it.title || '-',
-          quantidade: Number(it.quantity) || 0,
+          quantidade: itemQty,
+          // Comissão e frete proporcional ao item
+          comissao_valor: comissaoItem,
+          taxa_marketplace: comissaoItem, // alias para coluna marketplace_fee
+          frete_item: freteItem,
           // manter apenas o item da linha (para baixa de estoque por SKU)
           items: [it]
         };
