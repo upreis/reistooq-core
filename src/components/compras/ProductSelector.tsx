@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Package, ShoppingCart, Minus, Plus, Warehouse, Store } from "lucide-react";
-import { useProducts } from "@/hooks/useProducts";
+// Produtos vêm de produtos_composicoes (composições para OMS)
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,7 +37,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<{[key: string]: { product: Product; quantidade: number }}>({});
-  const { getProducts } = useProducts();
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -85,76 +85,48 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
   // Locais de venda filtrados pelo estoque selecionado
   const locaisVendaFiltrados = locaisVenda.filter(lv => lv.local_estoque_id === selectedLocalEstoqueId);
 
-  // Carregar produtos do estoque filtrados pelo local selecionado
+  // Carregar produtos de COMPOSIÇÕES (tabela produtos_composicoes)
   useEffect(() => {
     const loadProducts = async () => {
-      if (isOpen && selectedLocalEstoqueId) {
+      if (isOpen) {
         setLoading(true);
         try {
-          // Buscar produtos que têm estoque no local selecionado
-          const { data: estoquePorLocal, error: estoqueError } = await supabase
-            .from('estoque_por_local')
-            .select(`
-              quantidade,
-              produto_id,
-              produtos!inner (
-                id,
-                nome,
-                sku_interno,
-                preco_custo,
-                preco_venda,
-                quantidade_atual,
-                estoque_minimo,
-                categoria,
-                ativo
-              )
-            `)
-            .eq('local_id', selectedLocalEstoqueId)
-            .gt('quantidade', 0);
+          // Buscar produtos da tabela produtos_composicoes (composições para OMS)
+          const { data: composicoesData, error: composicoesError } = await supabase
+            .from('produtos_composicoes')
+            .select('id, sku_interno, nome, categoria, preco_venda, preco_custo, quantidade_atual, estoque_minimo')
+            .eq('ativo', true)
+            .order('nome');
 
-          if (estoqueError) {
-            console.error("Error loading products by location:", estoqueError);
+          if (composicoesError) {
+            console.error("Error loading compositions:", composicoesError);
             setProducts([]);
             return;
           }
 
-          // Mapear para o formato esperado, usando a quantidade do local
-          const produtosComEstoque = (estoquePorLocal || [])
-            .filter((item: any) => item.produtos?.ativo !== false)
-            .map((item: any) => ({
-              id: item.produtos.id,
-              nome: item.produtos.nome,
-              sku_interno: item.produtos.sku_interno,
-              preco_custo: item.produtos.preco_custo || 0,
-              preco_venda: item.produtos.preco_venda || 0,
-              quantidade_atual: item.quantidade, // Quantidade no local específico
-              quantidade_geral: item.produtos.quantidade_atual, // Quantidade geral
-              estoque_minimo: item.produtos.estoque_minimo,
-              categoria: item.produtos.categoria
-            }));
+          // Mapear para o formato esperado
+          const produtosComposicoes = (composicoesData || []).map((item: any) => ({
+            id: item.id,
+            nome: item.nome,
+            sku_interno: item.sku_interno,
+            preco_custo: item.preco_custo || 0,
+            preco_venda: item.preco_venda || 0,
+            quantidade_atual: item.quantidade_atual || 0,
+            estoque_minimo: item.estoque_minimo || 0,
+            categoria: item.categoria
+          }));
 
-          setProducts(produtosComEstoque);
+          setProducts(produtosComposicoes);
         } catch (error) {
-          console.error("Error loading products:", error);
+          console.error("Error loading compositions:", error);
           setProducts([]);
-        } finally {
-          setLoading(false);
-        }
-      } else if (isOpen && !selectedLocalEstoqueId) {
-        // Se não tem local selecionado, carregar todos os produtos
-        setLoading(true);
-        try {
-          const data = await getProducts({ limit: 1000 });
-          setProducts(data);
-        } catch (error) {
-          console.error("Error loading products:", error);
         } finally {
           setLoading(false);
         }
       }
     };
     loadProducts();
-  }, [isOpen, selectedLocalEstoqueId, getProducts]);
+  }, [isOpen]);
 
   const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
