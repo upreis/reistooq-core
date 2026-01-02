@@ -22,8 +22,8 @@ export interface PedidosFiltersState {
   dataInicio?: Date;
   dataFim?: Date;
   contasML?: string[];
-  // 🛍️ NOVO: Filtro de Marketplace (ML vs Shopee)
-  marketplace?: 'all' | 'ml' | 'shopee';
+  // 🛍️ ATUALIZADO: Filtro de Marketplace (ML vs Shopee vs OMS)
+  marketplace?: 'all' | 'ml' | 'shopee' | 'oms';
   // Status Avançado
   useAdvancedStatus?: boolean;
   advancedStatusFilters?: StatusFilters;
