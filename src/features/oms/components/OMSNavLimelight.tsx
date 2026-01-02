@@ -13,7 +13,7 @@ const navItems = [
   },
   {
     path: "/oms/pedidos",
-    label: "Atacado",
+    label: "Orçamento",
     icon: ShoppingCart,
   },
   {

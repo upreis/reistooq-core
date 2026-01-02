@@ -29,7 +29,7 @@ const PAGE_GROUPS: PageGroup[] = [
     label: 'Vendas',
     children: [
       { value: '/pedidos', label: 'Marketplace' },
-      { value: '/oms/pedidos', label: 'Atacado' },
+      { value: '/oms/pedidos', label: 'Orçamento' },
       { value: '/oms/cadastro', label: 'Cadastro' },
       { value: '/oms/configuracoes', label: 'Configurações OMS' },
     ]

@@ -4,7 +4,7 @@ import { RadioGroupNav } from "@/components/ui/radio-group-nav";
 
 const navigation = [
   { name: "Marketplace", href: "/pedidos", icon: Store, preserveSearch: true },
-  { name: "Atacado", href: "/oms/pedidos", icon: ShoppingCart },
+  { name: "Orçamento", href: "/oms/pedidos", icon: ShoppingCart },
   { name: "Cadastro", href: "/oms/cadastro", icon: Users },
   { name: "Configurações", href: "/oms/configuracoes", icon: Settings },
 ];
