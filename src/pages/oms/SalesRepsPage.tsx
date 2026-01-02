@@ -73,9 +73,21 @@ export default function SalesRepsPage() {
     setSubmitting(true);
 
     try {
+      // Get current user's organization_id
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) throw new Error('Usuário não autenticado');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', userData.user.id)
+        .single();
+
+      if (!profile?.organizacao_id) throw new Error('Organização não encontrada');
+
       const { error } = await supabase
         .from('oms_sales_reps')
-        .insert([data]);
+        .insert([{ ...data, organization_id: profile.organizacao_id }]);
 
       if (error) throw error;
 
