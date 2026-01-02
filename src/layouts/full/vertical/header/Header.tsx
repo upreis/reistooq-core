@@ -147,15 +147,15 @@ export default function Header() {
     
     
     
-    // Admin
-    if (path.startsWith('/admin/perfil')) return { icon: adminPerfilIcon, label: 'Admin / Perfil', isImage: true };
+    // Configurações (Admin)
+    if (path.startsWith('/admin/perfil')) return { icon: adminPerfilIcon, label: 'Perfil', isImage: true };
     
-    if (path.startsWith('/admin/seguranca')) return { icon: adminSegurancaIcon, label: 'Admin / Segurança', isImage: true };
-    if (path.startsWith('/admin/alertas')) return { icon: adminAlertasIcon, label: 'Admin / Alertas', isImage: true };
-    if (path.startsWith('/admin/convites')) return { icon: adminConvitesIcon, label: 'Admin / Convites', isImage: true };
-    if (path.startsWith('/admin/cargos')) return { icon: adminCargosIcon, label: 'Admin / Cargos', isImage: true };
-    if (path.startsWith('/admin/usuarios')) return { icon: adminUsuariosIcon, label: 'Admin / Usuários', isImage: true };
-    if (path.startsWith('/admin')) return { icon: adminIcon, label: 'Admin', isImage: true };
+    if (path.startsWith('/admin/seguranca')) return { icon: adminSegurancaIcon, label: 'Segurança', isImage: true };
+    if (path.startsWith('/admin/alertas')) return { icon: adminAlertasIcon, label: 'Alertas', isImage: true };
+    if (path.startsWith('/admin/convites')) return { icon: adminConvitesIcon, label: 'Convites', isImage: true };
+    if (path.startsWith('/admin/cargos')) return { icon: adminCargosIcon, label: 'Cargos', isImage: true };
+    if (path.startsWith('/admin/usuarios')) return { icon: adminUsuariosIcon, label: 'Usuários', isImage: true };
+    if (path.startsWith('/admin')) return { icon: adminIcon, label: 'Geral', isImage: true };
     
     // Estoque
     if (path.startsWith('/estoque/historico')) return { icon: estoqueHistoricoIcon, label: 'Estoque / Histórico', isImage: true };
