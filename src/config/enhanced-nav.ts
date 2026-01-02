@@ -193,13 +193,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             permission: 'admin:access'
           },
           {
-            id: 'admin-convites',
-            label: 'Convites',
-            path: '/admin/convites',
-            icon: 'Mail',
-            permission: 'admin:access'
-          },
-          {
             id: 'admin-alertas',
             label: 'Alertas',
             path: '/admin/alertas',
