@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Plus, 
   Edit, 
@@ -19,6 +17,7 @@ import {
 import { useOMSSalesReps } from "@/hooks/useOMSData";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { SalesRepForm } from "@/components/oms/SalesRepForm";
 
 interface SalesRep {
   id: string;
@@ -70,14 +69,13 @@ export default function SalesRepsPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleSubmitCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFormSubmitCreate = async (data: any) => {
     setSubmitting(true);
 
     try {
       const { error } = await supabase
         .from('oms_sales_reps')
-        .insert([formData]);
+        .insert([data]);
 
       if (error) throw error;
 
@@ -100,8 +98,12 @@ export default function SalesRepsPage() {
     }
   };
 
-  const handleSubmitEdit = async (e: React.FormEvent) => {
+  const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    handleFormSubmitCreate(formData);
+  };
+
+  const handleFormSubmitEdit = async (data: any) => {
     if (!selectedRep) return;
 
     setSubmitting(true);
@@ -109,7 +111,7 @@ export default function SalesRepsPage() {
     try {
       const { error } = await supabase
         .from('oms_sales_reps')
-        .update(formData)
+        .update(data)
         .eq('id', selectedRep.id);
 
       if (error) throw error;
@@ -131,6 +133,11 @@ export default function SalesRepsPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    handleFormSubmitEdit(formData);
   };
 
   const handleDelete = async (repId: string) => {
@@ -313,126 +320,30 @@ export default function SalesRepsPage() {
 
       {/* Modal de Criação */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Novo Vendedor</DialogTitle>
           </DialogHeader>
-          
-          <form onSubmit={handleSubmitCreate} className="space-y-4">
-            <div>
-              <Label>Nome *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
-                placeholder="Nome completo"
-              />
-            </div>
-            
-            <div>
-              <Label>E-mail *</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                required
-                placeholder="email@empresa.com"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                O vendedor poderá acessar o sistema com este email
-              </p>
-            </div>
-            
-            <div>
-              <Label>Telefone</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-            
-            <div>
-              <Label>Comissão Padrão (%)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={formData.default_commission_pct}
-                onChange={(e) => setFormData(prev => ({ ...prev, default_commission_pct: parseFloat(e.target.value) }))}
-              />
-            </div>
-            
-            <div className="flex gap-2 justify-end pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? "Criando..." : "Criar Vendedor"}
-              </Button>
-            </div>
-          </form>
+          <SalesRepForm
+            onSubmit={handleFormSubmitCreate}
+            onCancel={() => setIsCreateModalOpen(false)}
+            isLoading={submitting}
+          />
         </DialogContent>
       </Dialog>
 
       {/* Modal de Edição */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Editar Vendedor</DialogTitle>
           </DialogHeader>
-          
-          <form onSubmit={handleSubmitEdit} className="space-y-4">
-            <div>
-              <Label>Nome *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label>E-mail *</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label>Telefone</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-            
-            <div>
-              <Label>Comissão Padrão (%)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={formData.default_commission_pct}
-                onChange={(e) => setFormData(prev => ({ ...prev, default_commission_pct: parseFloat(e.target.value) }))}
-              />
-            </div>
-            
-            <div className="flex gap-2 justify-end pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-            </div>
-          </form>
+          <SalesRepForm
+            salesRep={selectedRep}
+            onSubmit={handleFormSubmitEdit}
+            onCancel={() => setIsEditModalOpen(false)}
+            isLoading={submitting}
+          />
         </DialogContent>
       </Dialog>
     </div>

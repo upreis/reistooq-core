@@ -4711,37 +4711,115 @@ export type Database = {
       }
       oms_sales_reps: {
         Row: {
+          acesso_restrito_horario: boolean | null
+          acesso_restrito_ip: boolean | null
+          bairro: string | null
+          celular: string | null
+          cep: string | null
+          cidade: string | null
+          codigo: string | null
+          complemento: string | null
+          contribuinte: string | null
           created_at: string
           default_commission_pct: number | null
+          deposito: string | null
+          doc: string | null
           email: string | null
+          email_comunicacoes: string | null
+          endereco: string | null
+          fantasia: string | null
           id: string
+          inscricao_estadual: string | null
           is_active: boolean | null
+          modulos_acesso: string[] | null
           name: string
+          numero: string | null
           organization_id: string | null
+          perfil_contato: string | null
           phone: string | null
+          pode_emitir_cobrancas: boolean | null
+          pode_incluir_produtos_nao_cadastrados: boolean | null
+          regra_liberacao_comissao: string | null
+          situacao: string | null
+          tipo_comissao: string | null
+          tipo_pessoa: string | null
+          uf: string | null
           updated_at: string
+          usuario_sistema: string | null
         }
         Insert: {
+          acesso_restrito_horario?: boolean | null
+          acesso_restrito_ip?: boolean | null
+          bairro?: string | null
+          celular?: string | null
+          cep?: string | null
+          cidade?: string | null
+          codigo?: string | null
+          complemento?: string | null
+          contribuinte?: string | null
           created_at?: string
           default_commission_pct?: number | null
+          deposito?: string | null
+          doc?: string | null
           email?: string | null
+          email_comunicacoes?: string | null
+          endereco?: string | null
+          fantasia?: string | null
           id?: string
+          inscricao_estadual?: string | null
           is_active?: boolean | null
+          modulos_acesso?: string[] | null
           name: string
+          numero?: string | null
           organization_id?: string | null
+          perfil_contato?: string | null
           phone?: string | null
+          pode_emitir_cobrancas?: boolean | null
+          pode_incluir_produtos_nao_cadastrados?: boolean | null
+          regra_liberacao_comissao?: string | null
+          situacao?: string | null
+          tipo_comissao?: string | null
+          tipo_pessoa?: string | null
+          uf?: string | null
           updated_at?: string
+          usuario_sistema?: string | null
         }
         Update: {
+          acesso_restrito_horario?: boolean | null
+          acesso_restrito_ip?: boolean | null
+          bairro?: string | null
+          celular?: string | null
+          cep?: string | null
+          cidade?: string | null
+          codigo?: string | null
+          complemento?: string | null
+          contribuinte?: string | null
           created_at?: string
           default_commission_pct?: number | null
+          deposito?: string | null
+          doc?: string | null
           email?: string | null
+          email_comunicacoes?: string | null
+          endereco?: string | null
+          fantasia?: string | null
           id?: string
+          inscricao_estadual?: string | null
           is_active?: boolean | null
+          modulos_acesso?: string[] | null
           name?: string
+          numero?: string | null
           organization_id?: string | null
+          perfil_contato?: string | null
           phone?: string | null
+          pode_emitir_cobrancas?: boolean | null
+          pode_incluir_produtos_nao_cadastrados?: boolean | null
+          regra_liberacao_comissao?: string | null
+          situacao?: string | null
+          tipo_comissao?: string | null
+          tipo_pessoa?: string | null
+          uf?: string | null
           updated_at?: string
+          usuario_sistema?: string | null
         }
         Relationships: [
           {
