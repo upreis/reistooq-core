@@ -71,6 +71,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     tipoLogistico: "",
     codigoRastreamento: "",
     localEstoqueId: "",
+    quemPagaFrete: "eu", // "eu" ou "cliente"
     
     // Endereço (preenchido do cliente)
     enderecoRua: "",
@@ -972,20 +973,17 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label>Local de Estoque</Label>
+              <Label>Quem paga o frete?</Label>
               <Select 
-                value={formData.localEstoqueId} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, localEstoqueId: value }))}
+                value={formData.quemPagaFrete} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, quemPagaFrete: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o local" />
+                  <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(locaisEstoque || []).map((local) => (
-                    <SelectItem key={local.id} value={local.id}>
-                      {local.nome} ({local.tipo})
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="eu">Eu</SelectItem>
+                  <SelectItem value="cliente">Cliente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
