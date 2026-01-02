@@ -958,36 +958,6 @@ export default function OrdersPageProfessional({
                               <TableRow className="bg-muted/30">
                                 <TableCell colSpan={8} className="p-4">
                                   <div className="space-y-4">
-                                    {/* Informações gerais */}
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                      <div>
-                                        <span className="text-muted-foreground">Tipo Logístico:</span>
-                                        <p className="font-medium">{order.tipo_logistico || '-'}</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground">Rastreamento:</span>
-                                        <p className="font-medium">{order.codigo_rastreamento || '-'}</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground">Frete:</span>
-                                        <p className="font-medium">{formatCurrency(order.shipping_total || 0)}</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground">Valor Líquido:</span>
-                                        <p className="font-medium text-green-600">{formatCurrency(order.valor_liquido || 0)}</p>
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Endereço */}
-                                    {order.endereco_rua && (
-                                      <div className="text-sm">
-                                        <span className="text-muted-foreground">Endereço:</span>
-                                        <p className="font-medium">
-                                          {order.endereco_rua}, {order.endereco_numero} - {order.endereco_bairro}, {order.endereco_cidade}/{order.endereco_uf} - CEP: {order.endereco_cep}
-                                        </p>
-                                      </div>
-                                    )}
-                                    
                                     {/* Itens do pedido */}
                                     {order.oms_order_items && order.oms_order_items.length > 0 && (
                                       <div>
