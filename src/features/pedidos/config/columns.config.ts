@@ -141,12 +141,12 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'custo_fixo_meli',
-    label: 'Custo Fixo Meli',
+    label: 'Custo Produto',
     category: 'financial',
     priority: 'important',
     visible: false,
     default: false,
-    description: 'Custo fixo adicional para produtos abaixo de R$ 79',
+    description: 'Custo do produto',
     width: 130,
     sortable: true
   },
