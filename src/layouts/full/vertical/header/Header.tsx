@@ -149,13 +149,13 @@ export default function Header() {
     
     // Configurações (Admin)
     if (path.startsWith('/admin/perfil')) return { icon: adminPerfilIcon, label: 'Perfil', isImage: true };
-    
+    if (path.startsWith('/admin/integracoes')) return { icon: adminIcon, label: 'Integrações', isImage: true };
     if (path.startsWith('/admin/seguranca')) return { icon: adminSegurancaIcon, label: 'Segurança', isImage: true };
     if (path.startsWith('/admin/alertas')) return { icon: adminAlertasIcon, label: 'Alertas', isImage: true };
     if (path.startsWith('/admin/convites')) return { icon: adminConvitesIcon, label: 'Convites', isImage: true };
     if (path.startsWith('/admin/cargos')) return { icon: adminCargosIcon, label: 'Cargos', isImage: true };
     if (path.startsWith('/admin/usuarios')) return { icon: adminUsuariosIcon, label: 'Usuários', isImage: true };
-    if (path.startsWith('/admin')) return { icon: adminIcon, label: 'Geral', isImage: true };
+    if (path.startsWith('/admin')) return { icon: adminIcon, label: 'Usuários', isImage: true };
     
     // Estoque
     if (path.startsWith('/estoque/historico')) return { icon: estoqueHistoricoIcon, label: 'Estoque / Histórico', isImage: true };
