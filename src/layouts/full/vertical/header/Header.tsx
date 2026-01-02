@@ -11,6 +11,7 @@ import comprasImportacaoIcon from "@/assets/icons/compras-importacao-icon.png";
 import estoqueIcon from "@/assets/estoque-icon.png";
 import estoqueComposicoesIcon from "@/assets/estoque-composicoes-icon.png";
 import estoqueHistoricoIcon from "@/assets/estoque-historico-icon.png";
+import estoqueInsumosIcon from "@/assets/icons/insumos-icon.png";
 import aplicativosCalendarioIcon from "@/assets/aplicativos-calendario-icon.png";
 import aplicativosNotasIcon from "@/assets/aplicativos-notas-icon.png";
 import configuracoesIntegracoesIcon from "@/assets/configuracoes-integracoes-icon.png";
@@ -161,7 +162,7 @@ export default function Header() {
     // Estoque
     if (path.startsWith('/estoque/historico')) return { icon: estoqueHistoricoIcon, label: 'Estoque / Histórico', isImage: true };
     if (path.startsWith('/estoque/composicoes')) return { icon: estoqueComposicoesIcon, label: 'Composições de Produtos', isImage: true };
-    if (path.startsWith('/estoque/insumos')) return { icon: estoqueComposicoesIcon, label: 'Composições de Insumos', isImage: true };
+    if (path.startsWith('/estoque/insumos')) return { icon: estoqueInsumosIcon, label: 'Composições de Insumos', isImage: true };
     if (path.startsWith('/estoque/de-para')) return { icon: estoqueIcon, label: 'De-Para de SKU', isImage: true };
     if (path.startsWith('/estoque')) return { icon: estoqueIcon, label: 'Estoque', isImage: true };
     if (path.startsWith('/category-manager')) return { icon: '🏷️', label: 'Categorias' };
