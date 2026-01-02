@@ -31,9 +31,17 @@ export function useOMSCustomers() {
   const createCustomer = async (data: any) => {
     setLoading(true);
     try {
+      // Buscar organization_id do usuário atual
+      const { data: orgData } = await supabase.rpc('get_current_organization_data');
+      const organizationId = (orgData as { id?: string } | null)?.id;
+      
+      if (!organizationId) {
+        throw new Error('Usuário não possui organização associada');
+      }
+
       const { data: newCustomer, error } = await supabase
         .from('oms_customers')
-        .insert([data])
+        .insert([{ ...data, organization_id: organizationId }])
         .select()
         .single();
       
