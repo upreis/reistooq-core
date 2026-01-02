@@ -608,7 +608,14 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
               <Label htmlFor="salesRep">Representante</Label>
               <Select 
                 value={formData.selectedSalesRep} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, selectedSalesRep: value }))}
+                onValueChange={(value) => {
+                  const selectedRep = salesReps.find(rep => rep.id === value);
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    selectedSalesRep: value,
+                    comissaoPercentual: selectedRep?.default_commission_pct || 0
+                  }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um representante" />
