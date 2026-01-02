@@ -202,14 +202,20 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 const mapping = mappingData.get(order.id);
 
                 // Extrair SKUs e quantidade total priorizando API structure
-                const orderItems = order.order_items || order.unified?.order_items || order.raw?.order_items || [];
-                const skus = orderItems.map((item: any) => 
-                  item.sku || 
-                  item.item?.sku || 
-                  item.item?.seller_sku || 
-                  item.seller_sku ||
-                  item.item?.id?.toString()
-                ).filter(Boolean);
+                // 🛒 OMS: Usar unified.items que contém todos os itens do pedido
+                const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
+                const orderItems = isOMS 
+                  ? (order.unified?.items || order.items || [])
+                  : (order.order_items || order.unified?.order_items || order.raw?.order_items || []);
+                const skus = isOMS
+                  ? (order.unified?.skus || orderItems.map((item: any) => item.sku).filter(Boolean))
+                  : orderItems.map((item: any) => 
+                      item.sku || 
+                      item.item?.sku || 
+                      item.item?.seller_sku || 
+                      item.seller_sku ||
+                      item.item?.id?.toString()
+                    ).filter(Boolean);
                 const quantidadeItens = orderItems.reduce((acc: number, item: any) => 
                   acc + (item.quantity || item.quantidade || 1), 0) || 1;
 
@@ -305,7 +311,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          order.unified?.marketplace === 'shopee' ||
                          order.unified?.provider === 'shopee';
 
-                       const content = isShopee ? (order.sku ?? order.unified?.sku ?? null) : (skus.length ? skus.join(', ') : null);
+                       // 🛒 OMS: Mostrar todos os SKUs do pedido
+                       const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
+                       const content = isShopee 
+                         ? (order.sku ?? order.unified?.sku ?? null) 
+                         : isOMS
+                           ? (order.unified?.skus?.join(', ') || skus.join(', ') || null)
+                           : (skus.length ? skus.join(', ') : null);
 
                        return (
                          <div
