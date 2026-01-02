@@ -296,28 +296,37 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
         continue;
       }
 
-      // ✅ BUSCAR ESTOQUE REAL - usando sku_interno pois o ID é de produtos_composicoes
+      // ✅ BUSCAR ESTOQUE REAL + PREÇO DE VENDA (fonte confiável: tabela produtos)
+      // usando sku_interno pois o ID vem de produtos_composicoes
       let realStock = 0;
+      let priceFromDb = 0;
       try {
         const { data, error } = await supabase
           .from('produtos')
-          .select('quantidade_atual')
+          .select('quantidade_atual, preco_venda')
           .eq('sku_interno', selectedProduct.sku_interno)
           .maybeSingle();
-        
+
         if (!error && data) {
           realStock = data.quantidade_atual || 0;
+          priceFromDb = data.preco_venda || 0;
         }
         console.log('🔍 DEBUG estoque real para produto', selectedProduct.nome, ':', realStock);
       } catch (error) {
-        console.warn('Erro ao buscar estoque real para produto', selectedProduct.nome, ':', error);
+        console.warn('Erro ao buscar estoque/preço para produto', selectedProduct.nome, ':', error);
         realStock = 0;
+        priceFromDb = 0;
       }
 
       // Converter para formato do pedido
       const customerTier = customers.find(c => c.id === formData.selectedCustomer)?.price_tier || 'standard';
       const tierMultiplier = getPriceTierMultiplier(customerTier);
-      const unitPrice = selectedProduct.preco_custo * tierMultiplier;
+
+      // ✅ Preço de venda (não custo). Prioriza o DB pois o selector pode não trazer o campo.
+      const basePrice = Number(
+        selectedProduct.preco_venda ?? priceFromDb ?? selectedProduct.price ?? selectedProduct.preco ?? 0
+      );
+      const unitPrice = basePrice * tierMultiplier;
 
       const newItem = {
         id: Date.now().toString() + Math.random(),
