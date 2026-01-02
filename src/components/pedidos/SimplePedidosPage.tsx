@@ -88,6 +88,7 @@ import { LoadingIndicator } from './LoadingIndicator';
 import { ShopeeImportModal } from './ShopeeImportModal';
 import { ShopeeUploadManager } from './ShopeeUploadManager';
 import { useShopeeOrdersFromDB } from '@/hooks/useShopeeOrdersFromDB';
+import { useOMSOrdersForPedidos } from '@/hooks/useOMSOrdersForPedidos';
 
 import { FEATURES } from '@/config/features';
 
@@ -305,8 +306,10 @@ function SimplePedidosPage({ className }: Props) {
 
   // 🛍️ Hook para buscar pedidos Shopee do banco (Excel importado)
   const isShopeeMarketplace = filtersManager.filters.marketplace === 'shopee';
+  const isOMSMarketplace = filtersManager.filters.marketplace === 'oms';
   const isAllMarketplaces = filtersManager.filters.marketplace === 'all' || !filtersManager.filters.marketplace;
   const shouldLoadShopee = isShopeeMarketplace || isAllMarketplaces;
+  const shouldLoadOMS = isOMSMarketplace || isAllMarketplaces;
   
   // 🛍️ SHOPEE: Colunas que não tem dados na Shopee (ocultar na aba Shopee)
   const SHOPEE_HIDDEN_COLUMNS = useMemo(() => new Set([
@@ -370,6 +373,16 @@ function SimplePedidosPage({ className }: Props) {
     pageSize: state.pageSize
   });
 
+  // 🛒 Hook para buscar pedidos OMS (Orçamento) aprovados
+  const omsOrdersDB = useOMSOrdersForPedidos({
+    enabled: shouldLoadOMS,
+    search: filtersManager.appliedFilters.search,
+    dataInicio: filtersManager.appliedFilters.dataInicio,
+    dataFim: filtersManager.appliedFilters.dataFim,
+    page: state.currentPage,
+    pageSize: state.pageSize
+  });
+
   // 🔄 Refetch Shopee quando filtros mudam
   useEffect(() => {
     if (shouldLoadShopee) {
@@ -377,6 +390,14 @@ function SimplePedidosPage({ className }: Props) {
       shopeeOrdersDB.refetch();
     }
   }, [shouldLoadShopee, filtersManager.appliedFilters, state.currentPage]);
+
+  // 🔄 Refetch OMS quando filtros mudam
+  useEffect(() => {
+    if (shouldLoadOMS) {
+      console.log('🛒 [OMS] Buscando pedidos aprovados...');
+      omsOrdersDB.refetch();
+    }
+  }, [shouldLoadOMS, filtersManager.appliedFilters, state.currentPage]);
 
   // 🧠 P3.2: Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE (debounce aumentado)
   const {
@@ -420,7 +441,7 @@ function SimplePedidosPage({ className }: Props) {
   // 🔧 FASE 4.1.2: Função movida para usePedidosHelpers (linha removida)
   
   // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
-  // 🛍️ SHOPEE + ML: Combinar dados quando marketplace = 'all'
+  // 🛍️ SHOPEE + ML + OMS: Combinar dados quando marketplace = 'all'
   const orders = useMemo(() => {
     // ✅ CORREÇÃO: Preservar raw + unified para que foi_atualizado seja acessível
     const shopeeUnified = shopeeOrdersDB.orders.map((o) => ({
@@ -429,29 +450,43 @@ function SimplePedidosPage({ className }: Props) {
       foi_atualizado: o.unified?.foi_atualizado || o.raw?.foi_atualizado || false
     }));
     
-    if (isShopeeMarketplace) {
+    // 🛒 OMS: Pedidos de Orçamento aprovados
+    const omsUnified = omsOrdersDB.orders.map((o) => ({
+      ...o.unified,
+      raw: o.raw,
+      foi_atualizado: false
+    }));
+    
+    if (isOMSMarketplace) {
+      // Apenas OMS (Orçamento)
+      return omsUnified;
+    } else if (isShopeeMarketplace) {
       // Apenas Shopee
       return shopeeUnified;
     } else if (isAllMarketplaces) {
-      // Combinar ML + Shopee
-      return [...rowsEnriquecidos, ...shopeeUnified];
+      // Combinar ML + Shopee + OMS
+      return [...rowsEnriquecidos, ...shopeeUnified, ...omsUnified];
     } else {
       // Apenas Mercado Livre
       return rowsEnriquecidos;
     }
-  }, [isShopeeMarketplace, isAllMarketplaces, shopeeOrdersDB.orders, rowsEnriquecidos]);
+  }, [isShopeeMarketplace, isOMSMarketplace, isAllMarketplaces, shopeeOrdersDB.orders, omsOrdersDB.orders, rowsEnriquecidos]);
 
-  const total = isShopeeMarketplace 
-    ? shopeeOrdersDB.total 
-    : isAllMarketplaces 
-      ? state.total + shopeeOrdersDB.total 
-      : state.total;
-  const loading = isShopeeMarketplace
-    ? shopeeOrdersDB.loading
-    : isAllMarketplaces
-      ? (state.loading || loadingLocais || shopeeOrdersDB.loading)
-      : (state.loading || loadingLocais);
-  const error = isShopeeMarketplace ? shopeeOrdersDB.error : state.error;
+  const total = isOMSMarketplace
+    ? omsOrdersDB.total
+    : isShopeeMarketplace 
+      ? shopeeOrdersDB.total 
+      : isAllMarketplaces 
+        ? state.total + shopeeOrdersDB.total + omsOrdersDB.total
+        : state.total;
+  const loading = isOMSMarketplace
+    ? omsOrdersDB.loading
+    : isShopeeMarketplace
+      ? shopeeOrdersDB.loading
+      : isAllMarketplaces
+        ? (state.loading || loadingLocais || shopeeOrdersDB.loading || omsOrdersDB.loading)
+        : (state.loading || loadingLocais);
+  const error = isOMSMarketplace ? omsOrdersDB.error : isShopeeMarketplace ? shopeeOrdersDB.error : state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
   
@@ -909,6 +944,15 @@ function SimplePedidosPage({ className }: Props) {
               >
                 <span className="text-orange-500">●</span>
                 Shopee
+              </Button>
+              <Button
+                variant={filtersManager.filters.marketplace === 'oms' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => filtersManager.updateFilter('marketplace', 'oms')}
+                className="h-7 px-3 text-xs gap-1.5"
+              >
+                <span className="text-emerald-500">●</span>
+                Orçamento
               </Button>
             </div>
             
