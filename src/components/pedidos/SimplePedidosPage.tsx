@@ -335,9 +335,7 @@ function SimplePedidosPage({ className }: Props) {
     'url_rastreamento',    // Rastreamento
     'pack_id',             // Pack ID
     'pickup_id',           // Pickup ID
-    'updated_at',          // Atualizado
     'receita_flex',        // Receita Flex (não aplicável)
-    'custo_fixo_meli',     // Custo Fixo Meli (não aplicável)
   ]), []);
   
   // Filtrar colunas baseado no marketplace selecionado
