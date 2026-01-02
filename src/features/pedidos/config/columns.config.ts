@@ -171,17 +171,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Método de pagamento utilizado',
     width: 150
   },
-  {
-    key: 'payment_status',
-    label: 'Status Pagamento',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status do pagamento',
-    width: 120
-  },
-
 
   // ====== MAPEAMENTO (das imagens 2 e 3) ======
   {
