@@ -15,6 +15,7 @@ import { ptBR } from "date-fns/locale";
 
 // ✅ USAR HOOKS EXISTENTES - OBRIGATÓRIO
 import { useOMSCustomers, useOMSSalesReps, useOMSProducts, formatCurrency, getPriceTierMultiplier } from "@/hooks/useOMSData";
+import { useLocaisEstoque, useEmpresaData, useNextOrderNumber } from "@/features/oms/hooks/useOMSData";
 import { useProducts } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,9 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   const { customers } = useOMSCustomers();
   const { salesReps } = useOMSSalesReps();
   const { products, searchProducts } = useOMSProducts();
+  const { data: locaisEstoque } = useLocaisEstoque();
+  const { data: empresaData } = useEmpresaData();
+  const { data: nextOrderNumber } = useNextOrderNumber();
   
   // ✅ INTEGRAÇÃO COM ESTOQUE
   const { getProducts } = useProducts();
@@ -64,6 +68,21 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     shippingTotal: 0,
     shippingMethod: "standard",
     deliveryAddress: "",
+    tipoLogistico: "",
+    codigoRastreamento: "",
+    localEstoqueId: "",
+    
+    // Endereço (preenchido do cliente)
+    enderecoRua: "",
+    enderecoNumero: "",
+    enderecoBairro: "",
+    enderecoCep: "",
+    enderecoCidade: "",
+    enderecoUf: "",
+    
+    // Comissão
+    comissaoPercentual: 0,
+    comissaoValor: 0,
     
     // Observações
     notes: "",
@@ -145,6 +164,18 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           deliveryAddress: initialData.delivery_address || "",
           notes: initialData.notes || "",
           internalNotes: initialData.internal_notes || "",
+          // Novos campos
+          tipoLogistico: initialData.tipo_logistico || "",
+          codigoRastreamento: initialData.codigo_rastreamento || "",
+          localEstoqueId: initialData.local_estoque_id || "",
+          comissaoPercentual: initialData.comissao_percentual || 0,
+          comissaoValor: initialData.comissao_valor || 0,
+          enderecoRua: initialData.endereco_rua || "",
+          enderecoNumero: initialData.endereco_numero || "",
+          enderecoBairro: initialData.endereco_bairro || "",
+          enderecoCep: initialData.endereco_cep || "",
+          enderecoCidade: initialData.endereco_cidade || "",
+          enderecoUf: initialData.endereco_uf || "",
           // ✅ MAPEAR ITENS DO PEDIDO COM ESTOQUE REAL
           items: (initialData.oms_order_items || []).map((item: any) => ({
             id: item.id,
@@ -157,6 +188,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
             discount_value: item.discount_value || 0,
             tax_value: item.tax_value || 0,
             total: item.total,
+            custo_unitario: item.custo_unitario || 0,
             available_stock: stockMap[item.product_id] || 0 // ✅ ESTOQUE REAL DO PRODUTO
           }))
         };
@@ -168,6 +200,24 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       loadRealStock();
     }
   }, [initialData, customers, salesReps]);
+
+  // ✅ EFEITO PARA PREENCHER ENDEREÇO QUANDO SELECIONAR CLIENTE
+  useEffect(() => {
+    if (formData.selectedCustomer && customers.length > 0) {
+      const selectedCustomerData = customers.find(c => c.id === formData.selectedCustomer);
+      if (selectedCustomerData) {
+        setFormData(prev => ({
+          ...prev,
+          enderecoRua: selectedCustomerData.endereco_rua || prev.enderecoRua,
+          enderecoNumero: selectedCustomerData.endereco_numero || prev.enderecoNumero,
+          enderecoBairro: selectedCustomerData.endereco_bairro || prev.enderecoBairro,
+          enderecoCep: selectedCustomerData.endereco_cep || prev.enderecoCep,
+          enderecoCidade: selectedCustomerData.endereco_cidade || prev.enderecoCidade,
+          enderecoUf: selectedCustomerData.endereco_uf || prev.enderecoUf
+        }));
+      }
+    }
+  }, [formData.selectedCustomer, customers]);
 
   const handleSearch = async (query: string) => {
     if (query.length >= 2) {
@@ -439,6 +489,9 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     try {
       const totals = calculateTotals();
       const selectedPaymentTerm = paymentTerms.find(pt => pt.id === formData.paymentTerm);
+      
+      // Calcular comissão baseada no percentual
+      const comissaoValor = (totals.grandTotal * formData.comissaoPercentual) / 100;
 
       const orderData = {
         customer_id: formData.selectedCustomer,
@@ -455,6 +508,19 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
         discount_type: formData.discountType,
         notes: formData.notes,
         internal_notes: formData.internalNotes,
+        // Novos campos
+        empresa: empresaData?.fantasia || empresaData?.nome || '',
+        tipo_logistico: formData.tipoLogistico,
+        codigo_rastreamento: formData.codigoRastreamento,
+        local_estoque_id: formData.localEstoqueId || null,
+        comissao_percentual: formData.comissaoPercentual,
+        comissao_valor: comissaoValor,
+        endereco_rua: formData.enderecoRua,
+        endereco_numero: formData.enderecoNumero,
+        endereco_bairro: formData.enderecoBairro,
+        endereco_cep: formData.enderecoCep,
+        endereco_cidade: formData.enderecoCidade,
+        endereco_uf: formData.enderecoUf,
         items: formData.items.map(item => ({
           ...item,
           qty: Number(item.qty),
@@ -462,7 +528,8 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           discount_pct: Number(item.discount_pct) || 0,
           discount_value: Number(item.discount_value) || 0,
           tax_value: Number(item.tax_value) || 0,
-          total: Number(item.total)
+          total: Number(item.total),
+          custo_unitario: Number(item.custo_unitario) || 0
         })),
         subtotal: Number(totals.subtotal),
         tax_total: Number(totals.taxTotal),
@@ -877,12 +944,61 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
         </CardContent>
       </Card>
 
-      {/* Informações de Entrega */}
+      {/* Logística e Estoque */}
       <Card>
         <CardHeader>
-          <CardTitle>Informações de Entrega</CardTitle>
+          <CardTitle>Logística e Estoque</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Local de Estoque</Label>
+              <Select 
+                value={formData.localEstoqueId} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, localEstoqueId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o local" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(locaisEstoque || []).map((local) => (
+                    <SelectItem key={local.id} value={local.id}>
+                      {local.nome} ({local.tipo})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Tipo Logístico</Label>
+              <Select 
+                value={formData.tipoLogistico} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, tipoLogistico: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="proprio">Entrega Própria</SelectItem>
+                  <SelectItem value="correios">Correios</SelectItem>
+                  <SelectItem value="transportadora">Transportadora</SelectItem>
+                  <SelectItem value="motoboy">Motoboy</SelectItem>
+                  <SelectItem value="retirada">Retirada no Local</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Código de Rastreamento</Label>
+              <Input
+                value={formData.codigoRastreamento}
+                onChange={(e) => setFormData(prev => ({ ...prev, codigoRastreamento: e.target.value }))}
+                placeholder="Ex: BR123456789BR"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Método de Entrega</Label>
@@ -903,7 +1019,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
             </div>
 
             <div>
-              <Label>Valor do Frete</Label>
+              <Label>Valor do Frete (Custo de Envio)</Label>
               <Input
                 type="number"
                 min="0"
@@ -917,15 +1033,110 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Endereço de Entrega */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Endereço de Entrega</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="md:col-span-2">
+              <Label>Rua</Label>
+              <Input
+                value={formData.enderecoRua}
+                onChange={(e) => setFormData(prev => ({ ...prev, enderecoRua: e.target.value }))}
+                placeholder="Nome da rua"
+              />
+            </div>
+            <div>
+              <Label>Número</Label>
+              <Input
+                value={formData.enderecoNumero}
+                onChange={(e) => setFormData(prev => ({ ...prev, enderecoNumero: e.target.value }))}
+                placeholder="Nº"
+              />
+            </div>
+            <div>
+              <Label>Bairro</Label>
+              <Input
+                value={formData.enderecoBairro}
+                onChange={(e) => setFormData(prev => ({ ...prev, enderecoBairro: e.target.value }))}
+                placeholder="Bairro"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>CEP</Label>
+              <Input
+                value={formData.enderecoCep}
+                onChange={(e) => setFormData(prev => ({ ...prev, enderecoCep: e.target.value }))}
+                placeholder="00000-000"
+              />
+            </div>
+            <div>
+              <Label>Cidade</Label>
+              <Input
+                value={formData.enderecoCidade}
+                onChange={(e) => setFormData(prev => ({ ...prev, enderecoCidade: e.target.value }))}
+                placeholder="Cidade"
+              />
+            </div>
+            <div>
+              <Label>UF</Label>
+              <Input
+                value={formData.enderecoUf}
+                onChange={(e) => setFormData(prev => ({ ...prev, enderecoUf: e.target.value }))}
+                placeholder="UF"
+                maxLength={2}
+              />
+            </div>
+          </div>
 
           <div>
-            <Label>Endereço de Entrega</Label>
+            <Label>Observação do Endereço</Label>
             <Textarea
               value={formData.deliveryAddress}
               onChange={(e) => setFormData(prev => ({ ...prev, deliveryAddress: e.target.value }))}
-              placeholder="Endereço completo para entrega..."
-              rows={3}
+              placeholder="Complemento, referências..."
+              rows={2}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Comissão do Vendedor */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Comissão do Vendedor</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Percentual de Comissão (%)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={formData.comissaoPercentual === 0 ? '' : formData.comissaoPercentual}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  comissaoPercentual: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 
+                }))}
+                placeholder="0%"
+              />
+            </div>
+            <div>
+              <Label>Valor da Comissão</Label>
+              <div className="h-9 flex items-center px-3 border rounded text-sm bg-muted">
+                {formatCurrency((calculateTotals().grandTotal * formData.comissaoPercentual) / 100)}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

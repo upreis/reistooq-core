@@ -270,6 +270,8 @@ export function useOMSOrders() {
   const createOrder = async (orderData: any) => {
     setLoading(true);
     try {
+      const year = new Date().getFullYear();
+      
       // Gerar número do pedido - buscar o último número no banco
       const { data: lastOrder } = await supabase
         .from('oms_orders')
@@ -285,13 +287,32 @@ export function useOMSOrders() {
         nextNumber = currentNumber + 1;
       }
       
-      const orderNumber = `${String(nextNumber).padStart(6, '0')}/2025`;
+      const orderNumber = `${String(nextNumber).padStart(6, '0')}/${year}`;
+      
+      // Gerar id_unico: SKUs dos itens + número do pedido
+      const skus = (orderData.items || [])
+        .map((item: any) => item.sku?.toUpperCase())
+        .filter(Boolean)
+        .sort()
+        .join('+');
+      const idUnico = skus ? `${skus}-${orderNumber}` : `NO-SKU-${orderNumber}`;
+      
+      // Calcular custo total dos produtos
+      const custoProdutoTotal = (orderData.items || []).reduce((sum: number, item: any) => {
+        return sum + ((item.custo_unitario || 0) * item.qty);
+      }, 0);
+      
+      // Calcular valor líquido: valor total - comissão - frete - custo produtos
+      const comissaoValor = orderData.comissao_valor || 0;
+      const valorLiquido = orderData.grand_total - comissaoValor - (orderData.shipping_total || 0) - custoProdutoTotal;
       
       // Criar pedido principal
       const { data: newOrder, error: orderError } = await supabase
         .from('oms_orders')
         .insert([{
           number: orderNumber,
+          id_unico: idUnico,
+          empresa: orderData.empresa,
           customer_id: orderData.customer_id,
           sales_rep_id: orderData.sales_rep_id,
           order_date: orderData.order_date,
@@ -309,7 +330,21 @@ export function useOMSOrders() {
           grand_total: orderData.grand_total,
           notes: orderData.notes,
           internal_notes: orderData.internal_notes,
-          status: 'draft'
+          status: 'draft',
+          // Novos campos
+          comissao_percentual: orderData.comissao_percentual || 0,
+          comissao_valor: comissaoValor,
+          tipo_logistico: orderData.tipo_logistico,
+          codigo_rastreamento: orderData.codigo_rastreamento,
+          local_estoque_id: orderData.local_estoque_id,
+          custo_produto_total: custoProdutoTotal,
+          valor_liquido: valorLiquido,
+          endereco_rua: orderData.endereco_rua,
+          endereco_numero: orderData.endereco_numero,
+          endereco_bairro: orderData.endereco_bairro,
+          endereco_cep: orderData.endereco_cep,
+          endereco_cidade: orderData.endereco_cidade,
+          endereco_uf: orderData.endereco_uf
         }])
         .select()
         .single();
@@ -328,7 +363,8 @@ export function useOMSOrders() {
           discount_pct: item.discount_pct,
           discount_value: item.discount_value,
           tax_value: item.tax_value,
-          total: item.total
+          total: item.total,
+          custo_unitario: item.custo_unitario || 0
         }));
 
         const { error: itemsError } = await supabase
