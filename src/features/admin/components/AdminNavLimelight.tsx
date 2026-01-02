@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Settings, Users, Shield, Mail, Bell, User, Link2 } from "lucide-react";
+import { Settings, Users, Shield, Bell, User, Link2 } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const navItems = [
@@ -12,11 +12,6 @@ const navItems = [
     path: "/admin/usuarios",
     label: "Usuários",
     icon: Users,
-  },
-  {
-    path: "/admin/convites",
-    label: "Convites",
-    icon: Mail,
   },
   {
     path: "/admin/alertas",
