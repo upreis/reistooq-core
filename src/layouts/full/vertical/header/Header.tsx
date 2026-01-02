@@ -295,7 +295,7 @@ export default function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
-                <Avatar className="w-8 h-8">
+                <Avatar className="w-10 h-10">
                   <AvatarImage src={ownerAvatar || profile?.avatar_url} alt={ownerName || fullName} />
                   <AvatarFallback>
                     {ownerName?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || initials}
