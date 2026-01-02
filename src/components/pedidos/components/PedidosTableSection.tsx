@@ -471,20 +471,20 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                               }
                     case 'desconto_cliente':
                       {
-                        // 🛒 OMS: Usar valor_desconto ou discount_amount do pedido
+                        // 🛒 OMS: Usar discount_amount do pedido (mapeado como valor_desconto no unified)
                         const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
                         const desconto = isOMS
-                          ? (order.valor_desconto || order.unified?.valor_desconto || order.discount_amount || 0)
+                          ? (order.unified?.valor_desconto ?? order.valor_desconto ?? order.discount_amount ?? 0)
                           : (order.discount || order.unified?.discount || 0);
                         const colorClass = desconto > 0 ? 'font-mono text-sm font-semibold text-green-600 dark:text-green-400' : '';
                         return <span className={colorClass}>{desconto > 0 ? formatMoney(desconto) : '-'}</span>;
                       }
                     case 'custo_envio_seller':
                       {
-                        // 🛒 OMS: Usar valor_frete ou shipping_total do pedido
+                        // 🛒 OMS: Usar shipping_total do pedido (mapeado como valor_frete no unified)
                         const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
                         const custoEnvio = isOMS
-                          ? (order.valor_frete || order.unified?.valor_frete || order.frete_item || 0)
+                          ? (order.unified?.valor_frete ?? order.valor_frete ?? order.shipping_total ?? 0)
                           : (order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0);
                         const colorClass = custoEnvio > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
                         return <span className={colorClass}>{formatMoney(custoEnvio)}</span>;
@@ -495,7 +495,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         // 🛒 OMS: Usar comissao_valor do pedido
                         const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
                         const fee = isOMS 
-                          ? (order.comissao_valor || order.unified?.comissao_valor || order.taxa_marketplace || 0)
+                          ? (order.unified?.comissao_valor ?? order.comissao_valor ?? 0)
                           : (order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0);
                         const colorClass = fee > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
                         return <span className={colorClass}>{fee > 0 ? formatMoney(fee) : '-'}</span>;
