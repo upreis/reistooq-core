@@ -590,6 +590,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        }
                      
                      case 'custo_fixo_meli': {
+                        // 🛒 OMS: Não tem custo fixo Meli
+                        const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
+                        if (isOMS) {
+                          return <span>-</span>;
+                        }
+                        
                         // Calcular Custo Fixo Meli baseado no VALOR UNITÁRIO
                         const valorTotal = order.total_amount || 
                                          order.valor_total || 
