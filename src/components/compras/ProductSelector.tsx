@@ -85,7 +85,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
   // Locais de venda filtrados pelo estoque selecionado
   const locaisVendaFiltrados = locaisVenda.filter(lv => lv.local_estoque_id === selectedLocalEstoqueId);
 
-  // Carregar produtos de COMPOSIÇÕES com estoque do local selecionado
+  // Carregar produtos de COMPOSIÇÕES com estoque calculado pelos insumos do local de venda
   useEffect(() => {
     const loadProducts = async () => {
       if (isOpen && selectedLocalEstoqueId) {
@@ -104,20 +104,36 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
             return;
           }
 
-          // Buscar estoque do local selecionado
-          // Primeiro precisamos mapear sku_interno para produto_id da tabela produtos
           const skus = (composicoesData || []).map((c: any) => c.sku_interno);
-          
-          // Buscar os produtos da tabela principal para pegar os IDs
+
+          // Se tem local de venda selecionado, buscar composições de insumos
+          let composicoesLocalVenda: any[] = [];
+          if (selectedLocalVendaId) {
+            const { data: compData } = await supabase
+              .from('composicoes_local_venda')
+              .select('sku_produto, sku_insumo, quantidade')
+              .eq('local_venda_id', selectedLocalVendaId)
+              .eq('ativo', true)
+              .in('sku_produto', skus);
+            
+            composicoesLocalVenda = compData || [];
+          }
+
+          // Buscar os produtos da tabela principal para pegar os IDs (produto principal + insumos)
+          const allSkus = [...new Set([
+            ...skus,
+            ...composicoesLocalVenda.map((c: any) => c.sku_insumo)
+          ])];
+
           const { data: produtosData } = await supabase
             .from('produtos')
             .select('id, sku_interno')
-            .in('sku_interno', skus);
+            .in('sku_interno', allSkus);
 
           const skuToProductId = new Map((produtosData || []).map((p: any) => [p.sku_interno, p.id]));
           const productIds = Array.from(skuToProductId.values());
 
-          // Buscar estoque por local
+          // Buscar estoque por local para todos os produtos e insumos
           const { data: estoqueData } = await supabase
             .from('estoque_por_local')
             .select('produto_id, quantidade')
@@ -126,10 +142,37 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
 
           const estoqueMap = new Map((estoqueData || []).map((e: any) => [e.produto_id, e.quantidade]));
 
-          // Mapear para o formato esperado com estoque real
+          // Função para calcular quantidade produzível baseado nos insumos
+          const calcularQuantidadeProduzivel = (skuProduto: string): number => {
+            // Filtrar composições deste produto
+            const insumosDoProtuto = composicoesLocalVenda.filter((c: any) => c.sku_produto === skuProduto);
+            
+            if (insumosDoProtuto.length === 0) {
+              // Sem composição de insumos, usar estoque do produto principal
+              const produtoId = skuToProductId.get(skuProduto);
+              return produtoId ? (estoqueMap.get(produtoId) || 0) : 0;
+            }
+
+            // Calcular mínimo baseado nos insumos (o insumo mais limitante define a quantidade)
+            let minProduzivel = Infinity;
+
+            for (const insumo of insumosDoProtuto) {
+              const insumoId = skuToProductId.get(insumo.sku_insumo);
+              const estoqueInsumo = insumoId ? (estoqueMap.get(insumoId) || 0) : 0;
+              const qtdNecessaria = insumo.quantidade || 1;
+              const podeFazer = Math.floor(estoqueInsumo / qtdNecessaria);
+              
+              if (podeFazer < minProduzivel) {
+                minProduzivel = podeFazer;
+              }
+            }
+
+            return minProduzivel === Infinity ? 0 : minProduzivel;
+          };
+
+          // Mapear para o formato esperado com estoque calculado
           const produtosComposicoes = (composicoesData || []).map((item: any) => {
-            const produtoId = skuToProductId.get(item.sku_interno);
-            const quantidadeEstoque = produtoId ? (estoqueMap.get(produtoId) || 0) : 0;
+            const quantidadeEstoque = calcularQuantidadeProduzivel(item.sku_interno);
             
             return {
               id: item.id,
@@ -155,7 +198,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
       }
     };
     loadProducts();
-  }, [isOpen, selectedLocalEstoqueId]);
+  }, [isOpen, selectedLocalEstoqueId, selectedLocalVendaId]);
 
   const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
