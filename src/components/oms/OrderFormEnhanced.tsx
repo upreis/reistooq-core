@@ -1042,12 +1042,14 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.shippingTotal === 0 ? '' : formData.shippingTotal}
+                value={formData.quemPagaFrete === "cliente" ? 0 : (formData.shippingTotal === 0 ? '' : formData.shippingTotal)}
                 onChange={(e) => setFormData(prev => ({ 
                   ...prev, 
                   shippingTotal: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 
                 }))}
                 placeholder="0,00"
+                disabled={formData.quemPagaFrete === "cliente"}
+                className={formData.quemPagaFrete === "cliente" ? "opacity-50 cursor-not-allowed" : ""}
               />
             </div>
           </div>
