@@ -7,8 +7,8 @@ const navItems = [
   {
     path: "/pedidos",
     label: "Marketplace",
-    icon: null,
-    customIcon: mercadoLivreLogo,
+    icon: Store,
+    customIcon: null,
     preserveSearch: true,
   },
   {
