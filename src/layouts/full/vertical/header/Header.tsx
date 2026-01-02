@@ -16,6 +16,7 @@ import aplicativosNotasIcon from "@/assets/aplicativos-notas-icon.png";
 import configuracoesIntegracoesIcon from "@/assets/configuracoes-integracoes-icon.png";
 import configuracoesAnunciosIcon from "@/assets/configuracoes-anuncios-icon.png";
 import adminIcon from "@/assets/admin-icon.png";
+import adminIntegracoesIcon from "@/assets/icons/admin-integracoes.png";
 import adminUsuariosIcon from "@/assets/admin-usuarios-icon.png";
 import adminCargosIcon from "@/assets/admin-cargos-icon.png";
 import adminConvitesIcon from "@/assets/admin-convites-icon.png";
@@ -149,7 +150,7 @@ export default function Header() {
     
     // Configurações (Admin)
     if (path.startsWith('/admin/perfil')) return { icon: adminPerfilIcon, label: 'Perfil', isImage: true };
-    if (path.startsWith('/admin/integracoes')) return { icon: adminIcon, label: 'Integrações', isImage: true };
+    if (path.startsWith('/admin/integracoes')) return { icon: adminIntegracoesIcon, label: 'Integrações', isImage: true };
     if (path.startsWith('/admin/seguranca')) return { icon: adminSegurancaIcon, label: 'Segurança', isImage: true };
     if (path.startsWith('/admin/alertas')) return { icon: adminAlertasIcon, label: 'Alertas', isImage: true };
     if (path.startsWith('/admin/convites')) return { icon: adminConvitesIcon, label: 'Convites', isImage: true };
