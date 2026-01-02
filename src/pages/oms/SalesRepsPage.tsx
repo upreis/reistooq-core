@@ -197,23 +197,6 @@ export default function SalesRepsPage() {
         </Button>
       </div>
 
-      {/* Info sobre Sistema de Acesso */}
-      <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-blue-900 dark:text-blue-100">
-                Sistema de Acesso para Vendedores
-              </h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                Vendedores cadastrados aqui podem acessar o sistema usando o mesmo email cadastrado. 
-                Eles terão acesso apenas aos próprios pedidos através da página <code>/vendor/dashboard</code>.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
