@@ -4304,69 +4304,186 @@ export type Database = {
           },
         ]
       }
-      oms_customers: {
+      oms_customer_contacts: {
         Row: {
-          billing_address: Json | null
           created_at: string
-          doc: string | null
+          customer_id: string
           email: string | null
-          endereco_bairro: string | null
-          endereco_cep: string | null
-          endereco_cidade: string | null
-          endereco_numero: string | null
-          endereco_rua: string | null
-          endereco_uf: string | null
           id: string
-          is_active: boolean | null
-          name: string
+          nome: string
           organization_id: string | null
-          payment_terms: string | null
-          phone: string | null
-          price_tier: string | null
-          shipping_address: Json | null
+          ramal: string | null
+          setor: string | null
+          telefone: string | null
           updated_at: string
         }
         Insert: {
-          billing_address?: Json | null
           created_at?: string
-          doc?: string | null
+          customer_id: string
           email?: string | null
-          endereco_bairro?: string | null
-          endereco_cep?: string | null
-          endereco_cidade?: string | null
-          endereco_numero?: string | null
-          endereco_rua?: string | null
-          endereco_uf?: string | null
           id?: string
-          is_active?: boolean | null
-          name: string
+          nome: string
           organization_id?: string | null
-          payment_terms?: string | null
-          phone?: string | null
-          price_tier?: string | null
-          shipping_address?: Json | null
+          ramal?: string | null
+          setor?: string | null
+          telefone?: string | null
           updated_at?: string
         }
         Update: {
+          created_at?: string
+          customer_id?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          organization_id?: string | null
+          ramal?: string | null
+          setor?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oms_customer_contacts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "oms_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oms_customer_contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oms_customers: {
+        Row: {
+          billing_address: Json | null
+          celular: string | null
+          cobranca_bairro: string | null
+          cobranca_cep: string | null
+          cobranca_cidade: string | null
+          cobranca_complemento: string | null
+          cobranca_numero: string | null
+          cobranca_rua: string | null
+          cobranca_uf: string | null
+          codigo: string | null
+          contribuinte: string | null
+          created_at: string
+          doc: string | null
+          email: string | null
+          email_nfe: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_complemento: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
+          fantasia: string | null
+          id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          is_active: boolean | null
+          name: string
+          observacoes_contato: string | null
+          organization_id: string | null
+          payment_terms: string | null
+          phone: string | null
+          possui_endereco_cobranca: boolean | null
+          price_tier: string | null
+          shipping_address: Json | null
+          telefone_adicional: string | null
+          tipo_contato: string[] | null
+          tipo_pessoa: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
           billing_address?: Json | null
+          celular?: string | null
+          cobranca_bairro?: string | null
+          cobranca_cep?: string | null
+          cobranca_cidade?: string | null
+          cobranca_complemento?: string | null
+          cobranca_numero?: string | null
+          cobranca_rua?: string | null
+          cobranca_uf?: string | null
+          codigo?: string | null
+          contribuinte?: string | null
           created_at?: string
           doc?: string | null
           email?: string | null
+          email_nfe?: string | null
           endereco_bairro?: string | null
           endereco_cep?: string | null
           endereco_cidade?: string | null
+          endereco_complemento?: string | null
           endereco_numero?: string | null
           endereco_rua?: string | null
           endereco_uf?: string | null
+          fantasia?: string | null
           id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
           is_active?: boolean | null
-          name?: string
+          name: string
+          observacoes_contato?: string | null
           organization_id?: string | null
           payment_terms?: string | null
           phone?: string | null
+          possui_endereco_cobranca?: boolean | null
           price_tier?: string | null
           shipping_address?: Json | null
+          telefone_adicional?: string | null
+          tipo_contato?: string[] | null
+          tipo_pessoa?: string | null
           updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          billing_address?: Json | null
+          celular?: string | null
+          cobranca_bairro?: string | null
+          cobranca_cep?: string | null
+          cobranca_cidade?: string | null
+          cobranca_complemento?: string | null
+          cobranca_numero?: string | null
+          cobranca_rua?: string | null
+          cobranca_uf?: string | null
+          codigo?: string | null
+          contribuinte?: string | null
+          created_at?: string
+          doc?: string | null
+          email?: string | null
+          email_nfe?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_complemento?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
+          fantasia?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          is_active?: boolean | null
+          name?: string
+          observacoes_contato?: string | null
+          organization_id?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          possui_endereco_cobranca?: boolean | null
+          price_tier?: string | null
+          shipping_address?: Json | null
+          telefone_adicional?: string | null
+          tipo_contato?: string[] | null
+          tipo_pessoa?: string | null
+          updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {
