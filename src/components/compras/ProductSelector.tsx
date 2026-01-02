@@ -125,12 +125,14 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
             ...composicoesLocalVenda.map((c: any) => c.sku_insumo)
           ])];
 
+          // Buscar produtos incluindo preços reais
           const { data: produtosData } = await supabase
             .from('produtos')
-            .select('id, sku_interno')
+            .select('id, sku_interno, preco_venda, preco_custo')
             .in('sku_interno', allSkus);
 
           const skuToProductId = new Map((produtosData || []).map((p: any) => [p.sku_interno, p.id]));
+          const skuToPrecos = new Map((produtosData || []).map((p: any) => [p.sku_interno, { preco_venda: p.preco_venda || 0, preco_custo: p.preco_custo || 0 }]));
           const productIds = Array.from(skuToProductId.values());
 
           // Buscar estoque por local para todos os produtos e insumos
@@ -170,16 +172,17 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
             return minProduzivel === Infinity ? 0 : minProduzivel;
           };
 
-          // Mapear para o formato esperado com estoque calculado
+          // Mapear para o formato esperado com estoque calculado e preços reais da tabela produtos
           const produtosComposicoes = (composicoesData || []).map((item: any) => {
             const quantidadeEstoque = calcularQuantidadeProduzivel(item.sku_interno);
+            const precosReais = skuToPrecos.get(item.sku_interno) || { preco_venda: 0, preco_custo: 0 };
             
             return {
               id: item.id,
               nome: item.nome,
               sku_interno: item.sku_interno,
-              preco_custo: item.preco_custo || 0,
-              preco_venda: item.preco_venda || 0,
+              preco_custo: precosReais.preco_custo || item.preco_custo || 0,
+              preco_venda: precosReais.preco_venda || item.preco_venda || 0,
               quantidade_atual: quantidadeEstoque,
               estoque_minimo: item.estoque_minimo || 0,
               categoria: item.categoria
