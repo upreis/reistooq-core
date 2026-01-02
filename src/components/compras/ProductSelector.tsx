@@ -85,10 +85,63 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
   // Locais de venda filtrados pelo estoque selecionado
   const locaisVendaFiltrados = locaisVenda.filter(lv => lv.local_estoque_id === selectedLocalEstoqueId);
 
-  // Carregar produtos do estoque
+  // Carregar produtos do estoque filtrados pelo local selecionado
   useEffect(() => {
     const loadProducts = async () => {
-      if (isOpen) {
+      if (isOpen && selectedLocalEstoqueId) {
+        setLoading(true);
+        try {
+          // Buscar produtos que têm estoque no local selecionado
+          const { data: estoquePorLocal, error: estoqueError } = await supabase
+            .from('estoque_por_local')
+            .select(`
+              quantidade,
+              produto_id,
+              produtos!inner (
+                id,
+                nome,
+                sku_interno,
+                preco_custo,
+                preco_venda,
+                quantidade_atual,
+                estoque_minimo,
+                categoria,
+                ativo
+              )
+            `)
+            .eq('local_id', selectedLocalEstoqueId)
+            .gt('quantidade', 0);
+
+          if (estoqueError) {
+            console.error("Error loading products by location:", estoqueError);
+            setProducts([]);
+            return;
+          }
+
+          // Mapear para o formato esperado, usando a quantidade do local
+          const produtosComEstoque = (estoquePorLocal || [])
+            .filter((item: any) => item.produtos?.ativo !== false)
+            .map((item: any) => ({
+              id: item.produtos.id,
+              nome: item.produtos.nome,
+              sku_interno: item.produtos.sku_interno,
+              preco_custo: item.produtos.preco_custo || 0,
+              preco_venda: item.produtos.preco_venda || 0,
+              quantidade_atual: item.quantidade, // Quantidade no local específico
+              quantidade_geral: item.produtos.quantidade_atual, // Quantidade geral
+              estoque_minimo: item.produtos.estoque_minimo,
+              categoria: item.produtos.categoria
+            }));
+
+          setProducts(produtosComEstoque);
+        } catch (error) {
+          console.error("Error loading products:", error);
+          setProducts([]);
+        } finally {
+          setLoading(false);
+        }
+      } else if (isOpen && !selectedLocalEstoqueId) {
+        // Se não tem local selecionado, carregar todos os produtos
         setLoading(true);
         try {
           const data = await getProducts({ limit: 1000 });
@@ -101,7 +154,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
       }
     };
     loadProducts();
-  }, [isOpen, getProducts]);
+  }, [isOpen, selectedLocalEstoqueId, getProducts]);
 
   const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -137,7 +190,10 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
       nome: product.nome,
       sku_interno: product.sku_interno,
       preco_custo: product.preco_custo,
-      quantidade: quantidade
+      quantidade: quantidade,
+      // Incluir informações do local de estoque e venda
+      local_estoque_id: selectedLocalEstoqueId,
+      local_venda_id: selectedLocalVendaId || null
     }));
 
     onSelectProducts(productsToReturn);
@@ -233,8 +289,19 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                   </Select>
                 </div>
               )}
-            </div>
+            
+            {/* Informação sobre composições do local de venda */}
+            {selectedLocalVendaId && (
+              <div className="col-span-1 md:col-span-2 mt-2 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-sm text-primary flex items-center gap-2">
+                  <Store className="w-4 h-4" />
+                  <span className="font-medium">Local de venda selecionado:</span> 
+                  As composições (insumos/embalagens) deste local serão consideradas na baixa de estoque.
+                </p>
+              </div>
+            )}
           </div>
+        </div>
 
           {/* Barra de pesquisa */}
           <div className="relative">
@@ -363,13 +430,22 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
           </div>
 
           {/* Produtos não encontrados */}
-          {filteredProducts.length === 0 && (
+          {filteredProducts.length === 0 && !loading && (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
               <p className="text-muted-foreground">
-                Tente ajustar sua pesquisa ou verificar se há produtos cadastrados.
+                {selectedLocalEstoqueId 
+                  ? "Nenhum produto com estoque disponível neste local. Verifique se há produtos cadastrados no estoque selecionado."
+                  : "Selecione um local de estoque para ver os produtos disponíveis."}
               </p>
+            </div>
+          )}
+
+          {loading && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Carregando produtos...</p>
             </div>
           )}
         </div>
