@@ -296,17 +296,18 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
         continue;
       }
 
-      // ✅ BUSCAR ESTOQUE REAL DA TABELA PRODUTOS (ProductSelector de compras retorna apenas 'quantidade' solicitada)
+      // ✅ BUSCAR ESTOQUE REAL - usando sku_interno pois o ID é de produtos_composicoes
       let realStock = 0;
       try {
         const { data, error } = await supabase
           .from('produtos')
           .select('quantidade_atual')
-          .eq('id', selectedProduct.id)
-          .single();
+          .eq('sku_interno', selectedProduct.sku_interno)
+          .maybeSingle();
         
-        if (error) throw error;
-        realStock = data?.quantidade_atual || 0;
+        if (!error && data) {
+          realStock = data.quantidade_atual || 0;
+        }
         console.log('🔍 DEBUG estoque real para produto', selectedProduct.nome, ':', realStock);
       } catch (error) {
         console.warn('Erro ao buscar estoque real para produto', selectedProduct.nome, ':', error);
