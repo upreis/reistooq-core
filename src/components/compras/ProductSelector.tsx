@@ -6,9 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Package, ShoppingCart, Minus, Plus } from "lucide-react";
+import { Search, Package, ShoppingCart, Minus, Plus, Warehouse, Store } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
 import { formatMoney } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Product {
   id: string;
@@ -38,6 +40,50 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
   const { getProducts } = useProducts();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Estado para locais de estoque e venda
+  const [locaisEstoque, setLocaisEstoque] = useState<{id: string; nome: string; tipo: string}[]>([]);
+  const [locaisVenda, setLocaisVenda] = useState<{id: string; nome: string; local_estoque_id: string}[]>([]);
+  const [selectedLocalEstoqueId, setSelectedLocalEstoqueId] = useState<string>('');
+  const [selectedLocalVendaId, setSelectedLocalVendaId] = useState<string>('');
+
+  // Carregar locais de estoque e venda
+  useEffect(() => {
+    const loadLocais = async () => {
+      try {
+        const [estoquesRes, vendasRes] = await Promise.all([
+          supabase.from('locais_estoque').select('id, nome, tipo').eq('ativo', true).order('tipo').order('nome'),
+          supabase.from('locais_venda').select('id, nome, local_estoque_id').eq('ativo', true).order('nome')
+        ]);
+
+        const estoques = estoquesRes.data || [];
+        const vendas = vendasRes.data || [];
+
+        setLocaisEstoque(estoques);
+        setLocaisVenda(vendas);
+
+        // Priorizar estoque "inhouse" que tenha locais de venda
+        const inhouseComVendas = estoques.find(e => 
+          e.tipo === 'inhouse' && vendas.some(v => v.local_estoque_id === e.id)
+        );
+        
+        if (inhouseComVendas) {
+          setSelectedLocalEstoqueId(inhouseComVendas.id);
+          const primeiroLocalVenda = vendas.find(v => v.local_estoque_id === inhouseComVendas.id);
+          if (primeiroLocalVenda) setSelectedLocalVendaId(primeiroLocalVenda.id);
+        } else {
+          const principal = estoques.find(e => e.tipo === 'principal');
+          if (principal) setSelectedLocalEstoqueId(principal.id);
+        }
+      } catch (error) {
+        console.error("Error loading locais:", error);
+      }
+    };
+    loadLocais();
+  }, []);
+
+  // Locais de venda filtrados pelo estoque selecionado
+  const locaisVendaFiltrados = locaisVenda.filter(lv => lv.local_estoque_id === selectedLocalEstoqueId);
 
   // Carregar produtos do estoque
   useEffect(() => {
@@ -142,6 +188,54 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Seletores de Estoque e Local de Venda */}
+          <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="flex items-center gap-2 mb-2">
+                  <Warehouse className="w-4 h-4" />
+                  Local de Estoque
+                </Label>
+                <Select value={selectedLocalEstoqueId} onValueChange={(value) => {
+                  setSelectedLocalEstoqueId(value);
+                  setSelectedLocalVendaId('');
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o estoque" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locaisEstoque.map(local => (
+                      <SelectItem key={local.id} value={local.id}>
+                        {local.nome} ({local.tipo})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {locaisVendaFiltrados.length > 0 && (
+                <div>
+                  <Label className="flex items-center gap-2 mb-2">
+                    <Store className="w-4 h-4" />
+                    Local de Venda
+                  </Label>
+                  <Select value={selectedLocalVendaId} onValueChange={setSelectedLocalVendaId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o local de venda" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locaisVendaFiltrados.map(local => (
+                        <SelectItem key={local.id} value={local.id}>
+                          {local.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Barra de pesquisa */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
