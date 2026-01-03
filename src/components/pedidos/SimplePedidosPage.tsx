@@ -324,6 +324,7 @@ function SimplePedidosPage({ className }: Props) {
     'pack_id',             // Pack ID
     'pickup_id',           // Pickup ID
     'tags',                // Tags do Pedido
+    'desconto_cliente',    // Desconto Cliente (só existe no Orçamento)
   ]), []);
   
   // 🛒 OMS: Colunas que não tem dados no Orçamento (ocultar na aba Orçamento)
@@ -343,6 +344,7 @@ function SimplePedidosPage({ className }: Props) {
   const ML_HIDDEN_COLUMNS = useMemo(() => new Set([
     'comissao_vendedor',   // Comissão Vendedor (só existe no Orçamento)
     'comissao_percentual', // % Comissão (só existe no Orçamento)
+    'desconto_cliente',    // Desconto Cliente (só existe no Orçamento)
   ]), []);
   
   // Identificar se está na aba Mercado Livre (não é Shopee nem OMS)
