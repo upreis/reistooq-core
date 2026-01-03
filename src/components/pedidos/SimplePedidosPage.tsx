@@ -336,11 +336,12 @@ function SimplePedidosPage({ className }: Props) {
     'pack_id',             // Pack ID
     'pickup_id',           // Pickup ID
     'receita_flex',        // Receita Flex (não aplicável)
+    'marketplace_fee',     // Taxa Mercado Livre (não existe no Orçamento)
   ]), []);
   
   // 🛒 ML: Colunas exclusivas do Orçamento (ocultar na aba Mercado Livre)
   const ML_HIDDEN_COLUMNS = useMemo(() => new Set([
-    'marketplace_fee',     // Comissão Vendedor (só existe no Orçamento)
+    'comissao_vendedor',   // Comissão Vendedor (só existe no Orçamento)
     'comissao_percentual', // % Comissão (só existe no Orçamento)
   ]), []);
   
