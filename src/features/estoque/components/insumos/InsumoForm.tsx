@@ -559,7 +559,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localEstoqueId, lo
                                                 Nenhum insumo encontrado.
                                               </span>
                                             </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-xs">
+                                            <TooltipContent side="bottom" className="max-w-xs z-[99999]">
                                               <div className="text-xs space-y-1">
                                                 <div className="font-semibold border-b pb-1 mb-1">
                                                   Insumos não listados
