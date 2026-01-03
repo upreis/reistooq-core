@@ -173,6 +173,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
+    key: 'custo_fixo_meli_original',
+    label: 'Custo Fixo Meli',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Custo fixo do Mercado Livre (valor estático do pedido)',
+    width: 130,
+    sortable: true
+  },
+  {
     key: 'valor_liquido_vendedor',
     label: 'Valor Líquido',
     category: 'financial',
