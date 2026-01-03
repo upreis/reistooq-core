@@ -640,6 +640,16 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         );
                       }
                      
+                     // 💰 Custo Fixo Meli Original: valor estático do pedido (exclusivo ML)
+                     case 'custo_fixo_meli_original': {
+                        const custoFixoMeli = order.custo_fixo_meli || order.unified?.custo_fixo_meli || order.raw?.custo_fixo_meli || 0;
+                        return (
+                          <span className={`font-mono text-xs ${custoFixoMeli > 0 ? 'text-orange-600' : 'text-muted-foreground'}`}>
+                            {custoFixoMeli > 0 ? formatMoney(custoFixoMeli) : '—'}
+                          </span>
+                        );
+                      }
+                     
                      case 'payment_method':
                        return <span className="text-xs">{translatePaymentMethod(order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || order.metodo_pagamento || '-')}</span>;
                      case 'payment_status':

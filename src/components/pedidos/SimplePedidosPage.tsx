@@ -325,6 +325,7 @@ function SimplePedidosPage({ className }: Props) {
     'pickup_id',           // Pickup ID
     'tags',                // Tags do Pedido
     'desconto_cliente',    // Desconto Cliente (só existe no Orçamento)
+    'custo_fixo_meli_original', // Custo Fixo Meli (exclusivo ML)
   ]), []);
   
   // 🛒 OMS: Colunas que não tem dados no Orçamento (ocultar na aba Orçamento)
@@ -338,6 +339,7 @@ function SimplePedidosPage({ className }: Props) {
     'pickup_id',           // Pickup ID
     'receita_flex',        // Receita Flex (não aplicável)
     'marketplace_fee',     // Taxa Mercado Livre (não existe no Orçamento)
+    'custo_fixo_meli_original', // Custo Fixo Meli (exclusivo ML)
   ]), []);
   
   // 🛒 ML: Colunas exclusivas do Orçamento (ocultar na aba Mercado Livre)
