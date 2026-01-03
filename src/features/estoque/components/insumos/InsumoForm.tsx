@@ -32,6 +32,12 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { ComposicaoInsumoEnriquecida } from '../../types/insumos.types';
@@ -544,7 +550,24 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localEstoqueId, lo
                                 <Command>
                                   <CommandInput placeholder="Buscar SKU..." />
                                   <CommandList>
-                                    <CommandEmpty>Nenhum insumo encontrado.</CommandEmpty>
+                                    <CommandEmpty>
+                                      {insumos.length === 0 ? (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <span className="cursor-help">
+                                                Nenhum insumo encontrado.
+                                              </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right" align="start">
+                                              Aqui somente aparecerá os insumos cadastrado na pagina estoque como insumo e nao como produto
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      ) : (
+                                        'Nenhum insumo encontrado.'
+                                      )}
+                                    </CommandEmpty>
                                     <CommandGroup>
                                       {insumos.map((insumo) => (
                                         <CommandItem
