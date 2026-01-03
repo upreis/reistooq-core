@@ -51,11 +51,13 @@ interface InsumoFormProps {
   onClose: () => void;
   onSubmit: (data: any) => Promise<void>;
   insumo?: ComposicaoInsumoEnriquecida | null;
+  /** ID do local de estoque selecionado - usado para filtrar insumos disponíveis */
+  localEstoqueId?: string;
   /** Quando informado, habilita o modo "por venda" também na criação (Nova Composição) */
   localVendaId?: string;
 }
 
-export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: InsumoFormProps) {
+export function InsumoForm({ open, onClose, onSubmit, insumo, localEstoqueId, localVendaId }: InsumoFormProps) {
   const [produtos, setProdutos] = useState<Array<{ sku: string; nome: string }>>([]);
   const [insumos, setInsumos] = useState<Array<{ sku: string; nome: string; estoque: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +76,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
     if (open) {
       loadData();
     }
-  }, [open]);
+  }, [open, localEstoqueId]);
 
   // Carregar dados do insumo quando estiver em modo edição
   useEffect(() => {
@@ -176,11 +178,9 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
     setLoading(true);
     try {
       // Buscar produtos (de produtos e produtos_composicoes)
-      const [produtosRes, composicoesRes, insumosRes] = await Promise.all([
+      const [produtosRes, composicoesRes] = await Promise.all([
         supabase.from('produtos').select('sku_interno, nome').eq('ativo', true),
         supabase.from('produtos_composicoes').select('sku_interno, nome').eq('ativo', true),
-        // Buscar apenas produtos cadastrados como insumo
-        supabase.from('produtos').select('sku_interno, nome, quantidade_atual').eq('ativo', true).eq('tipo_item', 'insumo')
       ]);
 
       // Combinar produtos
@@ -189,13 +189,53 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localVendaId }: In
         ...(composicoesRes.data || []).map(p => ({ sku: p.sku_interno, nome: p.nome }))
       ].sort((a, b) => a.sku.localeCompare(b.sku));
 
-      // Insumos disponíveis (apenas produtos com tipo_item = 'insumo')
-      const todosInsumos = (insumosRes.data || [])
-        .map(i => ({ sku: i.sku_interno, nome: i.nome, estoque: i.quantidade_atual }))
-        .sort((a, b) => a.sku.localeCompare(b.sku));
-
       setProdutos(todosProdutos);
-      setInsumos(todosInsumos);
+
+      // 🔧 Buscar insumos do LOCAL DE ESTOQUE SELECIONADO (se houver)
+      // Se tiver localEstoqueId, busca apenas insumos que existem nesse local
+      if (localEstoqueId) {
+        // Buscar estoque por local com join no produto para pegar nome
+        const { data: estoquePorLocal, error } = await supabase
+          .from('estoque_por_local')
+          .select(`
+            quantidade,
+            produto_id,
+            produtos!inner(id, sku_interno, nome, tipo_item, ativo)
+          `)
+          .eq('local_id', localEstoqueId)
+          .eq('produtos.ativo', true)
+          .eq('produtos.tipo_item', 'insumo');
+
+        if (error) {
+          console.error('Erro ao buscar estoque por local:', error);
+          setInsumos([]);
+        } else {
+          const insumosDoLocal = (estoquePorLocal || [])
+            .filter((item: any) => item.produtos) // Garantir que tem produto
+            .map((item: any) => ({
+              sku: item.produtos.sku_interno,
+              nome: item.produtos.nome,
+              estoque: item.quantidade || 0
+            }))
+            .sort((a: any, b: any) => a.sku.localeCompare(b.sku));
+          
+          console.log(`📦 Insumos do local ${localEstoqueId}:`, insumosDoLocal.length);
+          setInsumos(insumosDoLocal);
+        }
+      } else {
+        // Fallback: buscar todos os insumos (estoque global) se não houver local selecionado
+        const { data: insumosRes } = await supabase
+          .from('produtos')
+          .select('sku_interno, nome, quantidade_atual')
+          .eq('ativo', true)
+          .eq('tipo_item', 'insumo');
+
+        const todosInsumos = (insumosRes || [])
+          .map(i => ({ sku: i.sku_interno, nome: i.nome, estoque: i.quantidade_atual || 0 }))
+          .sort((a, b) => a.sku.localeCompare(b.sku));
+
+        setInsumos(todosInsumos);
+      }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     } finally {
