@@ -615,14 +615,18 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      
                      case 'custo_fixo_meli': {
                         // 💰 Custo Produto: buscar custo calculado (produto + componentes + insumos) para TODOS os marketplaces
-                        const sku = order.sku || order.unified?.sku || order.sku_produto || '-';
+                        // 🔧 CORREÇÃO: Usar mesma lógica de extração de SKU que a coluna skus_produtos
+                        // Para ML, o SKU fica em order_items[].seller_sku ou item.sku
+                        const skuParaCusto = skus.length > 0 
+                          ? skus[0] // Usar primeiro SKU (principal)
+                          : (order.sku || order.unified?.sku || order.sku_produto || '-');
                         const localEstoqueId = order.local_estoque_id || order.unified?.local_estoque_id;
                         const localVendaId = order.local_venda_id || order.unified?.local_venda_id;
-                        const quantidade = order.quantidade || order.unified?.quantidade || 1;
+                        const quantidade = quantidadeItens || order.quantidade || order.unified?.quantidade || 1;
                         
                         return (
                           <CustoProdutoCell 
-                            sku={sku}
+                            sku={skuParaCusto}
                             localEstoqueId={localEstoqueId}
                             localVendaId={localVendaId}
                             quantidade={quantidade}
