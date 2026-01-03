@@ -601,33 +601,21 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        }
                      
                      case 'custo_fixo_meli': {
-                        // 💰 Para pedidos OMS/Orçamento: buscar custo calculado (produto + componentes + insumos)
-                        const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
+                        // 💰 Custo calculado (produto + componentes + insumos)
+                        // Segue a mesma lógica da página /estoque/composicoes
+                        const sku = order.sku_produto || order.sku || order.unified?.sku || order.raw?.sku_produto || '-';
+                        const localEstoqueId = order.local_estoque_id || order.unified?.local_estoque_id || order.raw?.local_estoque_id;
+                        const localVendaId = order.local_venda_id || order.unified?.local_venda_id || order.raw?.local_venda_id;
+                        const quantidade = order.quantidade || order.unified?.quantidade || order.raw?.quantidade || 1;
                         
-                        if (isOMS) {
-                          const sku = order.sku || order.unified?.sku || '-';
-                          const localEstoqueId = order.local_estoque_id || order.unified?.local_estoque_id;
-                          const localVendaId = order.local_venda_id || order.unified?.local_venda_id;
-                          const quantidade = order.quantidade || order.unified?.quantidade || 1;
-                          
-                          return (
-                            <CustoProdutoCell 
-                              sku={sku}
-                              localEstoqueId={localEstoqueId}
-                              localVendaId={localVendaId}
-                              quantidade={quantidade}
-                            />
-                          );
-                        }
-                        
-                        // Para outros marketplaces: exibir custo unitário do pedido
-                        const custoUni = order.custo_uni || 
-                                        order.unified?.custo_uni || 
-                                        order.raw?.custo_uni || 
-                                        0;
-                        
-                        const colorClass = custoUni > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
-                        return <span className={colorClass}>{formatMoney(custoUni)}</span>;
+                        return (
+                          <CustoProdutoCell 
+                            sku={sku}
+                            localEstoqueId={localEstoqueId}
+                            localVendaId={localVendaId}
+                            quantidade={quantidade}
+                          />
+                        );
                       }
                      
                      case 'payment_method':
