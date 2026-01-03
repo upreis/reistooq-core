@@ -41,6 +41,7 @@ import {
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { buildIdUnico } from '@/utils/idUnico';
+import { CustoProdutoCell } from './CustoProdutoCell';
 
 interface PedidosTableSectionProps {
   orders: any[];
@@ -600,7 +601,26 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        }
                      
                      case 'custo_fixo_meli': {
-                        // Exibir custo unitário do pedido
+                        // 💰 Para pedidos OMS/Orçamento: buscar custo calculado (produto + componentes + insumos)
+                        const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
+                        
+                        if (isOMS) {
+                          const sku = order.sku || order.unified?.sku || '-';
+                          const localEstoqueId = order.local_estoque_id || order.unified?.local_estoque_id;
+                          const localVendaId = order.local_venda_id || order.unified?.local_venda_id;
+                          const quantidade = order.quantidade || order.unified?.quantidade || 1;
+                          
+                          return (
+                            <CustoProdutoCell 
+                              sku={sku}
+                              localEstoqueId={localEstoqueId}
+                              localVendaId={localVendaId}
+                              quantidade={quantidade}
+                            />
+                          );
+                        }
+                        
+                        // Para outros marketplaces: exibir custo unitário do pedido
                         const custoUni = order.custo_uni || 
                                         order.unified?.custo_uni || 
                                         order.raw?.custo_uni || 
