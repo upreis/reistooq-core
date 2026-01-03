@@ -130,13 +130,24 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'marketplace_fee',
+    label: 'Taxa Mercado Livre',
+    category: 'financial',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Taxa cobrada pelo Mercado Livre na venda',
+    width: 120,
+    sortable: true
+  },
+  {
+    key: 'comissao_vendedor',
     label: 'Comissão Vendedor',
     category: 'financial',
     priority: 'important',
     visible: true,
     default: true,
-    description: 'Comissão do vendedor/representante',
-    width: 120,
+    description: 'Comissão do vendedor/representante (Orçamento)',
+    width: 130,
     sortable: true
   },
   {

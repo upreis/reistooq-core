@@ -493,13 +493,26 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     
                     case 'marketplace_fee':
                       {
-                        // 🛒 OMS: Valor já vem calculado proporcionalmente no SimplePedidosPage
-                        const isOMS = order.marketplace === 'oms' || order.unified?.marketplace === 'oms';
-                        const fee = isOMS 
-                          ? (order.comissao_valor ?? order.taxa_marketplace ?? order.unified?.comissao_valor ?? 0)
-                          : (order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0);
+                        // 🛒 Taxa Mercado Livre (só para ML/Shopee, não OMS)
+                        const fee = order.order_items?.[0]?.sale_fee || 
+                                   order.raw?.order_items?.[0]?.sale_fee || 
+                                   order.marketplace_fee || 
+                                   order.fees?.[0]?.value || 
+                                   order.raw?.fees?.[0]?.value || 
+                                   order.taxa_marketplace ||
+                                   0;
                         const colorClass = fee > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
                         return <span className={colorClass}>{fee > 0 ? formatMoney(fee) : '-'}</span>;
+                      }
+                    
+                    case 'comissao_vendedor':
+                      {
+                        // 🛒 Comissão Vendedor (só para OMS/Orçamento)
+                        const comissao = order.comissao_valor ?? 
+                                        order.unified?.comissao_valor ?? 
+                                        0;
+                        const colorClass = comissao > 0 ? 'font-mono text-sm font-semibold text-green-600 dark:text-green-400' : '';
+                        return <span className={colorClass}>{comissao > 0 ? formatMoney(comissao) : '-'}</span>;
                       }
                     case 'valor_liquido_vendedor':
                       {
