@@ -614,19 +614,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        }
                      
                      case 'custo_fixo_meli': {
-                        // 💰 Custo Produto: buscar custo calculado (produto + componentes + insumos) para TODOS os marketplaces
-                        // 🔧 CORREÇÃO: Usar mesma lógica de extração de SKU que a coluna skus_produtos
-                        // Para ML, o SKU fica em order_items[].seller_sku ou item.sku
-                        const skuParaCusto = skus.length > 0 
-                          ? skus[0] // Usar primeiro SKU (principal)
-                          : (order.sku || order.unified?.sku || order.sku_produto || '-');
+                        // 💰 Custo Produto: custo calculado (composição padrão + insumos local)
+                        // ℹ️ A key é legado (custo_fixo_meli), mas a UI usa como "Custo Produto".
+                        // 🔧 Para ML/Shopee o SKU do pedido nem sempre é o SKU interno do estoque;
+                        // usamos o de-para (mappingData) quando existir.
+                        const skuMapeado =
+                          mapping?.skuEstoque ||
+                          mapping?.skuKit ||
+                          (skus.length > 0 ? skus[0] : (order.sku || order.unified?.sku || order.sku_produto || '-'));
+
                         const localEstoqueId = order.local_estoque_id || order.unified?.local_estoque_id;
                         const localVendaId = order.local_venda_id || order.unified?.local_venda_id;
-                        const quantidade = quantidadeItens || order.quantidade || order.unified?.quantidade || 1;
-                        
+
+                        // Quantidade: priorizar a quantidade do kit quando houver de-para
+                        const quantidade =
+                          Number(mapping?.quantidadeKit ?? mapping?.quantidade ?? quantidadeItens ?? order.quantidade ?? order.unified?.quantidade ?? 1) || 1;
+
                         return (
                           <CustoProdutoCell 
-                            sku={skuParaCusto}
+                            sku={skuMapeado}
                             localEstoqueId={localEstoqueId}
                             localVendaId={localVendaId}
                             quantidade={quantidade}
