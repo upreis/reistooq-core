@@ -2,6 +2,29 @@
 
 Este documento descreve a implementação do tooltip usado na coluna "Custo Produto" para que possa ser replicado em outras páginas.
 
+## 🔢 Lógica de Cálculo
+
+O custo é calculado seguindo a **mesma lógica da página /estoque/composicoes**:
+
+1. **Composição Padrão** (tabela `produto_componentes`): 
+   - Filtrado por `sku_produto` + `local_id` (local de estoque)
+   - Soma: Σ (preco_custo do componente × quantidade)
+
+2. **Insumos do Local de Venda** (tabela `composicoes_local_venda`):
+   - Filtrado por `sku_produto` + `local_venda_id`
+   - Soma: Σ (preco_custo do insumo × quantidade)
+
+3. **Custo Total** = Composição Padrão + Insumos Local
+
+### Exemplo: SKU FL-105-DOUR-1
+| Tipo | SKU | Custo Uni | Qtd | Total |
+|------|-----|-----------|-----|-------|
+| Composição | FL-105-DOUR-1 | R$ 5,00 | 1 | R$ 5,00 |
+| Insumo Local | INSU-1-10X15-1 | R$ 0,20 | 1 | R$ 0,20 |
+| **TOTAL** | | | | **R$ 5,20** |
+
+Se vender 5 unidades: R$ 5,20 × 5 = **R$ 26,00**
+
 ---
 
 ## 📐 Especificações Visuais

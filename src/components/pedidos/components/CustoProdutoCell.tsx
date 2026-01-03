@@ -1,6 +1,8 @@
 /**
  * 💰 Componente para exibir custo do produto com insumos
- * Usado na coluna "Custo Produto" para pedidos OMS/Orçamento
+ * Segue a mesma lógica da página /estoque/composicoes
+ * 
+ * Custo Total = Composição Padrão + Insumos Local de Venda
  */
 
 import React, { memo } from 'react';
@@ -22,11 +24,14 @@ export const CustoProdutoCell = memo(function CustoProdutoCell({
   localVendaId,
   quantidade = 1
 }: CustoProdutoCellProps) {
-  const { custoTotal, custoProduto, custoComponentes, custoInsumos, loading, fonte } = useCustoProdutoComInsumos(
-    sku,
-    localEstoqueId,
-    localVendaId
-  );
+  const { 
+    custoTotal, 
+    custoComposicaoPadrao, 
+    custoInsumosLocal, 
+    loading, 
+    fonte,
+    detalhes 
+  } = useCustoProdutoComInsumos(sku, localEstoqueId, localVendaId);
 
   if (loading) {
     return (
@@ -43,12 +48,13 @@ export const CustoProdutoCell = memo(function CustoProdutoCell({
     return <span className="text-muted-foreground">—</span>;
   }
 
-  const temComponentes = custoComponentes > 0;
-  const temInsumos = custoInsumos > 0;
-  const temDetalhes = temComponentes || temInsumos;
+  const temComposicao = custoComposicaoPadrao > 0;
+  const temInsumos = custoInsumosLocal > 0;
+  const temDetalhes = temComposicao || temInsumos;
 
   const colorClass = 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400';
 
+  // Sem detalhes, mostra valor simples
   if (!temDetalhes) {
     return <span className={colorClass}>{formatMoney(custoTotalQty)}</span>;
   }
@@ -61,31 +67,53 @@ export const CustoProdutoCell = memo(function CustoProdutoCell({
             {formatMoney(custoTotalQty)}
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
+        <TooltipContent side="top" className="max-w-sm">
           <div className="text-xs space-y-1">
-            <div className="font-semibold border-b pb-1 mb-1">Detalhamento do Custo</div>
-            <div className="flex justify-between gap-4">
-              <span>Produto:</span>
-              <span className="font-mono">{formatMoney(custoProduto * quantidade)}</span>
+            <div className="font-semibold border-b pb-1 mb-1">
+              Custo por Unidade: {formatMoney(custoTotal)}
             </div>
-            {temComponentes && (
-              <div className="flex justify-between gap-4">
-                <span>Componentes:</span>
-                <span className="font-mono">{formatMoney(custoComponentes * quantidade)}</span>
+            
+            {/* Composição Padrão */}
+            {detalhes.componentesPadrao.length > 0 && (
+              <div className="space-y-0.5">
+                <div className="text-muted-foreground text-[10px] uppercase">Composição Padrão</div>
+                {detalhes.componentesPadrao.map((comp, idx) => (
+                  <div key={idx} className="flex justify-between gap-4">
+                    <span className="truncate max-w-[140px]" title={comp.sku}>
+                      {comp.sku} ×{comp.quantidade}
+                    </span>
+                    <span className="font-mono">{formatMoney(comp.custoTotal)}</span>
+                  </div>
+                ))}
               </div>
             )}
-            {temInsumos && (
-              <div className="flex justify-between gap-4">
-                <span>Insumos:</span>
-                <span className="font-mono">{formatMoney(custoInsumos * quantidade)}</span>
+            
+            {/* Insumos do Local de Venda */}
+            {detalhes.insumosLocal.length > 0 && (
+              <div className="space-y-0.5 pt-1">
+                <div className="text-muted-foreground text-[10px] uppercase">Insumos Local</div>
+                {detalhes.insumosLocal.map((ins, idx) => (
+                  <div key={idx} className="flex justify-between gap-4">
+                    <span className="truncate max-w-[140px]" title={ins.sku}>
+                      {ins.sku} ×{ins.quantidade}
+                    </span>
+                    <span className="font-mono">{formatMoney(ins.custoTotal)}</span>
+                  </div>
+                ))}
               </div>
             )}
-            <div className="flex justify-between gap-4 font-semibold border-t pt-1 mt-1">
-              <span>Total:</span>
-              <span className="font-mono">{formatMoney(custoTotalQty)}</span>
-            </div>
-            <div className="text-[10px] text-muted-foreground pt-1">
-              Fonte: {fonte === 'local_venda' ? 'Local de Venda' : fonte === 'padrao' ? 'Composição Padrão' : 'Produto'}
+            
+            {/* Total (quantidade > 1) */}
+            {quantidade > 1 && (
+              <div className="flex justify-between gap-4 font-semibold border-t pt-1 mt-1">
+                <span>Total ({quantidade}×):</span>
+                <span className="font-mono">{formatMoney(custoTotalQty)}</span>
+              </div>
+            )}
+            
+            {/* Fonte */}
+            <div className="text-[10px] text-muted-foreground pt-1 border-t mt-1">
+              Fonte: {fonte === 'local_venda' ? 'Local de Venda' : fonte === 'padrao' ? 'Composição Padrão' : 'Sem composição'}
             </div>
           </div>
         </TooltipContent>
