@@ -546,6 +546,24 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       desconto_cupom: 0, // TODO: Mapear de order.coupon se existir
       
       taxa_marketplace: order.marketplace_fee || 0,
+      
+      // 💰 Custo Fixo Meli: taxa fixa cobrada para vendas abaixo de R$ 79
+      // Vem de order_items[].sale_fee ou order.fees (fixed_fee)
+      custo_fixo_meli: (() => {
+        // 1. Tentar pegar de order_items[].sale_fee (soma de todos os itens)
+        const saleFeeTotal = orderItems.reduce((sum: number, item: any) => {
+          return sum + (item.sale_fee || 0);
+        }, 0);
+        if (saleFeeTotal > 0) return saleFeeTotal;
+        
+        // 2. Tentar pegar de order.fees (tipo fixed_fee)
+        const fixedFee = (order.fees || []).find((f: any) => f.type === 'fixed_fee' || f.type === 'sale_fee');
+        if (fixedFee?.amount) return fixedFee.amount;
+        
+        // 3. Fallback: buscar qualquer fee com valor
+        const anyFee = (order.fees || []).find((f: any) => f.amount > 0);
+        return anyFee?.amount || 0;
+      })(),
       custo_envio_seller: custoEnvioSeller,
       
       // 🆕 FLEX: Campos de análise detalhada
