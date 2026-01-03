@@ -338,6 +338,15 @@ function SimplePedidosPage({ className }: Props) {
     'receita_flex',        // Receita Flex (não aplicável)
   ]), []);
   
+  // 🛒 ML: Colunas exclusivas do Orçamento (ocultar na aba Mercado Livre)
+  const ML_HIDDEN_COLUMNS = useMemo(() => new Set([
+    'marketplace_fee',     // Comissão Vendedor (só existe no Orçamento)
+    'comissao_percentual', // % Comissão (só existe no Orçamento)
+  ]), []);
+  
+  // Identificar se está na aba Mercado Livre (não é Shopee nem OMS)
+  const isMLMarketplace = !isShopeeMarketplace && !isOMSMarketplace;
+  
   // Filtrar colunas baseado no marketplace selecionado
   const visibleColumns = useMemo(() => {
     const baseVisible = columnManager.state.visibleColumns;
@@ -347,7 +356,9 @@ function SimplePedidosPage({ className }: Props) {
       ? SHOPEE_HIDDEN_COLUMNS 
       : isOMSMarketplace 
         ? OMS_HIDDEN_COLUMNS 
-        : null;
+        : isMLMarketplace
+          ? ML_HIDDEN_COLUMNS
+          : null;
     
     if (hiddenColumns) {
       const filtered = new Set<string>();
@@ -360,15 +371,17 @@ function SimplePedidosPage({ className }: Props) {
     }
     
     return baseVisible;
-  }, [columnManager.state.visibleColumns, isShopeeMarketplace, isOMSMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS]);
+  }, [columnManager.state.visibleColumns, isShopeeMarketplace, isOMSMarketplace, isMLMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS, ML_HIDDEN_COLUMNS]);
   
-  // Filtrar definições de colunas para Shopee/OMS
+  // Filtrar definições de colunas para Shopee/OMS/ML
   const filteredVisibleDefinitions = useMemo(() => {
     const hiddenColumns = isShopeeMarketplace 
       ? SHOPEE_HIDDEN_COLUMNS 
       : isOMSMarketplace 
         ? OMS_HIDDEN_COLUMNS 
-        : null;
+        : isMLMarketplace
+          ? ML_HIDDEN_COLUMNS
+          : null;
         
     if (hiddenColumns) {
       return columnManager.visibleDefinitions.filter(
@@ -376,15 +389,17 @@ function SimplePedidosPage({ className }: Props) {
       );
     }
     return columnManager.visibleDefinitions;
-  }, [columnManager.visibleDefinitions, isShopeeMarketplace, isOMSMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS]);
+  }, [columnManager.visibleDefinitions, isShopeeMarketplace, isOMSMarketplace, isMLMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS, ML_HIDDEN_COLUMNS]);
   
-  // Definições filtradas para o seletor de colunas (Shopee/OMS oculta algumas)
+  // Definições filtradas para o seletor de colunas (Shopee/OMS/ML oculta algumas)
   const filteredDefinitions = useMemo(() => {
     const hiddenColumns = isShopeeMarketplace 
       ? SHOPEE_HIDDEN_COLUMNS 
       : isOMSMarketplace 
         ? OMS_HIDDEN_COLUMNS 
-        : null;
+        : isMLMarketplace
+          ? ML_HIDDEN_COLUMNS
+          : null;
         
     if (hiddenColumns) {
       return columnManager.definitions.filter(
@@ -392,7 +407,7 @@ function SimplePedidosPage({ className }: Props) {
       );
     }
     return columnManager.definitions;
-  }, [columnManager.definitions, isShopeeMarketplace, isOMSMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS]);
+  }, [columnManager.definitions, isShopeeMarketplace, isOMSMarketplace, isMLMarketplace, SHOPEE_HIDDEN_COLUMNS, OMS_HIDDEN_COLUMNS, ML_HIDDEN_COLUMNS]);
   
   const shopeeOrdersDB = useShopeeOrdersFromDB({
     enabled: shouldLoadShopee,
