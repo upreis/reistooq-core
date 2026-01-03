@@ -47,7 +47,10 @@ export function ColumnManager(props: ColumnManagerProps) {
     ? { state: extState, actions: extActions, definitions: extDefs || internal.definitions, visibleDefinitions: extVisible || internal.visibleDefinitions, profiles: extProfiles || internal.profiles }
     : internal
   );
-  const { state, actions, definitions, visibleDefinitions, profiles } = used;
+  
+  // 🔧 PRIORIDADE: Usar definitions passadas como prop (filtradas por marketplace) sobre as do manager
+  const { state, actions, visibleDefinitions, profiles } = used;
+  const definitions = extDefs && extDefs.length > 0 ? extDefs : used.definitions;
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
