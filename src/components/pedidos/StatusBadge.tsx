@@ -31,6 +31,10 @@ const SHIPPING_STATUS_CONFIG = {
   not_delivered: { label: 'Não Entregue', color: 'bg-red-100 text-red-800 border-red-200' },
   cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800 border-red-200' },
   closed: { label: 'Fechado', color: 'bg-gray-100 text-gray-800 border-gray-200' },
+
+  // ✅ Compatibilidade (ex.: OMS / Orçamento)
+  approved: { label: 'Aprovado', color: 'bg-green-100 text-green-800 border-green-200' },
+  aproved: { label: 'Aprovado', color: 'bg-green-100 text-green-800 border-green-200' },
   default: { label: 'Desconhecido', color: 'bg-gray-100 text-gray-800 border-gray-200' }
 } as const;
 
@@ -39,7 +43,7 @@ const IMPORTANT_SUBSTATUS = {
   // Order substatus
   pack_splitted: 'Dividido',
   fraudulent: 'Fraudulento',
-  
+
   // Shipping substatus
   printed: 'Etiqueta Impressa',
   picked_up: 'Coletado',
@@ -55,15 +59,20 @@ const IMPORTANT_SUBSTATUS = {
 export function StatusBadge({ status, substatus, type, className }: StatusBadgeProps) {
   if (!status) return null;
 
+  const normalizedStatus = String(status).toLowerCase().trim();
+  const normalizedSubstatus = substatus ? String(substatus).toLowerCase().trim() : undefined;
+
   const config = type === 'order' ? ORDER_STATUS_CONFIG : SHIPPING_STATUS_CONFIG;
-  const statusConfig = config[status as keyof typeof config] || config.default;
-  
+  const statusConfig =
+    config[normalizedStatus as keyof typeof config] ||
+    config.default;
+
   // Determina se deve mostrar o substatus
-  const shouldShowSubstatus = substatus && 
-    Object.keys(IMPORTANT_SUBSTATUS).includes(substatus);
-  
-  const substatusLabel = shouldShowSubstatus ? 
-    IMPORTANT_SUBSTATUS[substatus as keyof typeof IMPORTANT_SUBSTATUS] : null;
+  const shouldShowSubstatus = normalizedSubstatus && Object.prototype.hasOwnProperty.call(IMPORTANT_SUBSTATUS, normalizedSubstatus);
+
+  const substatusLabel = shouldShowSubstatus
+    ? IMPORTANT_SUBSTATUS[normalizedSubstatus as keyof typeof IMPORTANT_SUBSTATUS]
+    : null;
 
   return (
     <div className="flex flex-col gap-1">
