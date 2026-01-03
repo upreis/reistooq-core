@@ -1,20 +1,28 @@
 /**
- * 💰 Hook para calcular custo total do produto (produto + componentes + insumos)
- * Usado na coluna "Custo Produto" para pedidos OMS/Orçamento
+ * 💰 Hook para calcular custo total do produto (composição padrão + insumos local de venda)
+ * Segue a mesma lógica da página /estoque/composicoes
+ * 
+ * LÓGICA:
+ * 1. Busca composição padrão (produto_componentes) pelo local_estoque_id
+ * 2. Busca insumos do local de venda (composicoes_local_venda) pelo local_venda_id
+ * 3. Soma os custos: Σ (preco_custo do componente × quantidade)
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 const isDev = process.env.NODE_ENV === 'development';
 
 export interface CustoProdutoResult {
-  custoProduto: number;
-  custoComponentes: number;
-  custoInsumos: number;
-  custoTotal: number;
+  custoComposicaoPadrao: number;  // Custo da composição padrão (produto_componentes)
+  custoInsumosLocal: number;       // Custo dos insumos do local de venda
+  custoTotal: number;              // Soma total
   loading: boolean;
-  fonte: 'local_venda' | 'padrao' | 'produto_apenas';
+  fonte: 'local_venda' | 'padrao' | 'sem_composicao';
+  detalhes: {
+    componentesPadrao: Array<{ sku: string; quantidade: number; custoUni: number; custoTotal: number }>;
+    insumosLocal: Array<{ sku: string; quantidade: number; custoUni: number; custoTotal: number }>;
+  };
 }
 
 interface CacheEntry {
@@ -31,21 +39,6 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
  */
 function getCacheKey(sku: string, localEstoqueId?: string | null, localVendaId?: string | null): string {
   return `${sku}|${localEstoqueId || ''}|${localVendaId || ''}`;
-}
-
-/**
- * Busca custo de um SKU na tabela produtos
- */
-async function buscarCustoProduto(sku: string): Promise<number> {
-  const { data, error } = await supabase
-    .from('produtos')
-    .select('preco_custo')
-    .eq('sku_interno', sku)
-    .eq('ativo', true)
-    .maybeSingle();
-
-  if (error || !data) return 0;
-  return Number(data.preco_custo) || 0;
 }
 
 /**
@@ -68,7 +61,14 @@ async function buscarCustosProdutos(skus: string[]): Promise<Map<string, number>
 }
 
 /**
- * Calcula o custo total de um produto incluindo componentes e insumos
+ * Calcula o custo total de um produto seguindo a mesma lógica da página /estoque/composicoes
+ * 
+ * Custo Total = Composição Padrão + Insumos do Local de Venda
+ * 
+ * Exemplo do SKU FL-105-DOUR-1:
+ * - Composição Padrão: FL-105-DOUR-1 (R$ 5,00 × 1) = R$ 5,00
+ * - Insumo Local: INSU-1-10X15-1 (R$ 0,20 × 1) = R$ 0,20
+ * - CUSTO TOTAL = R$ 5,20
  */
 export async function calcularCustoProdutoCompleto(
   sku: string,
@@ -83,11 +83,13 @@ export async function calcularCustoProdutoCompleto(
   }
 
   try {
-    // 1. Custo do produto principal
-    const custoProduto = await buscarCustoProduto(sku);
+    let custoComposicaoPadrao = 0;
+    let custoInsumosLocal = 0;
+    let fonte: 'local_venda' | 'padrao' | 'sem_composicao' = 'sem_composicao';
+    const componentesPadrao: Array<{ sku: string; quantidade: number; custoUni: number; custoTotal: number }> = [];
+    const insumosLocal: Array<{ sku: string; quantidade: number; custoUni: number; custoTotal: number }> = [];
 
-    // 2. Buscar componentes (do local de estoque)
-    let custoComponentes = 0;
+    // 1. COMPOSIÇÃO PADRÃO (produto_componentes) - filtrado pelo local de estoque
     if (localEstoqueId) {
       const { data: componentes } = await supabase
         .from('produto_componentes')
@@ -96,22 +98,27 @@ export async function calcularCustoProdutoCompleto(
         .eq('local_id', localEstoqueId);
 
       if (componentes && componentes.length > 0) {
+        fonte = 'padrao';
         const skusComponentes = componentes.map(c => c.sku_componente);
-        const custosComponentes = await buscarCustosProdutos(skusComponentes);
+        const custosMap = await buscarCustosProdutos(skusComponentes);
         
-        custoComponentes = componentes.reduce((sum, comp) => {
-          const custoUnit = custosComponentes.get(comp.sku_componente) || 0;
-          return sum + (custoUnit * (comp.quantidade || 1));
-        }, 0);
+        componentes.forEach(comp => {
+          const custoUni = custosMap.get(comp.sku_componente) || 0;
+          const qtd = comp.quantidade || 1;
+          const custoItem = custoUni * qtd;
+          custoComposicaoPadrao += custoItem;
+          componentesPadrao.push({
+            sku: comp.sku_componente,
+            quantidade: qtd,
+            custoUni,
+            custoTotal: custoItem
+          });
+        });
       }
     }
 
-    // 3. Buscar insumos (prioriza local de venda)
-    let custoInsumos = 0;
-    let fonte: 'local_venda' | 'padrao' | 'produto_apenas' = 'produto_apenas';
-
+    // 2. INSUMOS DO LOCAL DE VENDA (composicoes_local_venda)
     if (localVendaId) {
-      // Tentar buscar insumos do local de venda
       const { data: insumosLV } = await supabase
         .from('composicoes_local_venda')
         .select('sku_insumo, quantidade')
@@ -122,42 +129,50 @@ export async function calcularCustoProdutoCompleto(
       if (insumosLV && insumosLV.length > 0) {
         fonte = 'local_venda';
         const skusInsumos = insumosLV.map(i => i.sku_insumo);
-        const custosInsumos = await buscarCustosProdutos(skusInsumos);
+        const custosMap = await buscarCustosProdutos(skusInsumos);
         
-        custoInsumos = insumosLV.reduce((sum, ins) => {
-          const custoUnit = custosInsumos.get(ins.sku_insumo) || 0;
-          return sum + (custoUnit * (ins.quantidade || 1));
-        }, 0);
+        insumosLV.forEach(ins => {
+          const custoUni = custosMap.get(ins.sku_insumo) || 0;
+          const qtd = ins.quantidade || 1;
+          const custoItem = custoUni * qtd;
+          custoInsumosLocal += custoItem;
+          insumosLocal.push({
+            sku: ins.sku_insumo,
+            quantidade: qtd,
+            custoUni,
+            custoTotal: custoItem
+          });
+        });
       }
     }
 
-    // Fallback: insumos padrão (composicoes_insumos)
-    if (custoInsumos === 0 && fonte === 'produto_apenas') {
-      const { data: insumosPadrao } = await supabase
-        .from('composicoes_insumos')
-        .select('sku_insumo, quantidade')
-        .eq('sku_produto', sku)
-        .eq('ativo', true);
-
-      if (insumosPadrao && insumosPadrao.length > 0) {
-        fonte = 'padrao';
-        const skusInsumos = insumosPadrao.map(i => i.sku_insumo);
-        const custosInsumos = await buscarCustosProdutos(skusInsumos);
-        
-        custoInsumos = insumosPadrao.reduce((sum, ins) => {
-          const custoUnit = custosInsumos.get(ins.sku_insumo) || 0;
-          return sum + (custoUnit * (ins.quantidade || 1));
-        }, 0);
+    // Se não encontrou composição padrão mas tem local de estoque, 
+    // busca o custo direto do produto como fallback
+    if (componentesPadrao.length === 0 && localEstoqueId) {
+      const custosMap = await buscarCustosProdutos([sku]);
+      const custoDirecto = custosMap.get(sku) || 0;
+      if (custoDirecto > 0) {
+        custoComposicaoPadrao = custoDirecto;
+        componentesPadrao.push({
+          sku: sku,
+          quantidade: 1,
+          custoUni: custoDirecto,
+          custoTotal: custoDirecto
+        });
+        if (fonte === 'sem_composicao') fonte = 'padrao';
       }
     }
 
     const result: CustoProdutoResult = {
-      custoProduto,
-      custoComponentes,
-      custoInsumos,
-      custoTotal: custoProduto + custoComponentes + custoInsumos,
+      custoComposicaoPadrao,
+      custoInsumosLocal,
+      custoTotal: custoComposicaoPadrao + custoInsumosLocal,
       loading: false,
-      fonte
+      fonte,
+      detalhes: {
+        componentesPadrao,
+        insumosLocal
+      }
     };
 
     // Salvar no cache
@@ -165,11 +180,12 @@ export async function calcularCustoProdutoCompleto(
 
     if (isDev) {
       console.log(`💰 [CustoProduto] SKU: ${sku}`, {
-        custoProduto,
-        custoComponentes,
-        custoInsumos,
+        custoComposicaoPadrao,
+        custoInsumosLocal,
         custoTotal: result.custoTotal,
-        fonte
+        fonte,
+        componentesPadrao: componentesPadrao.length,
+        insumosLocal: insumosLocal.length
       });
     }
 
@@ -177,12 +193,15 @@ export async function calcularCustoProdutoCompleto(
   } catch (error) {
     console.error(`❌ [CustoProduto] Erro ao calcular custo para ${sku}:`, error);
     return {
-      custoProduto: 0,
-      custoComponentes: 0,
-      custoInsumos: 0,
+      custoComposicaoPadrao: 0,
+      custoInsumosLocal: 0,
       custoTotal: 0,
       loading: false,
-      fonte: 'produto_apenas'
+      fonte: 'sem_composicao',
+      detalhes: {
+        componentesPadrao: [],
+        insumosLocal: []
+      }
     };
   }
 }
@@ -196,12 +215,15 @@ export function useCustoProdutoComInsumos(
   localVendaId?: string | null
 ): CustoProdutoResult {
   const [result, setResult] = useState<CustoProdutoResult>({
-    custoProduto: 0,
-    custoComponentes: 0,
-    custoInsumos: 0,
+    custoComposicaoPadrao: 0,
+    custoInsumosLocal: 0,
     custoTotal: 0,
     loading: true,
-    fonte: 'produto_apenas'
+    fonte: 'sem_composicao',
+    detalhes: {
+      componentesPadrao: [],
+      insumosLocal: []
+    }
   });
 
   useEffect(() => {
