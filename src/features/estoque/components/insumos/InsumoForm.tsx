@@ -555,12 +555,22 @@ export function InsumoForm({ open, onClose, onSubmit, insumo, localEstoqueId, lo
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
-                                              <span className="cursor-help">
+                                              <span className="cursor-help underline decoration-dashed underline-offset-2">
                                                 Nenhum insumo encontrado.
                                               </span>
                                             </TooltipTrigger>
-                                            <TooltipContent side="right" align="start">
-                                              Aqui somente aparecerá os insumos cadastrado na pagina estoque como insumo e nao como produto
+                                            <TooltipContent side="top" className="max-w-xs">
+                                              <div className="text-xs space-y-1">
+                                                <div className="font-semibold border-b pb-1 mb-1">
+                                                  Insumos não listados
+                                                </div>
+                                                <p>
+                                                  Aqui somente aparecerá os insumos cadastrados na página Estoque como <span className="font-semibold">insumo</span> e não como produto.
+                                                </p>
+                                                <div className="text-[10px] text-muted-foreground pt-1">
+                                                  Para cadastrar insumos, vá em Estoque → Controle e marque o tipo como "Insumo".
+                                                </div>
+                                              </div>
                                             </TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>
